@@ -1,31 +1,32 @@
 
-import { BookOpen, CalendarClock, Home, Settings } from 'lucide-react';
+import { FileDiff, Home } from 'lucide-react';
+import DirDiffPage from './pages/DirDiffPage';
+import HomePage from './pages/HomePage';
 
 interface Route {
 	title: string;
-	url: string;
+	url: PageRoutePaths;
 	icon: JSX.Element;
 	routeElement: JSX.Element;
+}
+
+export enum PageRoutePaths { 
+	Home = "/", 
+	DirectoryDiff = "/DirDiff"
 }
 
 // Menu items.
 export const PageRoutes: Route[] = [
 	{
 		title: 'Home',
-		url: '/home',
+		url: PageRoutePaths.Home,
 		icon: <Home/>,
-		routeElement: <div>home</div>,
+		routeElement: <HomePage/>,
 	},
 	{
-		title: 'Quran',
-		url: '/quran',
-		icon: <BookOpen/>,
-		routeElement: <div>homqurane</div>,
-	},
-	{
-		title: 'Sessions',
-		url: '/sessions',
-		icon: <CalendarClock/>,
-		routeElement: <div>sess</div>,
+		title: 'Dir Diff',
+		url: PageRoutePaths.DirectoryDiff,
+		icon: <FileDiff/>,
+		routeElement: <DirDiffPage/>,
 	}
 ];

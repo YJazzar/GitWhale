@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"fmt"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,6 +16,10 @@ var assets embed.FS
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
+
+	println("Here are the os args:")
+	fmt.Printf("%+v\n", os.Args)
+	println("finish args")
 
 	// Create application with options
 	err := wails.Run(&options.App{

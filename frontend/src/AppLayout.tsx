@@ -16,24 +16,43 @@ import {
 import { Toaster } from '@/components/ui/toaster';
 import { useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { PageRoutes } from './PageRoutes';
+import { PageRoutePaths, PageRoutes } from './PageRoutes';
+import { GetStartupState } from '../wailsjs/go/main/App';
+import { useQuery } from 'react-query';
 
 export function AppSidebar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const sidebar = useSidebar();
 
+	const startupStateQuery = useQuery({
+		queryKey: ['GetStartupState'],
+		queryFn: GetStartupState,
+	});
+
 	// Close the sidebar on mobile because it's nicer
 	const onLinkClick = () => {
 		sidebar.setOpenMobile(false);
 	};
 
-	// Navigates to the home page on startup
-	useEffect(() => {
-		if (location.pathname === '/') {
+	const NavigateToDefaultRoute = async () => {
+		let startupState = startupStateQuery.data;
+
+		if (!!startupState?.directoryDiff) {
+			navigate(PageRoutePaths.DirectoryDiff);
+		} else {
 			navigate(PageRoutes[0].url);
 		}
-	}, [location.pathname]);
+	};
+
+	// Navigates to the home page on startup
+	useEffect(() => {
+		console.dir({location, startupStateQuery})
+		// cant uncomment unless i do something like mentioned here: https://github.com/wailsapp/wails/issues/2262
+		// if (location.pathname === '/' && startupStateQuery.data) {
+		// 	NavigateToDefaultRoute();
+		// }
+	}, [location.pathname, startupStateQuery]);
 
 	return (
 		<Sidebar>

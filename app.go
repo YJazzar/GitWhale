@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 )
 
 // App struct
@@ -21,7 +20,20 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+type StartupState struct {
+	DirectoryDiff DirectoryDiff `json:"directoryDiff"`
+}
+
+type DirectoryDiff struct {
+	LeftFolderPath  string `json:"leftFolderPath"`
+	RightFolderPath string `json:"rightFolderPath"`
+}
+
+func (a *App) GetStartupState() *StartupState {
+	return &StartupState{
+		DirectoryDiff: DirectoryDiff{
+			LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/left/",
+			RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/right/",
+		},
+	}
 }
