@@ -21,19 +21,23 @@ func (a *App) startup(ctx context.Context) {
 }
 
 type StartupState struct {
-	DirectoryDiff DirectoryDiff `json:"directoryDiff"`
+	DirectoryDiff StartupDirectoryDiffArgs `json:"directoryDiff"`
 }
 
-type DirectoryDiff struct {
+type StartupDirectoryDiffArgs struct {
 	LeftFolderPath  string `json:"leftFolderPath"`
 	RightFolderPath string `json:"rightFolderPath"`
 }
 
 func (a *App) GetStartupState() *StartupState {
 	return &StartupState{
-		DirectoryDiff: DirectoryDiff{
+		DirectoryDiff: StartupDirectoryDiffArgs{
 			LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/left/",
 			RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/right/",
 		},
 	}
+}
+
+func (a *App) GetDirectoryDiffDetails() {
+
 }

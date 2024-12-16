@@ -1,11 +1,11 @@
 export namespace main {
 	
-	export class DirectoryDiff {
+	export class StartupDirectoryDiffArgs {
 	    leftFolderPath: string;
 	    rightFolderPath: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new DirectoryDiff(source);
+	        return new StartupDirectoryDiffArgs(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -15,7 +15,7 @@ export namespace main {
 	    }
 	}
 	export class StartupState {
-	    directoryDiff: DirectoryDiff;
+	    directoryDiff: StartupDirectoryDiffArgs;
 	
 	    static createFrom(source: any = {}) {
 	        return new StartupState(source);
@@ -23,7 +23,7 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.directoryDiff = this.convertValues(source["directoryDiff"], DirectoryDiff);
+	        this.directoryDiff = this.convertValues(source["directoryDiff"], StartupDirectoryDiffArgs);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

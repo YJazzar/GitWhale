@@ -47,7 +47,7 @@ export function AppSidebar() {
 
 	// Navigates to the home page on startup
 	useEffect(() => {
-		console.dir({location, startupStateQuery})
+		// console.dir({location, startupStateQuery})
 		// cant uncomment unless i do something like mentioned here: https://github.com/wailsapp/wails/issues/2262
 		// if (location.pathname === '/' && startupStateQuery.data) {
 		// 	NavigateToDefaultRoute();

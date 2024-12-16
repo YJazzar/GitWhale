@@ -12,9 +12,6 @@ import { PageRoutes } from './PageRoutes';
 const queryClient = new QueryClient();
 
 function App() {
-	const [resultText, setResultText] = useState('Please enter your name below 👇');
-	const [name, setName] = useState('');
-
 	return (
 		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
 			<QueryClientProvider client={queryClient}>
