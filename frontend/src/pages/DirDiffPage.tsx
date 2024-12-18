@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import { GetStartupState } from '../../wailsjs/go/main/App';
+import { GetDirectoryDiffDetails, GetStartupState } from '../../wailsjs/go/backend/App';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import * as monaco from 'monaco-editor';
@@ -53,6 +53,11 @@ export default function DirDiffPage() {
 	const [editor, setEditor] = useState<monaco.editor.IStandaloneDiffEditor | undefined>(undefined);
 	// const [data, setData] = useState<SessionDataInput[]>([]);
 
+
+	const testClick = () => {
+		GetDirectoryDiffDetails()
+	}
+
 	useEffect(() => {
 		if (editor || !editorDivRef.current) {
 			return;
@@ -82,6 +87,7 @@ export default function DirDiffPage() {
 
 	return (
 		<div className="h-full w-full">
+			<Button onClick={testClick}>Test</Button>
 			<div ref={editorDivRef} id="container" className="h-full w-full"></div>
 			{/* <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
 				<code className="text-white">{JSON.stringify(startupStateQuery, null, 2)}</code>

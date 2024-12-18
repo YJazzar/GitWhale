@@ -17,8 +17,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { PageRoutePaths, PageRoutes } from './PageRoutes';
-import { GetStartupState } from '../wailsjs/go/main/App';
 import { useQuery } from 'react-query';
+import { GetStartupState } from './../wailsjs/go/backend/App';
 
 export function AppSidebar() {
 	const location = useLocation();
@@ -91,7 +91,7 @@ export default function AppLayout() {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-			<main className="w-full p-4">
+			<main className="w-full">
 				<SidebarTrigger />
 				<Outlet />
 				<Toaster />

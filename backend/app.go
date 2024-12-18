@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"context"
@@ -16,7 +16,7 @@ func NewApp() *App {
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
-func (a *App) startup(ctx context.Context) {
+func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
@@ -39,5 +39,6 @@ func (a *App) GetStartupState() *StartupState {
 }
 
 func (a *App) GetDirectoryDiffDetails() {
-
+	dirDiff := a.GetStartupState().DirectoryDiff
+	readDirDiffStructure(&dirDiff)
 }
