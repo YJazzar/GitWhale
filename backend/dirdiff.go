@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,41 +17,53 @@ type Directory struct {
 
 // FileInfo holds information about a file.
 type FileInfo struct {
-	Path string
-	Name string
-	Size int64 // in bytes
+	Path       string
+	Name       string
+	InLeftDir  bool
+	InRightDir bool
 }
 
-func readDirDiffStructure(dirs *StartupDirectoryDiffArgs) {
-
-	// Traverse the directory and get the structure
-	rootDir, err := traverseDir(dirs.LeftFolderPath)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
-	println("Here's the walked directory stuffs:")
-	fmt.Printf("%+v\n", rootDir)
-}
-
-// traverseDir recursively traverses a directory and builds a Directory structure
-func traverseDir(root string) (*Directory, error) {
-	fmt.Printf("Traversing using root: %v\n", root)
-
-	root = filepath.Clean(root)
-
+func readDirDiffStructure(dirs *StartupDirectoryDiffArgs) *Directory {
 	rootDir := &Directory{
-		Path:    root,
-		Name:    filepath.Base(root),
+		Path:    "",
+		Name:    "",
 		Files:   make([]*FileInfo, 0),
 		SubDirs: make([]*Directory, 0), // Use pointers for SubDirs
 	}
 
-	dirMap := make(map[string]*Directory)
-	dirMap[root] = rootDir
+	// Traverse the directory and get the structure
+	if err := traverseDir(rootDir, filepath.Clean(dirs.LeftFolderPath), InLeftDir); err != nil {
+		fmt.Println("Error:", err)
+		return nil
+	}
 
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	if err := traverseDir(rootDir, filepath.Clean(dirs.RightFolderPath), InRightDir); err != nil {
+		fmt.Println("Error:", err)
+		return nil
+	}
+
+	println("Here's the walked directory stuffs:")
+	fmt.Printf("%+v\n", rootDir)
+	return rootDir
+}
+
+const (
+	InLeftDir = iota
+	InRightDir
+)
+
+// traverseDir recursively traverses a directory and builds a Directory structure
+func traverseDir(rootDir *Directory, rootPath string, dirSide int) error {
+	if dirSide != InLeftDir && dirSide != InRightDir {
+		return fmt.Errorf("passed an invalid directory side")
+	}
+
+	fmt.Printf("Traversing using root: %v\n", rootPath)
+
+	dirMap := make(map[string]*Directory)
+	dirMap["."] = rootDir
+
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			// If there's an error accessing a file/folder, print it and skip it
 			fmt.Printf("Error accessing file: %v\n", err)
@@ -62,48 +73,72 @@ func traverseDir(root string) (*Directory, error) {
 		fmt.Printf("Walking into: %v\n", path)
 
 		// Skip the root directory itself
-		if path == root {
+		if path == rootPath {
 			return nil
 		}
 
-		// the parent directory name
-		parentDir := filepath.Dir(path)
+		// the relative parent directory name
+		relativeParentDir, err := filepath.Rel(rootPath, filepath.Dir(path))
+		if err != nil {
+			fmt.Printf("Error getting relative path for: %v\n", path)
+			return nil
+		}
+
+		relativeDir, err := filepath.Rel(rootPath, path)
+		if err != nil {
+			fmt.Printf("Error getting relative path for: %v\n", path)
+			return nil
+		}
 
 		// If it's a directory, add it to the structure
 		if info.IsDir() {
 			newDirectory := &Directory{
-				Path:    path, // Correct: use path directly, not parentDir
+				Path:    relativeDir, // Correct: use path directly, not parentDir
 				Name:    filepath.Base(path),
 				Files:   make([]*FileInfo, 0),
 				SubDirs: make([]*Directory, 0), // Use pointers for SubDirs
 			}
 
 			// Track the folder in the map
-			dirMap[path] = newDirectory
+			dirMap[relativeDir] = newDirectory
 
 			// Link the directory to the parent dir
-			parentDirectoryNode, exists := dirMap[parentDir]
+			parentDirectoryNode, exists := dirMap[relativeParentDir]
 			if !exists {
-				return errors.New(fmt.Sprintf("failed while trying to link the directory to its parent: %v", parentDir))
+				return fmt.Errorf("failed while trying to link the directory to its parent: %v", relativeParentDir)
 			}
 
 			// Append pointer to the new directory
 			parentDirectoryNode.SubDirs = append(parentDirectoryNode.SubDirs, newDirectory)
+			return nil
+		}
 
-		} else {
-			// It's a file here
-			directoryNode, exists := dirMap[parentDir]
-			if !exists {
-				return errors.New("need to always have a dir tracked in dirMap before reading its contents")
+		// It's a file here
+		directoryNode, exists := dirMap[relativeParentDir]
+		if !exists {
+			prettyPrint("current map state:", dirMap)
+			return fmt.Errorf("need to always have a dir tracked in dirMap before reading its contents: %v", relativeParentDir)
+		}
+
+		// First, we check if it already exists in the map (could have been added from a previous walk)
+		fileNode, exists := findFile(directoryNode.Files, path)
+
+		if !exists {
+			fileNode = &FileInfo{
+				Path: relativeDir, // Corrected path for the file
+				Name: filepath.Base(path),
 			}
 
 			// Append file info
-			directoryNode.Files = append(directoryNode.Files, &FileInfo{
-				Path: path, // Corrected path for the file
-				Name: filepath.Base(path),
-				Size: info.Size(),
-			})
+			directoryNode.Files = append(directoryNode.Files, fileNode)
 		}
+
+		if dirSide == InLeftDir {
+			fileNode.InLeftDir = true
+		} else if dirSide == InRightDir {
+			fileNode.InRightDir = true
+		}
+
 		return nil
 	})
 
@@ -114,13 +149,20 @@ func traverseDir(root string) (*Directory, error) {
 	// Debug print the final structure
 	prettyPrint("Final directory structure:\n", rootDir)
 
-	return rootDir, err
+	return err
 }
 
-type EmptyInterface interface {
+func findFile(files []*FileInfo, targetPath string) (*FileInfo, bool) {
+	for _, file := range files {
+		if file.Path == targetPath {
+			return file, true
+		}
+	}
+
+	return nil, false // Element not found
 }
 
-func prettyPrint(msg string, t EmptyInterface) {
+func prettyPrint(msg string, t any) {
 	// Debug print the final structure
 	b, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {

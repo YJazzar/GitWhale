@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"os"
 )
 
 // App struct
@@ -30,15 +31,27 @@ type StartupDirectoryDiffArgs struct {
 }
 
 func (a *App) GetStartupState() *StartupState {
+
+	args := os.Args
+	if len(args) != 3 {
+		// test code
+		return &StartupState{
+			DirectoryDiff: StartupDirectoryDiffArgs{
+				LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/left/",
+				RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/right/",
+			},
+		}
+	}
+
 	return &StartupState{
 		DirectoryDiff: StartupDirectoryDiffArgs{
-			LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/left/",
-			RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/right/",
+			LeftFolderPath:  args[1],
+			RightFolderPath: args[2],
 		},
 	}
 }
 
-func (a *App) GetDirectoryDiffDetails() {
+func (a *App) GetDirectoryDiffDetails() *Directory {
 	dirDiff := a.GetStartupState().DirectoryDiff
-	readDirDiffStructure(&dirDiff)
+	return readDirDiffStructure(&dirDiff)
 }
