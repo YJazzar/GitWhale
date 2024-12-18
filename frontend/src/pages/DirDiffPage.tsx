@@ -4,36 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import * as monaco from 'monaco-editor';
 
-self.MonacoEnvironment = {
-	getWorker: async function (workerId: never, label: string) {
-		let worker;
-
-		switch (label) {
-			case 'json':
-				worker = await import('monaco-editor/esm/vs/language/json/json.worker?worker');
-				break;
-			case 'css':
-			case 'scss':
-			case 'less':
-				worker = await import('monaco-editor/esm/vs/language/css/css.worker?worker');
-				break;
-			case 'html':
-			case 'handlebars':
-			case 'razor':
-				worker = await import('monaco-editor/esm/vs/language/html/html.worker?worker');
-				break;
-			case 'typescript':
-			case 'javascript':
-				worker = await import('monaco-editor/esm/vs/language/typescript/ts.worker?worker');
-				break;
-			default:
-				worker = await import('monaco-editor/esm/vs/editor/editor.worker?worker');
-		}
-
-		return new worker.default();
-	},
-};
-
 var originalModel = monaco.editor.createModel(
 	'This line is removed on the right.\njust some text\nabcd\nefgh\nSome more text',
 	'text/plain'
