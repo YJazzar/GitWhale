@@ -23,6 +23,12 @@ func main() {
 	fmt.Printf("%+v\n", os.Args)
 	println("finish args")
 
+	app.GetDirectoryDiffDetails()
+
+	// if true {
+	// 	return
+	// }
+
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "gittools",
