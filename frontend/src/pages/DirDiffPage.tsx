@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import * as monaco from 'monaco-editor';
 import { TreeNode } from '@/components/tree-component';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 var originalModel = monaco.editor.createModel(
 	'This line is removed on the right.\njust some text\nabcd\nefgh\nSome more text',
@@ -19,12 +20,6 @@ export default function DirDiffPage() {
 		queryKey: ['GetDirectoryDiffDetails'],
 		queryFn: GetDirectoryDiffDetails,
 	});
-
-	const testClick = async () => {
-		let data = await GetDirectoryDiffDetails();
-		console.log(data);
-		debugger
-	};
 
 	if (directoryDiffDetails.isLoading || !directoryDiffDetails.data) {
 		return <>Loading....</>;
@@ -43,9 +38,10 @@ export default function DirDiffPage() {
 
 	return (
 		<div className="h-full w-full">
-			<Button onClick={testClick}>Test</Button>
-			<TreeNode directory={directoryDiffDetails.data} />
-			<DiffView />
+			<Card className="p-2 m-5">
+				<TreeNode directory={directoryDiffDetails.data} />
+			</Card>
+			{/* <DiffView /> */}
 			{/* <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
 				<code className="text-white">{JSON.stringify(startupStateQuery, null, 2)}</code>
 			</pre> */}
