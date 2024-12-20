@@ -3,6 +3,7 @@ export namespace backend {
 	export class FileInfo {
 	    Path: string;
 	    Name: string;
+	    Extension: string;
 	    LeftDirAbsPath: string;
 	    RightDirAbsPath: string;
 	
@@ -14,6 +15,7 @@ export namespace backend {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Path = source["Path"];
 	        this.Name = source["Name"];
+	        this.Extension = source["Extension"];
 	        this.LeftDirAbsPath = source["LeftDirAbsPath"];
 	        this.RightDirAbsPath = source["RightDirAbsPath"];
 	    }

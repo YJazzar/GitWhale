@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"unicode/utf8"
 )
 
 // Directory represents a folder and its contents (both files and subdirectories).
@@ -19,6 +20,7 @@ type Directory struct {
 type FileInfo struct {
 	Path            string
 	Name            string
+	Extension       string
 	LeftDirAbsPath  string
 	RightDirAbsPath string
 }
@@ -150,8 +152,9 @@ func traverseDir(
 
 		if !exists {
 			fileNode = &FileInfo{
-				Path: relativeDir, // Corrected path for the file
-				Name: filepath.Base(path),
+				Path:      relativeDir, // Corrected path for the file
+				Name:      filepath.Base(path),
+				Extension: removeLeadingPeriod(filepath.Ext(path)),
 			}
 
 			// Append file info
@@ -175,6 +178,16 @@ func traverseDir(
 	prettyPrint("Final directory structure:\n", rootDir)
 
 	return err
+}
+
+func removeLeadingPeriod(extension string) string {
+	if len(extension) < 1 || extension[:1] != "." {
+		return extension
+	}
+
+	_, i := utf8.DecodeRuneInString(extension)
+	return extension[i:]
+
 }
 
 func findFile(files []*FileInfo, targetPath string) (*FileInfo, bool) {

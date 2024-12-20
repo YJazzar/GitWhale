@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
 import { ReadFile } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
+import { FileExtensionToLanguage } from '@/lib/monaco-utils';
 
 export type FileDiffViewProps = {
 	file: backend.FileInfo;
@@ -20,15 +21,16 @@ function useMonacoDiffModel(file: backend.FileInfo) {
 	const directoryDiffDetails = useQuery({
 		queryKey: ['GetFileContentsForDiff', file],
 		queryFn: async () => {
-			// const originalFilePromise = ReadFile(file.LeftDirAbsPath);
-			// const modifiedFilePromise = ReadFile(file.RightDirAbsPath);
-
 			const [originalFilePromise, modifiedFilePromise] = await Promise.allSettled([
 				ReadFile(file.LeftDirAbsPath),
 				ReadFile(file.RightDirAbsPath),
 			]);
+
 			const fileData = {
+				fileExtension: file.Extension,
+				originalFilePath: file.LeftDirAbsPath,
 				originalFile: '',
+				modifiedFilePath: file.RightDirAbsPath,
 				modifiedFile: '',
 			};
 
@@ -51,11 +53,24 @@ function useMonacoDiffModel(file: backend.FileInfo) {
 				setMonacoModel(undefined);
 				return;
 			}
+			console.log(data);
 
+			const language = FileExtensionToLanguage[data.fileExtension] || data.fileExtension
+			console.log({language})
 			setMonacoModel({
 				file: file,
-				modifiedModel: monaco.editor.createModel(data.modifiedFile),
-				originalModel: monaco.editor.createModel(data.originalFile),
+
+				modifiedModel: monaco.editor.createModel(
+					data.modifiedFile,
+					language,
+					// monaco.Uri.file(data.originalFilePath)
+				),
+
+				originalModel: monaco.editor.createModel(
+					data.originalFile,
+					language,
+					// monaco.Uri.file(data.modifiedFilePath)
+				),
 			});
 		},
 	});

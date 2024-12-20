@@ -34,7 +34,7 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "gittools",
-		Width:  1024,
+		Width:  1300,
 		Height: 768,
 		AssetServer: &assetserver.Options{
 			Assets: assets,

@@ -34,18 +34,18 @@ type StartupDirectoryDiffArgs struct {
 func (a *App) GetStartupState() *StartupState {
 
 	args := os.Args
-	if len(args) < 3 {
-		return &StartupState{}
-	}
-	// if len(args) != 3 {
-	// 	// test code
-	// 	return &StartupState{
-	// 		DirectoryDiff: StartupDirectoryDiffArgs{
-	// 			LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/left/",
-	// 			RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/right/",
-	// 		},
-	// 	}
+	// if len(args) < 3 {
+	// 	return &StartupState{}
 	// }
+	if len(args) != 3 {
+		// test code
+		return &StartupState{
+			DirectoryDiff: &StartupDirectoryDiffArgs{
+				LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/left/",
+				RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/right/",
+			},
+		}
+	}
 
 	return &StartupState{
 		DirectoryDiff: &StartupDirectoryDiffArgs{

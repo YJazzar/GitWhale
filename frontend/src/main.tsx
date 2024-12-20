@@ -1,4 +1,5 @@
 import React from 'react';
+import * as monaco from 'monaco-editor';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
@@ -35,6 +36,12 @@ self.MonacoEnvironment = {
 		return new worker.default();
 	},
 };
+
+monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+	noSemanticValidation: true,
+	noSyntaxValidation: true,
+});
+
 
 root.render(
 	<React.StrictMode>
