@@ -16,9 +16,11 @@ export default function DirDiffPage() {
 	});
 
 	const [openFiles, setOpenFiles] = useState<backend.FileInfo[]>([]);
+	const [currentOpenTab, setCurrentOpenTab] = useState<string>('fileOptions');
 
 	const onFileClick = (file: backend.FileInfo) => {
-		setOpenFiles([...openFiles, file]);
+		setOpenFiles([...openFiles.filter((openFile) => openFile !== file), file]);
+		setCurrentOpenTab(getFileKey(file));
 	};
 
 	const getFileKey = (file: backend.FileInfo) => {
@@ -42,9 +44,7 @@ export default function DirDiffPage() {
 
 	return (
 		<div className="w-full h-full ">
-			
-
-			<Tabs defaultValue="fileOptions" className=" h-full w-full">
+			<Tabs value={currentOpenTab} onValueChange={setCurrentOpenTab} className=" h-full w-full">
 				<TabsList>
 					<TabsTrigger value="fileOptions">Files</TabsTrigger>
 					{openFiles.map((file) => {
@@ -57,7 +57,7 @@ export default function DirDiffPage() {
 				</TabsContent>
 				{openFiles.map((file) => {
 					return (
-						<TabsContent className=' h-full w-full' value={getFileKey(file)}>
+						<TabsContent className=" h-full w-full" value={getFileKey(file)}>
 							<FileDiffView file={file} />
 						</TabsContent>
 					);
