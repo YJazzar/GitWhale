@@ -8,6 +8,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { backend } from 'wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FileDiffView from '@/components/file-diff-view';
+import { FileTabs, FileTabsHandle } from '@/components/file-tabs';
+
+const getFileKey = (file: backend.FileInfo) => {
+	return `${file.Path}/${file.Name}`;
+};
 
 export default function DirDiffPage() {
 	const directoryDiffDetails = useQuery({
@@ -15,17 +20,7 @@ export default function DirDiffPage() {
 		queryFn: GetDirectoryDiffDetails,
 	});
 
-	const [openFiles, setOpenFiles] = useState<backend.FileInfo[]>([]);
-	const [currentOpenTab, setCurrentOpenTab] = useState<string>('fileOptions');
-
-	const onFileClick = (file: backend.FileInfo) => {
-		setOpenFiles([...openFiles.filter((openFile) => openFile !== file), file]);
-		setCurrentOpenTab(getFileKey(file));
-	};
-
-	const getFileKey = (file: backend.FileInfo) => {
-		return `${file.Path}/${file.Name}`;
-	};
+	const fileTabRef = useRef<FileTabsHandle>(null);
 
 	if (directoryDiffDetails.isLoading || !directoryDiffDetails.data) {
 		return <>Loading....</>;
@@ -44,30 +39,25 @@ export default function DirDiffPage() {
 
 	return (
 		<div className="w-full h-full ">
-			<Tabs value={currentOpenTab} onValueChange={setCurrentOpenTab} className=" h-full w-full">
-				<TabsList>
-					<TabsTrigger value="fileOptions">Files</TabsTrigger>
-					{openFiles.map((file) => {
-						return <TabsTrigger value={getFileKey(file)}>{file.Name}</TabsTrigger>;
-					})}
-				</TabsList>
-
-				<TabsContent value="fileOptions">
-					<FileTree onFileClick={onFileClick} />
-				</TabsContent>
-				{openFiles.map((file) => {
-					return (
-						<TabsContent className=" h-full w-full" value={getFileKey(file)}>
-							<FileDiffView file={file} />
-						</TabsContent>
-					);
-				})}
-			</Tabs>
+			<FileTabs
+				ref={fileTabRef}
+				defaultTabKey="fileTree"
+				initialPages={[
+					{
+						key: 'fileTree',
+						render: () => {
+							return <FileTree fileTreeRef={fileTabRef} />;
+						},
+						title: 'Files',
+						preventUserClose: true
+					},
+				]}
+			/>
 		</div>
 	);
 }
 
-function FileTree(props: { onFileClick: (selectedFile: backend.FileInfo) => void }) {
+function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle> }) {
 	const directoryDiffDetails = useQuery({
 		queryKey: ['GetDirectoryDiffDetails'],
 		queryFn: GetDirectoryDiffDetails,
@@ -88,10 +78,20 @@ function FileTree(props: { onFileClick: (selectedFile: backend.FileInfo) => void
 		);
 	}
 
+	const onOpenFile = (file: backend.FileInfo) => {
+		props.fileTreeRef.current?.openNewPage({
+			key: getFileKey(file),
+			render: function (): JSX.Element {
+				return <FileDiffView file={file} />;
+			},
+			title: file.Name,
+		});
+	};
+
 	return (
 		<div className="w-full h-full ">
 			<Card className="p-2 m-5  max-h-screen overflow-auto">
-				<TreeNode directory={directoryDiffDetails.data} onFileClick={props.onFileClick} />
+				<TreeNode directory={directoryDiffDetails.data} onFileClick={onOpenFile} />
 			</Card>
 		</div>
 	);
