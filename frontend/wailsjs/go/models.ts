@@ -69,7 +69,7 @@ export namespace backend {
 	    }
 	}
 	export class StartupState {
-	    directoryDiff: StartupDirectoryDiffArgs;
+	    directoryDiff?: StartupDirectoryDiffArgs;
 	
 	    static createFrom(source: any = {}) {
 	        return new StartupState(source);

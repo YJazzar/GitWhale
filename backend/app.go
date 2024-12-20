@@ -23,7 +23,7 @@ func (a *App) Startup(ctx context.Context) {
 }
 
 type StartupState struct {
-	DirectoryDiff StartupDirectoryDiffArgs `json:"directoryDiff"`
+	DirectoryDiff *StartupDirectoryDiffArgs `json:"directoryDiff"`
 }
 
 type StartupDirectoryDiffArgs struct {
@@ -34,18 +34,21 @@ type StartupDirectoryDiffArgs struct {
 func (a *App) GetStartupState() *StartupState {
 
 	args := os.Args
-	if len(args) != 3 {
-		// test code
-		return &StartupState{
-			DirectoryDiff: StartupDirectoryDiffArgs{
-				LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/left/",
-				RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/right/",
-			},
-		}
+	if len(args) < 3 {
+		return &StartupState{}
 	}
+	// if len(args) != 3 {
+	// 	// test code
+	// 	return &StartupState{
+	// 		DirectoryDiff: StartupDirectoryDiffArgs{
+	// 			LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/left/",
+	// 			RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.VunxSB/right/",
+	// 		},
+	// 	}
+	// }
 
 	return &StartupState{
-		DirectoryDiff: StartupDirectoryDiffArgs{
+		DirectoryDiff: &StartupDirectoryDiffArgs{
 			LeftFolderPath:  args[1],
 			RightFolderPath: args[2],
 		},
@@ -54,7 +57,7 @@ func (a *App) GetStartupState() *StartupState {
 
 func (a *App) GetDirectoryDiffDetails() *Directory {
 	dirDiff := a.GetStartupState().DirectoryDiff
-	return readDirDiffStructure(&dirDiff)
+	return readDirDiffStructure(dirDiff)
 }
 
 func (a *App) ReadFile(filePath string) string {

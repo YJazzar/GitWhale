@@ -31,6 +31,10 @@ func readDirDiffStructure(dirs *StartupDirectoryDiffArgs) *Directory {
 		SubDirs: make([]*Directory, 0), // Use pointers for SubDirs
 	}
 
+	if dirs == nil {
+		return rootDir
+	}
+
 	// Set up a cache for all the folders and files
 
 	dirMap := make(map[string]*Directory)
