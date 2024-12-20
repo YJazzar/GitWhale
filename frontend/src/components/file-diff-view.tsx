@@ -53,22 +53,21 @@ function useMonacoDiffModel(file: backend.FileInfo) {
 				setMonacoModel(undefined);
 				return;
 			}
-			console.log(data);
 
-			const language = FileExtensionToLanguage[data.fileExtension] || data.fileExtension
-			console.log({language})
+			const language = FileExtensionToLanguage[data.fileExtension] || data.fileExtension;
+
 			setMonacoModel({
 				file: file,
 
 				modifiedModel: monaco.editor.createModel(
 					data.modifiedFile,
-					language,
+					language
 					// monaco.Uri.file(data.originalFilePath)
 				),
 
 				originalModel: monaco.editor.createModel(
 					data.originalFile,
-					language,
+					language
 					// monaco.Uri.file(data.modifiedFilePath)
 				),
 			});
@@ -100,11 +99,9 @@ export default function FileDiffView(props: FileDiffViewProps) {
 		});
 
 		setEditor(myEditor);
-		console.log('CREATING AN EDITOR NOW');
 
 		return () => {
 			myEditor.dispose();
-			console.log('DISPOSING ONE NOW');
 		};
 	}, []);
 

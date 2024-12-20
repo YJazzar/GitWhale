@@ -90,8 +90,6 @@ export function FileNode(props: {
 	let fileColor = '';
 	let fileDescription = '';
 
-	console.log(file)
-
 	if (file.LeftDirAbsPath && file.RightDirAbsPath) {
 		fileColor = 'text-amber-500';
 		fileDescription = ' (M)';
