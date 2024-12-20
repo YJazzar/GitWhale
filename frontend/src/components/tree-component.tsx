@@ -1,10 +1,11 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { KeyboardEventHandler, useState } from 'react';
-import { backend } from 'wailsjs/go/models';
+import { backend } from '../../wailsjs/go/models';
 import { Button } from './ui/button';
 
 interface TreeNodeProps {
 	directory: backend.Directory;
+	onFileClick: (file: backend.FileInfo) => void;
 }
 
 const leftPadding = 'pl-6';
@@ -21,10 +22,10 @@ export function TreeNode(props: TreeNodeProps) {
 
 	const handleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
 		if (event.key === 'ArrowUp') {
-			event.preventDefault()
+			event.preventDefault();
 			moveFocus(-1); // Move focus to the previous element
 		} else if (event.key === 'ArrowDown') {
-			event.preventDefault()
+			event.preventDefault();
 			moveFocus(1); // Move focus to the next element
 		}
 	};
@@ -37,7 +38,7 @@ export function TreeNode(props: TreeNodeProps) {
 	};
 
 	return (
-		<div className={` items-start justify-start `}>
+		<div className={` items-start justify-start  `}>
 			<Button
 				onKeyDown={handleKeyDown}
 				onClick={toggleCollapse}
@@ -53,11 +54,20 @@ export function TreeNode(props: TreeNodeProps) {
 						className={`${leftPadding} before:h-full before:absolute before:top-0 before:border-slate-500 before:border-l before:left`}
 					>
 						{props.directory.SubDirs.map((childDirectory) => (
-							<TreeNode key={childDirectory.Path} directory={childDirectory} />
+							<TreeNode
+								key={childDirectory.Path}
+								directory={childDirectory}
+								onFileClick={props.onFileClick}
+							/>
 						))}
 
 						{props.directory.Files.map((childFile) => (
-							<FileNode key={childFile.Path} file={childFile} onKeyDown={handleKeyDown} />
+							<FileNode
+								key={childFile.Path}
+								file={childFile}
+								onKeyDown={handleKeyDown}
+								onFileClick={props.onFileClick}
+							/>
 						))}
 					</div>
 				</div>
@@ -69,27 +79,29 @@ export function TreeNode(props: TreeNodeProps) {
 export function FileNode(props: {
 	file: backend.FileInfo;
 	onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
+	onFileClick: (file: backend.FileInfo) => void;
 }) {
-	const [isOpen, setIsOpen] = useState(false);
-
-	const { file } = props;
+	const { file, onFileClick } = props;
 
 	const onClick = () => {
-		setIsOpen(!isOpen);
+		onFileClick(file);
 	};
 
 	let fileColor = '';
 	let fileDescription = '';
-	if (file.InLeftDir && file.InRightDir) {
+
+	console.log(file)
+
+	if (file.LeftDirAbsPath && file.RightDirAbsPath) {
 		fileColor = 'text-amber-500';
 		fileDescription = ' (M)';
-	} else if (file.InLeftDir && !file.InRightDir) {
+	} else if (file.LeftDirAbsPath && !file.RightDirAbsPath) {
 		fileColor = 'text-red-700';
 		fileDescription = ' (D)';
-	} else if (!file.InLeftDir && file.InRightDir) {
+	} else if (!file.LeftDirAbsPath && file.RightDirAbsPath) {
 		fileColor = 'text-green-700';
 		fileDescription = ' (A)';
-	} else if (!file.InLeftDir && file.InRightDir) {
+	} else if (!file.LeftDirAbsPath && file.RightDirAbsPath) {
 		fileColor = greyTextColor;
 		fileDescription = ' (Unknown)';
 	}

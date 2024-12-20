@@ -9,3 +9,7 @@ export function GetDirectoryDiffDetails() {
 export function GetStartupState() {
   return window['go']['backend']['App']['GetStartupState']();
 }
+
+export function ReadFile(arg1) {
+  return window['go']['backend']['App']['ReadFile'](arg1);
+}

@@ -17,10 +17,10 @@ type Directory struct {
 
 // FileInfo holds information about a file.
 type FileInfo struct {
-	Path       string
-	Name       string
-	InLeftDir  bool
-	InRightDir bool
+	Path            string
+	Name            string
+	LeftDirAbsPath  string
+	RightDirAbsPath string
 }
 
 func readDirDiffStructure(dirs *StartupDirectoryDiffArgs) *Directory {
@@ -100,6 +100,12 @@ func traverseDir(
 		}
 		fmt.Printf("Using key in map: %v\n", relativeDir)
 
+		absoluteFilePath, err := filepath.Abs(path)
+		if err != nil {
+			fmt.Printf("Error getting absolute path for: %v\n", path)
+			return nil
+		}
+
 		// If it's a directory, add it to the structure
 		if info.IsDir() {
 			// Check if we're already tracking the folder
@@ -149,9 +155,9 @@ func traverseDir(
 		}
 
 		if dirSide == InLeftDir {
-			fileNode.InLeftDir = true
+			fileNode.LeftDirAbsPath = absoluteFilePath
 		} else if dirSide == InRightDir {
-			fileNode.InRightDir = true
+			fileNode.RightDirAbsPath = absoluteFilePath
 		}
 
 		return nil

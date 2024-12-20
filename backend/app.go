@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"os"
 )
 
@@ -54,4 +55,17 @@ func (a *App) GetStartupState() *StartupState {
 func (a *App) GetDirectoryDiffDetails() *Directory {
 	dirDiff := a.GetStartupState().DirectoryDiff
 	return readDirDiffStructure(&dirDiff)
+}
+
+func (a *App) ReadFile(filePath string) string {
+	if filePath == "" {
+		return ""
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Sprintf("Error: %v\n", err)
+	}
+
+	return string(data)
 }

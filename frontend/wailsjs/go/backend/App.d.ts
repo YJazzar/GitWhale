@@ -5,3 +5,5 @@ import {backend} from '../models';
 export function GetDirectoryDiffDetails():Promise<backend.Directory>;
 
 export function GetStartupState():Promise<backend.StartupState>;
+
+export function ReadFile(arg1:string):Promise<string>;

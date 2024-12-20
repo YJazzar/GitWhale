@@ -3,8 +3,8 @@ export namespace backend {
 	export class FileInfo {
 	    Path: string;
 	    Name: string;
-	    InLeftDir: boolean;
-	    InRightDir: boolean;
+	    LeftDirAbsPath: string;
+	    RightDirAbsPath: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new FileInfo(source);
@@ -14,8 +14,8 @@ export namespace backend {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Path = source["Path"];
 	        this.Name = source["Name"];
-	        this.InLeftDir = source["InLeftDir"];
-	        this.InRightDir = source["InRightDir"];
+	        this.LeftDirAbsPath = source["LeftDirAbsPath"];
+	        this.RightDirAbsPath = source["RightDirAbsPath"];
 	    }
 	}
 	export class Directory {

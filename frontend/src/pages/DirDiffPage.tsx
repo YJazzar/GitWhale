@@ -5,17 +5,69 @@ import { Button } from '@/components/ui/button';
 import * as monaco from 'monaco-editor';
 import { TreeNode } from '@/components/tree-component';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-
-var originalModel = monaco.editor.createModel(
-	'This line is removed on the right.\njust some text\nabcd\nefgh\nSome more text',
-	'text/plain'
-);
-var modifiedModel = monaco.editor.createModel(
-	'just some text\nabcz\nzzzzefgh\nSome more text\nThis line is removed on the left.',
-	'text/plain'
-);
+import { backend } from 'wailsjs/go/models';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import FileDiffView from '@/components/file-diff-view';
 
 export default function DirDiffPage() {
+	const directoryDiffDetails = useQuery({
+		queryKey: ['GetDirectoryDiffDetails'],
+		queryFn: GetDirectoryDiffDetails,
+	});
+
+	const [openFiles, setOpenFiles] = useState<backend.FileInfo[]>([]);
+
+	const onFileClick = (file: backend.FileInfo) => {
+		setOpenFiles([...openFiles, file]);
+	};
+
+	const getFileKey = (file: backend.FileInfo) => {
+		return `${file.Path}/${file.Name}`;
+	};
+
+	if (directoryDiffDetails.isLoading || !directoryDiffDetails.data) {
+		return <>Loading....</>;
+	}
+
+	if (directoryDiffDetails.isError) {
+		return (
+			<>
+				Error....{' '}
+				<pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+					<code className="text-white">{JSON.stringify(directoryDiffDetails, null, 2)}</code>
+				</pre>{' '}
+			</>
+		);
+	}
+
+	return (
+		<div className="w-full h-full ">
+			
+
+			<Tabs defaultValue="fileOptions" className=" h-full w-full">
+				<TabsList>
+					<TabsTrigger value="fileOptions">Files</TabsTrigger>
+					{openFiles.map((file) => {
+						return <TabsTrigger value={getFileKey(file)}>{file.Name}</TabsTrigger>;
+					})}
+				</TabsList>
+
+				<TabsContent value="fileOptions">
+					<FileTree onFileClick={onFileClick} />
+				</TabsContent>
+				{openFiles.map((file) => {
+					return (
+						<TabsContent className=' h-full w-full' value={getFileKey(file)}>
+							<FileDiffView file={file} />
+						</TabsContent>
+					);
+				})}
+			</Tabs>
+		</div>
+	);
+}
+
+function FileTree(props: { onFileClick: (selectedFile: backend.FileInfo) => void }) {
 	const directoryDiffDetails = useQuery({
 		queryKey: ['GetDirectoryDiffDetails'],
 		queryFn: GetDirectoryDiffDetails,
@@ -37,55 +89,10 @@ export default function DirDiffPage() {
 	}
 
 	return (
-		<div className="h-full w-full">
-			<Card className="p-2 m-5">
-				<TreeNode directory={directoryDiffDetails.data} />
+		<div className="w-full h-full ">
+			<Card className="p-2 m-5  max-h-screen overflow-auto">
+				<TreeNode directory={directoryDiffDetails.data} onFileClick={props.onFileClick} />
 			</Card>
-			{/* <DiffView /> */}
-			{/* <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-				<code className="text-white">{JSON.stringify(startupStateQuery, null, 2)}</code>
-			</pre> */}
-		</div>
-	);
-}
-
-function DiffView() {
-	const editorDivRef = useRef<HTMLDivElement>(null);
-	const [editor, setEditor] = useState<monaco.editor.IStandaloneDiffEditor | undefined>(undefined);
-
-	useEffect(() => {
-		if (editor || !editorDivRef.current) {
-			return;
-		}
-
-		// Hover on each property to see its docs!
-		const myEditor = monaco.editor.createDiffEditor(editorDivRef.current, {
-			// Render the diff inline,
-			renderSideBySide: true,
-			automaticLayout: true,
-			theme: 'vs-dark',
-		});
-
-		myEditor.setModel({
-			original: originalModel,
-			modified: modifiedModel,
-		});
-
-		setEditor(myEditor);
-		console.log('CREATING AN EDITOR NOW');
-
-		return () => {
-			myEditor.dispose();
-			console.log('DISPOSING ONE NOW');
-		};
-	}, []);
-
-	return (
-		<div className="h-full w-full">
-			<div ref={editorDivRef} id="container" className="h-full w-full"></div>
-			{/* <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-				<code className="text-white">{JSON.stringify(startupStateQuery, null, 2)}</code>
-			</pre> */}
 		</div>
 	);
 }
