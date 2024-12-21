@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import './App.css';
@@ -15,7 +13,7 @@ function App() {
 	return (
 		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
 			<QueryClientProvider client={queryClient}>
-				<div id="App">
+				<div id="App" className='h-screen w-screen'>
 					<RouterProvider router={router} />
 					<ModeToggle />
 				</div>

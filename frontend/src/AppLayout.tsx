@@ -6,6 +6,7 @@ import {
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
+	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
@@ -15,12 +16,12 @@ import {
 } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { useEffect } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { PageRoutePaths, PageRoutes } from './PageRoutes';
 import { useQuery } from 'react-query';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { GetStartupState } from './../wailsjs/go/backend/App';
+import { PageRoutePaths, PageRoutes } from './PageRoutes';
 
-export function AppSidebar() {
+export function OldAppSidebar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const sidebar = useSidebar();
@@ -55,8 +56,10 @@ export function AppSidebar() {
 	}, [location.pathname, startupStateQuery]);
 
 	return (
-		<Sidebar>
-			{/* <SidebarHeader>Hi</SidebarHeader> */}
+		<Sidebar collapsible='icon'>
+			<SidebarHeader>
+				<SidebarTrigger />
+			</SidebarHeader>
 
 			<SidebarContent>
 				<SidebarGroup>
@@ -87,12 +90,11 @@ export function AppSidebar() {
 	);
 }
 
-export default function AppLayout() {
+export default function OldAppLayout() {
 	return (
 		<SidebarProvider>
-			<AppSidebar />
-			<main className="w-full">
-				<SidebarTrigger />
+			<OldAppSidebar />
+			<main className="w-full h-full">
 				<Outlet />
 				<Toaster />
 			</main>
