@@ -123,6 +123,9 @@ type FileTabHeaderProps = {
 const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 	const { file, handlers } = props;
 
+	const isTemporarilyOpen = !file.isPermanentlyOpen && !file.preventUserClose;
+	const isCurrentFileOpen = handlers.getOpenFile()?.tabKey === file.tabKey;
+
 	const onCloseClick: React.MouseEventHandler<HTMLSpanElement> = (event) => {
 		event.preventDefault();
 		event.stopPropagation();
@@ -131,8 +134,9 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 
 	const onOpenFileClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
 		event.preventDefault();
+		event.stopPropagation();
 
-		if (handlers.getOpenFile()?.tabKey === file.tabKey) {
+		if (isCurrentFileOpen && isTemporarilyOpen) {
 			handlers.setFilePermaOpen(file);
 			return;
 		}
@@ -142,14 +146,20 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 
 	const onDoubleClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
 		event.preventDefault();
+		event.stopPropagation();
+
 		handlers.setFilePermaOpen(file);
 	};
 
-	const isTemporarilyOpen = !file.isPermanentlyOpen && !file.preventUserClose;
-
 	return (
 		<div
-			className="flex flex-row h-full border py-2 pl-2"
+			className={clsx([
+				'flex flex-row h-full border py-2 pl-2 cursor-pointer',
+				{
+					'pr-2': file.preventUserClose,
+					'bg-sidebar-accent': isCurrentFileOpen,
+				},
+			])}
 			onDoubleClick={onDoubleClick}
 			onClick={onOpenFileClick}
 		>
@@ -164,7 +174,10 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 			{/* {props.preventUserClose === true ? null : <X onClick={onCloseClick} />} */}
 			{file.preventUserClose === true ? null : (
 				<span
-					className="h-6 w-6 mr-1 flex hover:bg-accent rounded-md items-center justify-center"
+					className={clsx('h-6 w-6 mr-1 flex rounded-md items-center justify-center', {
+						'hover:bg-sidebar': isCurrentFileOpen,
+						'hover:bg-accent': !isCurrentFileOpen,
+					})}
 					onClick={onCloseClick}
 				>
 					x
