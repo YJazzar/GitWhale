@@ -44,7 +44,7 @@ export default function DirDiffPage() {
 				defaultTabKey="fileTree"
 				initialPages={[
 					{
-						key: 'fileTree',
+						tabKey: 'fileTree',
 						render: () => {
 							return <FileTree fileTreeRef={fileTabRef} />;
 						},
@@ -79,8 +79,8 @@ function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle> }) {
 	}
 
 	const onOpenFile = (file: backend.FileInfo) => {
-		props.fileTreeRef.current?.openNewPage({
-			key: getFileKey(file),
+		props.fileTreeRef.current?.openFile({
+			tabKey: getFileKey(file),
 			render: function (): JSX.Element {
 				return <FileDiffView file={file} />;
 			},
