@@ -1,6 +1,5 @@
 import clsx from 'clsx';
-import { X } from 'lucide-react';
-import { forwardRef, ReactElement, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 
 export type FileTabsHandle = {
 	closeFile: (fileToClose: FileTabPageProps) => void;
@@ -188,5 +187,5 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 };
 
 export const FileTabPage: React.FunctionComponent<FileTabPageProps> = (props) => {
-	return <div className="grow">{props.render()}</div>;
+	return <div className="grow h-full">{props.render()}</div>;
 };

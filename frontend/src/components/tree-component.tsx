@@ -8,8 +8,7 @@ interface TreeNodeProps {
 	onFileClick: (file: backend.FileInfo) => void;
 }
 
-const leftPadding = 'pl-6';
-const offsetLeftPadding = 'pl-4'; // needs to be 4 smaller than leftPadding
+const leftPadding = 'pl-4';
 const greyTextColor = 'text-slate-500';
 
 // A component to represent an individual folder or file
@@ -43,15 +42,15 @@ export function TreeNode(props: TreeNodeProps) {
 				onKeyDown={handleKeyDown}
 				onClick={toggleCollapse}
 				variant={'ghost'}
-				className={`w-full ${offsetLeftPadding} rounded-none  justify-start cursor-pointer flex gap-2 ${greyTextColor} `}
+				className={`w-full pl-1 rounded-none  justify-start cursor-pointer flex gap-0 ${greyTextColor} `}
 			>
-				{isOpen ? <ChevronDown /> : <ChevronRight />}
+				{isOpen ? <ChevronDown className='pl-0' /> : <ChevronRight />}
 				{props.directory.Name}
 			</Button>
 			{isOpen && (
 				<div className={`relative inset-0 `}>
 					<div
-						className={`${leftPadding} before:h-full before:absolute before:top-0 before:border-slate-500 before:border-l before:left`}
+						className={`pl-3 before:h-full before:absolute before:top-0 before:border-slate-500 before:border-l before:left`}
 					>
 						{props.directory.SubDirs.map((childDirectory) => (
 							<TreeNode
@@ -109,7 +108,7 @@ export function FileNode(props: {
 			onClick={onClick}
 			onKeyDown={props.onKeyDown}
 			variant={'ghost'}
-			className={`w-full ${leftPadding} ${fileColor} rounded-none my-1 items-center justify-start`}
+			className={`w-full  pl-2 ${fileColor} rounded-none my-1 items-center justify-start`}
 		>
 			{file.Name}
 			<span className={`${greyTextColor} text-xs`}>{fileDescription}</span>

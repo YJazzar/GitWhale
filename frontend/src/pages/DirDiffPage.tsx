@@ -6,6 +6,7 @@ import { useRef } from 'react';
 import { useQuery } from 'react-query';
 import { backend } from '../../wailsjs/go/models';
 import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
@@ -35,22 +36,34 @@ export default function DirDiffPage() {
 	}
 
 	return (
-		<div className="w-full h-full ">
-			<FileTabs
-				ref={fileTabRef}
-				defaultTabKey="fileTree"
-				initialPages={[
-					{
-						tabKey: 'fileTree',
-						render: () => {
-							return <FileTree fileTreeRef={fileTabRef} />;
-						},
-						title: 'Files',
-						preventUserClose: true
-					},
-				]}
-			/>
-		</div>
+		<>
+			<div className="w-full h-full flex flex-row ">
+				<ScrollArea className="h-screen w-screen-sm">
+					{/* <div className=" border h-screen overflow-y-auto"> */}
+						<FileTree fileTreeRef={fileTabRef} />
+					{/* </div> */}
+				</ScrollArea>
+
+				<div className="grow border h-screen flex flex-col">
+					<FileTabs
+						ref={fileTabRef}
+						defaultTabKey="fileTree"
+						initialPages={
+							[
+								// {
+								// 	tabKey: 'fileTree',
+								// 	render: () => {
+								// 		return <FileTree fileTreeRef={fileTabRef} />;
+								// 	},
+								// 	title: 'Files',
+								// 	preventUserClose: true
+								// },
+							]
+						}
+					/>
+				</div>
+			</div>
+		</>
 	);
 }
 
@@ -88,7 +101,7 @@ function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle> }) {
 	return (
 		<div className="w-full h-full">
 			{/* <Card className="p-2 m-5  max-h-screen overflow-auto"> */}
-				<TreeNode directory={directoryDiffDetails.data} onFileClick={onOpenFile} />
+			<TreeNode directory={directoryDiffDetails.data} onFileClick={onOpenFile} />
 			{/* </Card> */}
 		</div>
 	);

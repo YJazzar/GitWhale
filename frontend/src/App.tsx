@@ -15,7 +15,6 @@ function App() {
 			<QueryClientProvider client={queryClient}>
 				<div id="App" className='h-screen w-screen'>
 					<RouterProvider router={router} />
-					<ModeToggle />
 				</div>
 			</QueryClientProvider>
 		</ThemeProvider>

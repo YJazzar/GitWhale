@@ -21,7 +21,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { GetStartupState } from './../wailsjs/go/backend/App';
 import { PageRoutePaths, PageRoutes } from './PageRoutes';
 
-export function OldAppSidebar() {
+export function AppSidebar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const sidebar = useSidebar();
@@ -56,7 +56,7 @@ export function OldAppSidebar() {
 	}, [location.pathname, startupStateQuery]);
 
 	return (
-		<Sidebar collapsible='icon'>
+		<Sidebar collapsible="icon">
 			<SidebarHeader>
 				<SidebarTrigger />
 			</SidebarHeader>
@@ -90,14 +90,17 @@ export function OldAppSidebar() {
 	);
 }
 
-export default function OldAppLayout() {
+export default function AppLayout() {
 	return (
-		<SidebarProvider>
-			<OldAppSidebar />
-			<main className="w-full h-full">
-				<Outlet />
-				<Toaster />
-			</main>
-		</SidebarProvider>
+		<>
+			<SidebarProvider>
+				<AppSidebar />
+
+				<main className="w-full h-full">
+					<Outlet />
+					<Toaster />
+				</main>
+			</SidebarProvider>
+		</>
 	);
 }
