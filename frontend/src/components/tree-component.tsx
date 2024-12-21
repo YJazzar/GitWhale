@@ -9,7 +9,7 @@ interface TreeNodeProps {
 }
 
 const leftPadding = 'pl-6';
-const offsetLeftPadding = 'pl-2'; // needs to be 4 smaller than leftPadding
+const offsetLeftPadding = 'pl-4'; // needs to be 4 smaller than leftPadding
 const greyTextColor = 'text-slate-500';
 
 // A component to represent an individual folder or file
@@ -38,12 +38,12 @@ export function TreeNode(props: TreeNodeProps) {
 	};
 
 	return (
-		<div className={` items-start justify-start  `}>
+		<div className={`items-start justify-start`}>
 			<Button
 				onKeyDown={handleKeyDown}
 				onClick={toggleCollapse}
 				variant={'ghost'}
-				className={`w-full ${offsetLeftPadding} ml-2 my-1 justify-start py-1 cursor-pointer flex gap-2 ${greyTextColor} `}
+				className={`w-full ${offsetLeftPadding} rounded-none  justify-start cursor-pointer flex gap-2 ${greyTextColor} `}
 			>
 				{isOpen ? <ChevronDown /> : <ChevronRight />}
 				{props.directory.Name}
@@ -109,7 +109,7 @@ export function FileNode(props: {
 			onClick={onClick}
 			onKeyDown={props.onKeyDown}
 			variant={'ghost'}
-			className={`w-full ${leftPadding} ${fileColor} ml-2 my-1 items-center justify-start`}
+			className={`w-full ${leftPadding} ${fileColor} rounded-none my-1 items-center justify-start`}
 		>
 			{file.Name}
 			<span className={`${greyTextColor} text-xs`}>{fileDescription}</span>

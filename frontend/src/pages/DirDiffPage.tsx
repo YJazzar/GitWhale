@@ -1,14 +1,11 @@
-import { useQuery } from 'react-query';
-import { GetDirectoryDiffDetails, GetStartupState } from '../../wailsjs/go/backend/App';
-import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import * as monaco from 'monaco-editor';
-import { TreeNode } from '@/components/tree-component';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { backend } from 'wailsjs/go/models';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FileDiffView from '@/components/file-diff-view';
 import { FileTabs, FileTabsHandle } from '@/components/file-tabs';
+import { TreeNode } from '@/components/tree-component';
+import { Card } from '@/components/ui/card';
+import { useRef } from 'react';
+import { useQuery } from 'react-query';
+import { backend } from '../../wailsjs/go/models';
+import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
@@ -89,10 +86,10 @@ function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle> }) {
 	};
 
 	return (
-		<div className="w-full h-full ">
-			<Card className="p-2 m-5  max-h-screen overflow-auto">
+		<div className="w-full h-full">
+			{/* <Card className="p-2 m-5  max-h-screen overflow-auto"> */}
 				<TreeNode directory={directoryDiffDetails.data} onFileClick={onOpenFile} />
-			</Card>
+			{/* </Card> */}
 		</div>
 	);
 }
