@@ -1,10 +1,9 @@
 import FileDiffView from '@/components/file-diff-view';
 import { FileTabs, FileTabsHandle } from '@/components/file-tabs';
 import { TreeNode } from '@/components/tree-component';
-import { Card } from '@/components/ui/card';
 import { useRef } from 'react';
 import { useQuery } from 'react-query';
-import { backend } from '../../wailsjs/go/models';
+import { backend } from '../../wailsjs/runtime/';
 import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -40,7 +39,7 @@ export default function DirDiffPage() {
 			<div className="w-full h-full flex flex-row ">
 				<ScrollArea className="h-screen w-screen-sm">
 					{/* <div className=" border h-screen overflow-y-auto"> */}
-						<FileTree fileTreeRef={fileTabRef} />
+					<FileTree fileTreeRef={fileTabRef} />
 					{/* </div> */}
 				</ScrollArea>
 
