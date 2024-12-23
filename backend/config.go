@@ -52,7 +52,7 @@ func getAppConfigFilePath() (string, error) {
 	// Check if we've already created our app's folder
 	appConfigFolder := filepath.Join(documents, APP_NAME)
 	if !DirExists(appConfigFolder) {
-		os.Mkdir(appConfigFolder, os.ModeDir)
+		os.Mkdir(appConfigFolder, 0755)
 	}
 
 	appConfigFile := filepath.Join(appConfigFolder, "Config.json")

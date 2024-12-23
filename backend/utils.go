@@ -40,11 +40,10 @@ func SaveAsJSON[T any](filePath string, data T) error {
 
 func DirExists(dirPath string) bool {
 	if stat, err := os.Stat(dirPath); err == nil && stat.IsDir() {
-		fmt.Printf("Err while checking dir exists: %v\n", err)
-		return false
+		return true
 	}
 
-	return true
+	return false
 }
 
 func FileExists(filePath string) bool {
