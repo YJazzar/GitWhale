@@ -3,7 +3,7 @@ import { FileTabs, FileTabsHandle } from '@/components/file-tabs';
 import { TreeNode } from '@/components/tree-component';
 import { useRef } from 'react';
 import { useQuery } from 'react-query';
-import { backend } from '../../wailsjs/runtime/';
+import { backend } from '../../wailsjs/go/models';
 import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
