@@ -6,9 +6,13 @@ import (
 	"os"
 )
 
+var APP_NAME = "GitWhale"
+
 // App struct
 type App struct {
-	ctx context.Context
+	ctx          context.Context
+	StartupState StartupState `json:"startupState"`
+	AppConfig    AppConfig    `json:"appConfig"`
 }
 
 // NewApp creates a new App application struct
@@ -19,7 +23,23 @@ func NewApp() *App {
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) Startup(ctx context.Context) {
+
+	appConfig, err := LoadAppConfig()
+	if err != nil {
+		fmt.Printf("An error occurred while reading the application's saved config: %v\n", err)
+		return
+	}
+
 	a.ctx = ctx
+	a.StartupState = *a.GetStartupState()
+	a.AppConfig = *appConfig
+}
+
+func (app *App) Shutdown(ctx context.Context) {
+	err := app.AppConfig.SaveAppConfig()
+	if err != nil {
+		fmt.Printf("Failed to save application configuration: %v\n", err)
+	}
 }
 
 type StartupState struct {
