@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"fmt"
 	"os/exec"
 )
 
@@ -15,7 +14,7 @@ func runCommandAndLogErr(command *exec.Cmd) string {
 
 	result, err := command.Output()
 	if err != nil {
-		fmt.Printf("Error running command: [%v] -> %v\n", command.Args, err)
+		Log.Error("Error running command: [%v] -> %v\n", command.Args, err)
 	}
 
 	return string(result)

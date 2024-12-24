@@ -71,3 +71,13 @@ func FindIndex[T comparable](slice []T, element T) int {
 
 	return -1
 }
+
+func PrettyPrint(t any) string {
+	// Debug print the final structure
+	b, err := json.MarshalIndent(t, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("error:", err)
+	}
+
+	return string(b)
+}

@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -32,16 +31,16 @@ func getStartupState() *StartupState {
 		// 		RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/right/",
 		// 	},
 		// }
-		fmt.Printf("Returning nil from getStartupState() because the length was incorrect: %v", len(args))
+		Log.Info("Returning nil from getStartupState() because the length was incorrect: %v", len(args))
 		return nil
 	}
 
 	if args[1] != "--dir-diff" {
-		fmt.Printf("Returning nil from getStartupState() because the first flag was incorrect: %v", args[1])
+		Log.Error("Returning nil from getStartupState() because the first flag was incorrect: %v", args[1])
 		return nil
 	}
 
-	fmt.Printf("Returning a valid startup state  from getStartupState() ")
+	Log.Debug("Returning a valid startup state from getStartupState() ")
 
 	return &StartupState{
 		DirectoryDiff: &StartupDirectoryDiffArgs{

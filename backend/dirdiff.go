@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -44,19 +43,15 @@ func readDirDiffStructure(dirs *StartupDirectoryDiffArgs) *Directory {
 
 	// Traverse the directory and get the structure
 	if err := traverseDir(rootDir, filepath.Clean(dirs.LeftFolderPath), InLeftDir, dirMap); err != nil {
-		fmt.Println("Error:", err)
+		Log.Error("Error: %v", err)
 		return nil
 	}
-
-	fmt.Println("This is the cached map between runs")
 
 	if err := traverseDir(rootDir, filepath.Clean(dirs.RightFolderPath), InRightDir, dirMap); err != nil {
-		fmt.Println("Error:", err)
+		Log.Error("Error: %v", err)
 		return nil
 	}
 
-	println("Here's the walked directory stuffs:")
-	fmt.Printf("%+v\n", rootDir)
 	return rootDir
 }
 
@@ -76,18 +71,18 @@ func traverseDir(
 		return fmt.Errorf("passed an invalid directory side")
 	}
 
-	fmt.Printf("Traversing using root: %v\n", rootPath)
+	Log.Trace("Traversing using root: %v\n", rootPath)
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			// If there's an error accessing a file/folder, print it and skip it
-			fmt.Printf("filepath: \"%v\"\n", path)
-			fmt.Printf("File info before error: %v\n", info)
-			fmt.Printf("Error accessing file: %v\n", err)
+			Log.Error("filepath: \"%v\"\n", path)
+			Log.Error("File info before error: %v\n", info)
+			Log.Error("Error accessing file: %v\n", err)
 			return nil // Skip the file
 		}
 
-		fmt.Printf("Walking into: %v\n", path)
+		Log.Trace("Walking into: %v\n", path)
 
 		// Skip the root directory itself
 		if path == rootPath {
@@ -97,20 +92,20 @@ func traverseDir(
 		// the relative parent directory name
 		relativeParentDir, err := filepath.Rel(rootPath, filepath.Dir(path))
 		if err != nil {
-			fmt.Printf("Error getting relative path for: %v\n", path)
+			Log.Error("Error getting relative path for: %v\n", path)
 			return nil
 		}
 
 		relativeDir, err := filepath.Rel(rootPath, path)
 		if err != nil {
-			fmt.Printf("Error getting relative path for: %v\n", path)
+			Log.Error("Error getting relative path for: %v\n", path)
 			return nil
 		}
-		fmt.Printf("Using key in map: %v\n", relativeDir)
+		Log.Debug("Using key in map: %v\n", relativeDir)
 
 		absoluteFilePath, err := filepath.Abs(path)
 		if err != nil {
-			fmt.Printf("Error getting absolute path for: %v\n", path)
+			Log.Error("Error getting absolute path for: %v\n", path)
 			return nil
 		}
 
@@ -145,7 +140,7 @@ func traverseDir(
 		// It's a file here
 		directoryNode, exists := cachedDirMap[relativeParentDir]
 		if !exists {
-			prettyPrint("current map state:", cachedDirMap)
+			Log.Debug("current map state: %v", PrettyPrint(cachedDirMap))
 			return fmt.Errorf("need to always have a dir tracked in dirMap before reading its contents: %v", relativeParentDir)
 		}
 
@@ -173,11 +168,8 @@ func traverseDir(
 	})
 
 	if err != nil {
-		fmt.Println("error:", err)
+		Log.Error("error: %v", err)
 	}
-
-	// Debug print the final structure
-	prettyPrint("Final directory structure:\n", rootDir)
 
 	return err
 }
@@ -195,20 +187,9 @@ func removeLeadingPeriod(extension string) string {
 func findFile(files []*FileInfo, targetPath string) (*FileInfo, bool) {
 	for _, file := range files {
 		if file.Path == targetPath {
-			fmt.Printf("FOUND A MATCH IN %v\n", targetPath)
 			return file, true
 		}
 	}
 
 	return nil, false // Element not found
-}
-
-func prettyPrint(msg string, t any) {
-	// Debug print the final structure
-	b, err := json.MarshalIndent(t, "", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	fmt.Print(msg)
-	fmt.Print(string(b))
 }

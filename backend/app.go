@@ -23,23 +23,24 @@ type App struct {
 func NewApp() *App {
 	app := App{}
 	app.IsLoading = true
-	fmt.Printf("Running newapp()")
 	return &app
 }
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (app *App) Startup(ctx context.Context) {
+	Log.setContext(ctx)
+
 	app.ctx = ctx
 	app.IsLoading = false
 
 	appConfig, err := LoadAppConfig()
 	if err != nil {
-		fmt.Printf("An error occurred while reading the application's saved config: %v\n", err)
+		Log.Error("An error occurred while reading the application's saved config: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Running App.NewApp()")
+	Log.Trace("Running App.Startup()")
 
 	app.StartupState = getStartupState()
 	app.AppConfig = appConfig
@@ -54,13 +55,13 @@ func (app *App) Startup(ctx context.Context) {
 func (app *App) Shutdown(ctx context.Context) {
 	err := app.AppConfig.SaveAppConfig()
 	if err != nil {
-		fmt.Printf("Failed to save application configuration: %v\n", err)
+		Log.Error("Failed to save application configuration: %v\n", err)
 	}
 }
 
 func (a *App) GetAppState() *App {
-	fmt.Printf("GetAppState() running")
-	prettyPrint("AppState", a)
+	Log.Trace("GetAppState() running")
+	Log.Debug("AppState: %v\n", PrettyPrint(a))
 	return a
 }
 

@@ -2,14 +2,12 @@ package main
 
 import (
 	"embed"
-	"fmt"
 	"os"
 
 	. "gitwhale/backend"
 
 	"github.com/leaanthony/u"
 	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
@@ -22,13 +20,7 @@ func main() {
 	// Create an instance of the app structure
 	app := NewApp()
 
-	println("Here are the os args:")
-	fmt.Printf("%+v\n", os.Args)
-	println("finish args")
-
-	// if true {
-	// 	return
-	// }
+	Log.Debug("Parsed OS Args: '%v'\n", os.Args)
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -44,7 +36,7 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
-		LogLevel: logger.INFO,
+		// LogLevel: logger.INFO,
 		Mac: &mac.Options{
 			Preferences: &mac.Preferences{
 				TabFocusesLinks:        u.NewBool(true),
