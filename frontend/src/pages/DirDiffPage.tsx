@@ -55,9 +55,9 @@ export default function DirDiffPage() {
 	return (
 		<>
 			<div className="w-full h-full flex flex-row ">
-				<ResizablePanelGroup direction="horizontal">
+				<ResizablePanelGroup direction="horizontal" >
 					{/* Left pane that contains the file structure */}
-					<ResizablePanel defaultSize={15}>
+					<ResizablePanel defaultSize={20} >
 						{/* <ScrollArea className="h-screen "> */}
 						<div className=" border h-screen overflow-y-auto">
 							<FileTree fileTreeRef={fileTabRef} directoryData={directoryDiffDetails.data} />
