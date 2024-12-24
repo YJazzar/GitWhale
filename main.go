@@ -26,8 +26,6 @@ func main() {
 	fmt.Printf("%+v\n", os.Args)
 	println("finish args")
 
-	app.GetDirectoryDiffDetails()
-
 	// if true {
 	// 	return
 	// }

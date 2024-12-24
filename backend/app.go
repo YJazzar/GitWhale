@@ -13,19 +13,25 @@ var APP_NAME = "GitWhale"
 // App struct
 type App struct {
 	ctx              context.Context
-	StartupState     StartupState           `json:"startupState"`
-	AppConfig        AppConfig              `json:"appConfig"`
+	IsLoading        bool                   `json:"isLoading"`
+	StartupState     *StartupState          `json:"startupState"`
+	AppConfig        *AppConfig             `json:"appConfig"`
 	OpenRepoContexts map[string]RepoContext `json:"openRepoContexts"`
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	app := App{}
+	app.IsLoading = true
+	fmt.Printf("Running newapp()")
+	return &app
 }
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
-func (a *App) Startup(ctx context.Context) {
+func (app *App) Startup(ctx context.Context) {
+	app.ctx = ctx
+	app.IsLoading = false
 
 	appConfig, err := LoadAppConfig()
 	if err != nil {
@@ -33,16 +39,18 @@ func (a *App) Startup(ctx context.Context) {
 		return
 	}
 
-	a.ctx = ctx
-	a.StartupState = *a.GetStartupState()
-	a.AppConfig = *appConfig
-	a.OpenRepoContexts = make(map[string]RepoContext)
+	fmt.Printf("Running App.NewApp()")
+
+	app.StartupState = getStartupState()
+	app.AppConfig = appConfig
+	app.OpenRepoContexts = make(map[string]RepoContext)
 
 	if appConfig.DefaultStartupRepo != "" {
-		a.OpenRepoContexts[appConfig.DefaultStartupRepo] = *CreateContext(appConfig.DefaultStartupRepo)
+		app.OpenRepoContexts[appConfig.DefaultStartupRepo] = *CreateContext(appConfig.DefaultStartupRepo)
 	}
 }
 
+// Saves the config file
 func (app *App) Shutdown(ctx context.Context) {
 	err := app.AppConfig.SaveAppConfig()
 	if err != nil {
@@ -50,44 +58,15 @@ func (app *App) Shutdown(ctx context.Context) {
 	}
 }
 
-type StartupState struct {
-	DirectoryDiff *StartupDirectoryDiffArgs `json:"directoryDiff"`
+func (a *App) GetAppState() *App {
+	fmt.Printf("GetAppState() running")
+	prettyPrint("AppState", a)
+	return a
 }
 
-type StartupDirectoryDiffArgs struct {
-	LeftFolderPath  string `json:"leftFolderPath"`
-	RightFolderPath string `json:"rightFolderPath"`
-}
-
-func (a *App) GetStartupState() *StartupState {
-
-	args := os.Args
-	if len(args) != 4 {
-		// test code
-		// return &StartupState{
-		// 	DirectoryDiff: &StartupDirectoryDiffArgs{
-		// 		LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/left/",
-		// 		RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/right/",
-		// 	},
-		// }
-
-		return nil
-	}
-
-	if args[1] != "--dir-diff" {
-		return nil
-	}
-
-	return &StartupState{
-		DirectoryDiff: &StartupDirectoryDiffArgs{
-			LeftFolderPath:  args[2],
-			RightFolderPath: args[3],
-		},
-	}
-}
-
+// Walks the directories we need to diff
 func (a *App) GetDirectoryDiffDetails() *Directory {
-	if a.StartupState.DirectoryDiff == nil {
+	if a.StartupState == nil || a.StartupState.DirectoryDiff == nil {
 		return nil
 	}
 
@@ -95,6 +74,7 @@ func (a *App) GetDirectoryDiffDetails() *Directory {
 	return readDirDiffStructure(dirDiff)
 }
 
+// Reads any arbitrary file and provides it to the web process
 func (a *App) ReadFile(filePath string) string {
 	if filePath == "" {
 		return ""

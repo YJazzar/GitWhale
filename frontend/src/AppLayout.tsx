@@ -18,33 +18,29 @@ import { Toaster } from '@/components/ui/toaster';
 import { useEffect } from 'react';
 import { useQuery } from 'react-query';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { GetStartupState } from './../wailsjs/go/backend/App';
 import { PageRoutePaths, PageRoutes } from './PageRoutes';
+import { UseAppState } from './hooks/use-app-state';
+import DirDiffPage from './pages/DirDiffPage';
 
 export function AppSidebar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const sidebar = useSidebar();
 
-	const startupStateQuery = useQuery({
-		queryKey: ['GetStartupState'],
-		queryFn: GetStartupState,
-	});
-
 	// Close the sidebar on mobile because it's nicer
 	const onLinkClick = () => {
 		sidebar.setOpenMobile(false);
 	};
 
-	const NavigateToDefaultRoute = async () => {
-		let startupState = startupStateQuery.data;
+	// const NavigateToDefaultRoute = async () => {
+	// 	let startupState = startupStateQuery.data;
 
-		if (!!startupState?.directoryDiff) {
-			navigate(PageRoutePaths.DirectoryDiff);
-		} else {
-			navigate(PageRoutes[0].url);
-		}
-	};
+	// 	if (!!startupState?.directoryDiff) {
+	// 		navigate(PageRoutePaths.DirectoryDiff);
+	// 	} else {
+	// 		navigate(PageRoutes[0].url);
+	// 	}
+	// };
 
 	// Navigates to the home page on startup
 	useEffect(() => {
@@ -53,7 +49,7 @@ export function AppSidebar() {
 		// if (location.pathname === '/' && startupStateQuery.data) {
 		// 	NavigateToDefaultRoute();
 		// }
-	}, [location.pathname, startupStateQuery]);
+	}, [location.pathname]);
 
 	return (
 		<Sidebar collapsible="icon">
@@ -91,6 +87,29 @@ export function AppSidebar() {
 }
 
 export default function AppLayout() {
+	const appState = UseAppState();
+
+	console.log(appState)
+
+	if (appState.promised) {
+		return (
+			<>
+				<main className="w-full h-full m-auto">
+					Loading... <br />
+					<code>{JSON.stringify(appState.value, null, 4)}</code>
+				</main>
+			</>
+		);
+	}
+
+	if (!!appState.startupState.value?.directoryDiff) {
+		return (
+			<main className="w-full h-full">
+				<DirDiffPage />
+			</main>
+		);
+	}
+
 	return (
 		<>
 			<SidebarProvider>

@@ -1,5 +1,114 @@
 export namespace backend {
 	
+	export class RepoContext {
+	    currentBranch: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RepoContext(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentBranch = source["currentBranch"];
+	    }
+	}
+	export class AppConfig {
+	    filePath: string;
+	    defaultStartupRepo: string;
+	    recentGitRepos: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new AppConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.filePath = source["filePath"];
+	        this.defaultStartupRepo = source["defaultStartupRepo"];
+	        this.recentGitRepos = source["recentGitRepos"];
+	    }
+	}
+	export class StartupDirectoryDiffArgs {
+	    leftFolderPath: string;
+	    rightFolderPath: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new StartupDirectoryDiffArgs(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.leftFolderPath = source["leftFolderPath"];
+	        this.rightFolderPath = source["rightFolderPath"];
+	    }
+	}
+	export class StartupState {
+	    directoryDiff?: StartupDirectoryDiffArgs;
+	
+	    static createFrom(source: any = {}) {
+	        return new StartupState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.directoryDiff = this.convertValues(source["directoryDiff"], StartupDirectoryDiffArgs);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class App {
+	    isLoading: boolean;
+	    startupState?: StartupState;
+	    appConfig?: AppConfig;
+	    openRepoContexts: {[key: string]: RepoContext};
+	
+	    static createFrom(source: any = {}) {
+	        return new App(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isLoading = source["isLoading"];
+	        this.startupState = this.convertValues(source["startupState"], StartupState);
+	        this.appConfig = this.convertValues(source["appConfig"], AppConfig);
+	        this.openRepoContexts = this.convertValues(source["openRepoContexts"], RepoContext, true);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class FileInfo {
 	    Path: string;
 	    Name: string;
@@ -56,50 +165,8 @@ export namespace backend {
 		    return a;
 		}
 	}
-	export class StartupDirectoryDiffArgs {
-	    leftFolderPath: string;
-	    rightFolderPath: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new StartupDirectoryDiffArgs(source);
-	    }
 	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.leftFolderPath = source["leftFolderPath"];
-	        this.rightFolderPath = source["rightFolderPath"];
-	    }
-	}
-	export class StartupState {
-	    directoryDiff?: StartupDirectoryDiffArgs;
-	
-	    static createFrom(source: any = {}) {
-	        return new StartupState(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.directoryDiff = this.convertValues(source["directoryDiff"], StartupDirectoryDiffArgs);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 
 }
 

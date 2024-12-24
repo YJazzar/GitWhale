@@ -81,6 +81,8 @@ func traverseDir(
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			// If there's an error accessing a file/folder, print it and skip it
+			fmt.Printf("filepath: \"%v\"\n", path)
+			fmt.Printf("File info before error: %v\n", info)
 			fmt.Printf("Error accessing file: %v\n", err)
 			return nil // Skip the file
 		}

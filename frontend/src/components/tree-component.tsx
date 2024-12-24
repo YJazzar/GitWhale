@@ -2,10 +2,11 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { KeyboardEventHandler, useState } from 'react';
 import { backend } from '../../wailsjs/go/models';
 import { Button } from './ui/button';
+import clsx from 'clsx';
 
 interface TreeNodeProps {
 	directory: backend.Directory;
-	onFileClick: (file: backend.FileInfo) => void;
+	onFileClick: (file: backend.FileInfo, keepFileOpen: boolean) => void;
 }
 
 const leftPadding = 'pl-4';
@@ -44,33 +45,40 @@ export function TreeNode(props: TreeNodeProps) {
 				variant={'ghost'}
 				className={`w-full pl-1 rounded-none  justify-start cursor-pointer flex gap-0 ${greyTextColor} `}
 			>
-				{isOpen ? <ChevronDown className='pl-0' /> : <ChevronRight />}
+				{isOpen ? <ChevronDown className="pl-0" /> : <ChevronRight />}
 				{props.directory.Name}
 			</Button>
-			{isOpen && (
-				<div className={`relative inset-0 `}>
-					<div
-						className={`pl-3 before:h-full before:absolute before:top-0 before:border-slate-500 before:border-l before:left`}
-					>
-						{props.directory.SubDirs.map((childDirectory) => (
-							<TreeNode
-								key={childDirectory.Path}
-								directory={childDirectory}
-								onFileClick={props.onFileClick}
-							/>
-						))}
 
-						{props.directory.Files.map((childFile) => (
-							<FileNode
-								key={childFile.Path}
-								file={childFile}
-								onKeyDown={handleKeyDown}
-								onFileClick={props.onFileClick}
-							/>
-						))}
-					</div>
+			{/* The sub-folders and sub-files in this node */}
+			<div
+				className={clsx([
+					`relative inset-0 `,
+					{
+						hidden: !isOpen,
+					},
+				])}
+			>
+				<div
+					className={`pl-3 before:h-full before:absolute before:top-0 before:border-slate-500 before:border-l before:left`}
+				>
+					{props.directory.SubDirs.map((childDirectory) => (
+						<TreeNode
+							key={childDirectory.Path}
+							directory={childDirectory}
+							onFileClick={props.onFileClick}
+						/>
+					))}
+
+					{props.directory.Files.map((childFile) => (
+						<FileNode
+							key={childFile.Path}
+							file={childFile}
+							onKeyDown={handleKeyDown}
+							onFileClick={props.onFileClick}
+						/>
+					))}
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }
@@ -78,12 +86,17 @@ export function TreeNode(props: TreeNodeProps) {
 export function FileNode(props: {
 	file: backend.FileInfo;
 	onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
-	onFileClick: (file: backend.FileInfo) => void;
+	onFileClick: (file: backend.FileInfo, keepFileOpen: boolean) => void;
 }) {
 	const { file, onFileClick } = props;
 
 	const onClick = () => {
-		onFileClick(file);
+		onFileClick(file, false);
+	};
+
+	const onDoubleClick = () => {
+		console.log("double click so keep open plz")
+		onFileClick(file, true);
 	};
 
 	let fileColor = '';
@@ -106,6 +119,7 @@ export function FileNode(props: {
 	return (
 		<Button
 			onClick={onClick}
+			onDoubleClick={onDoubleClick}
 			onKeyDown={props.onKeyDown}
 			variant={'ghost'}
 			className={`w-full  pl-2 ${fileColor} rounded-none my-1 items-center justify-start`}
