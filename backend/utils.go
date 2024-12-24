@@ -53,3 +53,21 @@ func FileExists(filePath string) bool {
 	}
 	return false
 }
+
+func RemoveFromArray[T any](slice []T, indexToRemove int) []T {
+	if indexToRemove < 0 || indexToRemove > len(slice) {
+		return slice
+	}
+
+	return append(slice[:indexToRemove], slice[indexToRemove+1:]...)
+}
+
+func FindIndex[T comparable](slice []T, element T) int {
+	for index, currentElement := range slice {
+		if element == currentElement {
+			return index
+		}
+	}
+
+	return -1
+}

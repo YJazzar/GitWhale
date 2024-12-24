@@ -1,4 +1,4 @@
-module gittools
+module gitwhale
 
 go 1.21
 

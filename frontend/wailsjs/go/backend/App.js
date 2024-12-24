@@ -10,6 +10,10 @@ export function GetStartupState() {
   return window['go']['backend']['App']['GetStartupState']();
 }
 
+export function OpenNewRepo() {
+  return window['go']['backend']['App']['OpenNewRepo']();
+}
+
 export function ReadFile(arg1) {
   return window['go']['backend']['App']['ReadFile'](arg1);
 }

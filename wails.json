@@ -1,7 +1,7 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "gittools",
-  "outputfilename": "gittools",
+  "name": "gitwhale",
+  "outputfilename": "gitwhale",
   "frontend:install": "yarn install",
   "frontend:build": "yarn run build",
   "frontend:dev:watcher": "yarn run dev",

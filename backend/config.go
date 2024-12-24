@@ -11,10 +11,10 @@ type AppConfig struct {
 	FilePath string `json:"filePath"`
 
 	// The default git repo to open
-	DefaultStartupRepo *string `json:"defaultStartupRepo"`
+	DefaultStartupRepo string `json:"defaultStartupRepo"`
 
 	// A list of all the previous repos opened by the user
-	RecentGitRepos []*string `json:"recentGitRepos"`
+	RecentGitRepos []string `json:"recentGitRepos"`
 }
 
 func LoadAppConfig() (*AppConfig, error) {
@@ -26,8 +26,8 @@ func LoadAppConfig() (*AppConfig, error) {
 	if !FileExists(appConfigFile) {
 		return &AppConfig{
 			FilePath:           appConfigFile,
-			DefaultStartupRepo: nil,
-			RecentGitRepos:     []*string{},
+			DefaultStartupRepo: "",
+			RecentGitRepos:     []string{},
 		}, nil
 	}
 
@@ -57,4 +57,10 @@ func getAppConfigFilePath() (string, error) {
 
 	appConfigFile := filepath.Join(appConfigFolder, "Config.json")
 	return appConfigFile, nil
+}
+
+func (config *AppConfig) addRepoToRecentList(gitRepoPath string) {
+	prevIndex := FindIndex(config.RecentGitRepos, gitRepoPath)
+	config.RecentGitRepos = RemoveFromArray(config.RecentGitRepos, prevIndex)
+	config.RecentGitRepos = append([]string{gitRepoPath}, config.RecentGitRepos...)
 }

@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 	"os"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var APP_NAME = "GitWhale"
 
 // App struct
 type App struct {
-	ctx          context.Context
-	StartupState StartupState `json:"startupState"`
-	AppConfig    AppConfig    `json:"appConfig"`
+	ctx              context.Context
+	StartupState     StartupState           `json:"startupState"`
+	AppConfig        AppConfig              `json:"appConfig"`
+	OpenRepoContexts map[string]RepoContext `json:"openRepoContexts"`
 }
 
 // NewApp creates a new App application struct
@@ -33,6 +36,11 @@ func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.StartupState = *a.GetStartupState()
 	a.AppConfig = *appConfig
+	a.OpenRepoContexts = make(map[string]RepoContext)
+
+	if appConfig.DefaultStartupRepo != "" {
+		a.OpenRepoContexts[appConfig.DefaultStartupRepo] = *CreateContext(appConfig.DefaultStartupRepo)
+	}
 }
 
 func (app *App) Shutdown(ctx context.Context) {
@@ -54,29 +62,36 @@ type StartupDirectoryDiffArgs struct {
 func (a *App) GetStartupState() *StartupState {
 
 	args := os.Args
-	// if len(args) < 3 {
-	// 	return &StartupState{}
-	// }
-	if len(args) != 3 {
+	if len(args) != 4 {
 		// test code
-		return &StartupState{
-			DirectoryDiff: &StartupDirectoryDiffArgs{
-				LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/left/",
-				RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/right/",
-			},
-		}
+		// return &StartupState{
+		// 	DirectoryDiff: &StartupDirectoryDiffArgs{
+		// 		LeftFolderPath:  "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/left/",
+		// 		RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/right/",
+		// 	},
+		// }
+
+		return nil
+	}
+
+	if args[1] != "--dir-diff" {
+		return nil
 	}
 
 	return &StartupState{
 		DirectoryDiff: &StartupDirectoryDiffArgs{
-			LeftFolderPath:  args[1],
-			RightFolderPath: args[2],
+			LeftFolderPath:  args[2],
+			RightFolderPath: args[3],
 		},
 	}
 }
 
 func (a *App) GetDirectoryDiffDetails() *Directory {
-	dirDiff := a.GetStartupState().DirectoryDiff
+	if a.StartupState.DirectoryDiff == nil {
+		return nil
+	}
+
+	dirDiff := a.StartupState.DirectoryDiff
 	return readDirDiffStructure(dirDiff)
 }
 
@@ -91,4 +106,14 @@ func (a *App) ReadFile(filePath string) string {
 	}
 
 	return string(data)
+}
+
+// Launches a dialog to select a folder and opens a repo in the current window
+func (app *App) OpenNewRepo() {
+	newRepoPath, err := runtime.OpenDirectoryDialog(app.ctx, runtime.OpenDialogOptions{})
+	if err != nil || newRepoPath == "" {
+		return
+	}
+
+	app.AppConfig.addRepoToRecentList(newRepoPath)
 }
