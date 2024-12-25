@@ -4,7 +4,7 @@ import (
 	"embed"
 	"os"
 
-	. "gitwhale/backend"
+	"gitwhale/backend"
 
 	"github.com/leaanthony/u"
 	"github.com/wailsapp/wails/v2"
@@ -18,9 +18,9 @@ var assets embed.FS
 
 func main() {
 	// Create an instance of the app structure
-	app := NewApp()
+	app := backend.NewApp()
 
-	Log.Debug("Parsed OS Args: '%v'\n", os.Args)
+	backend.Log.Debug("Parsed OS Args: '%v'\n", os.Args)
 
 	// Create application with options
 	err := wails.Run(&options.App{

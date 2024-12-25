@@ -12,11 +12,10 @@ var APP_NAME = "GitWhale"
 
 // App struct
 type App struct {
-	ctx              context.Context
-	IsLoading        bool                   `json:"isLoading"`
-	StartupState     *StartupState          `json:"startupState"`
-	AppConfig        *AppConfig             `json:"appConfig"`
-	OpenRepoContexts map[string]RepoContext `json:"openRepoContexts"`
+	ctx          context.Context
+	IsLoading    bool          `json:"isLoading"`
+	StartupState *StartupState `json:"startupState"`
+	AppConfig    *AppConfig    `json:"appConfig"`
 }
 
 // NewApp creates a new App application struct
@@ -44,15 +43,14 @@ func (app *App) Startup(ctx context.Context) {
 
 	app.StartupState = getStartupState()
 	app.AppConfig = appConfig
-	app.OpenRepoContexts = make(map[string]RepoContext)
-
-	if appConfig.DefaultStartupRepo != "" {
-		app.OpenRepoContexts[appConfig.DefaultStartupRepo] = *CreateContext(appConfig.DefaultStartupRepo)
-	}
 }
 
 // Saves the config file
 func (app *App) Shutdown(ctx context.Context) {
+	if app.IsInDirDiffMode() {
+		return // no need to update config in this case
+	}
+
 	err := app.AppConfig.SaveAppConfig()
 	if err != nil {
 		Log.Error("Failed to save application configuration: %v\n", err)
@@ -66,13 +64,21 @@ func (a *App) GetAppState() *App {
 }
 
 // Walks the directories we need to diff
-func (a *App) GetDirectoryDiffDetails() *Directory {
-	if a.StartupState == nil || a.StartupState.DirectoryDiff == nil {
+func (app *App) GetDirectoryDiffDetails() *Directory {
+	if !app.IsInDirDiffMode() {
 		return nil
 	}
 
-	dirDiff := a.StartupState.DirectoryDiff
+	dirDiff := app.StartupState.DirectoryDiff
 	return readDirDiffStructure(dirDiff)
+}
+
+func (app *App) IsInDirDiffMode() bool {
+	if app.StartupState == nil || app.StartupState.DirectoryDiff == nil {
+		return false
+	}
+
+	return true
 }
 
 // Reads any arbitrary file and provides it to the web process
@@ -90,11 +96,17 @@ func (a *App) ReadFile(filePath string) string {
 }
 
 // Launches a dialog to select a folder and opens a repo in the current window
-func (app *App) OpenNewRepo() {
+func (app *App) OpenNewRepo() *App {
 	newRepoPath, err := runtime.OpenDirectoryDialog(app.ctx, runtime.OpenDialogOptions{})
 	if err != nil || newRepoPath == "" {
-		return
+		return app
 	}
 
-	app.AppConfig.addRepoToRecentList(newRepoPath)
+	app.AppConfig.openNewRepo(newRepoPath)
+	return app
+}
+
+func (app *App) CloseRepo(gitRepoPath string) *App {
+	app.AppConfig.closeRepo(gitRepoPath)
+	return app
 }

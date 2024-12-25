@@ -14,7 +14,8 @@ export namespace backend {
 	}
 	export class AppConfig {
 	    filePath: string;
-	    defaultStartupRepo: string;
+	    openGitRepos: {[key: string]: RepoContext};
+	    orderedOpenGitRepos: string[];
 	    recentGitRepos: string[];
 	
 	    static createFrom(source: any = {}) {
@@ -24,9 +25,28 @@ export namespace backend {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.filePath = source["filePath"];
-	        this.defaultStartupRepo = source["defaultStartupRepo"];
+	        this.openGitRepos = this.convertValues(source["openGitRepos"], RepoContext, true);
+	        this.orderedOpenGitRepos = source["orderedOpenGitRepos"];
 	        this.recentGitRepos = source["recentGitRepos"];
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class StartupDirectoryDiffArgs {
 	    leftFolderPath: string;
@@ -76,7 +96,6 @@ export namespace backend {
 	    isLoading: boolean;
 	    startupState?: StartupState;
 	    appConfig?: AppConfig;
-	    openRepoContexts: {[key: string]: RepoContext};
 	
 	    static createFrom(source: any = {}) {
 	        return new App(source);
@@ -87,7 +106,6 @@ export namespace backend {
 	        this.isLoading = source["isLoading"];
 	        this.startupState = this.convertValues(source["startupState"], StartupState);
 	        this.appConfig = this.convertValues(source["appConfig"], AppConfig);
-	        this.openRepoContexts = this.convertValues(source["openRepoContexts"], RepoContext, true);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

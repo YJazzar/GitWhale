@@ -76,7 +76,7 @@ func PrettyPrint(t any) string {
 	// Debug print the final structure
 	b, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
-		return fmt.Sprintf("error:", err)
+		return fmt.Sprintf("error: %v", err)
 	}
 
 	return string(b)

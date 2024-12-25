@@ -10,8 +10,9 @@ type AppConfig struct {
 	// The file path where the AppConfig struct lives
 	FilePath string `json:"filePath"`
 
-	// The default git repo to open
-	DefaultStartupRepo string `json:"defaultStartupRepo"`
+	// The git repos that are currently open, and their tab orders
+	GitReposMap         map[string]RepoContext `json:"openGitRepos"`
+	OrderedOpenGitRepos []string               `json:"orderedOpenGitRepos"`
 
 	// A list of all the previous repos opened by the user
 	RecentGitRepos []string `json:"recentGitRepos"`
@@ -25,9 +26,9 @@ func LoadAppConfig() (*AppConfig, error) {
 
 	if !FileExists(appConfigFile) {
 		return &AppConfig{
-			FilePath:           appConfigFile,
-			DefaultStartupRepo: "",
-			RecentGitRepos:     []string{},
+			FilePath:       appConfigFile,
+			GitReposMap:    make(map[string]RepoContext),
+			RecentGitRepos: []string{},
 		}, nil
 	}
 
@@ -59,8 +60,35 @@ func getAppConfigFilePath() (string, error) {
 	return appConfigFile, nil
 }
 
+func (config *AppConfig) openNewRepo(gitRepoPath string) {
+	gitRepoPath, err := filepath.Abs(gitRepoPath)
+	if err != nil {
+		Log.Error("Failed to get the absolute path for the repo: %v", gitRepoPath)
+		Log.Error("Inner error message: %v", err)
+		return
+	}
+
+	// Add to the list of open git repos if it's not already open for some reason
+	if _, exists := config.GitReposMap[gitRepoPath]; !exists {
+		config.GitReposMap[gitRepoPath] = *CreateContext(gitRepoPath)
+		config.OrderedOpenGitRepos = append(config.OrderedOpenGitRepos, gitRepoPath)
+	}
+
+	config.addRepoToRecentList(gitRepoPath)
+}
+
 func (config *AppConfig) addRepoToRecentList(gitRepoPath string) {
+	// Swaps out the repo to the top of the list. That way more recent ones are surfaced
 	prevIndex := FindIndex(config.RecentGitRepos, gitRepoPath)
 	config.RecentGitRepos = RemoveFromArray(config.RecentGitRepos, prevIndex)
 	config.RecentGitRepos = append([]string{gitRepoPath}, config.RecentGitRepos...)
+}
+
+func (config *AppConfig) closeRepo(gitRepoPath string) {
+	// Remove the from map
+	delete(config.GitReposMap, gitRepoPath)
+
+	// Remove from the ordered list
+	repoPositionIndex := FindIndex(config.OrderedOpenGitRepos, gitRepoPath)
+	config.OrderedOpenGitRepos = RemoveFromArray(config.OrderedOpenGitRepos, repoPositionIndex)
 }
