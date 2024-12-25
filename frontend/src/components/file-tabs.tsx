@@ -15,8 +15,12 @@ export type FileTabsProps = {
 
 export type FileTabPageProps = {
 	tabKey: string;
-	render: () => JSX.Element;
+	contentRender: () => JSX.Element;
 	title: string;
+	// React router integration
+	linkConfig?: {
+		path: string;
+	};
 	preventUserClose?: boolean | undefined;
 	isPermanentlyOpen?: boolean;
 };
@@ -187,5 +191,5 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 };
 
 export const FileTabPage: React.FunctionComponent<FileTabPageProps> = (props) => {
-	return <div className="grow h-full">{props.render()}</div>;
+	return <div className="grow h-full">{props.contentRender()}</div>;
 };

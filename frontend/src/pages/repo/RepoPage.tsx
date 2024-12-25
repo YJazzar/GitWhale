@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { OpenNewRepo } from '../../wailsjs/go/backend/App';
-import { Link } from 'react-router';
+import { OpenNewRepo } from '../../../wailsjs/go/backend/App';
+import { Link, Outlet } from 'react-router';
 
-export default function HomePage() {
+export default function RepoPage() {
 	return (
 		<div className="">
-			Home Page here
+			Repo Page
 			<br />
 			<Link to="/">Home</Link>
 			<br />
@@ -13,6 +13,7 @@ export default function HomePage() {
 			<br />
 			<Link to="/page-1/file-1">Page 1 - file 1</Link>
 			<br />
+			<Outlet />
 		</div>
 	);
 }

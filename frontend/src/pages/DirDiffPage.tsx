@@ -100,7 +100,7 @@ function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle>; directo
 	const onOpenFile = (file: backend.FileInfo, keepFileOpen: boolean) => {
 		let fileToOpen: FileTabPageProps = {
 			tabKey: getFileKey(file),
-			render: function (): JSX.Element {
+			contentRender: function (): JSX.Element {
 				return <FileDiffView file={file} />;
 			},
 			title: file.Name,
