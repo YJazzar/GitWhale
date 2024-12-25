@@ -11,6 +11,9 @@ export type FileTabsHandle = {
 };
 
 export type FileTabsProps = {
+	// Which route to go to when there are no tabs open
+	noTabSelectedPath: To;
+
 	// Which page to open on the first render
 	defaultTabKey: string;
 
@@ -39,7 +42,7 @@ export type FileTabPageProps = {
 };
 
 export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) => {
-	const { defaultTabKey, initialPages, routerConfig } = props;
+	const { defaultTabKey, initialPages, routerConfig, noTabSelectedPath } = props;
 
 	const [activeTabKey, setActiveTabKey] = useState<string | undefined>(defaultTabKey);
 	const [availableFiles, setAvailableFiles] = useState<FileTabPageProps[]>(initialPages);
@@ -67,7 +70,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 		// Need to go back to the parent path
 		if (!file?.linkPath) {
 			console.log('navigating to parent path');
-			navigate('/', { replace: true });
+			navigate(noTabSelectedPath, { replace: true });
 		} else {
 			console.log('navigating to new path: ');
 			console.log(file);
@@ -165,14 +168,14 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 	const isCurrentFileOpen = handlers.getOpenFile()?.tabKey === file.tabKey;
 
 	const onCloseClick: React.MouseEventHandler<HTMLSpanElement> = (event) => {
-		// event.preventDefault();
+		event.preventDefault();
 		event.stopPropagation();
 		handlers.closeFile(file);
 	};
 
 	const onOpenFileClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
 		// event.preventDefault();
-		event.stopPropagation();
+		// event.stopPropagation();
 
 		if (isCurrentFileOpen && isTemporarilyOpen) {
 			handlers.setFilePermaOpen(file);
@@ -184,7 +187,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 
 	const onDoubleClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
 		// event.preventDefault();
-		event.stopPropagation();
+		// event.stopPropagation();
 
 		handlers.setFilePermaOpen(file);
 	};

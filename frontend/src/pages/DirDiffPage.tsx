@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
-import { Route, Routes, useParams } from 'react-router';
+import { Navigate, Route, Routes, useParams } from 'react-router';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
@@ -109,10 +109,12 @@ export default function DirDiffPage() {
 										// },
 									]
 								}
+								noTabSelectedPath="/DirDiffHome"
 								routerConfig={() => {
 									return (
 										<Routes>
-											<Route path="/" element={<div>Select a file to start</div>} />
+											<Route path="/" element={<Navigate to={'/DirDiffHome'} />} />
+											<Route path="/DirDiffHome" element={<NoFileSelected/>}/>
 											<Route
 												path="/:tabKey"
 												element={<FileDiffViewWrapper fileInfoMap={fileInfoMap} />}
@@ -127,6 +129,12 @@ export default function DirDiffPage() {
 			</div>
 		</>
 	);
+}
+
+function NoFileSelected() { 
+	return <div className='w-full h-full grid place-content-center'>
+		Select a file to view diff
+	</div>
 }
 
 // Gets the file to render from react-router, and renders the actual diff view
@@ -146,10 +154,7 @@ function FileDiffViewWrapper(props: { fileInfoMap: Map<string, backend.FileInfo>
 		return <div>No file was selected</div>;
 	}
 
-	return <code className='whitespace-pre-wrap'>
-		{JSON.stringify(fileInfo, null, 4)}
-	</code>
-	// return <FileDiffView file={fileInfo} />;
+	return <FileDiffView file={fileInfo} />;
 }
 
 function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle>; directoryData: backend.Directory }) {
