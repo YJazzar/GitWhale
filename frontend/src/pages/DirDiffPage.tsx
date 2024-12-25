@@ -1,8 +1,8 @@
 import FileDiffView from '@/components/file-diff-view';
 import { FileTabPageProps, FileTabs, FileTabsHandle } from '@/components/file-tabs';
+import LoadingSpinner from '@/components/loading-spinner';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEffect, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
@@ -38,7 +38,7 @@ export default function DirDiffPage() {
 	}, []);
 
 	if (directoryDiffDetails.isLoading || !directoryDiffDetails.data) {
-		return <>Loading....</>;
+		return <LoadingSpinner />;
 	}
 
 	if (directoryDiffDetails.isError) {
@@ -55,9 +55,9 @@ export default function DirDiffPage() {
 	return (
 		<>
 			<div className="w-full h-full flex flex-row ">
-				<ResizablePanelGroup direction="horizontal" >
+				<ResizablePanelGroup direction="horizontal">
 					{/* Left pane that contains the file structure */}
-					<ResizablePanel defaultSize={20} >
+					<ResizablePanel defaultSize={20}>
 						{/* <ScrollArea className="h-screen "> */}
 						<div className=" border h-screen overflow-y-auto">
 							<FileTree fileTreeRef={fileTabRef} directoryData={directoryDiffDetails.data} />

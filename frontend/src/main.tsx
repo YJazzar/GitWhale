@@ -1,7 +1,7 @@
-import React from 'react';
 import * as monaco from 'monaco-editor';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
+import WrappedAppProvider from './App';
 
 const container = document.getElementById('root');
 
@@ -45,6 +45,6 @@ monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
 
 root.render(
 	<React.StrictMode>
-		<App />
+		<WrappedAppProvider />
 	</React.StrictMode>
 );

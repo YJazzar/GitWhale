@@ -1,25 +1,16 @@
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { createBrowserRouter, RouterProvider } from 'react-router';
+import { BrowserRouter, createBrowserRouter, RouterProvider, Routes } from 'react-router';
 import './App.css';
 import AppLayout from './AppLayout';
 import { ModeToggle } from './components/mode-toggle';
 import { ThemeProvider } from './components/theme-provider';
 import { PageRoutes } from './PageRoutes';
+import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
+import LoadingSpinner from './components/loading-spinner';
+import DirDiffPage from './pages/DirDiffPage';
 
 // Create a client
 const queryClient = new QueryClient();
-
-function App() {
-	return (
-		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-			<QueryClientProvider client={queryClient}>
-				<div id="App" className='h-screen w-screen'>
-					<RouterProvider router={router} />
-				</div>
-			</QueryClientProvider>
-		</ThemeProvider>
-	);
-}
 
 const router = createBrowserRouter([
 	{
@@ -35,4 +26,33 @@ const router = createBrowserRouter([
 	},
 ]);
 
-export default App;
+export default function WrappedAppProvider() {
+	return (
+		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+			<QueryClientProvider client={queryClient}>
+				<div id="App" className="h-screen w-screen">
+					<App />
+				</div>
+			</QueryClientProvider>
+		</ThemeProvider>
+	);
+}
+
+function App() {
+	const isInDirDiffMode = UseIsDirDiffMode();
+
+	if (isInDirDiffMode === undefined) {
+		console.log("returning spinner")
+		return <LoadingSpinner />;
+	}
+
+	if (isInDirDiffMode) {
+		return <DirDiffPage />;
+	}
+
+	return (
+		<BrowserRouter>
+			<Routes>{/* Each tab */}</Routes>
+		</BrowserRouter>
+	);
+}

@@ -21,6 +21,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { PageRoutePaths, PageRoutes } from './PageRoutes';
 import { UseAppState } from './hooks/use-app-state';
 import DirDiffPage from './pages/DirDiffPage';
+import LoadingSpinner from './components/loading-spinner';
 
 export function AppSidebar() {
 	const location = useLocation();
@@ -89,24 +90,13 @@ export function AppSidebar() {
 export default function AppLayout() {
 	const appState = UseAppState();
 
-	console.log(appState)
+	console.log(appState);
 
-	if (appState.promised) {
+	if (appState.promised || true) {
 		return (
 			<>
-				<main className="w-full h-full m-auto">
-					Loading... <br />
-					<code>{JSON.stringify(appState.value, null, 4)}</code>
-				</main>
+				<LoadingSpinner />
 			</>
-		);
-	}
-
-	if (!!appState.startupState.value?.directoryDiff) {
-		return (
-			<main className="w-full h-full">
-				<DirDiffPage />
-			</main>
 		);
 	}
 
