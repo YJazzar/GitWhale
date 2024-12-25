@@ -101,7 +101,7 @@ func traverseDir(
 			Log.Error("Error getting relative path for: %v\n", path)
 			return nil
 		}
-		Log.Debug("Using key in map: %v\n", relativeDir)
+		// Log.Debug("Using key in map: %v\n", relativeDir)
 
 		absoluteFilePath, err := filepath.Abs(path)
 		if err != nil {

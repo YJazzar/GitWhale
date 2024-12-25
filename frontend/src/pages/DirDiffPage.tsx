@@ -3,10 +3,11 @@ import { FileTabPageProps, FileTabs, FileTabsHandle } from '@/components/file-ta
 import LoadingSpinner from '@/components/loading-spinner';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
+import { Route, Routes, useParams } from 'react-router';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
@@ -19,6 +20,27 @@ export default function DirDiffPage() {
 	});
 
 	const fileTabRef = useRef<FileTabsHandle>(null);
+
+	const fileInfoMap = useMemo(() => {
+		const map: Map<string, backend.FileInfo> = new Map();
+
+		const recurseDir = (dir: backend.Directory) => {
+			// Add the current files
+			dir.Files.forEach((file) => {
+				map.set(getFileKey(file), file);
+			});
+
+			dir.SubDirs.forEach((subDir) => {
+				recurseDir(subDir);
+			});
+		};
+
+		if (directoryDiffDetails.data) {
+			recurseDir(directoryDiffDetails.data);
+		}
+
+		return map;
+	}, [directoryDiffDetails.data]);
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -52,6 +74,8 @@ export default function DirDiffPage() {
 		);
 	}
 
+	// return <>test</>
+
 	return (
 		<>
 			<div className="w-full h-full flex flex-row ">
@@ -72,7 +96,7 @@ export default function DirDiffPage() {
 						<div className="grow border h-screen flex flex-col">
 							<FileTabs
 								ref={fileTabRef}
-								defaultTabKey="fileTree"
+								defaultTabKey=""
 								initialPages={
 									[
 										// {
@@ -85,6 +109,17 @@ export default function DirDiffPage() {
 										// },
 									]
 								}
+								routerConfig={() => {
+									return (
+										<Routes>
+											<Route path="/" element={<div>Select a file to start</div>} />
+											<Route
+												path="/:tabKey"
+												element={<FileDiffViewWrapper fileInfoMap={fileInfoMap} />}
+											/>
+										</Routes>
+									);
+								}}
 							/>
 						</div>
 					</ResizablePanel>
@@ -94,17 +129,39 @@ export default function DirDiffPage() {
 	);
 }
 
+// Gets the file to render from react-router, and renders the actual diff view
+function FileDiffViewWrapper(props: { fileInfoMap: Map<string, backend.FileInfo> }) {
+	const { fileInfoMap } = props;
+	const { tabKey } = useParams();
+
+	const fileInfo = useMemo(() => {
+		if (!tabKey) {
+			return undefined;
+		}
+
+		return fileInfoMap.get(atob(tabKey));
+	}, [tabKey]);
+
+	if (!fileInfo) {
+		return <div>No file was selected</div>;
+	}
+
+	return <code className='whitespace-pre-wrap'>
+		{JSON.stringify(fileInfo, null, 4)}
+	</code>
+	// return <FileDiffView file={fileInfo} />;
+}
+
 function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle>; directoryData: backend.Directory }) {
 	const { directoryData } = props;
 
 	const onOpenFile = (file: backend.FileInfo, keepFileOpen: boolean) => {
+		const tabKey = getFileKey(file);
 		let fileToOpen: FileTabPageProps = {
-			tabKey: getFileKey(file),
-			contentRender: function (): JSX.Element {
-				return <FileDiffView file={file} />;
-			},
-			title: file.Name,
+			tabKey: tabKey,
+			titleRender: () => <>{file.Name}</>,
 			isPermanentlyOpen: keepFileOpen,
+			linkPath: `/${btoa(tabKey)}`,
 		};
 		props.fileTreeRef.current?.openFile(fileToOpen);
 		if (keepFileOpen) {

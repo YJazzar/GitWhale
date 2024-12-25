@@ -3,11 +3,11 @@ import { UseAppState } from './use-app-state';
 export const UseIsDirDiffMode = () => {
 	const appState = UseAppState();
 
-	if (appState.promised) {
+	if (!appState) {
 		return undefined;
 	}
 
-	if (!!appState.startupState.value?.directoryDiff) {
+	if (!!appState?.startupState?.directoryDiff) {
 		return true;
 	}
 

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { BrowserRouter, createBrowserRouter, Route, RouterProvider, Routes } from 'react-router';
+import { BrowserRouter, createBrowserRouter, HashRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router';
 import './App.css';
 import AppLayout from './AppLayout';
 import { ModeToggle } from './components/mode-toggle';
@@ -33,9 +33,11 @@ export default function WrappedAppProvider() {
 	return (
 		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
 			<QueryClientProvider client={queryClient}>
-				<div id="App" className="h-screen w-screen">
-					<App />
-				</div>
+				<BrowserRouter>
+					<div id="App" className="h-screen w-screen">
+						<App />
+					</div>
+				</BrowserRouter>
 			</QueryClientProvider>
 		</ThemeProvider>
 	);
@@ -54,15 +56,13 @@ function App() {
 	}
 
 	return (
-		<BrowserRouter>
-			<div className="border-red-200 border ">
-				<Routes>
-					<Route path="/" element={<HomePage />} />
-					<Route path="/:repoIndex" element={<RepoPage />}>
-						<Route path=":log" element={<RepoLog />} />
-					</Route>
-				</Routes>
-			</div>
-		</BrowserRouter>
+		<div className="border-red-200 border ">
+			<Routes>
+				<Route path="/" element={<HomePage />} />
+				<Route path="/:repoIndex" element={<RepoPage />}>
+					<Route path=":log" element={<RepoLog />} />
+				</Route>
+			</Routes>
+		</div>
 	);
 }

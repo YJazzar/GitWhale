@@ -1,35 +1,55 @@
 import clsx from 'clsx';
-import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { Link, To, useLocation, useNavigate } from 'react-router';
 
 export type FileTabsHandle = {
 	closeFile: (fileToClose: FileTabPageProps) => void;
 	openFile: (fileToOpen: FileTabPageProps) => void;
 	getOpenFile: () => FileTabPageProps | undefined;
+	getFileProps: (fileKey: string) => FileTabPageProps | undefined;
 	setFilePermaOpen: (file: FileTabPageProps) => void;
 };
 
 export type FileTabsProps = {
+	// Which page to open on the first render
 	defaultTabKey: string;
+
+	// What are all the possible options open as tabs on the first render
 	initialPages: FileTabPageProps[];
+
+	// The router config to make sure the child components can be linked to properly
+	routerConfig: () => JSX.Element;
 };
 
 export type FileTabPageProps = {
+	// The path to route to when the tab is clicked
+	linkPath: To;
+
+	// A uniquely identifiable key for the page
 	tabKey: string;
-	contentRender: () => JSX.Element;
-	title: string;
-	// React router integration
-	linkConfig?: {
-		path: string;
-	};
+
+	// Renders the title of the tab, most of the time should just be a string (+ maybe an icon)
+	titleRender: () => JSX.Element;
+
+	// Controls if the "x" button shows up
 	preventUserClose?: boolean | undefined;
+
+	// Controls if the file is only temporarily open or not
 	isPermanentlyOpen?: boolean;
 };
 
 export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) => {
-	const { defaultTabKey, initialPages } = props;
+	const { defaultTabKey, initialPages, routerConfig } = props;
 
 	const [activeTabKey, setActiveTabKey] = useState<string | undefined>(defaultTabKey);
 	const [availableFiles, setAvailableFiles] = useState<FileTabPageProps[]>(initialPages);
+
+	const navigate = useNavigate();
+	const location = useLocation();
+
+	useEffect(() => {
+	  console.log('Location changed to: ' + JSON.stringify(location));
+	}, [location]);
 
 	// Convert the availablePages into a map for easy lookup
 	const availableFileMap = useMemo(() => {
@@ -40,6 +60,20 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 
 		return map;
 	}, [availableFiles]);
+
+	const navigateToFile = (file: FileTabPageProps | undefined) => {
+		setActiveTabKey(file?.tabKey);
+
+		// Need to go back to the parent path
+		if (!file?.linkPath) {
+			console.log('navigating to parent path');
+			navigate('/', { replace: true });
+		} else {
+			console.log('navigating to new path: ');
+			console.log(file);
+			navigate(file.linkPath, { replace: true });
+		}
+	};
 
 	const handlers: FileTabsHandle = {
 		closeFile: function (fileToClose: FileTabPageProps): void {
@@ -61,16 +95,16 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 			// Update state
 			prevActiveIndex %= newAvailableTabs.length;
 			if (prevActiveIndex < newAvailableTabs.length) {
-				setActiveTabKey(newAvailableTabs[prevActiveIndex].tabKey);
+				navigateToFile(newAvailableTabs[prevActiveIndex]);
 			} else {
-				setActiveTabKey(undefined);
+				navigateToFile(undefined);
 			}
 			setAvailableFiles([...newAvailableTabs]);
 		},
 		openFile: function (newPage: FileTabPageProps): void {
 			// If the page is already open in a different tab
 			if (!!availableFileMap.get(newPage.tabKey)) {
-				setActiveTabKey(newPage.tabKey);
+				navigateToFile(newPage);
 				return;
 			}
 
@@ -80,12 +114,15 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 			});
 
 			setAvailableFiles([...newAvailableTabs, newPage]);
-			setActiveTabKey(newPage.tabKey);
+			navigateToFile(newPage);
 		},
 		getOpenFile: function (): FileTabPageProps | undefined {
 			if (activeTabKey) {
 				return availableFileMap.get(activeTabKey);
 			}
+		},
+		getFileProps: function (fileKey: string): FileTabPageProps | undefined {
+			return availableFileMap.get(fileKey);
 		},
 		setFilePermaOpen: function (fileToKeepOpen: FileTabPageProps): void {
 			let newAvailableTabs = availableFiles.map((file) => {
@@ -101,8 +138,6 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 	// Hooks that can be called by the parent component
 	useImperativeHandle(ref, () => handlers);
 
-	const currentActiveFile = handlers.getOpenFile();
-
 	return (
 		<div className="h-full w-full flex flex-col">
 			{/* The tabs */}
@@ -113,7 +148,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 			</div>
 
 			{/* The tab contents */}
-			{currentActiveFile ? <FileTabPage {...currentActiveFile} /> : null}
+			<div className="grow h-full">{routerConfig()}</div>
 		</div>
 	);
 });
@@ -130,13 +165,13 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 	const isCurrentFileOpen = handlers.getOpenFile()?.tabKey === file.tabKey;
 
 	const onCloseClick: React.MouseEventHandler<HTMLSpanElement> = (event) => {
-		event.preventDefault();
+		// event.preventDefault();
 		event.stopPropagation();
 		handlers.closeFile(file);
 	};
 
-	const onOpenFileClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
-		event.preventDefault();
+	const onOpenFileClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
+		// event.preventDefault();
 		event.stopPropagation();
 
 		if (isCurrentFileOpen && isTemporarilyOpen) {
@@ -147,15 +182,17 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 		handlers.openFile(file);
 	};
 
-	const onDoubleClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
-		event.preventDefault();
+	const onDoubleClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
+		// event.preventDefault();
 		event.stopPropagation();
 
 		handlers.setFilePermaOpen(file);
 	};
 
 	return (
-		<div
+		<Link
+			key={file.tabKey}
+			to={file.linkPath}
 			className={clsx([
 				'flex flex-row h-full border py-2 pl-2 cursor-pointer',
 				{
@@ -171,7 +208,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 					italic: isTemporarilyOpen,
 				})}
 			>
-				{file.title}
+				{file.titleRender()}
 			</span>
 
 			{/* {props.preventUserClose === true ? null : <X onClick={onCloseClick} />} */}
@@ -186,10 +223,6 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 					x
 				</span>
 			)}
-		</div>
+		</Link>
 	);
-};
-
-export const FileTabPage: React.FunctionComponent<FileTabPageProps> = (props) => {
-	return <div className="grow h-full">{props.contentRender()}</div>;
 };

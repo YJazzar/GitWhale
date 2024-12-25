@@ -16,12 +16,10 @@ import {
 } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { useEffect } from 'react';
-import { useQuery } from 'react-query';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { PageRoutePaths, PageRoutes } from './PageRoutes';
-import { UseAppState } from './hooks/use-app-state';
-import DirDiffPage from './pages/DirDiffPage';
+import { PageRoutes } from './PageRoutes';
 import LoadingSpinner from './components/loading-spinner';
+import { UseAppState } from './hooks/use-app-state';
 
 export function AppSidebar() {
 	const location = useLocation();
@@ -92,7 +90,7 @@ export default function AppLayout() {
 
 	console.log(appState);
 
-	if (appState.promised || true) {
+	if (!appState ||true) {
 		return (
 			<>
 				<LoadingSpinner />

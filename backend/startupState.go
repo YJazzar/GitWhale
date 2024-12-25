@@ -1,9 +1,5 @@
 package backend
 
-import (
-	"os"
-)
-
 type StartupState struct {
 	DirectoryDiff *StartupDirectoryDiffArgs `json:"directoryDiff"`
 }
@@ -15,14 +11,14 @@ type StartupDirectoryDiffArgs struct {
 
 func getStartupState() *StartupState {
 
-	// args := []string{
-	// 	"/Users/yousufjazzar/Desktop/gitwhale/build/bin/gitwhale.app/Contents/MacOS/gitwhale  ",
-	// 	"--dir-diff",
-	// 	"/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.Znmni5/left/",
-	// 	"/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.Znmni5/right/",
-	// }
+	args := []string{
+		"/Users/yousufjazzar/Desktop/gitwhale/build/bin/gitwhale.app/Contents/MacOS/gitwhale  ",
+		"--dir-diff",
+		"/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.Znmni5/left/",
+		"/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.Znmni5/right/",
+	}
 
-	args := os.Args
+	// args := os.Args
 	if len(args) != 4 {
 		// test code
 		// return &StartupState{
