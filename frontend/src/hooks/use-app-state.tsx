@@ -1,33 +1,33 @@
-import React from 'react';
-
-import { backend } from '../../wailsjs/go/models';
-import { GetAppState } from '../../wailsjs/go/backend/App';
-import { useQuery } from 'react-query';
 import { atom, useAtom } from 'jotai';
+import { GetAppState } from '../../wailsjs/go/backend/App';
+import { backend } from '../../wailsjs/go/models';
+import { useEffect } from 'react';
 
-const appStateAtom = atom(async (get) => {
-	return  await GetAppState();
-});
+const appStateAtom = atom<backend.App | undefined>(undefined);
 
 export const UseAppState = () => {
-	const [state, _] = useAtom(appStateAtom);
+	const [state, setState] = useAtom(appStateAtom);
 
-	// const directoryDiffDetails = useQuery({
-	// 	queryKey: ['GetAppState'],
-	// 	queryFn: async () => {
-	// 		console.log('getting new app state');
-	// 		return await GetAppState();
-	// 	},
-	// 	onSuccess(data) {
-	// 		if (!data) {
-	// 			// why did we get null?
-	// 			debugger;
-	// 			return;
-	// 		}
+	const initAppState = async () => {
+		if (!!state) {
+			return;
+		}
+		const initialAppState = await GetAppState();
+		setState(initialAppState);
+	};
 
-	// 		state.set(data);
-	// 	},
-	// });
+	useEffect(() => {
+		if (!!state) {
+			return;
+		}
 
-	return state;
+		initAppState();
+	}, [state, setState]);
+
+	const executeAndRefreshState = async (func: () => Promise<backend.App>) => {
+		let newState = await func();
+		setState(newState);
+	};
+
+	return { appState: state, executeAndRefreshState };
 };

@@ -15,15 +15,11 @@ import {
 	useSidebar,
 } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
-import { useEffect } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { PageRoutes } from './PageRoutes';
-import LoadingSpinner from './components/loading-spinner';
-import { UseAppState } from './hooks/use-app-state';
+import { House } from 'lucide-react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 export function AppSidebar() {
 	const location = useLocation();
-	const navigate = useNavigate();
 	const sidebar = useSidebar();
 
 	// Close the sidebar on mobile because it's nicer
@@ -31,24 +27,14 @@ export function AppSidebar() {
 		sidebar.setOpenMobile(false);
 	};
 
-	// const NavigateToDefaultRoute = async () => {
-	// 	let startupState = startupStateQuery.data;
-
-	// 	if (!!startupState?.directoryDiff) {
-	// 		navigate(PageRoutePaths.DirectoryDiff);
-	// 	} else {
-	// 		navigate(PageRoutes[0].url);
-	// 	}
-	// };
-
-	// Navigates to the home page on startup
-	useEffect(() => {
-		// console.dir({location, startupStateQuery})
-		// cant uncomment unless i do something like mentioned here: https://github.com/wailsapp/wails/issues/2262
-		// if (location.pathname === '/' && startupStateQuery.data) {
-		// 	NavigateToDefaultRoute();
-		// }
-	}, [location.pathname]);
+	const menuItems = [
+		{
+			title: 'test',
+			isActive: true, // normally a computed value,
+			url: '/url',
+			icon: <House />,
+		},
+	];
 
 	return (
 		<Sidebar collapsible="icon">
@@ -61,7 +47,7 @@ export function AppSidebar() {
 					<SidebarGroupLabel>Application</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{PageRoutes.map((item) => (
+							{menuItems.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton asChild isActive={item.url === location.pathname}>
 										<Link to={item.url} onClick={onLinkClick}>
@@ -85,19 +71,7 @@ export function AppSidebar() {
 	);
 }
 
-export default function AppLayout() {
-	const appState = UseAppState();
-
-	console.log(appState);
-
-	if (!appState ||true) {
-		return (
-			<>
-				<LoadingSpinner />
-			</>
-		);
-	}
-
+function AppLayout() {
 	return (
 		<>
 			<SidebarProvider>

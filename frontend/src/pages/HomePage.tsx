@@ -1,18 +1,23 @@
 import { Button } from '@/components/ui/button';
+import { UseAppState } from '@/hooks/use-app-state';
 import { OpenNewRepo } from '../../wailsjs/go/backend/App';
-import { Link } from 'react-router';
 
 export default function HomePage() {
+	const {appState, executeAndRefreshState} = UseAppState();
+
+	const onOpenRecentRepo = (repoPath: string) => {};
+
+	const onOpenNewRepo = async () => {
+		executeAndRefreshState(OpenNewRepo)
+	}
+
 	return (
-		<div className="">
-			Home Page here
-			<br />
-			<Link to="/">Home</Link>
-			<br />
-			<Link to="/page-1">Page 1</Link>
-			<br />
-			<Link to="/page-1/file-1">Page 1 - file 1</Link>
-			<br />
+		<div className="grid h-full place-content-center">
+			Recent repos:
+			{appState?.appConfig?.recentGitRepos.map((repoPath) => {
+				return <div onClick={() => onOpenRecentRepo(repoPath)}>{repoPath}</div>;
+			})}
+			<Button onClick={onOpenNewRepo}>Open a new repo</Button>
 		</div>
 	);
 }

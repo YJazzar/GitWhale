@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"os"
 
 	"gitwhale/backend"
@@ -22,9 +23,11 @@ func main() {
 
 	backend.Log.Debug("Parsed OS Args: '%v'\n", os.Args)
 
+	pid := os.Getpid()
+
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "gitwhale",
+		Title:  fmt.Sprint("[", pid, "] ", backend.APP_NAME),
 		Width:  1300,
 		Height: 768,
 		AssetServer: &assetserver.Options{

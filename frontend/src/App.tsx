@@ -1,33 +1,21 @@
+import { House } from 'lucide-react';
+import { useRef } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { BrowserRouter, createBrowserRouter, HashRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import './App.css';
-import AppLayout from './AppLayout';
-import { ModeToggle } from './components/mode-toggle';
-import { ThemeProvider } from './components/theme-provider';
-import { PageRoutes } from './PageRoutes';
-import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
+import { FileTabs, FileTabsHandle } from './components/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
+import { ThemeProvider } from './components/theme-provider';
+import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
+
 import DirDiffPage from './pages/DirDiffPage';
-import HomePage from './pages/HomePage';
-import RepoPage from './pages/repo/RepoPage';
 import RepoLog from './pages/repo/RepoLog';
+import RepoPage from './pages/repo/RepoPage';
+import { Toaster } from './components/ui/toaster';
+import HomePage from './pages/HomePage';
 
 // Create a client
 const queryClient = new QueryClient();
-
-const router = createBrowserRouter([
-	{
-		path: '/',
-		element: <AppLayout />,
-		//   errorElement: <ErrorPage />,
-		children: PageRoutes.map((route) => {
-			return {
-				path: route.url,
-				element: route.routeElement,
-			};
-		}),
-	},
-]);
 
 export default function WrappedAppProvider() {
 	return (
@@ -46,6 +34,8 @@ export default function WrappedAppProvider() {
 function App() {
 	const isInDirDiffMode = UseIsDirDiffMode();
 
+	const fileTabRef = useRef<FileTabsHandle>(null);
+
 	if (isInDirDiffMode === undefined) {
 		console.log('returning spinner');
 		return <LoadingSpinner />;
@@ -56,13 +46,36 @@ function App() {
 	}
 
 	return (
-		<div className="border-red-200 border ">
-			<Routes>
-				<Route path="/" element={<HomePage />} />
-				<Route path="/:repoIndex" element={<RepoPage />}>
-					<Route path=":log" element={<RepoLog />} />
-				</Route>
-			</Routes>
+		<div className=" w-full h-full flex flex-row ">
+			<div className="border grow">
+				<FileTabs
+					ref={fileTabRef}
+					defaultTabKey=""
+					initialPages={[
+						{
+							tabKey: 'home',
+							titleRender: () => <House strokeWidth={1} />,
+							isPermanentlyOpen: true,
+							preventUserClose: true,
+							linkPath: '/home',
+						},
+					]}
+					noTabSelectedPath="/DirDiffHome"
+					routerConfig={() => {
+						return (
+							<Routes>
+								<Route path="/" element={<Navigate to="/home" />} />
+								<Route path="/home" element={<HomePage	 />}/>
+								<Route path="/repo/:repoIndex" element={<RepoPage />}>
+									{/* <Route path=":log" element={<RepoLog />} /> */}
+								</Route>
+							</Routes>
+						);
+					}}
+				/>
+
+				<Toaster />
+			</div>
 		</div>
 	);
 }

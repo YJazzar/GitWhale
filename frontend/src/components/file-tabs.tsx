@@ -144,7 +144,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 	return (
 		<div className="h-full w-full flex flex-col">
 			{/* The tabs */}
-			<div className="h-fit flex flex-row">
+			<div className="h-fit flex flex-row border-b-2">
 				{availableFiles.map((file) => {
 					return <FileTabHeader key={file.tabKey} file={file} handlers={handlers} />;
 				})}

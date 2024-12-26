@@ -9,7 +9,7 @@
 			"type": "go",
 			"request": "attach",
 			"mode": "local",
-			"processId": 89437 // need to change to the correct PID (can find it with a classic "ps")
+			// "processId": 84807 // need to change to the correct PID (can find it with a classic "ps")
 		}
 	]
 }
