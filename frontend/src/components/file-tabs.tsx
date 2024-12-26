@@ -144,7 +144,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 	return (
 		<div className="h-full w-full flex flex-col">
 			{/* The tabs */}
-			<div className="h-fit flex flex-row border-b-2">
+			<div className="h-fit flex flex-row border-b-2 text-sm">
 				{availableFiles.map((file) => {
 					return <FileTabHeader key={file.tabKey} file={file} handlers={handlers} />;
 				})}
@@ -197,7 +197,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 			key={file.tabKey}
 			to={file.linkPath}
 			className={clsx([
-				'flex flex-row h-full border py-2 pl-2 cursor-pointer',
+				'flex flex-row h-full border pt-2 pb-1 pl-2 cursor-pointer items-baseline',
 				{
 					'pr-2': file.preventUserClose,
 					'bg-sidebar-accent': isCurrentFileOpen,

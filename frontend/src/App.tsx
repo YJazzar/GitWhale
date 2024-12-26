@@ -54,7 +54,7 @@ function App() {
 					initialPages={[
 						{
 							tabKey: 'home',
-							titleRender: () => <House strokeWidth={1} />,
+							titleRender: () => <House className='box-content h-5'  />,
 							isPermanentlyOpen: true,
 							preventUserClose: true,
 							linkPath: '/home',
