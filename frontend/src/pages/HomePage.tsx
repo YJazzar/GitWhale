@@ -25,7 +25,7 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 
 	const switchToRepo = (appState: backend.App, repoPath: string) => {
 		fileTabRef.current?.openFile({
-			linkPath: `repo/${repoPath}`,
+			linkPath: `repo/${btoa(repoPath)}`,
 			tabKey: repoPath,
 			titleRender: function (): JSX.Element {
 				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranch;

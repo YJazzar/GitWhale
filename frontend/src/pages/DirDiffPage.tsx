@@ -42,23 +42,6 @@ export default function DirDiffPage() {
 		return map;
 	}, [directoryDiffDetails.data]);
 
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if ((event.metaKey || event.ctrlKey) && event.key === 'w') {
-				let currentFile = fileTabRef.current?.getOpenFile();
-				if (currentFile) {
-					fileTabRef.current?.closeFile(currentFile);
-				}
-			}
-		};
-
-		document.addEventListener('keydown', handleKeyDown);
-
-		return () => {
-			document.removeEventListener('keydown', handleKeyDown);
-		};
-	}, []);
-
 	if (directoryDiffDetails.isLoading || !directoryDiffDetails.data) {
 		return <LoadingSpinner />;
 	}

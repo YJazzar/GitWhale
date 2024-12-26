@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { UseAppState } from '@/hooks/use-app-state';
 import { House } from 'lucide-react';
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router';
+import { Link, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router';
 
 export default function RepoPage() {
 
@@ -25,15 +25,19 @@ export default function RepoPage() {
 			<RepoPageSideBar />
 
 			<div className="w-full h-full">
-				<Routes>
-					<Route path="" element={<Navigate to=".." />} />
-					<Route path=":repoIndex" element={<RepoPage />} />
-				</Routes>
+				<Outlet/>
 			</div>
 		</SidebarProvider>
 	);
 }
 
+export function RepoHomeView() { 
+	const params = useParams()
+
+	return <code className='whitespace-pre-wrap'>
+		{JSON.stringify(params, null, 3)}
+	</code>
+}
 
 function RepoPageSideBar() {
 	const location = useLocation();

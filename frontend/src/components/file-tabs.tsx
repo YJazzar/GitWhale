@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Link, To, useLocation, useNavigate, useParams } from 'react-router';
 
 export type FileTabsHandle = {
@@ -80,6 +80,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 
 	const handlers: FileTabsHandle = {
 		closeFile: function (fileToClose: FileTabPageProps): void {
+			console.debug("handler.closeFile(): ", fileToClose)
 			// Get the current active index, and then increment it if the file is open
 			let prevActiveIndex = availableFiles.findIndex((file) => file.tabKey === activeTabKey);
 			if (fileToClose.tabKey === activeTabKey) {
@@ -87,12 +88,15 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 			}
 
 			const newAvailableTabs = availableFiles.filter((openFile) => {
+				if (openFile.preventUserClose) { 
+					return true // don't close things the user isn't allowed to close
+				}
+
 				if (openFile.tabKey === fileToClose.tabKey) {
 					return false; // close the tab
 				}
 
-				// Only keep necessary tabs open
-				return openFile.isPermanentlyOpen || openFile.preventUserClose;
+				return true;
 			});
 
 			// Update state
@@ -140,6 +144,28 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 
 	// Hooks that can be called by the parent component
 	useImperativeHandle(ref, () => handlers);
+
+	// Handles the keyboard shortcut to close stuff
+	// ... right now it only lets one of the file tab components from recognizing the short cut
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if ((event.metaKey || event.ctrlKey) && event.key === 'w') {
+				event.preventDefault();
+				event.stopPropagation();
+
+				let currentFile = handlers.getOpenFile();
+				if (currentFile) {
+					handlers.closeFile(currentFile);
+				}
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+
+		return () => {
+			document.removeEventListener('keydown', handleKeyDown);
+		};
+	}, [handlers]);
 
 	return (
 		<div className="h-full w-full flex flex-col">
@@ -197,7 +223,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 			key={file.tabKey}
 			to={file.linkPath}
 			className={clsx([
-				'flex flex-row h-full border pt-2 pb-1 pl-2 cursor-pointer items-baseline',
+				'flex flex-row h-full border border-b-0 pt-2 pb-1 pl-2 cursor-pointer items-baseline',
 				{
 					'pr-2': file.preventUserClose,
 					'bg-sidebar-accent': isCurrentFileOpen,

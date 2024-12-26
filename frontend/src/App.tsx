@@ -10,7 +10,7 @@ import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 
 import DirDiffPage from './pages/DirDiffPage';
 import RepoLog from './pages/repo/RepoLog';
-import RepoPage from './pages/repo/RepoPage';
+import RepoPage, { RepoHomeView } from './pages/repo/RepoPage';
 import { Toaster } from './components/ui/toaster';
 import HomePage from './pages/HomePage';
 
@@ -54,7 +54,7 @@ function App() {
 					initialPages={[
 						{
 							tabKey: 'home',
-							titleRender: () => <House className='box-content h-5'  />,
+							titleRender: () => <House className="box-content h-5" />,
 							isPermanentlyOpen: true,
 							preventUserClose: true,
 							linkPath: '/home',
@@ -66,8 +66,10 @@ function App() {
 							<Routes>
 								<Route path="/" element={<Navigate to="/home" />} />
 								<Route path="/home" element={<HomePage fileTabRef={fileTabRef} />} />
-								<Route path="/repo/:repoIndex" element={<RepoPage />}>
+								<Route path="/repo" element={<RepoPage />}>
 									{/* <Route path=":log" element={<RepoLog />} /> */}
+									{/* <Route path="" element={<Navigate to=".." />} /> */}
+									<Route path="/repo/:repoIndex" element={<RepoHomeView />} />
 								</Route>
 							</Routes>
 						);
