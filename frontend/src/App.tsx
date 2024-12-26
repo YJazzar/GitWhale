@@ -50,7 +50,7 @@ function App() {
 			<div className="border grow">
 				<FileTabs
 					ref={fileTabRef}
-					defaultTabKey=""
+					defaultTabKey="home"
 					initialPages={[
 						{
 							tabKey: 'home',
@@ -65,7 +65,7 @@ function App() {
 						return (
 							<Routes>
 								<Route path="/" element={<Navigate to="/home" />} />
-								<Route path="/home" element={<HomePage	 />}/>
+								<Route path="/home" element={<HomePage fileTabRef={fileTabRef} />} />
 								<Route path="/repo/:repoIndex" element={<RepoPage />}>
 									{/* <Route path=":log" element={<RepoLog />} /> */}
 								</Route>

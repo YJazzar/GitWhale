@@ -58,7 +58,6 @@ func (app *App) Shutdown(ctx context.Context) {
 }
 
 func (a *App) GetAppState() *App {
-	Log.Trace("GetAppState() running")
 	Log.Debug("AppState: %v\n", PrettyPrint(a))
 	return a
 }
@@ -96,14 +95,13 @@ func (a *App) ReadFile(filePath string) string {
 }
 
 // Launches a dialog to select a folder and opens a repo in the current window
-func (app *App) OpenNewRepo() *App {
+func (app *App) OpenNewRepo() string {
 	newRepoPath, err := runtime.OpenDirectoryDialog(app.ctx, runtime.OpenDialogOptions{})
 	if err != nil || newRepoPath == "" {
-		return app
+		return ""
 	}
 
-	app.AppConfig.openNewRepo(newRepoPath)
-	return app
+	return app.AppConfig.openNewRepo(newRepoPath)
 }
 
 func (app *App) CloseRepo(gitRepoPath string) *App {

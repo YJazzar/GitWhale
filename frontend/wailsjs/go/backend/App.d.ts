@@ -10,6 +10,6 @@ export function GetDirectoryDiffDetails():Promise<backend.Directory>;
 
 export function IsInDirDiffMode():Promise<boolean>;
 
-export function OpenNewRepo():Promise<backend.App>;
+export function OpenNewRepo():Promise<string>;
 
 export function ReadFile(arg1:string):Promise<string>;

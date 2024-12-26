@@ -60,12 +60,13 @@ func getAppConfigFilePath() (string, error) {
 	return appConfigFile, nil
 }
 
-func (config *AppConfig) openNewRepo(gitRepoPath string) {
+// Returns the absolute path that should be used to key into the repo
+func (config *AppConfig) openNewRepo(gitRepoPath string) string {
 	gitRepoPath, err := filepath.Abs(gitRepoPath)
 	if err != nil {
 		Log.Error("Failed to get the absolute path for the repo: %v", gitRepoPath)
 		Log.Error("Inner error message: %v", err)
-		return
+		return ""
 	}
 
 	// Add to the list of open git repos if it's not already open for some reason
@@ -75,6 +76,7 @@ func (config *AppConfig) openNewRepo(gitRepoPath string) {
 	}
 
 	config.addRepoToRecentList(gitRepoPath)
+	return gitRepoPath
 }
 
 func (config *AppConfig) addRepoToRecentList(gitRepoPath string) {

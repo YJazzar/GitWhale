@@ -2,12 +2,13 @@ package backend
 
 import (
 	"os/exec"
+	"strings"
 )
 
 func getCurrentBranchName(repoPath string) string {
 	cmd := exec.Command("bash", "-c", "git rev-parse --abbrev-ref HEAD")
 	cmd.Dir = repoPath
-	return runCommandAndLogErr(cmd)
+	return strings.TrimSpace(runCommandAndLogErr(cmd))
 }
 
 func runCommandAndLogErr(command *exec.Cmd) string {

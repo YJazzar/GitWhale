@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Link, To, useLocation, useNavigate } from 'react-router';
+import { Link, To, useLocation, useNavigate, useParams } from 'react-router';
 
 export type FileTabsHandle = {
 	closeFile: (fileToClose: FileTabPageProps) => void;
@@ -51,7 +51,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 	const location = useLocation();
 
 	useEffect(() => {
-	  console.log('Location changed to: ' + JSON.stringify(location));
+		console.log('Location changed to: ' + JSON.stringify(location));
 	}, [location]);
 
 	// Convert the availablePages into a map for easy lookup

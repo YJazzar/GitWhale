@@ -8,12 +8,10 @@ const appStateAtom = atom<backend.App | undefined>(undefined);
 export const UseAppState = () => {
 	const [state, setState] = useAtom(appStateAtom);
 
-	const initAppState = async () => {
-		if (!!state) {
-			return;
-		}
-		const initialAppState = await GetAppState();
-		setState(initialAppState);
+	const refreshAppState = async () => {
+		const newAppState = await GetAppState();
+		setState(newAppState);
+		return newAppState
 	};
 
 	useEffect(() => {
@@ -21,13 +19,14 @@ export const UseAppState = () => {
 			return;
 		}
 
-		initAppState();
+		refreshAppState();
 	}, [state, setState]);
 
+	// Helper function, idk if it's that helpful
 	const executeAndRefreshState = async (func: () => Promise<backend.App>) => {
 		let newState = await func();
 		setState(newState);
 	};
 
-	return { appState: state, executeAndRefreshState };
+	return { appState: state, refreshAppState, executeAndRefreshState };
 };
