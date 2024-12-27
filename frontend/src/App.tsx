@@ -69,7 +69,7 @@ function App() {
 								<Route path="/repo" element={<RepoPage />}>
 									{/* <Route path=":log" element={<RepoLog />} /> */}
 									{/* <Route path="" element={<Navigate to=".." />} /> */}
-									<Route path="/repo/:repoIndex" element={<RepoHomeView />} />
+									<Route path="/repo/:encodedRepoPath" element={<RepoHomeView />} />
 								</Route>
 							</Routes>
 						);

@@ -108,3 +108,7 @@ func (app *App) CloseRepo(gitRepoPath string) *App {
 	app.AppConfig.closeRepo(gitRepoPath)
 	return app
 }
+
+func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {
+	return readGitLog(gitRepoPath)
+}

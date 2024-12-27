@@ -25,3 +25,7 @@ export function OpenNewRepo() {
 export function ReadFile(arg1) {
   return window['go']['backend']['App']['ReadFile'](arg1);
 }
+
+export function RunGitLog(arg1) {
+  return window['go']['backend']['App']['RunGitLog'](arg1);
+}

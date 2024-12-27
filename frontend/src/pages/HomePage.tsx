@@ -28,7 +28,7 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 			linkPath: `repo/${btoa(repoPath)}`,
 			tabKey: repoPath,
 			titleRender: function (): JSX.Element {
-				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranch;
+				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranchName;
 				const repoName = repoPath;
 				return (
 					<>

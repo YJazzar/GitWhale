@@ -1,7 +1,7 @@
 export namespace backend {
 	
 	export class RepoContext {
-	    currentBranch: string;
+	    currentBranchName: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new RepoContext(source);
@@ -9,7 +9,7 @@ export namespace backend {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.currentBranch = source["currentBranch"];
+	        this.currentBranchName = source["currentBranchName"];
 	    }
 	}
 	export class AppConfig {
@@ -182,6 +182,34 @@ export namespace backend {
 		    }
 		    return a;
 		}
+	}
+	export class GitLogCommitInfo {
+	    commitHash: string;
+	    username: string;
+	    userEmail: string;
+	    commitTimeStamp: string;
+	    authoredTimeStamp: string;
+	    parentCommitHash: string;
+	    refs: string;
+	    commitMessage: string[];
+	    shortStat: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GitLogCommitInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commitHash = source["commitHash"];
+	        this.username = source["username"];
+	        this.userEmail = source["userEmail"];
+	        this.commitTimeStamp = source["commitTimeStamp"];
+	        this.authoredTimeStamp = source["authoredTimeStamp"];
+	        this.parentCommitHash = source["parentCommitHash"];
+	        this.refs = source["refs"];
+	        this.commitMessage = source["commitMessage"];
+	        this.shortStat = source["shortStat"];
+	    }
 	}
 	
 	
