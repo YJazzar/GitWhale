@@ -177,7 +177,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 			</div>
 
 			{/* The tab contents */}
-			<div className="grow h-full">{routerConfig()}</div>
+			<div className="grow h-full max-h-full max-w-full w-full overflow-auto">{routerConfig()}</div>
 		</div>
 	);
 });

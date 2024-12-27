@@ -27,6 +27,8 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 		fileTabRef.current?.openFile({
 			linkPath: `repo/${btoa(repoPath)}`,
 			tabKey: repoPath,
+			// Feels weird not to set this to true unless there's a fancy way for me to detect if the user performs an action inside the repo tab
+			isPermanentlyOpen: true,
 			titleRender: function (): JSX.Element {
 				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranchName;
 				const repoName = repoPath;
@@ -42,17 +44,21 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 	return (
 		<div className="grid h-full place-content-center">
 			<div className="flex flex-col items-start ">
-				<h2 className="">Start:</h2>
+				<h2>Start:</h2>
 				<ul>
 					<li>
-						<Button variant={'link'}>Open Repository</Button>
+						<Button variant={'link'} onClick={onOpenNewRepo}>
+							Open Repository
+						</Button>
 					</li>
 					<li>
-						<Button variant={'link'}>New Repository</Button>
+						<Button disabled variant={'link'}>
+							New Repository
+						</Button>
 					</li>
 				</ul>
 			</div>
-
+			<br />
 			<div className="flex flex-col items-start">
 				<h2>Recent:</h2>
 
@@ -63,7 +69,6 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 						</Button>
 					);
 				})}
-				<Button onClick={onOpenNewRepo}>Open a new repo</Button>
 			</div>
 		</div>
 	);

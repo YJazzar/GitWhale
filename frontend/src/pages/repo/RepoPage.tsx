@@ -30,7 +30,7 @@ export default function RepoPage() {
 		<SidebarProvider>
 			<RepoPageSideBar />
 
-			<div className="w-full h-full">
+			<div className="w-full h-full overflow-auto">
 				{/* <code className="whitespace-pre-wrap">{JSON.stringify(location, null, 3)}</code>
 			<code className="whitespace-pre-wrap">{JSON.stringify(params, null, 3)}</code> */}
 				<Outlet />
