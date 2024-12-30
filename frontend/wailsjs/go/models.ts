@@ -189,7 +189,7 @@ export namespace backend {
 	    userEmail: string;
 	    commitTimeStamp: string;
 	    authoredTimeStamp: string;
-	    parentCommitHash: string;
+	    parentCommitHashes: string[];
 	    refs: string;
 	    commitMessage: string[];
 	    shortStat: string;
@@ -205,7 +205,7 @@ export namespace backend {
 	        this.userEmail = source["userEmail"];
 	        this.commitTimeStamp = source["commitTimeStamp"];
 	        this.authoredTimeStamp = source["authoredTimeStamp"];
-	        this.parentCommitHash = source["parentCommitHash"];
+	        this.parentCommitHashes = source["parentCommitHashes"];
 	        this.refs = source["refs"];
 	        this.commitMessage = source["commitMessage"];
 	        this.shortStat = source["shortStat"];

@@ -61,7 +61,7 @@ func readGitLog(repoPath string) []GitLogCommitInfo {
 		case 4:
 			currentLog.CommitTimeStamp = line
 		case 5:
-			currentLog.ParentCommitHash = line
+			currentLog.ParentCommitHashes = strings.Split(line, " ")
 		case 6:
 			currentLog.Refs = line
 		case 7:

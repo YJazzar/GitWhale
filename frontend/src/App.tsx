@@ -10,9 +10,10 @@ import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 
 import DirDiffPage from './pages/DirDiffPage';
 import RepoLog from './pages/repo/RepoLogView';
-import RepoPage, { RepoHomeView } from './pages/repo/RepoPage';
+import RepoPage from './pages/repo/RepoPage';
 import { Toaster } from './components/ui/toaster';
 import HomePage from './pages/HomePage';
+import RepoHomeView from './pages/repo/RepoHomeView';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -72,7 +73,7 @@ function App() {
 									<Route path="/repo/:encodedRepoPath">
 										<Route
 											index={true}
-											element={<Navigate to="home"  replace/>}
+											element={<Navigate to="log"  replace/>}
 										/>
 										<Route path="home" element={<RepoHomeView />} />
 										<Route path="log" element={<RepoLog />} />
