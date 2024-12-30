@@ -9,7 +9,7 @@ import { ThemeProvider } from './components/theme-provider';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 
 import DirDiffPage from './pages/DirDiffPage';
-import RepoLog from './pages/repo/RepoLog';
+import RepoLog from './pages/repo/RepoLogView';
 import RepoPage, { RepoHomeView } from './pages/repo/RepoPage';
 import { Toaster } from './components/ui/toaster';
 import HomePage from './pages/HomePage';
@@ -64,12 +64,19 @@ function App() {
 					routerConfig={() => {
 						return (
 							<Routes>
-								<Route path="/" element={<Navigate to="/home" />} />
+								<Route path="/" element={<Navigate to="/home" replace />} />
 								<Route path="/home" element={<HomePage fileTabRef={fileTabRef} />} />
 								<Route path="/repo" element={<RepoPage />}>
 									{/* <Route path=":log" element={<RepoLog />} /> */}
-									{/* <Route path="" element={<Navigate to=".." />} /> */}
-									<Route path="/repo/:encodedRepoPath" element={<RepoHomeView />} />
+									{/* <Route path="/repo/:encodedRepoPath" element={<Navigate to="/repo/:encodedRepoPath/log" />} /> */}
+									<Route path="/repo/:encodedRepoPath">
+										<Route
+											index={true}
+											element={<Navigate to="home"  replace/>}
+										/>
+										<Route path="home" element={<RepoHomeView />} />
+										<Route path="log" element={<RepoLog />} />
+									</Route>
 								</Route>
 							</Routes>
 						);

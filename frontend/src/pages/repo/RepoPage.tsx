@@ -16,7 +16,7 @@ import {
 	useSidebar,
 } from '@/components/ui/sidebar';
 import { UseAppState } from '@/hooks/use-app-state';
-import { House } from 'lucide-react';
+import { House, LucideBookOpenText } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
@@ -44,7 +44,7 @@ export function RepoHomeView() {
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 
 	if (!encodedRepoPath) {
-		return null;
+		return <>Error: why are we rendering RepoHomeView when there's no repo provided?</>;
 	}
 
 	const repoPath = atob(encodedRepoPath);
@@ -75,6 +75,8 @@ function RepoPageSideBar() {
 	const location = useLocation();
 	const sidebar = useSidebar();
 
+	const { encodedRepoPath } = useParams();
+
 	// Close the sidebar on mobile because it's nicer
 	const onLinkClick = () => {
 		sidebar.setOpenMobile(false);
@@ -82,10 +84,14 @@ function RepoPageSideBar() {
 
 	const menuItems = [
 		{
-			title: 'test',
-			isActive: true, // normally a computed value,
-			url: '/url',
+			title: 'Home',
+			url: `/repo/${encodedRepoPath}/home`,
 			icon: <House />,
+		},
+		{
+			title: 'Log',
+			url: `/repo/${encodedRepoPath}/log`,
+			icon: <LucideBookOpenText />,
 		},
 	];
 
