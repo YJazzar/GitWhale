@@ -1,5 +1,13 @@
 # README
 
+```conf
+[diff]
+	tool = gitwhale
+
+[difftool "gitwhale"]
+	cmd = /Users/yousufjazzar/Desktop/gitwhale/build/bin/gitwhale.app/Contents/MacOS/gitwhale --dir-diff $LOCAL $REMOTE
+```
+
 ## About
 
 This is the official Wails React-TS template.
