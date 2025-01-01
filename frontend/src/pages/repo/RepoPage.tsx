@@ -1,5 +1,5 @@
 import { ModeToggle } from '@/components/mode-toggle';
-import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
 	Sidebar,
 	SidebarContent,
@@ -15,19 +15,15 @@ import {
 	SidebarTrigger,
 	useSidebar,
 } from '@/components/ui/sidebar';
-import { UseAppState } from '@/hooks/use-app-state';
-import { GitGraph, House, LucideBookOpenText } from 'lucide-react';
-import { createContext, useEffect, useState } from 'react';
-import { Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router';
-import { RunGitLog } from '../../../wailsjs/go/backend/App';
-import { backend } from '../../../wailsjs/go/models';
-import { Separator } from '@radix-ui/react-dropdown-menu';
 import {
 	RepoPageHandlersContext,
 	SideBarMenuItem,
 	useRepoPageHandlers,
 } from '@/hooks/repo-page-handler-context';
 import clsx from 'clsx';
+import { GitGraph, House } from 'lucide-react';
+import { useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router';
 
 export default function RepoPage() {
 	const [dynamicMenuItems, setDynamicMenuItems] = useState<SideBarMenuItem[]>([]);
@@ -109,7 +105,12 @@ function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 								);
 							})}
 
-							{dynamicMenuItems.length > 0 ? <br /> : null}
+							{dynamicMenuItems.length > 0 ? (
+								<>
+									<br />
+									<Separator />
+								</>
+							) : null}
 
 							{dynamicMenuItems.map((item) => {
 								return (
@@ -146,7 +147,10 @@ function SidebarMenuItemRender(props: {
 	const location = useLocation();
 	const navigate = useNavigate();
 
-	const onCloseClick = () => {
+	const onCloseClick = (event: React.MouseEvent<HTMLSpanElement>) => {
+		event.preventDefault();
+		event.stopPropagation();
+
 		repoPageHandlers?.onCloseDynamicRoute(menuItem);
 		if (location.pathname === menuItem.url) {
 			console.log('navigating to prev');

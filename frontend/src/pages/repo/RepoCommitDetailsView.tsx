@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { OpenNewRepo, RunGitLog } from '../../../wailsjs/go/backend/App';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { backend } from 'wailsjs/go/models';
+import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
 export default function RepoCommitDetailsView() {
 	const { encodedRepoPath, commitHash } = useParams();
