@@ -1,4 +1,5 @@
 import { ModeToggle } from '@/components/mode-toggle';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '@/components/ui/separator';
 import {
 	Sidebar,
@@ -15,6 +16,7 @@ import {
 	SidebarTrigger,
 	useSidebar,
 } from '@/components/ui/sidebar';
+import XTermWrapper from '@/components/xterm-wrapper';
 import {
 	RepoPageHandlersContext,
 	SideBarMenuItem,
@@ -23,11 +25,13 @@ import {
 import { UseAppState } from '@/hooks/use-app-state';
 import clsx from 'clsx';
 import { GitGraph, House } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ImperativePanelHandle } from 'react-resizable-panels';
 import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router';
 
 export default function RepoPage() {
 	const [dynamicMenuItems, setDynamicMenuItems] = useState<SideBarMenuItem[]>([]);
+	const terminalResizablePanelRef = useRef<ImperativePanelHandle>(null);
 
 	const handlers = {
 		onAddNewDynamicRoute: (newItem: SideBarMenuItem) => {
@@ -44,16 +48,51 @@ export default function RepoPage() {
 		},
 	};
 
+	// Handles the keyboard shortcut to close stuff
+	// ... right now it only lets one of the file tab components from recognizing the short cut
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if ((event.metaKey || event.ctrlKey) && event.key === 'j') {
+				event.preventDefault();
+				event.stopPropagation();
+
+				if (terminalResizablePanelRef.current?.isCollapsed()) {
+					terminalResizablePanelRef.current.expand();
+				} else {
+					terminalResizablePanelRef.current?.collapse();
+				}
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+
+		return () => {
+			document.removeEventListener('keydown', handleKeyDown);
+		};
+	}, [handlers]);
+
 	return (
 		<SidebarProvider>
 			<RepoPageHandlersContext.Provider value={handlers}>
 				<RepoPageSideBar dynamicMenuItems={dynamicMenuItems} />
 
-				<div className="w-full h-full overflow-auto">
-					{/* <code className="whitespace-pre-wrap">{JSON.stringify(location, null, 3)}</code>
-			<code className="whitespace-pre-wrap">{JSON.stringify(params, null, 3)}</code> */}
-					<Outlet />
-				</div>
+				<ResizablePanelGroup direction="vertical">
+					{/* Left pane that contains the file structure */}
+					<ResizablePanel defaultSize={70} minSize={10}>
+						<div className="w-full h-full overflow-auto">
+							<Outlet />
+						</div>
+					</ResizablePanel>
+
+					<ResizableHandle withHandle />
+
+					{/* Right pain containing the actual diffs */}
+					<ResizablePanel collapsible={true} minSize={5} ref={terminalResizablePanelRef}>
+						<div className="w-full h-full overflow-auto">
+							<XTermWrapper />
+						</div>
+					</ResizablePanel>
+				</ResizablePanelGroup>
 			</RepoPageHandlersContext.Provider>
 		</SidebarProvider>
 	);
