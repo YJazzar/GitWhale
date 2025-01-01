@@ -70,17 +70,16 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 		// Need to go back to the parent path
 		if (!file?.linkPath) {
 			console.log('navigating to parent path');
-			navigate(noTabSelectedPath, { replace: true });
+			navigate(noTabSelectedPath);
 		} else {
 			console.log('navigating to new path: ');
 			console.log(file);
-			navigate(file.linkPath, { replace: true });
+			navigate(file.linkPath);
 		}
 	};
 
 	const handlers: FileTabsHandle = {
 		closeFile: function (fileToClose: FileTabPageProps): void {
-			console.debug("handler.closeFile(): ", fileToClose)
 			// Get the current active index, and then increment it if the file is open
 			let prevActiveIndex = availableFiles.findIndex((file) => file.tabKey === activeTabKey);
 			if (fileToClose.tabKey === activeTabKey) {

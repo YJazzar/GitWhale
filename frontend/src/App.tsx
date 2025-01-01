@@ -9,11 +9,12 @@ import { ThemeProvider } from './components/theme-provider';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 
 import DirDiffPage from './pages/DirDiffPage';
-import RepoLog from './pages/repo/RepoLogView';
 import RepoPage from './pages/repo/RepoPage';
 import { Toaster } from './components/ui/toaster';
 import HomePage from './pages/HomePage';
 import RepoHomeView from './pages/repo/RepoHomeView';
+import RepoCommitDetailsView from './pages/repo/RepoCommitDetailsView';
+import RepoLogView from './pages/repo/RepoLogView';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -38,7 +39,6 @@ function App() {
 	const fileTabRef = useRef<FileTabsHandle>(null);
 
 	if (isInDirDiffMode === undefined) {
-		console.log('returning spinner');
 		return <LoadingSpinner />;
 	}
 
@@ -65,18 +65,19 @@ function App() {
 					routerConfig={() => {
 						return (
 							<Routes>
-								<Route path="/" element={<Navigate to="/home" replace />} />
+								<Route path="/" element={<Navigate to="/home"  />} />
 								<Route path="/home" element={<HomePage fileTabRef={fileTabRef} />} />
 								<Route path="/repo" element={<RepoPage />}>
 									{/* <Route path=":log" element={<RepoLog />} /> */}
 									{/* <Route path="/repo/:encodedRepoPath" element={<Navigate to="/repo/:encodedRepoPath/log" />} /> */}
 									<Route path="/repo/:encodedRepoPath">
-										<Route
-											index={true}
-											element={<Navigate to="log"  replace/>}
-										/>
+										<Route index={true} element={<Navigate to="log" />} />
 										<Route path="home" element={<RepoHomeView />} />
-										<Route path="log" element={<RepoLog />} />
+										<Route path="log" element={<RepoLogView />} />
+										<Route
+											path="commit/:commitHash"
+											element={<RepoCommitDetailsView />}
+										/>
 									</Route>
 								</Route>
 							</Routes>

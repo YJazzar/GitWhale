@@ -16,41 +16,65 @@ import {
 	useSidebar,
 } from '@/components/ui/sidebar';
 import { UseAppState } from '@/hooks/use-app-state';
-import { House, LucideBookOpenText } from 'lucide-react';
-import { useState } from 'react';
-import { Link, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router';
+import { GitGraph, House, LucideBookOpenText } from 'lucide-react';
+import { createContext, useEffect, useState } from 'react';
+import { Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
 import { backend } from '../../../wailsjs/go/models';
+import { Separator } from '@radix-ui/react-dropdown-menu';
+import {
+	RepoPageHandlersContext,
+	SideBarMenuItem,
+	useRepoPageHandlers,
+} from '@/hooks/repo-page-handler-context';
+import clsx from 'clsx';
 
 export default function RepoPage() {
-	const location = useLocation();
-	const params = useParams();
+	const [dynamicMenuItems, setDynamicMenuItems] = useState<SideBarMenuItem[]>([]);
+
+	const handlers = {
+		onAddNewDynamicRoute: (newItem: SideBarMenuItem) => {
+			if (dynamicMenuItems.some((item) => item.url === newItem.url)) {
+				// The item already exists in the menu
+				return;
+			}
+
+			setDynamicMenuItems([...dynamicMenuItems, newItem]);
+		},
+
+		onCloseDynamicRoute: (oldItem: SideBarMenuItem) => {
+			setDynamicMenuItems(dynamicMenuItems.filter((dynItem) => dynItem.url !== oldItem.url));
+		},
+	};
 
 	return (
 		<SidebarProvider>
-			<RepoPageSideBar />
+			<RepoPageHandlersContext.Provider value={handlers}>
+				<RepoPageSideBar dynamicMenuItems={dynamicMenuItems} />
 
-			<div className="w-full h-full overflow-auto">
-				{/* <code className="whitespace-pre-wrap">{JSON.stringify(location, null, 3)}</code>
+				<div className="w-full h-full overflow-auto">
+					{/* <code className="whitespace-pre-wrap">{JSON.stringify(location, null, 3)}</code>
 			<code className="whitespace-pre-wrap">{JSON.stringify(params, null, 3)}</code> */}
-				<Outlet />
-			</div>
+					<Outlet />
+				</div>
+			</RepoPageHandlersContext.Provider>
 		</SidebarProvider>
 	);
 }
 
-function RepoPageSideBar() {
+function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 	const location = useLocation();
 	const sidebar = useSidebar();
 
 	const { encodedRepoPath } = useParams();
+	const { dynamicMenuItems } = props;
 
 	// Close the sidebar on mobile because it's nicer
 	const onLinkClick = () => {
 		sidebar.setOpenMobile(false);
 	};
 
-	const menuItems = [
+	const menuItems: SideBarMenuItem[] = [
 		{
 			title: 'Home',
 			url: `/repo/${encodedRepoPath}/home`,
@@ -59,7 +83,7 @@ function RepoPageSideBar() {
 		{
 			title: 'Log',
 			url: `/repo/${encodedRepoPath}/log`,
-			icon: <LucideBookOpenText />,
+			icon: <GitGraph />,
 		},
 	];
 
@@ -74,16 +98,29 @@ function RepoPageSideBar() {
 					<SidebarGroupLabel>Application</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{menuItems.map((item) => (
-								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton asChild isActive={item.url === location.pathname}>
-										<Link to={item.url} onClick={onLinkClick}>
-											{item.icon}
-											<span>{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
+							{menuItems.map((item) => {
+								return (
+									<SidebarMenuItemRender
+										key={item.url}
+										menuItem={item}
+										onLinkClick={onLinkClick}
+										isDynamicRoute={false}
+									/>
+								);
+							})}
+
+							{dynamicMenuItems.length > 0 ? <br /> : null}
+
+							{dynamicMenuItems.map((item) => {
+								return (
+									<SidebarMenuItemRender
+										key={item.url}
+										menuItem={item}
+										onLinkClick={onLinkClick}
+										isDynamicRoute
+									/>
+								);
+							})}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
@@ -95,5 +132,49 @@ function RepoPageSideBar() {
 				<ModeToggle />
 			</SidebarFooter>
 		</Sidebar>
+	);
+}
+
+function SidebarMenuItemRender(props: {
+	menuItem: SideBarMenuItem;
+	onLinkClick: () => void;
+	isDynamicRoute: boolean;
+}) {
+	const { menuItem, onLinkClick, isDynamicRoute } = props;
+	const repoPageHandlers = useRepoPageHandlers();
+
+	const location = useLocation();
+	const navigate = useNavigate();
+
+	const onCloseClick = () => {
+		repoPageHandlers?.onCloseDynamicRoute(menuItem);
+		if (location.pathname === menuItem.url) {
+			console.log('navigating to prev');
+			navigate(-1);
+		}
+	};
+
+	return (
+		<SidebarMenuItem>
+			<SidebarMenuButton asChild isActive={menuItem.url === location.pathname}>
+				<Link to={menuItem.url} onClick={onLinkClick} className="flex flex-row h-4 w-4">
+					{menuItem.icon}
+					<span className="grow">{menuItem.title}</span>
+
+					{isDynamicRoute ? (
+						<span
+							className={clsx(
+								'h-5 w-5 mr-1 box-border flex rounded-md items-center justify-center',
+								'hover:bg-destructive text-destructive-foreground shadow-sm'
+							)}
+							onClick={onCloseClick}
+						>
+							x
+						</span>
+					) : null}
+				</Link>
+				{/* </div>	 */}
+			</SidebarMenuButton>
+		</SidebarMenuItem>
 	);
 }

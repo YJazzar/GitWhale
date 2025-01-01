@@ -2,14 +2,17 @@ import { Button } from '@/components/ui/button';
 import useCommitGraphBuilder from '@/hooks/use-commit-graph-builder';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useState } from 'react';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useRepoPageHandlers } from '@/hooks/repo-page-handler-context';
+import { GitCommitVertical } from 'lucide-react';
 
 export default function RepoLogView() {
 	const { encodedRepoPath } = useParams();
+	const repoPageHandlers = useRepoPageHandlers();
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 
 	const commitGraph = useCommitGraphBuilder(logs);
@@ -21,26 +24,59 @@ export default function RepoLogView() {
 	const repoPath = atob(encodedRepoPath);
 
 	const refreshLogs = async () => {
-		console.debug('refreshing logs on ', repoPath);
 		const newLogs = await RunGitLog(repoPath);
-		console.debug('got: ', newLogs);
 		setLogs(newLogs);
 	};
 
-	console.debug(commitGraph);
+	const generateCommitPageUrl = (commitHash: string) => {
+		return `/repo/${encodedRepoPath}/commit/${commitHash}`;
+	};
+
+	const onOpenCommitPage = (commitHash: string) => {
+		repoPageHandlers?.onAddNewDynamicRoute({
+			icon: <GitCommitVertical />,
+			title: commitHash.slice(0, 7),
+			url: generateCommitPageUrl(commitHash),
+		});
+	};
+
+	const columns: ColumnDef<backend.GitLogCommitInfo>[] = [
+		{
+			header: 'Open',
+			cell(props) {
+				return (
+					<Link
+						to={generateCommitPageUrl(props.row.original.commitHash)}
+						onClick={() => onOpenCommitPage(props.row.original.commitHash)}
+					>
+						Open
+					</Link>
+				);
+			},
+		},
+		{
+			accessorKey: 'commitHash',
+			header: 'hash',
+		},
+		{
+			accessorKey: 'username',
+			header: 'User',
+		},
+		{
+			accessorKey: 'shortStat',
+			header: 'Stat',
+		},
+		{
+			accessorKey: 'commitMessage',
+			header: 'Message',
+		},
+	];
 
 	return (
 		<>
 			<Button onClick={refreshLogs}>Refresh </Button>
 			Log results:
 			<LinearCommitLogTable columns={columns} data={logs} />
-			{/* {logs.map((log) => {
-				return (
-					<div key={log.commitHash}>
-						<code className="whitespace-pre-wrap">{JSON.stringify(log, null, 3)}</code>
-					</div>
-				);
-			})} */}
 		</>
 	);
 }
@@ -98,22 +134,3 @@ function LinearCommitLogTable<TData, TValue>({ columns, data }: DataTableProps<T
 		</div>
 	);
 }
-
-const columns: ColumnDef<backend.GitLogCommitInfo>[] = [
-	{
-		accessorKey: 'commitHash',
-		header: 'hash',
-	},
-	{
-		accessorKey: 'username',
-		header: 'User',
-	},
-	{
-		accessorKey: 'shortStat',
-		header: 'Stat',
-	},
-	{
-		accessorKey: 'commitMessage',
-		header: 'Message',
-	},
-];

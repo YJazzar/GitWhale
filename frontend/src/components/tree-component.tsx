@@ -95,7 +95,6 @@ export function FileNode(props: {
 	};
 
 	const onDoubleClick = () => {
-		console.log("double click so keep open plz")
 		onFileClick(file, true);
 	};
 
