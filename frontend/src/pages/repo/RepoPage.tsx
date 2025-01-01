@@ -20,6 +20,7 @@ import {
 	SideBarMenuItem,
 	useRepoPageHandlers,
 } from '@/hooks/repo-page-handler-context';
+import { UseAppState } from '@/hooks/use-app-state';
 import clsx from 'clsx';
 import { GitGraph, House } from 'lucide-react';
 import { useState } from 'react';
@@ -59,8 +60,8 @@ export default function RepoPage() {
 }
 
 function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
-	const location = useLocation();
 	const sidebar = useSidebar();
+	const { appState } = UseAppState();
 
 	const { encodedRepoPath } = useParams();
 	const { dynamicMenuItems } = props;
@@ -83,6 +84,9 @@ function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 		},
 	];
 
+	const repoPath = atob(encodedRepoPath ?? '');
+	const branchName = appState?.appConfig?.openGitRepos[repoPath]?.currentBranchName;
+
 	return (
 		<Sidebar collapsible="icon">
 			<SidebarHeader>
@@ -91,7 +95,7 @@ function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 
 			<SidebarContent>
 				<SidebarGroup>
-					<SidebarGroupLabel>Application</SidebarGroupLabel>
+					<SidebarGroupLabel>{branchName}</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							{menuItems.map((item) => {
