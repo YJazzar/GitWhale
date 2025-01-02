@@ -6,16 +6,18 @@ import (
 	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"golang.org/x/term"
 )
 
 var APP_NAME = "GitWhale"
 
 // App struct
 type App struct {
-	ctx          context.Context
-	IsLoading    bool          `json:"isLoading"`
-	StartupState *StartupState `json:"startupState"`
-	AppConfig    *AppConfig    `json:"appConfig"`
+	ctx              context.Context
+	IsLoading        bool          `json:"isLoading"`
+	StartupState     *StartupState `json:"startupState"`
+	AppConfig        *AppConfig    `json:"appConfig"`
+	terminalSessions map[string]*term.Terminal
 }
 
 // NewApp creates a new App application struct
@@ -43,6 +45,7 @@ func (app *App) Startup(ctx context.Context) {
 
 	app.StartupState = getStartupState()
 	app.AppConfig = appConfig
+	app.terminalSessions = make(map[string]*term.Terminal)
 }
 
 // Saves the config file
@@ -101,11 +104,16 @@ func (app *App) OpenNewRepo() string {
 		return ""
 	}
 
+	SetupXTermForNewRepo(app, newRepoPath)
+
 	return app.AppConfig.openNewRepo(newRepoPath)
 }
 
 func (app *App) CloseRepo(gitRepoPath string) *App {
 	app.AppConfig.closeRepo(gitRepoPath)
+
+	delete(app.terminalSessions, gitRepoPath)
+
 	return app
 }
 

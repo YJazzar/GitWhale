@@ -9,19 +9,18 @@ import { RunGitLog } from '../../../wailsjs/go/backend/App';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRepoPageHandlers } from '@/hooks/repo-page-handler-context';
 import { GitCommitVertical } from 'lucide-react';
+import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 
 export default function RepoLogView() {
-	const { encodedRepoPath } = useParams();
+	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
 	const repoPageHandlers = useRepoPageHandlers();
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 
 	const commitGraph = useCommitGraphBuilder(logs);
 
-	if (!encodedRepoPath) {
+	if (!repoPath) {
 		return <>Error: why are we rendering RepoHomeView when there's no repo provided?</>;
 	}
-
-	const repoPath = atob(encodedRepoPath);
 
 	const refreshLogs = async () => {
 		const newLogs = await RunGitLog(repoPath);
