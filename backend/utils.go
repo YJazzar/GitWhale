@@ -8,6 +8,10 @@ import (
 
 func LoadJSON[T any](filename string) (T, error) {
 	var data T
+	if !FileExists(filename) {
+		return data, fmt.Errorf("file not found at: %v", filename)
+	}
+
 	fileData, err := os.ReadFile(filename)
 	if err != nil {
 		return data, err

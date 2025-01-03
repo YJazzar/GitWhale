@@ -5,9 +5,9 @@ go 1.21
 toolchain go1.22.3
 
 require (
+	github.com/creack/pty v1.1.24
 	github.com/leaanthony/u v1.1.0
 	github.com/wailsapp/wails/v2 v2.9.2
-	golang.org/x/term v0.27.0
 )
 
 require (

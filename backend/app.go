@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"golang.org/x/term"
 )
 
 var APP_NAME = "GitWhale"
@@ -17,7 +17,12 @@ type App struct {
 	IsLoading        bool          `json:"isLoading"`
 	StartupState     *StartupState `json:"startupState"`
 	AppConfig        *AppConfig    `json:"appConfig"`
-	terminalSessions map[string]*term.Terminal
+	terminalSessions map[string]*TerminalSession
+}
+
+type TerminalSession struct {
+	ptySession *os.File
+	waiter     sync.WaitGroup
 }
 
 // NewApp creates a new App application struct
@@ -38,14 +43,13 @@ func (app *App) Startup(ctx context.Context) {
 	appConfig, err := LoadAppConfig()
 	if err != nil {
 		Log.Error("An error occurred while reading the application's saved config: %v\n", err)
-		return
 	}
 
 	Log.Trace("Running App.Startup()")
 
 	app.StartupState = getStartupState()
 	app.AppConfig = appConfig
-	app.terminalSessions = make(map[string]*term.Terminal)
+	app.terminalSessions = make(map[string]*TerminalSession)
 }
 
 // Saves the config file
@@ -104,17 +108,35 @@ func (app *App) OpenNewRepo() string {
 		return ""
 	}
 
-	SetupXTermForNewRepo(app, newRepoPath)
-
 	return app.AppConfig.openNewRepo(newRepoPath)
 }
 
 func (app *App) CloseRepo(gitRepoPath string) *App {
 	app.AppConfig.closeRepo(gitRepoPath)
-
-	delete(app.terminalSessions, gitRepoPath)
-
+	app.CleanupTerminalSession(gitRepoPath)
 	return app
+}
+
+func (app *App) InitNewTerminalSession(repoPath string) {
+	SetupXTermForNewRepo(app, repoPath)
+}
+
+func (app *App) OnTerminalSessionWasResized(repoPath string, newSize TTYSize) {
+	session, exists := app.terminalSessions[repoPath]
+	if !exists {
+		Log.Error("Tried to resize a non-existent session")
+	}
+
+	ResizePtySession(session, newSize)
+}
+
+func (app *App) CleanupTerminalSession(repoPath string) {
+	// Remove the session from the map of sessions, and run any clean up logic
+	if _, exists := app.terminalSessions[repoPath]; exists {
+		Log.Info("Deleting the session for repo: %v", repoPath)
+		// session.waiter.Done() // This should invoke the defer logic where the session got created
+		delete(app.terminalSessions, repoPath)
+	}
 }
 
 func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {

@@ -21,18 +21,20 @@ type AppConfig struct {
 func LoadAppConfig() (*AppConfig, error) {
 	appConfigFile, err := getAppConfigFilePath()
 	if err != nil {
+		Log.Error("Could not get config file path because: %v", err)
 		return nil, err
 	}
 
-	if !FileExists(appConfigFile) {
-		return &AppConfig{
+	config, err := LoadJSON[*AppConfig](appConfigFile)
+	if err != nil || config == nil {
+		config = &AppConfig{
 			FilePath:       appConfigFile,
 			GitReposMap:    make(map[string]RepoContext),
 			RecentGitRepos: []string{},
-		}, nil
+		}
 	}
 
-	return LoadJSON[*AppConfig](appConfigFile)
+	return config, err
 }
 
 func (config *AppConfig) SaveAppConfig() error {
@@ -70,6 +72,7 @@ func (config *AppConfig) openNewRepo(gitRepoPath string) string {
 	}
 
 	// Add to the list of open git repos if it's not already open for some reason
+	Log.Info("Current config: %v", config)
 	if _, exists := config.GitReposMap[gitRepoPath]; !exists {
 		config.GitReposMap[gitRepoPath] = *CreateContext(gitRepoPath)
 		config.OrderedOpenGitRepos = append(config.OrderedOpenGitRepos, gitRepoPath)
