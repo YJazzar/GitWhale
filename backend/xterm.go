@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"sync"
@@ -124,6 +125,13 @@ func CreateXTermSession(app *App, repoPath string) {
 		for {
 			buffer := make([]byte, maxBufferSizeBytes)
 			readLength, err := tty.Read(buffer)
+
+			// We get an io.EOF error when the terminal is shutting down
+			if err == io.EOF {
+				Log.Debug("Received EOF err, ending terminal infinite read loop...")
+				return
+			}
+
 			if err != nil {
 				Log.Warning("Ending session... Failed to read from tty: %s", err)
 				session.waiter.Done()

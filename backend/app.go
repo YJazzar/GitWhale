@@ -125,6 +125,7 @@ func (app *App) OnTerminalSessionWasResized(repoPath string, newSize TTYSize) {
 	session, exists := app.terminalSessions[repoPath]
 	if !exists {
 		Log.Error("Tried to resize a non-existent session")
+		return
 	}
 
 	ResizePtySession(session, newSize)
@@ -132,9 +133,9 @@ func (app *App) OnTerminalSessionWasResized(repoPath string, newSize TTYSize) {
 
 func (app *App) CleanupTerminalSession(repoPath string) {
 	// Remove the session from the map of sessions, and run any clean up logic
-	if _, exists := app.terminalSessions[repoPath]; exists {
+	if session, exists := app.terminalSessions[repoPath]; exists {
 		Log.Info("Deleting the session for repo: %v", repoPath)
-		// session.waiter.Done() // This should invoke the defer logic where the session got created
+		session.waiter.Done() // This should invoke the defer logic where the session got created
 		delete(app.terminalSessions, repoPath)
 	}
 }

@@ -8,10 +8,12 @@ import {
 	InitNewTerminalSession,
 	OnTerminalSessionWasResized,
 } from '../../wailsjs/go/backend/App';
+import { FitAddon } from '@xterm/addon-fit';
+import { useResizeObserver } from '@/hooks/use-resize-observer';
 
 export default function XTermWrapper() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
-	const terminalRef = useRef<Terminal | undefined>(undefined);
+	const terminalRef = useRef<{ terminal: Terminal; fitAddon: FitAddon } | undefined>(undefined);
 	const divNodeRef = useRef(null);
 
 	const initTerminal = async () => {
@@ -19,10 +21,17 @@ export default function XTermWrapper() {
 			return;
 		}
 
-		await InitNewTerminalSession(repoPath);
+		const fitAddon = new FitAddon();
 		const newTerminal = new Terminal();
+
+		// Store refs for later use
+		terminalRef.current = {
+			terminal: newTerminal,
+			fitAddon: fitAddon,
+		};
+
+		newTerminal.loadAddon(fitAddon);
 		newTerminal.open(divNodeRef.current);
-		debugger;
 
 		// Subscribe to new stuff getting written from the terminal
 		EventsOn(`onTerminalDataReturned://${repoPath}`, (event: string) => {
@@ -41,22 +50,19 @@ export default function XTermWrapper() {
 			EventsEmit(`onTerminalData://${repoPath}`, event);
 		});
 
-		terminalRef.current = newTerminal;
+		await InitNewTerminalSession(repoPath);
 
-		debugger;
+		fitAddon.fit();
+
 		newTerminal.write('\n');
 	};
 
 	const cleanupTerminal = () => {
-	
-
-		const currentTerminal = terminalRef.current
+		const currentTerminal = terminalRef.current?.terminal;
 		if (!currentTerminal) {
-			return
+			return;
 		}
 
-		debugger;
-		
 		currentTerminal.dispose();
 		EventsOff(`onTerminalDataReturned://${repoPath}`);
 		CleanupTerminalSession(repoPath);
@@ -68,7 +74,12 @@ export default function XTermWrapper() {
 		return cleanupTerminal;
 	}, []);
 
-	return <div ref={divNodeRef}></div>;
+	
+	useResizeObserver(divNodeRef, () => {
+		terminalRef.current?.fitAddon.fit()
+	});
+
+	return <div className="w-full h-full" ref={divNodeRef}></div>;
 }
 
 function base64ToByteArray(base64: string) {
