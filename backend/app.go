@@ -76,7 +76,7 @@ func (app *App) GetDirectoryDiffDetails() *Directory {
 	}
 
 	dirDiff := app.StartupState.DirectoryDiff
-	return readDirDiffStructure(dirDiff)
+	return readDiffs(dirDiff)
 }
 
 func (app *App) IsInDirDiffMode() bool {

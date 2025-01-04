@@ -42,6 +42,11 @@ func SaveAsJSON[T any](filePath string, data T) error {
 	return nil
 }
 
+func IsDir(path string) (bool, error) {
+	stat, err := os.Stat(path)
+	return stat.IsDir(), err
+}
+
 func DirExists(dirPath string) bool {
 	if stat, err := os.Stat(dirPath); err == nil && stat.IsDir() {
 		return true
@@ -51,7 +56,7 @@ func DirExists(dirPath string) bool {
 }
 
 func FileExists(filePath string) bool {
-	if _, err := os.Stat(filePath); err == nil {
+	if stat, err := os.Stat(filePath); err == nil && !stat.IsDir() {
 		return true
 
 	}

@@ -24,6 +24,70 @@ type FileInfo struct {
 	RightDirAbsPath string
 }
 
+func readDiffs(dirs *StartupDirectoryDiffArgs) *Directory {
+
+	if dirs == nil {
+		return nil
+	}
+
+	leftIsDir, leftErr := IsDir(dirs.LeftPath)
+	rightIsDir, rightErr := IsDir(dirs.RightPath)
+	if leftErr != nil || rightErr != nil {
+		Log.Error("Got errors checking if the passed paths were directories or files.")
+		Log.Error("\tLeft path error: %v", leftErr)
+		Log.Error("\tRight path error: %v", rightErr)
+		return nil
+	}
+
+	if leftIsDir != rightIsDir {
+		Log.Error("The left path and the right input paths must match")
+		Log.Error("\tLeft path: %v", dirs.LeftPath)
+		Log.Error("\tRight path: %v", dirs.RightPath)
+		return nil
+	}
+
+	if leftIsDir {
+		return readDirDiffStructure(dirs)
+	}
+
+	return readFileDiff(dirs)
+}
+
+func readFileDiff(dirs *StartupDirectoryDiffArgs) *Directory {
+
+	leftAbsPath, err := filepath.Abs(dirs.LeftPath)
+	if err != nil {
+		Log.Error("Could not translate the left input path to an absolute path. Error: %v", err)
+		return nil
+	}
+
+	rightAbsPath, err := filepath.Abs(dirs.RightPath)
+	if err != nil {
+		Log.Error("Could not translate the right input path to an absolute path. Error: %v", err)
+		return nil
+	}
+
+	rootDir := &Directory{
+		Path:    "./",
+		Name:    "./",
+		Files:   make([]*FileInfo, 0),
+		SubDirs: make([]*Directory, 0), // Use pointers for SubDirs
+	}
+
+	fileNode := &FileInfo{
+		Path:            "",
+		Name:            filepath.Base(dirs.LeftPath),
+		Extension:       removeLeadingPeriod(filepath.Ext(dirs.LeftPath)),
+		LeftDirAbsPath:  leftAbsPath,
+		RightDirAbsPath: rightAbsPath,
+	}
+
+	// Append file info
+	rootDir.Files = append(rootDir.Files, fileNode)
+
+	return rootDir
+}
+
 func readDirDiffStructure(dirs *StartupDirectoryDiffArgs) *Directory {
 	rootDir := &Directory{
 		Path:    "./",
@@ -32,22 +96,17 @@ func readDirDiffStructure(dirs *StartupDirectoryDiffArgs) *Directory {
 		SubDirs: make([]*Directory, 0), // Use pointers for SubDirs
 	}
 
-	if dirs == nil {
-		return rootDir
-	}
-
 	// Set up a cache for all the folders and files
-
 	dirMap := make(map[string]*Directory)
 	dirMap["."] = rootDir
 
 	// Traverse the directory and get the structure
-	if err := traverseDir(rootDir, filepath.Clean(dirs.LeftFolderPath), InLeftDir, dirMap); err != nil {
+	if err := traverseDir(filepath.Clean(dirs.LeftPath), InLeftDir, dirMap); err != nil {
 		Log.Error("Error: %v", err)
 		return nil
 	}
 
-	if err := traverseDir(rootDir, filepath.Clean(dirs.RightFolderPath), InRightDir, dirMap); err != nil {
+	if err := traverseDir(filepath.Clean(dirs.RightPath), InRightDir, dirMap); err != nil {
 		Log.Error("Error: %v", err)
 		return nil
 	}
@@ -62,7 +121,6 @@ const (
 
 // traverseDir recursively traverses a directory and builds a Directory structure
 func traverseDir(
-	rootDir *Directory,
 	rootPath string,
 	dirSide int,
 	cachedDirMap map[string]*Directory,

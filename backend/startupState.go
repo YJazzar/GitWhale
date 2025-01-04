@@ -7,8 +7,8 @@ type StartupState struct {
 }
 
 type StartupDirectoryDiffArgs struct {
-	LeftFolderPath  string `json:"leftFolderPath"`
-	RightFolderPath string `json:"rightFolderPath"`
+	LeftPath  string `json:"leftFolderPath"`
+	RightPath string `json:"rightFolderPath"`
 }
 
 func getStartupState() *StartupState {
@@ -21,6 +21,7 @@ func getStartupState() *StartupState {
 	// }
 
 	args := os.Args
+
 	if len(args) != 4 {
 		// test code
 		// return &StartupState{
@@ -29,11 +30,12 @@ func getStartupState() *StartupState {
 		// 		RightFolderPath: "/var/folders/4x/3dxp61h50d3bt6jvwvb2bz4m0000gn/T/git-difftool.F12WVC/right/",
 		// 	},
 		// }
+
 		Log.Info("Returning nil from getStartupState() because the length was incorrect: %v", len(args))
 		return nil
 	}
 
-	if args[1] != "--dir-diff" {
+	if args[1] != "--diff-tool" {
 		Log.Error("Returning nil from getStartupState() because the first flag was incorrect: %v", args[1])
 		return nil
 	}
@@ -42,8 +44,8 @@ func getStartupState() *StartupState {
 
 	return &StartupState{
 		DirectoryDiff: &StartupDirectoryDiffArgs{
-			LeftFolderPath:  args[2],
-			RightFolderPath: args[3],
+			LeftPath:  args[2],
+			RightPath: args[3],
 		},
 	}
 }
