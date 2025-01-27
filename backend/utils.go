@@ -43,6 +43,19 @@ func SaveAsJSON[T any](filePath string, data T) error {
 	return nil
 }
 
+func ReadFileAsString(filePath string) (string, error) {
+	if !FileExists(filePath) {
+		return "", fmt.Errorf("file not found at: %v", filePath)
+	}
+
+	fileData, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	return string(fileData), nil
+}
+
 func WriteToFileAndReplaceOld(filePath string, fileContent string) error {
 	content := []byte(fileContent)
 	err := os.WriteFile(filePath, content, 0644) // 0644 is the file permission

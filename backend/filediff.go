@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 func SendFileDiffNotification(leftFilePath string, rightFilePath string) {
@@ -59,7 +61,7 @@ func StartFileDiffWatcher(ctx context.Context) {
 				}
 				log.Println("event:", event)
 				if event.Has(fsnotify.Write) {
-					log.Println("modified file:", event.Name)
+					onReceivedFileDiffNotification(ctx, event.Name)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
@@ -78,6 +80,32 @@ func StartFileDiffWatcher(ctx context.Context) {
 
 	// Block main goroutine forever.
 	<-make(chan struct{})
+}
+
+type FileDiffNotification struct {
+	LeftFilePath  string `json:"leftFilePath"`
+	RightFilePath string `json:"rightFilePath"`
+}
+
+func onReceivedFileDiffNotification(ctx context.Context, filePath string) {
+	log.Println("Found new file diff at path:", filePath)
+
+	fileContent, err := ReadFileAsString(filePath)
+	if err != nil {
+		Log.Error("Error while getting file diff notification data: %v", err)
+		return
+	}
+
+	lines := strings.Split(fileContent, "\n")
+	if len(lines) != 2 {
+		Log.Error("Received a notification, but the notification file was malformed (expected two lines inside it)")
+		return
+	}
+
+	runtime.EventsEmit(ctx, "onOpenNewFileDiff", FileDiffNotification{
+		LeftFilePath:  lines[0],
+		RightFilePath: lines[1],
+	})
 }
 
 func createFileDiffWatcherLockFile() error {
