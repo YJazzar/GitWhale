@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"os"
@@ -25,6 +26,15 @@ func main() {
 
 	pid := os.Getpid()
 
+	startupState := backend.GetStartupState()
+	if startupState != nil && startupState.DirectoryDiff != nil && startupState.DirectoryDiff.IsFileDiff {
+		if startupState.DirectoryDiff.ShouldSendNotification {
+			// Make the other GitWhale process show the diff instead
+			backend.SendFileDiffNotification(startupState.DirectoryDiff.LeftPath, startupState.DirectoryDiff.RightPath)
+			return
+		}
+	}
+
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  fmt.Sprint("[", pid, "] ", backend.APP_NAME),
@@ -34,8 +44,10 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.Startup,
-		OnShutdown:       app.Shutdown,
+		OnStartup: func(ctx context.Context) {
+			app.Startup(ctx, startupState)
+		},
+		OnShutdown: app.Shutdown,
 		Bind: []interface{}{
 			app,
 		},

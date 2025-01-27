@@ -7,11 +7,14 @@ type StartupState struct {
 }
 
 type StartupDirectoryDiffArgs struct {
-	LeftPath  string `json:"leftFolderPath"`
-	RightPath string `json:"rightFolderPath"`
+	LeftPath               string `json:"leftFolderPath"`
+	RightPath              string `json:"rightFolderPath"`
+	IsFileDiff             bool
+	ShouldSendNotification bool // True means that there's another active GitWhale process showing file diffs
+	ShouldStartFileWatcher bool // Mutually exclusive with ShouldSendNotification
 }
 
-func getStartupState() *StartupState {
+func GetStartupState() *StartupState {
 
 	// args := []string{
 	// 	"/Users/yousufjazzar/Desktop/gitwhale/build/bin/gitwhale.app/Contents/MacOS/gitwhale  ",
@@ -42,10 +45,31 @@ func getStartupState() *StartupState {
 
 	Log.Debug("Returning a valid startup state from getStartupState() ")
 
+	isLeftDir, err := IsDir(args[2])
+	if err != nil {
+		Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[2], err)
+		return nil
+	}
+
+	isRightDir, err := IsDir(args[3])
+	if err != nil {
+		Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[3], err)
+		return nil
+	}
+
+	shouldSendNotification, err := isFileDiffNotificationLockFileExists()
+	if err != nil {
+		Log.Error("Error while checking file diff lock file: %v", err)
+		return nil
+	}
+
 	return &StartupState{
 		DirectoryDiff: &StartupDirectoryDiffArgs{
-			LeftPath:  args[2],
-			RightPath: args[3],
+			LeftPath:               args[2],
+			RightPath:              args[3],
+			IsFileDiff:             !isLeftDir && !isRightDir,
+			ShouldSendNotification: shouldSendNotification,
+			ShouldStartFileWatcher: !shouldSendNotification,
 		},
 	}
 }

@@ -1,8 +1,6 @@
 package backend
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 )
 
@@ -39,27 +37,6 @@ func LoadAppConfig() (*AppConfig, error) {
 
 func (config *AppConfig) SaveAppConfig() error {
 	return SaveAsJSON(config.FilePath, config)
-}
-
-func getAppConfigFilePath() (string, error) {
-	homePath, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	documents := filepath.Join(homePath, "Documents")
-	if !DirExists(documents) {
-		return "", fmt.Errorf("the documents path doesn't exist in: %v", documents)
-	}
-
-	// Check if we've already created our app's folder
-	appConfigFolder := filepath.Join(documents, APP_NAME)
-	if !DirExists(appConfigFolder) {
-		os.Mkdir(appConfigFolder, 0755)
-	}
-
-	appConfigFile := filepath.Join(appConfigFolder, "Config.json")
-	return appConfigFile, nil
 }
 
 // Returns the absolute path that should be used to key into the repo

@@ -3,6 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"os"
 )
 
@@ -39,6 +40,28 @@ func SaveAsJSON[T any](filePath string, data T) error {
 		return fmt.Errorf("failed to write JSON data to file: %w", err)
 	}
 
+	return nil
+}
+
+func WriteToFileAndReplaceOld(filePath string, fileContent string) error {
+	content := []byte(fileContent)
+	err := os.WriteFile(filePath, content, 0644) // 0644 is the file permission
+	if err != nil {
+		Log.Error("Error writing to file: %v", err)
+		return err
+	}
+	Log.Info("File written successfully to: %v", filePath)
+	return nil
+}
+
+func DeleteFile(filePath string) error {
+	err := os.Remove(filePath)
+	if err != nil {
+		Log.Error("Error removing file: %v", err)
+		return err
+	}
+
+	Log.Info("Deleted file successfully: %v", filePath)
 	return nil
 }
 
@@ -89,4 +112,10 @@ func PrettyPrint(t any) string {
 	}
 
 	return string(b)
+}
+
+func HashString(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }

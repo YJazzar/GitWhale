@@ -34,7 +34,7 @@ func NewApp() *App {
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
-func (app *App) Startup(ctx context.Context) {
+func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 	Log.setContext(ctx)
 
 	app.ctx = ctx
@@ -47,9 +47,13 @@ func (app *App) Startup(ctx context.Context) {
 
 	Log.Trace("Running App.Startup()")
 
-	app.StartupState = getStartupState()
+	app.StartupState = startupState
 	app.AppConfig = appConfig
 	app.terminalSessions = make(map[string]*TerminalSession)
+
+	if startupState.DirectoryDiff.ShouldStartFileWatcher {
+		StartFileDiffWatcher(ctx)
+	}
 }
 
 // Saves the config file

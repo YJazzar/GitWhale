@@ -24,6 +24,8 @@ type FileInfo struct {
 	RightDirAbsPath string
 }
 
+// Given a left side and a right side path (dir or filepath), the tag will figure out all the files
+// we need to show diffs for (only runs if the program was opened with the --diff-tool flag)
 func readDiffs(dirs *StartupDirectoryDiffArgs) *Directory {
 
 	if dirs == nil {
