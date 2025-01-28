@@ -78,6 +78,12 @@ func DeleteFile(filePath string) error {
 	return nil
 }
 
+func CreateDirIfNeeded(path string) {
+	if !DirExists(path) {
+		os.Mkdir(path, 0755)
+	}
+}
+
 func IsDir(path string) (bool, error) {
 	stat, err := os.Stat(path)
 	return stat.IsDir(), err

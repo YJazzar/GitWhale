@@ -6,13 +6,13 @@ toolchain go1.22.3
 
 require (
 	github.com/creack/pty v1.1.24
+	github.com/fsnotify/fsnotify v1.8.0
 	github.com/leaanthony/u v1.1.0
 	github.com/wailsapp/wails/v2 v2.9.2
 )
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect

@@ -17,13 +17,14 @@ func getAppConfigFilePath() (string, error) {
 }
 
 func getFileDiffNotificationsFolderPath() (string, error) {
-	appConfigFolder, err := getAppFolderPath()
+	notifFolderPath, err := getAppFolderPath()
 	if err != nil {
-		return appConfigFolder, err
+		return notifFolderPath, err
 	}
 
-	appConfigFile := filepath.Join(appConfigFolder, "FileDiffs")
-	return appConfigFile, nil
+	notifFolderPath = filepath.Join(notifFolderPath, "FileDiffs")
+	CreateDirIfNeeded(notifFolderPath)
+	return notifFolderPath, nil
 }
 
 func getFileDiffNotificationLockFilePath() (string, error) {
@@ -59,9 +60,7 @@ func getAppFolderPath() (string, error) {
 
 	// Check if we've already created our app's folder
 	appConfigFolder := filepath.Join(documents, APP_NAME)
-	if !DirExists(appConfigFolder) {
-		os.Mkdir(appConfigFolder, 0755)
-	}
+	CreateDirIfNeeded(appConfigFolder)
 
 	return appConfigFolder, nil
 }

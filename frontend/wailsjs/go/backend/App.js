@@ -41,3 +41,7 @@ export function ReadFile(arg1) {
 export function RunGitLog(arg1) {
   return window['go']['backend']['App']['RunGitLog'](arg1);
 }
+
+export function Startup(arg1, arg2) {
+  return window['go']['backend']['App']['Startup'](arg1, arg2);
+}

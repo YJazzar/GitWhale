@@ -3,21 +3,20 @@ import { FileTabPageProps, FileTabs, FileTabsHandle } from '@/components/file-ta
 import LoadingSpinner from '@/components/loading-spinner';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useEffect, useMemo, useRef } from 'react';
-import { useQuery } from 'react-query';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { isError, useQuery } from 'react-query';
 import { GetDirectoryDiffDetails } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
 import { Navigate, Route, Routes, useParams } from 'react-router';
+import { EventsOff, EventsOn } from '../../wailsjs/runtime/runtime';
+
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
 };
 
 export default function DirDiffPage() {
-	const directoryDiffDetails = useQuery({
-		queryKey: ['GetDirectoryDiffDetails'],
-		queryFn: GetDirectoryDiffDetails,
-	});
+	const fileTreeData = useDiffFileTreeData()
 
 	const fileTabRef = useRef<FileTabsHandle>(null);
 
@@ -35,23 +34,35 @@ export default function DirDiffPage() {
 			});
 		};
 
-		if (directoryDiffDetails.data) {
-			recurseDir(directoryDiffDetails.data);
+		if (fileTreeData.data) {
+			recurseDir(fileTreeData.data);
 		}
 
 		return map;
-	}, [directoryDiffDetails.data]);
+	}, [fileTreeData]);
 
-	if (directoryDiffDetails.isLoading || !directoryDiffDetails.data) {
+	const onAddNewFileToDiff = (event: backend.FileInfo) => {
+		fileTreeData.onAddFile?.(event)
+	};
+
+	// Listen in to any additional files we may need to diff later on:
+	useEffect(() => {
+		EventsOn(`onOpenNewFileDiff`, onAddNewFileToDiff);
+		return () => {
+			EventsOff('onOpenNewFileDiff');
+		};
+	});
+
+	if (fileTreeData.isLoading || !fileTreeData.data) {
 		return <LoadingSpinner />;
 	}
 
-	if (directoryDiffDetails.isError) {
+	if (fileTreeData.isError) {
 		return (
 			<>
 				Error....{' '}
 				<pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-					<code className="text-white">{JSON.stringify(directoryDiffDetails, null, 2)}</code>
+					<code className="text-white">{JSON.stringify(fileTreeData, null, 2)}</code>
 				</pre>{' '}
 			</>
 		);
@@ -67,7 +78,7 @@ export default function DirDiffPage() {
 					<ResizablePanel defaultSize={20}>
 						{/* <ScrollArea className="h-screen "> */}
 						<div className=" border h-screen overflow-y-auto">
-							<FileTree fileTreeRef={fileTabRef} directoryData={directoryDiffDetails.data} />
+							<FileTree fileTreeRef={fileTabRef} directoryData={fileTreeData.data} />
 						</div>
 						{/* </ScrollArea> */}
 					</ResizablePanel>
@@ -97,7 +108,7 @@ export default function DirDiffPage() {
 									return (
 										<Routes>
 											<Route path="/" element={<Navigate to={'/DirDiffHome'} />} />
-											<Route path="/DirDiffHome" element={<NoFileSelected/>}/>
+											<Route path="/DirDiffHome" element={<NoFileSelected />} />
 											<Route
 												path="/:tabKey"
 												element={<FileDiffViewWrapper fileInfoMap={fileInfoMap} />}
@@ -114,10 +125,50 @@ export default function DirDiffPage() {
 	);
 }
 
-function NoFileSelected() { 
-	return <div className='w-full h-full grid place-content-center'>
-		Select a file to view diff
-	</div>
+function useDiffFileTreeData() { 
+	const directoryDiffDetails = useQuery({
+		queryKey: ['GetDirectoryDiffDetails'],
+		queryFn: GetDirectoryDiffDetails,
+	});
+
+	const [fileTreeData, setFileTreeData] = useState<backend.Directory | undefined>(undefined)
+	useEffect(() => { 
+		// Ignore any sub-sequent refreshes made by the query
+		if (!!fileTreeData) { 
+			return;
+		}
+
+		if (directoryDiffDetails.data && !directoryDiffDetails.isLoading)  { 
+			setFileTreeData(directoryDiffDetails.data)
+		}
+	}, [directoryDiffDetails.data, fileTreeData])
+
+	if (directoryDiffDetails.isLoading || !directoryDiffDetails.data || directoryDiffDetails.isError) {
+		return  { 
+			isLoading: directoryDiffDetails.isLoading, 
+			isError: directoryDiffDetails.isError, 
+		}
+	}
+
+	const onAddFileToRootDir = (newFile: backend.FileInfo) => {
+		if (!fileTreeData) { return }
+
+		setFileTreeData({
+			...fileTreeData, 
+			convertValues: fileTreeData.convertValues, // idk why even the go to TS transpiler adds this
+			Files: [...fileTreeData.Files, newFile]
+		})
+	}
+
+	return {
+		data: fileTreeData, 
+		onAddFile: onAddFileToRootDir
+	}
+
+}
+
+function NoFileSelected() {
+	return <div className="w-full h-full grid place-content-center">Select a file to view diff</div>;
 }
 
 // Gets the file to render from react-router, and renders the actual diff view

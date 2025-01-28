@@ -51,13 +51,21 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 	app.AppConfig = appConfig
 	app.terminalSessions = make(map[string]*TerminalSession)
 
-	if startupState.DirectoryDiff.ShouldStartFileWatcher {
-		StartFileDiffWatcher(ctx)
+	if startupState.DirectoryDiff != nil {
+		if startupState.DirectoryDiff.ShouldStartFileWatcher {
+			startupState.fileDiffWatcher = StartFileDiffWatcher(ctx)
+		}
 	}
 }
 
 // Saves the config file
 func (app *App) Shutdown(ctx context.Context) {
+	if app.StartupState.DirectoryDiff != nil {
+		if app.StartupState.DirectoryDiff.ShouldStartFileWatcher {
+			CloseFileDiffWatcher(app.StartupState.fileDiffWatcher)
+		}
+	}
+
 	if app.IsInDirDiffMode() {
 		return // no need to update config in this case
 	}

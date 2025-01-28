@@ -51,6 +51,9 @@ export namespace backend {
 	export class StartupDirectoryDiffArgs {
 	    leftFolderPath: string;
 	    rightFolderPath: string;
+	    IsFileDiff: boolean;
+	    ShouldSendNotification: boolean;
+	    ShouldStartFileWatcher: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new StartupDirectoryDiffArgs(source);
@@ -60,6 +63,9 @@ export namespace backend {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.leftFolderPath = source["leftFolderPath"];
 	        this.rightFolderPath = source["rightFolderPath"];
+	        this.IsFileDiff = source["IsFileDiff"];
+	        this.ShouldSendNotification = source["ShouldSendNotification"];
+	        this.ShouldStartFileWatcher = source["ShouldStartFileWatcher"];
 	    }
 	}
 	export class StartupState {
