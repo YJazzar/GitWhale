@@ -17,7 +17,13 @@ import RepoCommitDetailsView from './pages/repo/RepoCommitDetailsView';
 import RepoLogView from './pages/repo/RepoLogView';
 
 // Create a client
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			refetchOnWindowFocus: false,
+		}
+	},
+});
 
 export default function WrappedAppProvider() {
 	return (
