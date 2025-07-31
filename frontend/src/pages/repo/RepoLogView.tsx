@@ -1,21 +1,36 @@
 import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import useCommitGraphBuilder from '@/hooks/use-commit-graph-builder';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { backend } from 'wailsjs/go/models';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { CommitDetails } from '@/components/commit-details';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
+import { useCurrentRepo, usePanelSizes } from '@/store/hooks';
 
 export default function RepoLogView() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
-	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [selectedCommit, setSelectedCommit] = useState<backend.GitLogCommitInfo | null>(null);
+	const { 
+		commits, 
+		selectedCommit, 
+		loading, 
+		setCommits, 
+		setSelectedCommit, 
+		setLoading,
+		setCurrentRepoPath
+	} = useCurrentRepo();
+	const { getPanelSizes, savePanelSizes } = usePanelSizes();
 
-	const commitGraph = useCommitGraphBuilder(logs);
+	const commitGraph = useCommitGraphBuilder(commits);
+
+	// Set current repo path when component mounts
+	useEffect(() => {
+		if (repoPath) {
+			setCurrentRepoPath(repoPath);
+		}
+	}, [repoPath, setCurrentRepoPath]);
 
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
@@ -25,7 +40,7 @@ export default function RepoLogView() {
 		setLoading(true);
 		try {
 			const newLogs = await RunGitLog(repoPath);
-			setLogs(newLogs);
+			setCommits(newLogs);
 		} catch (error) {
 			console.error('Failed to load git log:', error);
 		} finally {
@@ -33,12 +48,19 @@ export default function RepoLogView() {
 		}
 	};
 
+	// Auto-refresh logs when component mounts if no commits are loaded
+	useEffect(() => {
+		if (commits.length === 0 && !loading) {
+			refreshLogs();
+		}
+	}, [commits.length, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	const generateCommitPageUrl = (commitHash: string) => {
 		return `/repo/${encodedRepoPath}/commit/${commitHash}`;
 	};
 
 	const onCommitSelect = (commitHash: string) => {
-		const commit = logs.find(log => log.commitHash === commitHash);
+		const commit = commits.find(log => log.commitHash === commitHash);
 		if (commit) {
 			setSelectedCommit(commit);
 		}
@@ -46,6 +68,12 @@ export default function RepoLogView() {
 
 	const handleCloseCommitDetails = () => {
 		setSelectedCommit(null);
+	};
+
+	const panelSizes = getPanelSizes('repo-log-view', selectedCommit ? [60, 40] : [100]);
+
+	const handlePanelResize = (sizes: number[]) => {
+		savePanelSizes('repo-log-view', sizes);
 	};
 
 	return (
@@ -58,10 +86,14 @@ export default function RepoLogView() {
 			</div>
 			
 			<div className="flex-1 min-h-0 w-full">
-				<ResizablePanelGroup direction="vertical" className="h-full">
-					<ResizablePanel defaultSize={selectedCommit ? 60 : 100} minSize={30}>
+				<ResizablePanelGroup 
+					direction="vertical" 
+					className="h-full"
+					onLayout={handlePanelResize}
+				>
+					<ResizablePanel defaultSize={panelSizes[0]} minSize={30}>
 						<GitLogGraph 
-							commits={logs}
+							commits={commits}
 							onCommitClick={onCommitSelect}
 							generateCommitPageUrl={generateCommitPageUrl}
 							loading={loading}
@@ -72,7 +104,7 @@ export default function RepoLogView() {
 					{selectedCommit && (
 						<>
 							<ResizableHandle />
-							<ResizablePanel defaultSize={40} minSize={20}>
+							<ResizablePanel defaultSize={panelSizes[1]} minSize={20}>
 								<CommitDetails 
 									commit={selectedCommit}
 									onClose={handleCloseCommitDetails}

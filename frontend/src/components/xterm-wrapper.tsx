@@ -10,11 +10,16 @@ import {
 } from '../../wailsjs/go/backend/App';
 import { FitAddon } from '@xterm/addon-fit';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
+import { useTerminalSessions } from '@/store/hooks';
 
 export default function XTermWrapper() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
+	const { sessions, addSession, removeSession, updateSession } = useTerminalSessions();
 	const terminalRef = useRef<{ terminal: Terminal; fitAddon: FitAddon } | undefined>(undefined);
 	const divNodeRef = useRef(null);
+
+	const sessionId = `terminal-${repoPath}`;
+	const currentSession = sessions.find(s => s.id === sessionId);
 
 	const initTerminal = async () => {
 		if (!!terminalRef.current || !divNodeRef.current) {
@@ -33,6 +38,13 @@ export default function XTermWrapper() {
 		newTerminal.loadAddon(fitAddon);
 		newTerminal.open(divNodeRef.current);
 
+		// Add session to global state
+		addSession({
+			id: sessionId,
+			repoPath,
+			isActive: true
+		});
+
 		// Subscribe to new stuff getting written from the terminal
 		EventsOn(`onTerminalDataReturned://${repoPath}`, (event: string) => {
 			const byteData = base64ToByteArray(event);
@@ -47,6 +59,8 @@ export default function XTermWrapper() {
 
 		newTerminal.onData((event) => {
 			console.log(event);
+			// Update last command in global state
+			updateSession(sessionId, { lastCommand: event });
 			EventsEmit(`onTerminalData://${repoPath}`, event);
 		});
 
@@ -66,13 +80,17 @@ export default function XTermWrapper() {
 		currentTerminal.dispose();
 		EventsOff(`onTerminalDataReturned://${repoPath}`);
 		CleanupTerminalSession(repoPath);
+		
+		// Remove session from global state
+		removeSession(sessionId);
+		
 		terminalRef.current = undefined;
 	};
 
 	useEffect(() => {
 		initTerminal();
 		return cleanupTerminal;
-	}, []);
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 	
 	useResizeObserver(divNodeRef, () => {

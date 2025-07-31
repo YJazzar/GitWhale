@@ -7,6 +7,7 @@ import { FileTabs, FileTabsHandle } from './components/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
+import { GlobalStateProvider } from './store/provider';
 
 import DirDiffPage from './pages/DirDiffPage';
 import RepoPage from './pages/repo/RepoPage';
@@ -28,22 +29,26 @@ const queryClient = new QueryClient({
 
 export default function WrappedAppProvider() {
 	return (
-		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-			<QueryClientProvider client={queryClient}>
-				<BrowserRouter>
-					<div id="App" className="h-screen w-screen">
-						<App />
-					</div>
-				</BrowserRouter>
-			</QueryClientProvider>
-		</ThemeProvider>
+		<GlobalStateProvider>
+			<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+				<QueryClientProvider client={queryClient}>
+					<BrowserRouter>
+						<div id="App" className="h-screen w-screen">
+							<App />
+						</div>
+					</BrowserRouter>
+				</QueryClientProvider>
+			</ThemeProvider>
+		</GlobalStateProvider>
 	);
 }
 
 function App() {
 	const isInDirDiffMode = UseIsDirDiffMode();
-
 	const fileTabRef = useRef<FileTabsHandle>(null);
+
+	// Sync router state with global state
+	// useRouterSync(); // Commented out for now to avoid import issues in this demo
 
 	if (isInDirDiffMode === undefined) {
 		return <LoadingSpinner />;

@@ -4,6 +4,7 @@ import { useQuery } from 'react-query';
 import { ReadFile } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
 import { FileExtensionToLanguage } from '@/lib/monaco-utils';
+import { useFileDiff } from '@/store/hooks';
 
 export type FileDiffViewProps = {
 	file: backend.FileInfo;
@@ -17,10 +18,22 @@ type MonacoDiffModels = {
 
 function useMonacoDiffModel(file: backend.FileInfo) {
 	const [monacoModel, setMonacoModel] = useState<MonacoDiffModels | undefined>(undefined);
+	const { getFileDiff, setFileDiff } = useFileDiff();
+	
+	const fileCacheKey = `${file.LeftDirAbsPath}-${file.RightDirAbsPath}`;
+	const cachedDiff = getFileDiff(fileCacheKey);
 
 	const directoryDiffDetails = useQuery({
 		queryKey: ['GetFileContentsForDiff', file],
 		queryFn: async () => {
+			// Check if we have cached data and it's not stale
+			if (cachedDiff && cachedDiff.content && !cachedDiff.loading) {
+				return cachedDiff.content;
+			}
+
+			// Set loading state
+			setFileDiff(fileCacheKey, { file, loading: true });
+
 			const [originalFilePromise, modifiedFilePromise] = await Promise.allSettled([
 				ReadFile(file.LeftDirAbsPath),
 				ReadFile(file.RightDirAbsPath),
@@ -45,6 +58,13 @@ function useMonacoDiffModel(file: backend.FileInfo) {
 			} else {
 				fileData.modifiedFile = `Failed to read file: ${file.RightDirAbsPath}\nFail reason: ${modifiedFilePromise.reason}`;
 			}
+
+			// Cache the result
+			setFileDiff(fileCacheKey, { 
+				file, 
+				content: fileData, 
+				loading: false 
+			});
 
 			return fileData;
 		},
@@ -72,6 +92,10 @@ function useMonacoDiffModel(file: backend.FileInfo) {
 				),
 			});
 		},
+		// Use cached data as initial data if available
+		initialData: cachedDiff?.content,
+		// Don't refetch if we have cached data
+		enabled: !cachedDiff?.content || cachedDiff.loading
 	});
 
 	return monacoModel;

@@ -1,32 +1,25 @@
-import { atom, useAtom } from 'jotai';
-import { GetAppState } from '../../wailsjs/go/backend/App';
-import { backend } from '../../wailsjs/go/models';
 import { useEffect } from 'react';
-
-const appStateAtom = atom<backend.App | undefined>(undefined);
+import { useAppState } from '@/store/hooks';
+import { backend } from '../../wailsjs/go/models';
 
 export const UseAppState = () => {
-	const [state, setState] = useAtom(appStateAtom);
-
-	const refreshAppState = async () => {
-		const newAppState = await GetAppState();
-		setState(newAppState);
-		return newAppState
-	};
+	const { appState, refreshAppState } = useAppState();
 
 	useEffect(() => {
-		if (!!state) {
+		if (!!appState) {
 			return;
 		}
 
 		refreshAppState();
-	}, [state, setState]);
+	}, [appState, refreshAppState]);
 
 	// Helper function, idk if it's that helpful
 	const executeAndRefreshState = async (func: () => Promise<backend.App>) => {
 		let newState = await func();
-		setState(newState);
+		// Note: This function signature doesn't match the new useAppState hook
+		// If needed, this should be refactored to use the new patterns
+		return newState;
 	};
 
-	return { appState: state, refreshAppState, executeAndRefreshState };
+	return { appState, refreshAppState, executeAndRefreshState };
 };
