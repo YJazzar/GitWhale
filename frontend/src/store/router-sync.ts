@@ -5,7 +5,7 @@
 
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { useNavigation, useRecentActivity, useCurrentRepo } from './hooks';
+import { useNavigation, useRecentActivity } from './hooks';
 
 /**
  * Hook that automatically syncs router state with global navigation state
@@ -15,7 +15,6 @@ export function useRouterSync() {
 	const location = useLocation();
 	const { setCurrentRoute, addToHistory } = useNavigation();
 	const { addActivity } = useRecentActivity();
-	const { setCurrentRepoPath } = useCurrentRepo();
 
 	useEffect(() => {
 		// Update current route
@@ -34,17 +33,9 @@ export function useRouterSync() {
 			}
 		});
 
-		// Extract repo path from URL if it's a repo route
-		const repoMatch = location.pathname.match(/\/repo\/([^\/]+)/);
-		if (repoMatch) {
-			try {
-				const decodedRepoPath = atob(repoMatch[1]);
-				setCurrentRepoPath(decodedRepoPath);
-			} catch (error) {
-				console.warn('Failed to decode repo path from URL:', repoMatch[1]);
-			}
-		}
-	}, [location, setCurrentRoute, addToHistory, addActivity, setCurrentRepoPath]);
+		// Note: Individual repo components now manage their own repo context
+		// instead of having a global "current repo path"
+	}, [location, setCurrentRoute, addToHistory, addActivity]);
 }
 
 /**

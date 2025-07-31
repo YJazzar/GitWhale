@@ -58,44 +58,14 @@ export const useAppState = () => {
 // Repository State Hooks
 // ============================================================================
 
-export const useCurrentRepo = () => {
-	const [currentRepoPath, setCurrentRepoPath] = useAtom(currentRepoPathAtom);
-	const [repoData, setRepoData] = useAtom(currentRepoDataAtom);
-	
-	const updateRepoData = useCallback((updates: Partial<RepoData>) => {
-		setRepoData(updates);
-	}, [setRepoData]);
-	
-	const setCommits = useCallback((commits: backend.GitLogCommitInfo[]) => {
-		updateRepoData({ commits, lastRefresh: Date.now() });
-	}, [updateRepoData]);
-	
-	const setSelectedCommit = useCallback((commit: backend.GitLogCommitInfo | null) => {
-		updateRepoData({ selectedCommit: commit });
-	}, [updateRepoData]);
-	
-	const setLoading = useCallback((loading: boolean) => {
-		updateRepoData({ loading });
-	}, [updateRepoData]);
-	
-	return {
-		currentRepoPath,
-		setCurrentRepoPath,
-		repoData,
-		updateRepoData,
-		setCommits,
-		setSelectedCommit,
-		setLoading,
-		commits: repoData.commits,
-		selectedCommit: repoData.selectedCommit,
-		loading: repoData.loading,
-		lastRefresh: repoData.lastRefresh
-	};
-};
-
-export const useRepoData = (repoPath: string) => {
+/**
+ * Hook for managing repository state for a specific repo path
+ * @param repoPath - The absolute path to the repository
+ */
+export const useRepoState = (repoPath: string) => {
 	const repoMap = useAtomValue(repoDataMapAtom);
 	const setRepoMap = useSetAtom(repoDataMapAtom);
+	const setCurrentRepoPath = useSetAtom(currentRepoPathAtom);
 	
 	const repoData = repoMap.get(repoPath) || {
 		commits: [],
@@ -110,9 +80,64 @@ export const useRepoData = (repoPath: string) => {
 		setRepoMap(newMap);
 	}, [repoMap, setRepoMap, repoPath, repoData]);
 	
+	const setCommits = useCallback((commits: backend.GitLogCommitInfo[]) => {
+		updateRepoData({ commits, lastRefresh: Date.now() });
+	}, [updateRepoData]);
+	
+	const setSelectedCommit = useCallback((commit: backend.GitLogCommitInfo | null) => {
+		updateRepoData({ selectedCommit: commit });
+	}, [updateRepoData]);
+	
+	const setLoading = useCallback((loading: boolean) => {
+		updateRepoData({ loading });
+	}, [updateRepoData]);
+	
+	const makeActive = useCallback(() => {
+		setCurrentRepoPath(repoPath);
+	}, [setCurrentRepoPath, repoPath]);
+	
 	return {
-		repoData,
+		// State
+		commits: repoData.commits,
+		selectedCommit: repoData.selectedCommit,
+		loading: repoData.loading,
+		lastRefresh: repoData.lastRefresh,
+		
+		// Actions
+		setCommits,
+		setSelectedCommit,
+		setLoading,
+		makeActive,
+		
+		// Low-level access (use sparingly)
 		updateRepoData
+	};
+};
+
+/**
+ * Hook for getting the currently active repository path and switching between repos
+ */
+export const useCurrentRepoPath = () => {
+	const [currentRepoPath, setCurrentRepoPath] = useAtom(currentRepoPathAtom);
+	
+	return {
+		currentRepoPath,
+		setCurrentRepoPath
+	};
+};
+
+/**
+ * Hook that combines current repo path with repo state for convenience
+ * Useful when you don't know the repo path upfront
+ */
+export const useCurrentRepo = () => {
+	const { currentRepoPath, setCurrentRepoPath } = useCurrentRepoPath();
+	const repoState = useRepoState(currentRepoPath || '');
+	
+	return {
+		currentRepoPath,
+		setCurrentRepoPath,
+		...repoState
 	};
 };
 
@@ -120,24 +145,36 @@ export const useRepoData = (repoPath: string) => {
 // File Tabs Hooks
 // ============================================================================
 
-export const useFileTabs = () => {
-	const [fileTabs, setFileTabs] = useAtom(fileTabsAtom);
+/**
+ * Hook for managing file tabs in a specific context (e.g., main workspace, specific repo)
+ * @param context - Optional context identifier (defaults to 'global')
+ */
+export const useFileTabs = (context: string = 'global') => {
+	const [allFileTabs, setAllFileTabs] = useAtom(fileTabsAtom);
 	const [activeTabKey, setActiveTabKey] = useAtom(activeTabKeyAtom);
 	
-	const openFile = useCallback((fileData: FileTabData) => {
-		setFileTabs(prev => {
-			const existing = prev.find(tab => tab.tabKey === fileData.tabKey);
+	// Filter tabs by context
+	const fileTabs = allFileTabs.filter(tab => 
+		tab.tabKey.startsWith(`${context}:`) || (!tab.tabKey.includes(':') && context === 'global')
+	);
+	
+	const openFile = useCallback((fileData: Omit<FileTabData, 'tabKey'> & { tabKey?: string }) => {
+		const tabKey = fileData.tabKey || `${context}:${fileData.linkPath}`;
+		const fullFileData = { ...fileData, tabKey };
+		
+		setAllFileTabs(prev => {
+			const existing = prev.find(tab => tab.tabKey === tabKey);
 			if (existing) {
 				return prev; // Already exists
 			}
-			return [...prev, fileData];
+			return [...prev, fullFileData];
 		});
-		setActiveTabKey(fileData.tabKey);
-	}, [setFileTabs, setActiveTabKey]);
+		setActiveTabKey(tabKey);
+	}, [setAllFileTabs, setActiveTabKey, context]);
 	
 	const closeFile = useCallback((tabKey: string) => {
-		setFileTabs(prev => prev.filter(tab => tab.tabKey !== tabKey));
-		// If closing active tab, switch to another tab
+		setAllFileTabs(prev => prev.filter(tab => tab.tabKey !== tabKey));
+		// If closing active tab, switch to another tab in this context
 		setActiveTabKey(prev => {
 			if (prev === tabKey) {
 				const remaining = fileTabs.filter(tab => tab.tabKey !== tabKey);
@@ -145,28 +182,31 @@ export const useFileTabs = () => {
 			}
 			return prev;
 		});
-	}, [setFileTabs, setActiveTabKey, fileTabs]);
+	}, [setAllFileTabs, setActiveTabKey, fileTabs]);
 	
 	const setFilePermaOpen = useCallback((tabKey: string) => {
-		setFileTabs(prev => prev.map(tab => 
+		setAllFileTabs(prev => prev.map(tab => 
 			tab.tabKey === tabKey 
 				? { ...tab, isPermanentlyOpen: true }
 				: tab
 		));
-	}, [setFileTabs]);
+	}, [setAllFileTabs]);
 	
 	const getActiveFile = useCallback(() => {
-		return fileTabs.find(tab => tab.tabKey === activeTabKey);
-	}, [fileTabs, activeTabKey]);
+		return allFileTabs.find(tab => tab.tabKey === activeTabKey);
+	}, [allFileTabs, activeTabKey]);
+	
+	const isActiveInContext = activeTabKey?.startsWith(`${context}:`) || 
+		(!activeTabKey?.includes(':') && context === 'global');
 	
 	return {
 		fileTabs,
-		activeTabKey,
+		activeTabKey: isActiveInContext ? activeTabKey : undefined,
 		setActiveTabKey,
 		openFile,
 		closeFile,
 		setFilePermaOpen,
-		getActiveFile
+		getActiveFile: isActiveInContext ? getActiveFile : () => undefined
 	};
 };
 
@@ -196,21 +236,32 @@ export const useSidebar = () => {
 	};
 };
 
-export const usePanelSizes = () => {
+/**
+ * Hook for managing panel sizes for a specific panel group
+ * @param panelId - Unique identifier for the panel group (e.g., 'repo-log-view', 'diff-view')
+ * @param defaultSizes - Default sizes to use if none are saved
+ */
+export const usePanelSizes = (panelId: string, defaultSizes: number[] = [50, 50]) => {
 	const [panelSizes, setPanelSizes] = useAtom(panelSizesAtom);
 	
-	const savePanelSizes = useCallback((panelId: string, sizes: number[]) => {
-		setPanelSizes(prev => ({ ...prev, [panelId]: sizes }));
-	}, [setPanelSizes]);
+	const currentSizes = panelSizes[panelId] || defaultSizes;
 	
-	const getPanelSizes = useCallback((panelId: string, defaultSizes: number[] = []) => {
-		return panelSizes[panelId] || defaultSizes;
-	}, [panelSizes]);
+	const savePanelSizes = useCallback((sizes: number[]) => {
+		setPanelSizes(prev => ({ ...prev, [panelId]: sizes }));
+	}, [setPanelSizes, panelId]);
+	
+	const resetToDefault = useCallback(() => {
+		setPanelSizes(prev => {
+			const newSizes = { ...prev };
+			delete newSizes[panelId];
+			return newSizes;
+		});
+	}, [setPanelSizes, panelId]);
 	
 	return {
-		panelSizes,
-		savePanelSizes,
-		getPanelSizes
+		sizes: currentSizes,
+		saveSizes: savePanelSizes,
+		resetToDefault
 	};
 };
 
@@ -218,28 +269,71 @@ export const usePanelSizes = () => {
 // Terminal State Hooks
 // ============================================================================
 
-export const useTerminalSessions = () => {
-	const [sessions, setSessions] = useAtom(terminalSessionsAtom);
+/**
+ * Hook for managing terminal sessions for a specific repository
+ * @param repoPath - The absolute path to the repository
+ */
+export const useTerminalSessions = (repoPath: string) => {
+	const [allSessions, setAllSessions] = useAtom(terminalSessionsAtom);
 	
-	const addSession = useCallback((session: TerminalSession) => {
-		setSessions(prev => [...prev, session]);
-	}, [setSessions]);
+	// Filter sessions by repo path
+	const sessions = allSessions.filter(session => session.repoPath === repoPath);
+	
+	const addSession = useCallback((session: Omit<TerminalSession, 'repoPath'>) => {
+		const fullSession = { ...session, repoPath };
+		setAllSessions(prev => [...prev, fullSession]);
+	}, [setAllSessions, repoPath]);
 	
 	const removeSession = useCallback((sessionId: string) => {
-		setSessions(prev => prev.filter(s => s.id !== sessionId));
-	}, [setSessions]);
+		setAllSessions(prev => prev.filter(s => s.id !== sessionId));
+	}, [setAllSessions]);
 	
-	const updateSession = useCallback((sessionId: string, updates: Partial<TerminalSession>) => {
-		setSessions(prev => prev.map(s => 
-			s.id === sessionId ? { ...s, ...updates } : s
+	const updateSession = useCallback((sessionId: string, updates: Partial<Omit<TerminalSession, 'repoPath'>>) => {
+		setAllSessions(prev => prev.map(s => 
+			s.id === sessionId && s.repoPath === repoPath ? { ...s, ...updates } : s
 		));
-	}, [setSessions]);
+	}, [setAllSessions, repoPath]);
+	
+	const getActiveSession = useCallback(() => {
+		return sessions.find(s => s.isActive);
+	}, [sessions]);
+	
+	const setActiveSession = useCallback((sessionId: string) => {
+		setAllSessions(prev => prev.map(s => ({
+			...s,
+			isActive: s.id === sessionId && s.repoPath === repoPath
+		})));
+	}, [setAllSessions, repoPath]);
 	
 	return {
 		sessions,
 		addSession,
 		removeSession,
-		updateSession
+		updateSession,
+		getActiveSession,
+		setActiveSession
+	};
+};
+
+/**
+ * Hook for getting all terminal sessions across all repositories
+ * Useful for global terminal management UI
+ */
+export const useAllTerminalSessions = () => {
+	const [sessions, setSessions] = useAtom(terminalSessionsAtom);
+	
+	const removeSession = useCallback((sessionId: string) => {
+		setSessions(prev => prev.filter(s => s.id !== sessionId));
+	}, [setSessions]);
+	
+	const getSessionsByRepo = useCallback((repoPath: string) => {
+		return sessions.filter(s => s.repoPath === repoPath);
+	}, [sessions]);
+	
+	return {
+		allSessions: sessions,
+		removeSession,
+		getSessionsByRepo
 	};
 };
 
@@ -247,41 +341,101 @@ export const useTerminalSessions = () => {
 // Git State Hooks
 // ============================================================================
 
-export const useCommitGraphCache = () => {
+/**
+ * Hook for managing commit graph cache for a specific repository
+ * @param repoPath - The absolute path to the repository
+ */
+export const useCommitGraphCache = (repoPath: string) => {
 	const [cache, setCache] = useAtom(commitGraphCacheAtom);
 	
-	const getCachedGraph = useCallback((repoPath: string) => {
-		return cache.get(repoPath);
-	}, [cache]);
+	const getCachedGraph = useCallback((commitsHash: string) => {
+		const cacheKey = `${repoPath}:${commitsHash}`;
+		return cache.get(cacheKey);
+	}, [cache, repoPath]);
 	
-	const setCachedGraph = useCallback((repoPath: string, graph: any) => {
+	const setCachedGraph = useCallback((commitsHash: string, graph: any) => {
+		const cacheKey = `${repoPath}:${commitsHash}`;
 		const newCache = new Map(cache);
-		newCache.set(repoPath, graph);
+		newCache.set(cacheKey, graph);
 		setCache(newCache);
-	}, [cache, setCache]);
+	}, [cache, setCache, repoPath]);
+	
+	const clearCache = useCallback(() => {
+		const newCache = new Map(cache);
+		// Remove all entries for this repo
+		for (const [key] of newCache) {
+			if (key.startsWith(`${repoPath}:`)) {
+				newCache.delete(key);
+			}
+		}
+		setCache(newCache);
+	}, [cache, setCache, repoPath]);
 	
 	return {
 		getCachedGraph,
-		setCachedGraph
+		setCachedGraph,
+		clearCache
 	};
 };
 
-export const useFileDiff = () => {
+/**
+ * Hook for managing file diff cache for specific files
+ * @param fileIdentifier - Unique identifier for the file (e.g., file path or comparison key)
+ */
+export const useFileDiff = (fileIdentifier: string) => {
 	const [fileDiffMap, setFileDiffMap] = useAtom(fileDiffMapAtom);
 	
-	const getFileDiff = useCallback((filePath: string) => {
-		return fileDiffMap.get(filePath);
-	}, [fileDiffMap]);
+	const fileDiff = fileDiffMap.get(fileIdentifier);
 	
-	const setFileDiff = useCallback((filePath: string, data: FileDiffData) => {
+	const setFileDiff = useCallback((data: FileDiffData) => {
 		const newMap = new Map(fileDiffMap);
-		newMap.set(filePath, data);
+		newMap.set(fileIdentifier, data);
+		setFileDiffMap(newMap);
+	}, [fileDiffMap, setFileDiffMap, fileIdentifier]);
+	
+	const clearFileDiff = useCallback(() => {
+		const newMap = new Map(fileDiffMap);
+		newMap.delete(fileIdentifier);
+		setFileDiffMap(newMap);
+	}, [fileDiffMap, setFileDiffMap, fileIdentifier]);
+	
+	const isLoading = fileDiff?.loading || false;
+	const hasContent = !!fileDiff?.content;
+	
+	return {
+		fileDiff,
+		content: fileDiff?.content,
+		isLoading,
+		hasContent,
+		setFileDiff,
+		clearFileDiff
+	};
+};
+
+/**
+ * Hook for getting all cached file diffs (for cleanup, debugging, etc.)
+ */
+export const useAllFileDiffs = () => {
+	const [fileDiffMap, setFileDiffMap] = useAtom(fileDiffMapAtom);
+	
+	const clearAllDiffs = useCallback(() => {
+		setFileDiffMap(new Map());
+	}, [setFileDiffMap]);
+	
+	const clearDiffsForRepo = useCallback((repoPath: string) => {
+		const newMap = new Map(fileDiffMap);
+		for (const [key] of newMap) {
+			if (key.includes(repoPath)) {
+				newMap.delete(key);
+			}
+		}
 		setFileDiffMap(newMap);
 	}, [fileDiffMap, setFileDiffMap]);
 	
 	return {
-		getFileDiff,
-		setFileDiff
+		allDiffs: fileDiffMap,
+		clearAllDiffs,
+		clearDiffsForRepo
 	};
 };
 

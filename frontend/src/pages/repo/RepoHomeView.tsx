@@ -4,18 +4,18 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
-import { useCurrentRepo } from '@/store/hooks';
+import { useRepoState } from '@/store/hooks';
 
 export default function RepoHomeView() {
 	const { repoPath } = useCurrentRepoParams();
-	const { commits, setCommits, setCurrentRepoPath } = useCurrentRepo();
+	const { commits, setCommits, makeActive } = useRepoState(repoPath || '');
 
-	// Set current repo path when component mounts
+	// Set this repo as active when component mounts
 	useEffect(() => {
 		if (repoPath) {
-			setCurrentRepoPath(repoPath);
+			makeActive();
 		}
-	}, [repoPath, setCurrentRepoPath]);
+	}, [repoPath, makeActive]);
 
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoHomeView when there's no repo provided?</>;

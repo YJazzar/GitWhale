@@ -14,6 +14,7 @@ export default function RepoCommitDetailsView() {
 	}
 
 	const refreshLogs = async () => {
+		debugger
 		const newLogs = await RunGitLog(repoPath);
 		setLogs(newLogs);
 	};

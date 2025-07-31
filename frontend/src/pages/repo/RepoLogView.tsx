@@ -8,7 +8,7 @@ import { RunGitLog } from '../../../wailsjs/go/backend/App';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { CommitDetails } from '@/components/commit-details';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
-import { useCurrentRepo, usePanelSizes } from '@/store/hooks';
+import { useRepoState, usePanelSizes } from '@/store/hooks';
 
 export default function RepoLogView() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
@@ -19,24 +19,25 @@ export default function RepoLogView() {
 		setCommits, 
 		setSelectedCommit, 
 		setLoading,
-		setCurrentRepoPath
-	} = useCurrentRepo();
-	const { getPanelSizes, savePanelSizes } = usePanelSizes();
+		makeActive
+	} = useRepoState(repoPath || '');
+	const { sizes, saveSizes } = usePanelSizes('repo-log-view', selectedCommit ? [60, 40] : [100]);
 
-	const commitGraph = useCommitGraphBuilder(commits);
+	const commitGraph = useCommitGraphBuilder(commits, repoPath || '');
 
-	// Set current repo path when component mounts
+	// Set this repo as active when component mounts
 	useEffect(() => {
 		if (repoPath) {
-			setCurrentRepoPath(repoPath);
+			makeActive();
 		}
-	}, [repoPath, setCurrentRepoPath]);
+	}, [repoPath, makeActive]);
 
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
 	}
 
 	const refreshLogs = async () => {
+		debugger
 		setLoading(true);
 		try {
 			const newLogs = await RunGitLog(repoPath);
@@ -70,10 +71,8 @@ export default function RepoLogView() {
 		setSelectedCommit(null);
 	};
 
-	const panelSizes = getPanelSizes('repo-log-view', selectedCommit ? [60, 40] : [100]);
-
-	const handlePanelResize = (sizes: number[]) => {
-		savePanelSizes('repo-log-view', sizes);
+	const handlePanelResize = (newSizes: number[]) => {
+		saveSizes(newSizes);
 	};
 
 	return (
@@ -91,7 +90,7 @@ export default function RepoLogView() {
 					className="h-full"
 					onLayout={handlePanelResize}
 				>
-					<ResizablePanel defaultSize={panelSizes[0]} minSize={30}>
+					<ResizablePanel defaultSize={sizes[0]} minSize={30}>
 						<GitLogGraph 
 							commits={commits}
 							onCommitClick={onCommitSelect}
@@ -104,7 +103,7 @@ export default function RepoLogView() {
 					{selectedCommit && (
 						<>
 							<ResizableHandle />
-							<ResizablePanel defaultSize={panelSizes[1]} minSize={20}>
+							<ResizablePanel defaultSize={sizes[1]} minSize={20}>
 								<CommitDetails 
 									commit={selectedCommit}
 									onClose={handleCloseCommitDetails}

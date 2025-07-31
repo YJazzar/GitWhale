@@ -2,6 +2,7 @@
 //  * Example component demonstrating how to use the global state management
 //  * This shows various patterns for different types of state
 //  */
+export {};
 
 // import React from 'react';
 // import { Button } from '@/components/ui/button';

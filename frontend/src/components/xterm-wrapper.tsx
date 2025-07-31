@@ -14,7 +14,7 @@ import { useTerminalSessions } from '@/store/hooks';
 
 export default function XTermWrapper() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
-	const { sessions, addSession, removeSession, updateSession } = useTerminalSessions();
+	const { sessions, addSession, removeSession, updateSession } = useTerminalSessions(repoPath || '');
 	const terminalRef = useRef<{ terminal: Terminal; fitAddon: FitAddon } | undefined>(undefined);
 	const divNodeRef = useRef(null);
 
@@ -41,7 +41,6 @@ export default function XTermWrapper() {
 		// Add session to global state
 		addSession({
 			id: sessionId,
-			repoPath,
 			isActive: true
 		});
 

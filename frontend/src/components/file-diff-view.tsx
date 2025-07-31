@@ -18,10 +18,8 @@ type MonacoDiffModels = {
 
 function useMonacoDiffModel(file: backend.FileInfo) {
 	const [monacoModel, setMonacoModel] = useState<MonacoDiffModels | undefined>(undefined);
-	const { getFileDiff, setFileDiff } = useFileDiff();
-	
 	const fileCacheKey = `${file.LeftDirAbsPath}-${file.RightDirAbsPath}`;
-	const cachedDiff = getFileDiff(fileCacheKey);
+	const { fileDiff: cachedDiff, setFileDiff } = useFileDiff(fileCacheKey);
 
 	const directoryDiffDetails = useQuery({
 		queryKey: ['GetFileContentsForDiff', file],
@@ -32,7 +30,7 @@ function useMonacoDiffModel(file: backend.FileInfo) {
 			}
 
 			// Set loading state
-			setFileDiff(fileCacheKey, { file, loading: true });
+			setFileDiff({ file, loading: true });
 
 			const [originalFilePromise, modifiedFilePromise] = await Promise.allSettled([
 				ReadFile(file.LeftDirAbsPath),
@@ -60,7 +58,7 @@ function useMonacoDiffModel(file: backend.FileInfo) {
 			}
 
 			// Cache the result
-			setFileDiff(fileCacheKey, { 
+			setFileDiff({ 
 				file, 
 				content: fileData, 
 				loading: false 

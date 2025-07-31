@@ -38,8 +38,8 @@ const appState = useAppState();
 
 #### 2. Repository State
 ```typescript
-// Per-repository data (commits, selections, loading states)
-const { commits, selectedCommit, setCommits } = useCurrentRepo();
+// Per-repository data (commits, selections, loading states) - context-aware
+const { commits, selectedCommit, setCommits, makeActive } = useRepoState(repoPath);
 ```
 
 #### 3. File Tabs State
@@ -50,22 +50,22 @@ const { fileTabs, openFile, closeFile } = useFileTabs();
 
 #### 4. UI State
 ```typescript
-// Theme, sidebar state, panel sizes
+// Theme, sidebar state, panel sizes - context-aware
 const { theme, setTheme } = useTheme();
-const { getPanelSizes, savePanelSizes } = usePanelSizes();
+const { sizes, saveSizes } = usePanelSizes('repo-log-view', [60, 40]);
 ```
 
 #### 5. Terminal State
 ```typescript
-// Terminal sessions and their status
-const { sessions, addSession, removeSession } = useTerminalSessions();
+// Terminal sessions and their status - context-aware
+const { sessions, addSession, removeSession } = useTerminalSessions(repoPath);
 ```
 
 #### 6. Git State
 ```typescript
-// Commit graph cache and file diffs
-const { getCachedGraph, setCachedGraph } = useCommitGraphCache();
-const { getFileDiff, setFileDiff } = useFileDiff();
+// Commit graph cache and file diffs - context-aware
+const { getCachedGraph, setCachedGraph } = useCommitGraphCache(repoPath);
+const { fileDiff, setFileDiff, clearFileDiff } = useFileDiff(fileIdentifier);
 ```
 
 ## Usage Examples

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { backend } from 'wailsjs/go/models';
-import { useCommitGraphCache, useCurrentRepo } from '@/store/hooks';
+import { useCommitGraphCache } from '@/store/hooks';
 
 type LinkedCommitInfo = {
 	parentCommits: LinkedCommitInfo[]; // The "older" commits
@@ -8,9 +8,11 @@ type LinkedCommitInfo = {
 	commitInfo: backend.GitLogCommitInfo;
 };
 
-export default function useCommitGraphBuilder(commits: backend.GitLogCommitInfo[] | undefined) {
-	const { currentRepoPath } = useCurrentRepo();
-	const { getCachedGraph, setCachedGraph } = useCommitGraphCache();
+export default function useCommitGraphBuilder(
+	commits: backend.GitLogCommitInfo[] | undefined,
+	repoPath: string
+) {
+	const { getCachedGraph, setCachedGraph } = useCommitGraphCache(repoPath);
 
 	return useMemo(() => {
 		if (!commits || commits.length < 1) {
@@ -18,7 +20,7 @@ export default function useCommitGraphBuilder(commits: backend.GitLogCommitInfo[
 		}
 
 		// Create a cache key based on commit hashes
-		const cacheKey = `${currentRepoPath}-${commits.map(c => c.commitHash).join(',')}`;
+		const cacheKey = `${repoPath}-${commits.map(c => c.commitHash).join(',')}`;
 		
 		// Check if we have a cached result
 		const cached = getCachedGraph(cacheKey);
@@ -63,5 +65,5 @@ export default function useCommitGraphBuilder(commits: backend.GitLogCommitInfo[
 		setCachedGraph(cacheKey, result);
 		
 		return result;
-	}, [commits, currentRepoPath, getCachedGraph, setCachedGraph]);
+	}, [commits, repoPath, getCachedGraph, setCachedGraph]);
 }
