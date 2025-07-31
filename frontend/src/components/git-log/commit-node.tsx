@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { GitBranch, GitCommit, GitMerge, User, Calendar, Hash } from 'lucide-react';
+import { useUnixTime } from '@/hooks/use-unix-time';
 
 interface Connection {
 	fromColumn: number;
@@ -60,7 +61,7 @@ export function CommitNode({
 			{/* Graph visualization area */}
 			<div
 				className="relative flex-shrink-0"
-				style={{ width: Math.max(100, (branchColumn + 1) * 30 + 60) }}
+				style={{ width: (branchColumn + 1) * 30 + 10 }}
 			>
 				{/* Connection lines */}
 				<svg
@@ -169,7 +170,7 @@ export function CommitNode({
 									</div>
 									<div className="flex items-center gap-1 flex-shrink-0">
 										<Calendar className="w-3 h-3" />
-										<span>{new Date(commit.commitTimeStamp).toLocaleDateString()}</span>
+										<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
 									</div>
 									<div className="flex items-center gap-1 flex-shrink-0">
 										<Hash className="w-3 h-3" />
