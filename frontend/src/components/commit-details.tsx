@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { GitBranch, User, Calendar, Hash, ExternalLink } from 'lucide-react';
 import { CommitHash } from './commit-hash';
+import { useUnixTime } from '@/hooks/use-unix-time';
 
 interface CommitDetailsProps {
 	commit: backend.GitLogCommitInfo;
@@ -36,7 +37,7 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 					<div className="flex-1 min-w-0">
 						<CardTitle className="text-lg flex items-center gap-2">
 							<div className="mt-2">
-								<CommitHash 
+								<CommitHash
 									commitHash={commit.commitHash}
 									isMerge={commit.parentCommitHashes.length > 1}
 								/>
@@ -62,43 +63,46 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 
 			<ScrollArea className="flex-1">
 				<CardContent className="space-y-4">
-					{/* Author and Date */}
 					<div className="space-y-1 text-sm text-right">
+						{/* Author  */}
 						<div className="flex items-center gap-2">
 							<User className="w-4 h-4 text-muted-foreground" />
 							<span className="font-medium">Author:</span>
 							<span>{commit.username}</span>
 						</div>
+
+						{/* Parent Commits */}
+						{commit.parentCommitHashes.length > 0 && (
+							<div className="flex items-center gap-2">
+								<Hash className="w-4 h-4 text-muted-foreground" />
+								<span className="font-medium">Parent Commits:</span>
+								<span className="flex items-center gap-2">
+									{commit.parentCommitHashes.map((parentHash, index) => (
+										<CommitHash
+											key={index}
+											commitHash={parentHash}
+											shortHash={true}
+											showIcon={false}
+											className="flex-1"
+										/>
+									))}
+								</span>
+							</div>
+						)}
+
+						{/* Commit date */}
 						<div className="flex items-center gap-2">
 							<Calendar className="w-4 h-4 text-muted-foreground" />
-							<span className="font-medium">Date:</span>
-							<span>{new Date(commit.commitTimeStamp).toLocaleString()}</span>
+							<span className="font-medium">Commit Date:</span>
+							<span>{useUnixTime(commit.commitTimeStamp).toLocaleString()}</span>
+						</div>
+
+						<div className="flex items-center gap-2">
+							<Calendar className="w-4 h-4 text-muted-foreground" />
+							<span className="font-medium">Authored Date:</span>
+							<span>{useUnixTime(commit.authoredTimeStamp).toLocaleString()}</span>
 						</div>
 					</div>
-
-					{/* Parent Commits */}
-					{commit.parentCommitHashes.length > 0 && (
-						<div>
-							<h3 className="font-semibold mb-2">Parent Commits</h3>
-							<Card>
-								<CardContent className="p-3">
-									<div className="space-y-2">
-										{commit.parentCommitHashes.map((parentHash, index) => (
-											<div key={index} className="flex items-center gap-2">
-												<Hash className="w-4 h-4 text-muted-foreground" />
-												<CommitHash 
-													commitHash={parentHash}
-													shortHash={true}
-													showIcon={false}
-													className="flex-1"
-												/>
-											</div>
-										))}
-									</div>
-								</CardContent>
-							</Card>
-						</div>
-					)}
 
 					{/* Commit Message */}
 					<div>
