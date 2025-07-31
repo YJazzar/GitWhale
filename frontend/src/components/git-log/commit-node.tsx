@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { GitBranch, GitCommit, GitMerge, User, Calendar, Hash } from 'lucide-react';
-import { useNavigate } from 'react-router';
 
 interface Connection {
 	fromColumn: number;
@@ -33,7 +32,6 @@ export function CommitNode({
 	onCommitClick,
 	generateCommitPageUrl
 }: CommitNodeProps) {
-	const navigate = useNavigate();
 	const commitUrl = generateCommitPageUrl?.(commit.commitHash);
 	const shortHash = commit.commitHash.slice(0, 7);
 	const commitMessage = Array.isArray(commit.commitMessage) 
@@ -56,12 +54,8 @@ export function CommitNode({
 	const leftPadding = branchColumn * 30; // 30px per column
 
 	const handleCommitClick = () => {
+		// Call the callback to show commit details
 		onCommitClick?.(commit.commitHash);
-
-		if (commitUrl) {
-			// Use React Router's programmatic navigation
-			navigate(commitUrl);
-		}
 	};
 
 	return (

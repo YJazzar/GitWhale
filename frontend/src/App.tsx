@@ -15,6 +15,7 @@ import HomePage from './pages/HomePage';
 import RepoHomeView from './pages/repo/RepoHomeView';
 import RepoCommitDetailsView from './pages/repo/RepoCommitDetailsView';
 import RepoLogView from './pages/repo/RepoLogView';
+import RepoTerminalView from './pages/repo/RepoTerminalView';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -80,6 +81,7 @@ function App() {
 										<Route index={true} element={<Navigate to="log" />} />
 										<Route path="home" element={<RepoHomeView />} />
 										<Route path="log" element={<RepoLogView />} />
+										<Route path="terminal" element={<RepoTerminalView />} />
 										<Route
 											path="commit/:commitHash"
 											element={<RepoCommitDetailsView />}

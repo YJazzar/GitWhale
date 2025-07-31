@@ -1,25 +1,24 @@
 import { Button } from '@/components/ui/button';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import useCommitGraphBuilder from '@/hooks/use-commit-graph-builder';
 import { useState } from 'react';
-import { useParams } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
-import { useRepoPageHandlers } from '@/hooks/repo-page-handler-context';
-import { GitCommitVertical } from 'lucide-react';
+import { CommitDetails } from '@/components/commit-details';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 
 export default function RepoLogView() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
-	const repoPageHandlers = useRepoPageHandlers();
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [selectedCommit, setSelectedCommit] = useState<backend.GitLogCommitInfo | null>(null);
 
 	const commitGraph = useCommitGraphBuilder(logs);
 
 	if (!repoPath) {
-		return <>Error: why are we rendering RepoHomeView when there's no repo provided?</>;
+		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
 	}
 
 	const refreshLogs = async () => {
@@ -38,12 +37,15 @@ export default function RepoLogView() {
 		return `/repo/${encodedRepoPath}/commit/${commitHash}`;
 	};
 
-	const onOpenCommitPage = (commitHash: string) => {
-		repoPageHandlers?.onAddNewDynamicRoute({
-			icon: <GitCommitVertical />,
-			title: commitHash.slice(0, 7),
-			url: generateCommitPageUrl(commitHash),
-		});
+	const onCommitSelect = (commitHash: string) => {
+		const commit = logs.find(log => log.commitHash === commitHash);
+		if (commit) {
+			setSelectedCommit(commit);
+		}
+	};
+
+	const handleCloseCommitDetails = () => {
+		setSelectedCommit(null);
 	};
 
 	return (
@@ -56,13 +58,29 @@ export default function RepoLogView() {
 			</div>
 			
 			<div className="flex-1 min-h-0 w-full">
-				<GitLogGraph 
-					commits={logs}
-					onCommitClick={onOpenCommitPage}
-					generateCommitPageUrl={generateCommitPageUrl}
-					loading={loading}
-					className="border rounded-lg p-4 bg-background h-full"
-				/>
+				<ResizablePanelGroup direction="vertical" className="h-full">
+					<ResizablePanel defaultSize={selectedCommit ? 60 : 100} minSize={30}>
+						<GitLogGraph 
+							commits={logs}
+							onCommitClick={onCommitSelect}
+							generateCommitPageUrl={generateCommitPageUrl}
+							loading={loading}
+							className="border rounded-lg p-4 bg-background h-full"
+						/>
+					</ResizablePanel>
+					
+					{selectedCommit && (
+						<>
+							<ResizableHandle />
+							<ResizablePanel defaultSize={40} minSize={20}>
+								<CommitDetails 
+									commit={selectedCommit}
+									onClose={handleCloseCommitDetails}
+								/>
+							</ResizablePanel>
+						</>
+					)}
+				</ResizablePanelGroup>
 			</div>
 		</div>
 	);
