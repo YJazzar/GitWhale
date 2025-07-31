@@ -5,7 +5,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { backend } from 'wailsjs/go/models';
 import { useNavigate } from 'react-router';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
-import { GitBranch, GitCommit, GitMerge, User, Calendar, Hash, ExternalLink } from 'lucide-react';
+import { GitBranch, User, Calendar, Hash, ExternalLink } from 'lucide-react';
+import { CommitHash } from './commit-hash';
 
 interface CommitDetailsProps {
 	commit: backend.GitLogCommitInfo;
@@ -34,16 +35,11 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 				<div className="flex items-start justify-between">
 					<div className="flex-1 min-w-0">
 						<CardTitle className="text-lg flex items-center gap-2">
-							<div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-								{commit.parentCommitHashes.length > 1 ? (
-									<GitMerge className="w-5 h-5 text-primary" />
-								) : (
-									<GitCommit className="w-5 h-5 text-primary" />
-								)}
-
-								<code className="bg-muted px-2 py-1 rounded font-mono">
-									{commit.commitHash}
-								</code>
+							<div className="mt-2">
+								<CommitHash 
+									commitHash={commit.commitHash}
+									isMerge={commit.parentCommitHashes.length > 1}
+								/>
 							</div>
 						</CardTitle>
 					</div>
@@ -90,9 +86,12 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 										{commit.parentCommitHashes.map((parentHash, index) => (
 											<div key={index} className="flex items-center gap-2">
 												<Hash className="w-4 h-4 text-muted-foreground" />
-												<code className="font-mono text-sm bg-muted px-2 py-1 rounded">
-													{parentHash.slice(0, 7)}
-												</code>
+												<CommitHash 
+													commitHash={parentHash}
+													shortHash={true}
+													showIcon={false}
+													className="flex-1"
+												/>
 											</div>
 										))}
 									</div>
