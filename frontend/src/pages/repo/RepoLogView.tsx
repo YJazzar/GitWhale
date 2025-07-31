@@ -1,12 +1,11 @@
 import { Button } from '@/components/ui/button';
 import useCommitGraphBuilder from '@/hooks/use-commit-graph-builder';
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { useRepoPageHandlers } from '@/hooks/repo-page-handler-context';
 import { GitCommitVertical } from 'lucide-react';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
@@ -15,6 +14,7 @@ export default function RepoLogView() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
 	const repoPageHandlers = useRepoPageHandlers();
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
+	const [loading, setLoading] = useState(false);
 
 	const commitGraph = useCommitGraphBuilder(logs);
 
@@ -23,8 +23,15 @@ export default function RepoLogView() {
 	}
 
 	const refreshLogs = async () => {
-		const newLogs = await RunGitLog(repoPath);
-		setLogs(newLogs);
+		setLoading(true);
+		try {
+			const newLogs = await RunGitLog(repoPath);
+			setLogs(newLogs);
+		} catch (error) {
+			console.error('Failed to load git log:', error);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const generateCommitPageUrl = (commitHash: string) => {
@@ -39,97 +46,22 @@ export default function RepoLogView() {
 		});
 	};
 
-	const columns: ColumnDef<backend.GitLogCommitInfo>[] = [
-		{
-			header: 'Open',
-			cell(props) {
-				return (
-					<Link
-						to={generateCommitPageUrl(props.row.original.commitHash)}
-						onClick={() => onOpenCommitPage(props.row.original.commitHash)}
-					>
-						Open
-					</Link>
-				);
-			},
-		},
-		{
-			accessorKey: 'commitHash',
-			header: 'hash',
-		},
-		{
-			accessorKey: 'username',
-			header: 'User',
-		},
-		{
-			accessorKey: 'shortStat',
-			header: 'Stat',
-		},
-		{
-			accessorKey: 'commitMessage',
-			header: 'Message',
-		},
-	];
-
 	return (
-		<>
-			<Button onClick={refreshLogs}>Refresh </Button>
-			Log results:
-			<LinearCommitLogTable columns={columns} data={logs} />
-		</>
-	);
-}
-
-interface DataTableProps<TData, TValue> {
-	columns: ColumnDef<TData, TValue>[];
-	data: TData[];
-}
-
-function LinearCommitLogTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
-	const table = useReactTable({
-		data,
-		columns,
-		getCoreRowModel: getCoreRowModel(),
-	});
-
-	return (
-		<div className="rounded-md border">
-			<Table>
-				<TableHeader>
-					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow key={headerGroup.id}>
-							{headerGroup.headers.map((header) => {
-								return (
-									<TableHead key={header.id}>
-										{header.isPlaceholder
-											? null
-											: flexRender(header.column.columnDef.header, header.getContext())}
-									</TableHead>
-								);
-							})}
-						</TableRow>
-					))}
-				</TableHeader>
-				<TableBody>
-					{table.getRowModel().rows?.length ? (
-						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))
-					) : (
-						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 text-center">
-								No results.
-							</TableCell>
-						</TableRow>
-					)}
-				</TableBody>
-			</Table>
+		<div className="flex flex-col gap-4 p-4">
+			<div className="flex items-center justify-between">
+				<h2 className="text-2xl font-bold">Git Log</h2>
+				<Button onClick={refreshLogs} disabled={loading}>
+					{loading ? 'Loading...' : 'Refresh'}
+				</Button>
+			</div>
+			
+			<GitLogGraph 
+				commits={logs}
+				onCommitClick={onOpenCommitPage}
+				generateCommitPageUrl={generateCommitPageUrl}
+				loading={loading}
+				className="border rounded-lg p-4 bg-background"
+			/>
 		</div>
 	);
 }
