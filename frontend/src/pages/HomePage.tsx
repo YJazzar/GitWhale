@@ -1,9 +1,10 @@
 import { FileTabsHandle } from '@/components/file-tabs';
 import { Button } from '@/components/ui/button';
 import { UseAppState } from '@/hooks/use-app-state';
+import { Star, StarOff } from 'lucide-react';
 import { Link } from 'react-router';
 import { backend } from 'wailsjs/go/models';
-import { OpenNewRepo } from '../../wailsjs/go/backend/App';
+import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
 
 export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHandle> }) {
 	const { fileTabRef } = props;
@@ -21,6 +22,11 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 		const newRepoPath = await OpenNewRepo();
 		const newAppState = await refreshAppState();
 		switchToRepo(newAppState, newRepoPath);
+	};
+
+	const onToggleStar = async (repoPath: string) => {
+		await ToggleStarRepo(repoPath);
+		await refreshAppState();
 	};
 
 	const switchToRepo = (appState: backend.App, repoPath: string) => {
@@ -41,6 +47,39 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 		});
 	};
 
+	const RepoEntry = ({ repoPath, isStarred }: { repoPath: string; isStarred: boolean }) => (
+		<div className="flex items-center">
+			{/* Start button */}
+			<Button
+				variant={'ghost'}
+				size={'sm'}
+				onClick={() => onToggleStar(repoPath)}
+				className="h-4 w-4"
+			>
+				{isStarred ? (
+					<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+				) : (
+					<Star className="h-4 w-4" />
+				)}
+			</Button>
+
+			{/* Repo open button link */}
+			<Button
+				variant={'link'}
+				onClick={() => onOpenRecentRepo(repoPath)}
+				className="flex-1 justify-start"
+			>
+				{repoPath}
+			</Button>
+			
+		</div>
+	);
+
+	// Get starred and non-starred repos
+	const starredRepos = appState?.appConfig?.starredGitRepos || [];
+	const recentRepos = appState?.appConfig?.recentGitRepos || [];
+	const nonStarredRecentRepos = recentRepos.filter((repo) => !starredRepos.includes(repo));
+
 	return (
 		<div className="grid h-full place-content-center">
 			<div className="flex flex-col items-start ">
@@ -59,17 +98,27 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 				</ul>
 			</div>
 			<br />
-			<div className="flex flex-col items-start">
-				<h2>Recent:</h2>
-
-				{appState?.appConfig?.recentGitRepos.map((repoPath) => {
-					return (
-						<Button key={repoPath} variant={'link'} onClick={() => onOpenRecentRepo(repoPath)}>
-							{repoPath}
-						</Button>
-					);
-				})}
-			</div>
+			{starredRepos.length > 0 && (
+				<>
+					<div className="flex flex-col items-start">
+						<h2>Starred:</h2>
+						{starredRepos.map((repoPath) => (
+							<RepoEntry key={repoPath} repoPath={repoPath} isStarred={true} />
+						))}
+					</div>
+					<br />
+				</>
+			)}
+			{nonStarredRecentRepos.length > 0 && (
+				<>
+					<div className="flex flex-col items-start">
+						<h2>Recent:</h2>
+						{nonStarredRecentRepos.map((repoPath) => (
+							<RepoEntry key={repoPath} repoPath={repoPath} isStarred={false} />
+						))}
+					</div>
+				</>
+			)}
 		</div>
 	);
 }

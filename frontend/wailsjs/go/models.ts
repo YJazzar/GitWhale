@@ -17,6 +17,7 @@ export namespace backend {
 	    openGitRepos: {[key: string]: RepoContext};
 	    orderedOpenGitRepos: string[];
 	    recentGitRepos: string[];
+	    starredGitRepos: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new AppConfig(source);
@@ -28,6 +29,7 @@ export namespace backend {
 	        this.openGitRepos = this.convertValues(source["openGitRepos"], RepoContext, true);
 	        this.orderedOpenGitRepos = source["orderedOpenGitRepos"];
 	        this.recentGitRepos = source["recentGitRepos"];
+	        this.starredGitRepos = source["starredGitRepos"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

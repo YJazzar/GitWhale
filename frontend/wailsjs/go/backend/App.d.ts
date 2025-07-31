@@ -24,3 +24,5 @@ export function ReadFile(arg1:string):Promise<string>;
 export function RunGitLog(arg1:string):Promise<Array<backend.GitLogCommitInfo>>;
 
 export function Startup(arg1:context.Context,arg2:backend.StartupState):Promise<void>;
+
+export function ToggleStarRepo(arg1:string):Promise<boolean>;

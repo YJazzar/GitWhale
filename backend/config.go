@@ -14,6 +14,9 @@ type AppConfig struct {
 
 	// A list of all the previous repos opened by the user
 	RecentGitRepos []string `json:"recentGitRepos"`
+
+	// A list of starred/favorited repos that persist at the top
+	StarredGitRepos []string `json:"starredGitRepos"`
 }
 
 func LoadAppConfig() (*AppConfig, error) {
@@ -26,9 +29,10 @@ func LoadAppConfig() (*AppConfig, error) {
 	config, err := LoadJSON[*AppConfig](appConfigFile)
 	if err != nil || config == nil {
 		config = &AppConfig{
-			FilePath:       appConfigFile,
-			GitReposMap:    make(map[string]RepoContext),
-			RecentGitRepos: []string{},
+			FilePath:        appConfigFile,
+			GitReposMap:     make(map[string]RepoContext),
+			RecentGitRepos:  []string{},
+			StarredGitRepos: []string{},
 		}
 	}
 
@@ -73,4 +77,24 @@ func (config *AppConfig) closeRepo(gitRepoPath string) {
 	// Remove from the ordered list
 	repoPositionIndex := FindIndex(config.OrderedOpenGitRepos, gitRepoPath)
 	config.OrderedOpenGitRepos = RemoveFromArray(config.OrderedOpenGitRepos, repoPositionIndex)
+}
+
+func (config *AppConfig) toggleStarRepo(gitRepoPath string) bool {
+	gitRepoPath, err := filepath.Abs(gitRepoPath)
+	if err != nil {
+		Log.Error("Failed to get the absolute path for the repo: %v", gitRepoPath)
+		Log.Error("Inner error message: %v", err)
+		return false
+	}
+
+	starIndex := FindIndex(config.StarredGitRepos, gitRepoPath)
+	if starIndex >= 0 {
+		// Repo is starred, so unstar it
+		config.StarredGitRepos = RemoveFromArray(config.StarredGitRepos, starIndex)
+		return false
+	} else {
+		// Repo is not starred, so star it
+		config.StarredGitRepos = append(config.StarredGitRepos, gitRepoPath)
+		return true
+	}
 }

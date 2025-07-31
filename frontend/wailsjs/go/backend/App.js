@@ -45,3 +45,7 @@ export function RunGitLog(arg1) {
 export function Startup(arg1, arg2) {
   return window['go']['backend']['App']['Startup'](arg1, arg2);
 }
+
+export function ToggleStarRepo(arg1) {
+  return window['go']['backend']['App']['ToggleStarRepo'](arg1);
+}

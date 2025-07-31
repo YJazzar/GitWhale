@@ -155,3 +155,7 @@ func (app *App) CleanupTerminalSession(repoPath string) {
 func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {
 	return readGitLog(gitRepoPath)
 }
+
+func (app *App) ToggleStarRepo(gitRepoPath string) bool {
+	return app.AppConfig.toggleStarRepo(gitRepoPath)
+}
