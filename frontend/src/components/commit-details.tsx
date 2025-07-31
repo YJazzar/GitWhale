@@ -1,13 +1,14 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { backend } from 'wailsjs/go/models';
-import { useNavigate } from 'react-router';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
-import { GitBranch, User, Calendar, Hash, ExternalLink } from 'lucide-react';
-import { CommitHash } from './commit-hash';
 import { useUnixTime } from '@/hooks/use-unix-time';
+import { Calendar, ExternalLink, GitBranch, Hash, User } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { backend } from 'wailsjs/go/models';
+import { CommitHash } from './commit-hash';
+import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 
 interface CommitDetailsProps {
 	commit: backend.GitLogCommitInfo;
@@ -15,10 +16,6 @@ interface CommitDetailsProps {
 }
 
 export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
-	const navigate = useNavigate();
-	const { encodedRepoPath } = useCurrentRepoParams();
-
-	const commitUrl = `/repo/${encodedRepoPath}/commit/${commit.commitHash}`;
 	const commitMessage = Array.isArray(commit.commitMessage)
 		? commit.commitMessage.join('\n')
 		: commit.commitMessage;
@@ -26,9 +23,8 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 	// Parse refs to identify branches and tags
 	const refs = parseRefs(commit.refs);
 
-	const handleViewFullCommit = () => {
-		navigate(commitUrl);
-	};
+    let isMergeCommit = commit.parentCommitHashes.length > 1;
+    const handleViewFullCommit = useNavigateToCommit(commit.commitHash, isMergeCommit);
 
 	return (
 		<div className="h-full flex flex-col border-t bg-background">

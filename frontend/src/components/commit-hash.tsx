@@ -2,6 +2,7 @@ import { GitCommit, GitMerge } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { cn } from '@/lib/utils';
+import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 
 interface CommitHashProps {
 	commitHash: string;
@@ -21,16 +22,19 @@ export function CommitHash({
 	clickable = true
 }: CommitHashProps) {
 	const navigate = useNavigate();
-	const { encodedRepoPath } = useCurrentRepoParams();
 
 	const displayHash = shortHash ? commitHash.slice(0, 7) : commitHash;
-	const commitUrl = `/repo/${encodedRepoPath}/commit/${commitHash}`;
+
+    let isMergeCommit = commitHash.length > 1;
+    const handleViewFullCommit = useNavigateToCommit(commitHash, isMergeCommit);
 
 	const handleClick = () => {
 		if (clickable) {
-			navigate(commitUrl);
+			handleViewFullCommit();
 		}
 	};
+
+    
 
 	return (
 		<div 
