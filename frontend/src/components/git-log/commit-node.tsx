@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { GitBranch, GitCommit, GitMerge, User, Calendar, Hash } from 'lucide-react';
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router';
 
 interface Connection {
 	fromColumn: number;
@@ -33,10 +33,7 @@ export function CommitNode({
 	onCommitClick,
 	generateCommitPageUrl
 }: CommitNodeProps) {
-	const handleCommitClick = () => {
-		onCommitClick?.(commit.commitHash);
-	};
-
+	const navigate = useNavigate();
 	const commitUrl = generateCommitPageUrl?.(commit.commitHash);
 	const shortHash = commit.commitHash.slice(0, 7);
 	const commitMessage = Array.isArray(commit.commitMessage) 
@@ -57,6 +54,15 @@ export function CommitNode({
 
 	// Calculate the left padding based on branch column
 	const leftPadding = branchColumn * 30; // 30px per column
+
+	const handleCommitClick = () => {
+		onCommitClick?.(commit.commitHash);
+
+		if (commitUrl) {
+			// Use React Router's programmatic navigation
+			navigate(commitUrl);
+		}
+	};
 
 	return (
 		<div className="relative flex items-start py-1">
@@ -123,7 +129,10 @@ export function CommitNode({
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<Card className="hover:shadow-md transition-all duration-200 hover:border-primary/20 cursor-pointer">
+							<Card 
+								className="hover:shadow-md transition-all duration-200 hover:border-primary/20 cursor-pointer"
+								onClick={handleCommitClick}
+							>
 								<CardContent className="p-2">
 									<div className="flex items-start justify-between gap-3">
 										<div className="flex-1 min-w-0">
@@ -169,34 +178,17 @@ export function CommitNode({
 												</div>
 											</div>
 										</div>
-
-										{/* Actions */}
-										<div className="flex items-center gap-2 flex-shrink-0">
-											{commitUrl ? (
-												<Button asChild size="sm" variant="outline" className="h-7 px-2">
-													<Link to={commitUrl} onClick={handleCommitClick}>
-														View
-													</Link>
-												</Button>
-											) : (
-												<Button size="sm" variant="outline" onClick={handleCommitClick} className="h-7 px-2">
-													View
-												</Button>
-											)}
-										</div>
 									</div>
 								</CardContent>
 							</Card>
 						</TooltipTrigger>
-						{(commit.shortStat || shouldShowTooltip) && (
+						{(commit.shortStat) && (
 							<TooltipContent side="left" className="max-w-sm">
 								<div className="text-sm">
-									{shouldShowTooltip && (
-										<div className="mb-2">
-											<div className="font-semibold mb-1">Full message:</div>
-											<pre className="font-mono whitespace-pre-wrap">{commitMessage}</pre>
-										</div>
-									)}
+									<div className="mb-2">
+										<div className="font-semibold mb-1">Full message:</div>
+										<pre className="font-mono whitespace-pre-wrap">{commitMessage}</pre>
+									</div>
 									{commit.shortStat && (
 										<div>
 											<div className="font-semibold mb-1">Changes:</div>
