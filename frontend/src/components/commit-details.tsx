@@ -34,52 +34,20 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 				<div className="flex items-start justify-between">
 					<div className="flex-1 min-w-0">
 						<CardTitle className="text-lg flex items-center gap-2">
-							{commit.parentCommitHashes.length > 1 ? (
-								<GitMerge className="w-5 h-5 text-primary" />
-							) : (
-								<GitCommit className="w-5 h-5 text-primary" />
-							)}
-
 							<div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+								{commit.parentCommitHashes.length > 1 ? (
+									<GitMerge className="w-5 h-5 text-primary" />
+								) : (
+									<GitCommit className="w-5 h-5 text-primary" />
+								)}
+
 								<code className="bg-muted px-2 py-1 rounded font-mono">
-									<Hash className="w-4 h-4" />
 									{commit.commitHash}
 								</code>
 							</div>
 						</CardTitle>
 					</div>
 					<div className="flex flex-col items-end gap-2">
-						{/* Author and Date */}
-						<div className="space-y-1 text-sm text-right">
-							<div className="flex items-center gap-2">
-								<User className="w-4 h-4 text-muted-foreground" />
-								<span className="font-medium">Author:</span>
-								<span>{commit.username}</span>
-							</div>
-							<div className="flex items-center gap-2">
-								<Calendar className="w-4 h-4 text-muted-foreground" />
-								<span className="font-medium">Date:</span>
-								<span>{new Date(commit.commitTimeStamp).toLocaleString()}</span>
-							</div>
-						</div>
-
-						{/* Parent Commits */}
-						{commit.parentCommitHashes.length > 0 && (
-							<div className="text-sm">
-								<div className="font-medium mb-1 text-right">Parent Commits:</div>
-								<div className="space-y-1">
-									{commit.parentCommitHashes.map((parentHash, index) => (
-										<div key={index} className="flex items-center justify-end gap-2">
-											<Hash className="w-3 h-3 text-muted-foreground" />
-											<code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-												{parentHash.slice(0, 7)}
-											</code>
-										</div>
-									))}
-								</div>
-							</div>
-						)}
-
 						{/* Action Buttons */}
 						<div className="flex items-center gap-2 mt-2">
 							<Button onClick={handleViewFullCommit} size="sm">
@@ -98,6 +66,41 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 
 			<ScrollArea className="flex-1">
 				<CardContent className="space-y-4">
+					{/* Author and Date */}
+					<div className="space-y-1 text-sm text-right">
+						<div className="flex items-center gap-2">
+							<User className="w-4 h-4 text-muted-foreground" />
+							<span className="font-medium">Author:</span>
+							<span>{commit.username}</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Calendar className="w-4 h-4 text-muted-foreground" />
+							<span className="font-medium">Date:</span>
+							<span>{new Date(commit.commitTimeStamp).toLocaleString()}</span>
+						</div>
+					</div>
+
+					{/* Parent Commits */}
+					{commit.parentCommitHashes.length > 0 && (
+						<div>
+							<h3 className="font-semibold mb-2">Parent Commits</h3>
+							<Card>
+								<CardContent className="p-3">
+									<div className="space-y-2">
+										{commit.parentCommitHashes.map((parentHash, index) => (
+											<div key={index} className="flex items-center gap-2">
+												<Hash className="w-4 h-4 text-muted-foreground" />
+												<code className="font-mono text-sm bg-muted px-2 py-1 rounded">
+													{parentHash.slice(0, 7)}
+												</code>
+											</div>
+										))}
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+					)}
+
 					{/* Commit Message */}
 					<div>
 						<h3 className="font-semibold mb-2">Message</h3>
