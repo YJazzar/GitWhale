@@ -47,8 +47,8 @@ export function GitLogGraph({
 	const branchInfo = calculateBranchLayout(commits);
 
 	return (
-		<div className={cn("git-log-graph overflow-auto", className)}>
-			<div className="min-w-max">
+		<div className={cn("git-log-graph overflow-auto w-full", className)}>
+			<div className="min-w-max w-full">
 				{commits.map((commit, index) => {
 					const branchData = branchInfo.get(commit.commitHash);
 					return (

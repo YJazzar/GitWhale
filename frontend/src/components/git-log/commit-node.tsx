@@ -46,23 +46,23 @@ export function CommitNode({
 	const refs = parseRefs(commit.refs);
 
 	// Calculate the left padding based on branch column
-	const leftPadding = branchColumn * 40; // 40px per column
+	const leftPadding = branchColumn * 30; // 30px per column
 
 	return (
-		<div className="relative flex items-start py-3">
+		<div className="relative flex items-start py-1">
 			{/* Graph visualization area */}
-			<div className="relative flex-shrink-0" style={{ width: Math.max(120, (branchColumn + 1) * 40 + 80) }}>
+			<div className="relative flex-shrink-0" style={{ width: Math.max(100, (branchColumn + 1) * 30 + 60) }}>
 				{/* Connection lines */}
 				<svg 
 					className="absolute inset-0 w-full h-full pointer-events-none"
-					style={{ height: '120px' }}
+					style={{ height: '80px' }}
 				>
 					{!isFirst && (
 						<line
-							x1={leftPadding + 20}
+							x1={leftPadding + 15}
 							y1={0}
-							x2={leftPadding + 20}
-							y2={60}
+							x2={leftPadding + 15}
+							y2={40}
 							stroke="currentColor"
 							strokeWidth="2"
 							className="text-muted-foreground/60"
@@ -73,18 +73,18 @@ export function CommitNode({
 						<ConnectionLine
 							key={index}
 							connection={connection}
-							fromY={60}
-							toY={120}
-							columnWidth={40}
+							fromY={40}
+							toY={80}
+							columnWidth={30}
 						/>
 					))}
 					
 					{!isLast && (
 						<line
-							x1={leftPadding + 20}
-							y1={60}
-							x2={leftPadding + 20}
-							y2={120}
+							x1={leftPadding + 15}
+							y1={40}
+							x2={leftPadding + 15}
+							y2={80}
 							stroke="currentColor"
 							strokeWidth="2"
 							className="text-muted-foreground/60"
@@ -94,35 +94,29 @@ export function CommitNode({
 
 				{/* Commit dot */}
 				<div 
-					className="absolute z-10 w-5 h-5 rounded-full border-2 border-primary bg-background flex items-center justify-center shadow-sm"
+					className="absolute z-10 w-4 h-4 rounded-full border-2 border-primary bg-background flex items-center justify-center shadow-sm"
 					style={{ 
-						left: leftPadding + 12, 
-						top: 52 
+						left: leftPadding + 7, 
+						top: 32 
 					}}
 				>
 					{commit.parentCommitHashes.length > 1 ? (
-						<GitMerge className="w-2.5 h-2.5 text-primary" />
+						<GitMerge className="w-2 h-2 text-primary" />
 					) : (
-						<GitCommit className="w-2.5 h-2.5 text-primary" />
+						<GitCommit className="w-2 h-2 text-primary" />
 					)}
 				</div>
 			</div>
 
 			{/* Commit details */}
-			<div className="flex-1 min-w-0 ml-6">
+			<div className="flex-1 p-0">
 				<Card className="hover:shadow-md transition-all duration-200 hover:border-primary/20">
-					<CardContent className="p-4">
-						<div className="flex items-start justify-between gap-4">
+					<CardContent className="p-2">
+						<div className="flex items-start justify-between gap-3">
 							<div className="flex-1 min-w-0">
 								{/* Commit message and refs */}
-								<div className="flex items-start gap-2 mb-3">
-									<h3 className="font-medium text-sm leading-tight text-foreground" 
-										style={{ 
-											display: '-webkit-box',
-											WebkitLineClamp: 2,
-											WebkitBoxOrient: 'vertical',
-											overflow: 'hidden'
-										}}>
+								<div className="flex items-start gap-2 mb-2">
+									<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0">
 										{commitMessage}
 									</h3>
 									{refs.branches.length > 0 && (
@@ -147,16 +141,16 @@ export function CommitNode({
 								</div>
 
 								{/* Author and timestamp */}
-								<div className="flex items-center gap-4 text-xs text-muted-foreground mb-2 flex-wrap">
-									<div className="flex items-center gap-1">
-										<User className="w-3 h-3" />
-										<span>{commit.username}</span>
+								<div className="flex items-center gap-3 text-xs text-muted-foreground mb-2 overflow-hidden">
+									<div className="flex items-center gap-1 truncate">
+										<User className="w-3 h-3 flex-shrink-0" />
+										<span className="truncate">{commit.username}</span>
 									</div>
-									<div className="flex items-center gap-1">
+									<div className="flex items-center gap-1 flex-shrink-0">
 										<Calendar className="w-3 h-3" />
 										<span>{new Date(commit.commitTimeStamp).toLocaleDateString()}</span>
 									</div>
-									<div className="flex items-center gap-1">
+									<div className="flex items-center gap-1 flex-shrink-0">
 										<Hash className="w-3 h-3" />
 										<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{shortHash}</code>
 									</div>
@@ -164,22 +158,22 @@ export function CommitNode({
 
 								{/* Short stat */}
 								{commit.shortStat && (
-									<div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded text-mono">
+									<div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded font-mono truncate">
 										{commit.shortStat}
 									</div>
 								)}
 							</div>
 
 							{/* Actions */}
-							<div className="flex items-center gap-2 shrink-0">
+							<div className="flex items-center gap-2 flex-shrink-0">
 								{commitUrl ? (
-									<Button asChild size="sm" variant="outline" className="h-8">
+									<Button asChild size="sm" variant="outline" className="h-7 px-2">
 										<Link to={commitUrl} onClick={handleCommitClick}>
 											View
 										</Link>
 									</Button>
 								) : (
-									<Button size="sm" variant="outline" onClick={handleCommitClick} className="h-8">
+									<Button size="sm" variant="outline" onClick={handleCommitClick} className="h-7 px-2">
 										View
 									</Button>
 								)}
@@ -200,8 +194,8 @@ interface ConnectionLineProps {
 }
 
 function ConnectionLine({ connection, fromY, toY, columnWidth }: ConnectionLineProps) {
-	const fromX = connection.fromColumn * columnWidth + 20;
-	const toX = connection.toColumn * columnWidth + 20;
+	const fromX = connection.fromColumn * columnWidth + 15;
+	const toX = connection.toColumn * columnWidth + 15;
 
 	if (connection.type === 'straight' && fromX === toX) {
 		// Straight line down

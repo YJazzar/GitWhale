@@ -47,7 +47,7 @@ export default function RepoLogView() {
 	};
 
 	return (
-		<div className="flex flex-col gap-4 p-4">
+		<div className="flex flex-col gap-4 p-4 h-full">
 			<div className="flex items-center justify-between">
 				<h2 className="text-2xl font-bold">Git Log</h2>
 				<Button onClick={refreshLogs} disabled={loading}>
@@ -55,13 +55,15 @@ export default function RepoLogView() {
 				</Button>
 			</div>
 			
-			<GitLogGraph 
-				commits={logs}
-				onCommitClick={onOpenCommitPage}
-				generateCommitPageUrl={generateCommitPageUrl}
-				loading={loading}
-				className="border rounded-lg p-4 bg-background"
-			/>
+			<div className="flex-1 min-h-0 w-full">
+				<GitLogGraph 
+					commits={logs}
+					onCommitClick={onOpenCommitPage}
+					generateCommitPageUrl={generateCommitPageUrl}
+					loading={loading}
+					className="border rounded-lg p-4 bg-background h-full"
+				/>
+			</div>
 		</div>
 	);
 }
