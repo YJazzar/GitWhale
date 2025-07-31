@@ -3,7 +3,6 @@ import { backend } from 'wailsjs/go/models';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { GitBranch, GitCommit, GitMerge, User, Calendar, Hash } from 'lucide-react';
 
@@ -30,20 +29,18 @@ export function CommitNode({
 	isFirst,
 	isLast,
 	onCommitClick,
-	generateCommitPageUrl
+	generateCommitPageUrl,
 }: CommitNodeProps) {
 	const commitUrl = generateCommitPageUrl?.(commit.commitHash);
 	const shortHash = commit.commitHash.slice(0, 7);
-	const commitMessage = Array.isArray(commit.commitMessage) 
-		? commit.commitMessage.join('\n') 
+	const commitMessage = Array.isArray(commit.commitMessage)
+		? commit.commitMessage.join('\n')
 		: commit.commitMessage;
-	
+
 	// For display, only show the first line and truncate to 75 characters
 	const firstLine = commitMessage.split('\n')[0];
-	const displayMessage = firstLine.length > 75 
-		? firstLine.slice(0, 75) + '...' 
-		: firstLine;
-	
+	const displayMessage = firstLine.length > 75 ? firstLine.slice(0, 75) + '...' : firstLine;
+
 	// Check if we should show tooltip (multi-line or truncated first line)
 	const shouldShowTooltip = commitMessage.includes('\n') || firstLine.length > 75;
 
@@ -61,9 +58,12 @@ export function CommitNode({
 	return (
 		<div className="relative flex items-start py-1">
 			{/* Graph visualization area */}
-			<div className="relative flex-shrink-0" style={{ width: Math.max(100, (branchColumn + 1) * 30 + 60) }}>
+			<div
+				className="relative flex-shrink-0"
+				style={{ width: Math.max(100, (branchColumn + 1) * 30 + 60) }}
+			>
 				{/* Connection lines */}
-				<svg 
+				<svg
 					className="absolute inset-0 w-full h-full pointer-events-none"
 					style={{ height: '80px' }}
 				>
@@ -78,7 +78,7 @@ export function CommitNode({
 							className="text-muted-foreground/60"
 						/>
 					)}
-					
+
 					{connections.map((connection, index) => (
 						<ConnectionLine
 							key={index}
@@ -88,7 +88,7 @@ export function CommitNode({
 							columnWidth={30}
 						/>
 					))}
-					
+
 					{!isLast && (
 						<line
 							x1={leftPadding + 15}
@@ -103,11 +103,11 @@ export function CommitNode({
 				</svg>
 
 				{/* Commit dot */}
-				<div 
+				<div
 					className="absolute z-10 w-4 h-4 rounded-full border-2 border-primary bg-background flex items-center justify-center shadow-sm"
-					style={{ 
-						left: leftPadding + 7, 
-						top: 32 
+					style={{
+						left: leftPadding + 7,
+						top: 32,
 					}}
 				>
 					{commit.parentCommitHashes.length > 1 ? (
@@ -120,80 +120,68 @@ export function CommitNode({
 
 			{/* Commit details */}
 			<div className="flex-1 p-0">
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Card 
-								className="hover:shadow-md transition-all duration-200 hover:border-primary/20 cursor-pointer"
-								onClick={handleCommitClick}
-							>
-								<CardContent className="p-2">
-									<div className="flex items-start justify-between gap-3">
-										<div className="flex-1 min-w-0">
-											{/* Commit message and refs */}
-											<div className="flex items-start gap-2 mb-2">
-												<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0">
-													{displayMessage}
-												</h3>
-												{refs.branches.length > 0 && (
-													<div className="flex gap-1 flex-wrap">
-														{refs.branches.map((branch, index) => (
-															<Badge key={index} variant="secondary" className="text-xs shrink-0">
-																<GitBranch className="w-3 h-3 mr-1" />
-																{branch}
-															</Badge>
-														))}
-													</div>
-												)}
-												{refs.tags.length > 0 && (
-													<div className="flex gap-1 flex-wrap">
-														{refs.tags.map((tag, index) => (
-															<Badge key={index} variant="outline" className="text-xs shrink-0">
-																{tag}
-															</Badge>
-														))}
-													</div>
-												)}
-											</div>
-
-											{/* Author and timestamp */}
-											<div className="flex items-center gap-3 text-xs text-muted-foreground overflow-hidden">
-												<div className="flex items-center gap-1 truncate">
-													<User className="w-3 h-3 flex-shrink-0" />
-													<span className="truncate">{commit.username}</span>
-												</div>
-												<div className="flex items-center gap-1 flex-shrink-0">
-													<Calendar className="w-3 h-3" />
-													<span>{new Date(commit.commitTimeStamp).toLocaleDateString()}</span>
-												</div>
-												<div className="flex items-center gap-1 flex-shrink-0">
-													<Hash className="w-3 h-3" />
-													<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{shortHash}</code>
-												</div>
-											</div>
+				<Card
+					className="hover:shadow-md transition-all duration-200 hover:border-primary/20 cursor-pointer"
+					onClick={handleCommitClick}
+				>
+					<CardContent className="p-2">
+						<div className="flex items-start justify-between gap-3">
+							<div className="flex-1 min-w-0">
+								{/* Commit message and refs */}
+								<div className="flex items-start gap-2 mb-2">
+									<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0">
+										{displayMessage}
+									</h3>
+									{refs.branches.length > 0 && (
+										<div className="flex gap-1 flex-wrap">
+											{refs.branches.map((branch, index) => (
+												<Badge
+													key={index}
+													variant="secondary"
+													className="text-xs shrink-0"
+												>
+													<GitBranch className="w-3 h-3 mr-1" />
+													{branch}
+												</Badge>
+											))}
 										</div>
-									</div>
-								</CardContent>
-							</Card>
-						</TooltipTrigger>
-						{(commit.shortStat) && (
-							<TooltipContent side="left" className="max-w-sm">
-								<div className="text-sm">
-									<div className="mb-2">
-										<div className="font-semibold mb-1">Full message:</div>
-										<pre className="font-mono whitespace-pre-wrap">{commitMessage}</pre>
-									</div>
-									{commit.shortStat && (
-										<div>
-											<div className="font-semibold mb-1">Changes:</div>
-											<div className="font-mono">{commit.shortStat}</div>
+									)}
+									{refs.tags.length > 0 && (
+										<div className="flex gap-1 flex-wrap">
+											{refs.tags.map((tag, index) => (
+												<Badge
+													key={index}
+													variant="outline"
+													className="text-xs shrink-0"
+												>
+													{tag}
+												</Badge>
+											))}
 										</div>
 									)}
 								</div>
-							</TooltipContent>
-						)}
-					</Tooltip>
-				</TooltipProvider>
+
+								{/* Author and timestamp */}
+								<div className="flex items-center gap-3 text-xs text-muted-foreground overflow-hidden">
+									<div className="flex items-center gap-1 truncate">
+										<User className="w-3 h-3 flex-shrink-0" />
+										<span className="truncate">{commit.username}</span>
+									</div>
+									<div className="flex items-center gap-1 flex-shrink-0">
+										<Calendar className="w-3 h-3" />
+										<span>{new Date(commit.commitTimeStamp).toLocaleDateString()}</span>
+									</div>
+									<div className="flex items-center gap-1 flex-shrink-0">
+										<Hash className="w-3 h-3" />
+										<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+											{shortHash}
+										</code>
+									</div>
+								</div>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);
@@ -228,16 +216,14 @@ function ConnectionLine({ connection, fromY, toY, columnWidth }: ConnectionLineP
 	// Curved line for merges and branches
 	const midY = fromY + (toY - fromY) / 2;
 	const path = `M ${fromX} ${fromY} Q ${fromX} ${midY} ${toX} ${toY}`;
-	
+
 	return (
 		<path
 			d={path}
 			stroke="currentColor"
 			strokeWidth="2"
 			fill="none"
-			className={cn(
-				connection.type === 'merge' ? 'text-orange-500' : 'text-blue-500'
-			)}
+			className={cn(connection.type === 'merge' ? 'text-orange-500' : 'text-blue-500')}
 		/>
 	);
 }
@@ -256,12 +242,15 @@ function parseRefs(refs: string): ParsedRefs {
 	const tags: string[] = [];
 
 	// Parse refs like "(origin/main, main)" or "(tag: v1.0.0)"
-	const refParts = refs.replace(/[()]/g, '').split(',').map(r => r.trim());
-	
+	const refParts = refs
+		.replace(/[()]/g, '')
+		.split(',')
+		.map((r) => r.trim());
+
 	for (const ref of refParts) {
 		if (ref.startsWith('tag:')) {
 			tags.push(ref.substring(4).trim());
-		} else if (ref && !ref.includes('/') || ref.startsWith('origin/')) {
+		} else if ((ref && !ref.includes('/')) || ref.startsWith('origin/')) {
 			branches.push(ref);
 		}
 	}
