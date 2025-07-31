@@ -3,6 +3,7 @@ import { backend } from 'wailsjs/go/models';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { GitBranch, GitCommit, GitMerge, User, Calendar, Hash } from 'lucide-react';
 import { Link } from 'react-router';
@@ -110,77 +111,83 @@ export function CommitNode({
 
 			{/* Commit details */}
 			<div className="flex-1 p-0">
-				<Card className="hover:shadow-md transition-all duration-200 hover:border-primary/20">
-					<CardContent className="p-2">
-						<div className="flex items-start justify-between gap-3">
-							<div className="flex-1 min-w-0">
-								{/* Commit message and refs */}
-								<div className="flex items-start gap-2 mb-2">
-									<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0">
-										{commitMessage}
-									</h3>
-									{refs.branches.length > 0 && (
-										<div className="flex gap-1 flex-wrap">
-											{refs.branches.map((branch, index) => (
-												<Badge key={index} variant="secondary" className="text-xs shrink-0">
-													<GitBranch className="w-3 h-3 mr-1" />
-													{branch}
-												</Badge>
-											))}
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Card className="hover:shadow-md transition-all duration-200 hover:border-primary/20 cursor-pointer">
+								<CardContent className="p-2">
+									<div className="flex items-start justify-between gap-3">
+										<div className="flex-1 min-w-0">
+											{/* Commit message and refs */}
+											<div className="flex items-start gap-2 mb-2">
+												<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0">
+													{commitMessage}
+												</h3>
+												{refs.branches.length > 0 && (
+													<div className="flex gap-1 flex-wrap">
+														{refs.branches.map((branch, index) => (
+															<Badge key={index} variant="secondary" className="text-xs shrink-0">
+																<GitBranch className="w-3 h-3 mr-1" />
+																{branch}
+															</Badge>
+														))}
+													</div>
+												)}
+												{refs.tags.length > 0 && (
+													<div className="flex gap-1 flex-wrap">
+														{refs.tags.map((tag, index) => (
+															<Badge key={index} variant="outline" className="text-xs shrink-0">
+																{tag}
+															</Badge>
+														))}
+													</div>
+												)}
+											</div>
+
+											{/* Author and timestamp */}
+											<div className="flex items-center gap-3 text-xs text-muted-foreground overflow-hidden">
+												<div className="flex items-center gap-1 truncate">
+													<User className="w-3 h-3 flex-shrink-0" />
+													<span className="truncate">{commit.username}</span>
+												</div>
+												<div className="flex items-center gap-1 flex-shrink-0">
+													<Calendar className="w-3 h-3" />
+													<span>{new Date(commit.commitTimeStamp).toLocaleDateString()}</span>
+												</div>
+												<div className="flex items-center gap-1 flex-shrink-0">
+													<Hash className="w-3 h-3" />
+													<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{shortHash}</code>
+												</div>
+											</div>
 										</div>
-									)}
-									{refs.tags.length > 0 && (
-										<div className="flex gap-1 flex-wrap">
-											{refs.tags.map((tag, index) => (
-												<Badge key={index} variant="outline" className="text-xs shrink-0">
-													{tag}
-												</Badge>
-											))}
+
+										{/* Actions */}
+										<div className="flex items-center gap-2 flex-shrink-0">
+											{commitUrl ? (
+												<Button asChild size="sm" variant="outline" className="h-7 px-2">
+													<Link to={commitUrl} onClick={handleCommitClick}>
+														View
+													</Link>
+												</Button>
+											) : (
+												<Button size="sm" variant="outline" onClick={handleCommitClick} className="h-7 px-2">
+													View
+												</Button>
+											)}
 										</div>
-									)}
+									</div>
+								</CardContent>
+							</Card>
+						</TooltipTrigger>
+						{commit.shortStat && (
+							<TooltipContent side="left" className="max-w-xs">
+								<div className="text-xs font-mono">
+									{commit.shortStat}
 								</div>
-
-								{/* Author and timestamp */}
-								<div className="flex items-center gap-3 text-xs text-muted-foreground mb-2 overflow-hidden">
-									<div className="flex items-center gap-1 truncate">
-										<User className="w-3 h-3 flex-shrink-0" />
-										<span className="truncate">{commit.username}</span>
-									</div>
-									<div className="flex items-center gap-1 flex-shrink-0">
-										<Calendar className="w-3 h-3" />
-										<span>{new Date(commit.commitTimeStamp).toLocaleDateString()}</span>
-									</div>
-									<div className="flex items-center gap-1 flex-shrink-0">
-										<Hash className="w-3 h-3" />
-										<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{shortHash}</code>
-									</div>
-								</div>
-
-								{/* Short stat */}
-								{commit.shortStat && (
-									<div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded font-mono truncate">
-										{commit.shortStat}
-									</div>
-								)}
-							</div>
-
-							{/* Actions */}
-							<div className="flex items-center gap-2 flex-shrink-0">
-								{commitUrl ? (
-									<Button asChild size="sm" variant="outline" className="h-7 px-2">
-										<Link to={commitUrl} onClick={handleCommitClick}>
-											View
-										</Link>
-									</Button>
-								) : (
-									<Button size="sm" variant="outline" onClick={handleCommitClick} className="h-7 px-2">
-										View
-									</Button>
-								)}
-							</div>
-						</div>
-					</CardContent>
-				</Card>
+							</TooltipContent>
+						)}
+					</Tooltip>
+				</TooltipProvider>
 			</div>
 		</div>
 	);
