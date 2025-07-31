@@ -40,8 +40,17 @@ export function CommitNode({
 	const commitUrl = generateCommitPageUrl?.(commit.commitHash);
 	const shortHash = commit.commitHash.slice(0, 7);
 	const commitMessage = Array.isArray(commit.commitMessage) 
-		? commit.commitMessage.join(' ') 
+		? commit.commitMessage.join('\n') 
 		: commit.commitMessage;
+	
+	// For display, only show the first line and truncate to 75 characters
+	const firstLine = commitMessage.split('\n')[0];
+	const displayMessage = firstLine.length > 75 
+		? firstLine.slice(0, 75) + '...' 
+		: firstLine;
+	
+	// Check if we should show tooltip (multi-line or truncated first line)
+	const shouldShowTooltip = commitMessage.includes('\n') || firstLine.length > 75;
 
 	// Parse refs to identify branches and tags
 	const refs = parseRefs(commit.refs);
@@ -121,7 +130,7 @@ export function CommitNode({
 											{/* Commit message and refs */}
 											<div className="flex items-start gap-2 mb-2">
 												<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0">
-													{commitMessage}
+													{displayMessage}
 												</h3>
 												{refs.branches.length > 0 && (
 													<div className="flex gap-1 flex-wrap">
@@ -179,10 +188,21 @@ export function CommitNode({
 								</CardContent>
 							</Card>
 						</TooltipTrigger>
-						{commit.shortStat && (
-							<TooltipContent side="left" className="max-w-xs">
-								<div className="text-xs font-mono">
-									{commit.shortStat}
+						{(commit.shortStat || shouldShowTooltip) && (
+							<TooltipContent side="left" className="max-w-sm">
+								<div className="text-sm">
+									{shouldShowTooltip && (
+										<div className="mb-2">
+											<div className="font-semibold mb-1">Full message:</div>
+											<pre className="font-mono whitespace-pre-wrap">{commitMessage}</pre>
+										</div>
+									)}
+									{commit.shortStat && (
+										<div>
+											<div className="font-semibold mb-1">Changes:</div>
+											<div className="font-mono">{commit.shortStat}</div>
+										</div>
+									)}
 								</div>
 							</TooltipContent>
 						)}
