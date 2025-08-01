@@ -1,10 +1,11 @@
 import { FileTabsHandle } from '@/components/file-tabs';
 import { Button } from '@/components/ui/button';
-import { UseAppState } from '@/hooks/use-app-state';
+import { UseAppState } from '@/hooks/state/use-app-state';
 import { Star, StarOff } from 'lucide-react';
 import { Link } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
+import { useRepoState } from '@/hooks/state/use-repo-state';
 
 export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHandle> }) {
 	const { fileTabRef } = props;
@@ -33,8 +34,13 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 		fileTabRef.current?.openFile({
 			linkPath: `repo/${btoa(repoPath)}`,
 			tabKey: repoPath,
+			preventUserClose: false,
 			// Feels weird not to set this to true unless there's a fancy way for me to detect if the user performs an action inside the repo tab
 			isPermanentlyOpen: true,
+			onTabClose: () => {
+				const repoState = useRepoState(repoPath)
+				repoState.terminalState.disposeTerminal()
+			},
 			titleRender: function (): JSX.Element {
 				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranchName;
 				const repoName = repoPath;

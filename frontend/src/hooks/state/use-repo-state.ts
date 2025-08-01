@@ -7,6 +7,8 @@ import {
 } from '../../../wailsjs/go/backend/App';
 import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
 
+
+
 export const useRepoState = (repoPath: string) => {
 	return {
 		terminalState: getTerminalState(repoPath),
@@ -16,10 +18,8 @@ export const useRepoState = (repoPath: string) => {
 // MARK: Terminal related state. A bit special because we actually want
 // the data to NOT cause re-renders
 
-const xTermRefState = new Map<string, { terminal: Terminal; fitAddon: FitAddon; element: HTMLDivElement }>();
+const xTermRefMap = new Map<string, { terminal: Terminal; fitAddon: FitAddon; element: HTMLDivElement }>();
 function getTerminalState(repoPath: string) {
-	const { terminal, fitAddon } = xTermRefState.get(repoPath) || {};
-
 	const createTerminal = () => {
 		const fitAddon = new FitAddon();
 		const newTerminal = new Terminal({ cursorBlink: true, cursorStyle: 'bar' });
@@ -27,7 +27,7 @@ function getTerminalState(repoPath: string) {
 		element.className = 'w-full h-full';
 
 		newTerminal.loadAddon(fitAddon);
-		xTermRefState.set(repoPath, { terminal: newTerminal, fitAddon, element });
+		xTermRefMap.set(repoPath, { terminal: newTerminal, fitAddon, element });
 
 		setupTerminalEvents(repoPath, newTerminal);
 
@@ -37,16 +37,24 @@ function getTerminalState(repoPath: string) {
 		return { terminal: newTerminal, fitAddon, element };
 	};
 
+	const disposeTerminal = () => {
+		const { terminal } = xTermRefMap.get(repoPath) || {};
+		if (!terminal) {
+			return;
+		}
 
-	const unregisterTerminal = () => {
-		xTermRefState.delete(repoPath);
+		terminal.dispose();
+		EventsOff(`onTerminalDataReturned://${repoPath}`);
+		CleanupTerminalSession(repoPath);
+		xTermRefMap.delete(repoPath);
 	};
+
 
 	const getTerminalState = () => {
-		return xTermRefState.get(repoPath);
+		return xTermRefMap.get(repoPath);
 	};
 
-	return { createTerminal, unregisterTerminal, getTerminalState };
+	return { createTerminal, disposeTerminal, getTerminalState };
 }
 
 async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
@@ -69,22 +77,6 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 
 	await InitNewTerminalSession(repoPath);
 }
-
-function disposeTerminal(repoPath: string) {
-
-		// const cleanupTerminal = () => {
-		// 	const currentTerminal = terminal.getTerminalState()?.terminal;
-		// 	if (!currentTerminal) {
-		// 		return;
-		// 	}
-	
-		// 	currentTerminal?.dispose();
-		// 	EventsOff(`onTerminalDataReturned://${repoPath}`);
-		// 	CleanupTerminalSession(repoPath);
-		// 	terminal.unregisterTerminal();
-		// };
-}
-
 
 function base64ToByteArray(base64: string) {
 	// Decode the base64 string into an ASCII string
