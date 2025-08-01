@@ -39,6 +39,9 @@ export type FileTabPageProps = {
 
 	// Controls if the file is only temporarily open or not
 	isPermanentlyOpen?: boolean;
+
+	// Code hook to run additional logic when the tab is closed
+	onTabClose?: () => void;
 };
 
 export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) => {
@@ -106,6 +109,11 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 				navigateToFile(undefined);
 			}
 			setAvailableFiles([...newAvailableTabs]);
+
+			const actuallyClosingFile = newAvailableTabs.length !== availableFiles.length;
+			if (actuallyClosingFile) {
+				fileToClose.onTabClose?.();
+			}
 		},
 		openFile: function (newPage: FileTabPageProps): void {
 			// If the page is already open in a different tab

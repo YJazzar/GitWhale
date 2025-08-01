@@ -1,4 +1,4 @@
-import { UseAppState } from './use-app-state';
+import { UseAppState } from './state/use-app-state';
 
 export const UseIsDirDiffMode = () => {
 	const {appState} = UseAppState();

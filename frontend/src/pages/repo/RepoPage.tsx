@@ -20,7 +20,7 @@ import {
 	SideBarMenuItem,
 	useRepoPageHandlers,
 } from '@/hooks/repo-page-handler-context';
-import { UseAppState } from '@/hooks/use-app-state';
+import { UseAppState } from '@/hooks/state/use-app-state';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import clsx from 'clsx';
 import { GitGraph, House, Terminal } from 'lucide-react';

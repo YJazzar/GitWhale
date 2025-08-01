@@ -14,7 +14,7 @@ export namespace backend {
 	}
 	export class AppConfig {
 	    filePath: string;
-	    openGitRepos: {[key: string]: RepoContext};
+	    openGitRepos: Record<string, RepoContext>;
 	    orderedOpenGitRepos: string[];
 	    recentGitRepos: string[];
 	    starredGitRepos: string[];
@@ -191,6 +191,7 @@ export namespace backend {
 		    return a;
 		}
 	}
+	
 	export class GitLogCommitInfo {
 	    commitHash: string;
 	    username: string;

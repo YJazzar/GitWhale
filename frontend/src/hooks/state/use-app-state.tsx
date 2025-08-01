@@ -1,6 +1,6 @@
 import { atom, useAtom } from 'jotai';
-import { GetAppState } from '../../wailsjs/go/backend/App';
-import { backend } from '../../wailsjs/go/models';
+import { GetAppState } from '../../../wailsjs/go/backend/App';
+import { backend } from '../../../wailsjs/go/models';
 import { useEffect } from 'react';
 
 const appStateAtom = atom<backend.App | undefined>(undefined);
