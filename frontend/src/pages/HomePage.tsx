@@ -1,7 +1,7 @@
 import { FileTabsHandle } from '@/components/file-tabs';
 import { Button } from '@/components/ui/button';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { Star, StarOff } from 'lucide-react';
+import { Star, StarOff, Settings } from 'lucide-react';
 import { Link } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
@@ -28,6 +28,23 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 	const onToggleStar = async (repoPath: string) => {
 		await ToggleStarRepo(repoPath);
 		await refreshAppState();
+	};
+
+	const onOpenSettings = () => {
+		fileTabRef.current?.openFile({
+			linkPath: 'settings',
+			tabKey: 'settings',
+			preventUserClose: false,
+			isPermanentlyOpen: true,
+			titleRender: function (): JSX.Element {
+				return (
+					<div className="flex items-center gap-2">
+						<Settings className="h-4 w-4" />
+						Settings
+					</div>
+				);
+			},
+		});
 	};
 
 	const switchToRepo = (appState: backend.App, repoPath: string) => {
@@ -87,44 +104,60 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 	const nonStarredRecentRepos = recentRepos.filter((repo) => !starredRepos.includes(repo));
 
 	return (
-		<div className="grid h-full place-content-center">
-			<div className="flex flex-col items-start ">
-				<h2>Start:</h2>
-				<ul>
-					<li>
-						<Button variant={'link'} onClick={onOpenNewRepo}>
-							Open Repository
-						</Button>
-					</li>
-					<li>
-						<Button disabled variant={'link'}>
-							New Repository
-						</Button>
-					</li>
-				</ul>
+		<div className="h-full flex items-center justify-center p-8">
+			<div className="grid grid-cols-2 gap-6 max-w-4xl w-full">
+				{/* Column 1: Start Menu */}
+				<div className="flex flex-col items-start">
+					<h2 className="text-xl font-semibold mb-4">Start:</h2>
+					<ul className="space-y-2">
+						<li>
+							<Button variant={'link'} onClick={onOpenNewRepo} className="justify-start p-0">
+								Open Repository
+							</Button>
+						</li>
+						<li>
+							<Button disabled variant={'link'} className="justify-start p-0">
+								New Repository
+							</Button>
+						</li>
+						<li>
+							<Button variant={'link'} onClick={onOpenSettings} className="justify-start p-0">
+								<Settings className="h-4 w-4 mr-2" />
+								Settings
+							</Button>
+						</li>
+					</ul>
+				</div>
+
+				{/* Vertical Separator */}
+				<div className="relative">
+					<div className="absolute left-0 top-0 bottom-0 w-px bg-border -translate-x-3"></div>
+					
+					{/* Column 2: Starred and Recent Repos */}
+					<div className="flex flex-col items-start">
+						{starredRepos.length > 0 && (
+							<div className="mb-8">
+								<h2 className="text-xl font-semibold mb-4">Starred:</h2>
+								<div className="space-y-2">
+									{starredRepos.map((repoPath) => (
+										<RepoEntry key={repoPath} repoPath={repoPath} isStarred={true} />
+									))}
+								</div>
+							</div>
+						)}
+						{nonStarredRecentRepos.length > 0 && (
+							<div>
+								<h2 className="text-xl font-semibold mb-4">Recent:</h2>
+								<div className="space-y-2">
+									{nonStarredRecentRepos.map((repoPath) => (
+										<RepoEntry key={repoPath} repoPath={repoPath} isStarred={false} />
+									))}
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
 			</div>
-			<br />
-			{starredRepos.length > 0 && (
-				<>
-					<div className="flex flex-col items-start">
-						<h2>Starred:</h2>
-						{starredRepos.map((repoPath) => (
-							<RepoEntry key={repoPath} repoPath={repoPath} isStarred={true} />
-						))}
-					</div>
-					<br />
-				</>
-			)}
-			{nonStarredRecentRepos.length > 0 && (
-				<>
-					<div className="flex flex-col items-start">
-						<h2>Recent:</h2>
-						{nonStarredRecentRepos.map((repoPath) => (
-							<RepoEntry key={repoPath} repoPath={repoPath} isStarred={false} />
-						))}
-					</div>
-				</>
-			)}
 		</div>
 	);
 }

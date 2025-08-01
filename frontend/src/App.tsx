@@ -12,6 +12,7 @@ import DirDiffPage from './pages/DirDiffPage';
 import RepoPage from './pages/repo/RepoPage';
 import { Toaster } from './components/ui/toaster';
 import HomePage from './pages/HomePage';
+import SettingsPage from './pages/SettingsPage';
 import RepoHomeView from './pages/repo/RepoHomeView';
 import RepoCommitDetailsView from './pages/repo/RepoCommitDetailsView';
 import RepoLogView from './pages/repo/RepoLogView';
@@ -74,6 +75,7 @@ function App() {
 							<Routes>
 								<Route path="/" element={<Navigate to="/home"  />} />
 								<Route path="/home" element={<HomePage fileTabRef={fileTabRef} />} />
+								<Route path="/settings" element={<SettingsPage />} />
 								<Route path="/repo" element={<RepoPage />}>
 									{/* <Route path=":log" element={<RepoLog />} /> */}
 									{/* <Route path="/repo/:encodedRepoPath" element={<Navigate to="/repo/:encodedRepoPath/log" />} /> */}
