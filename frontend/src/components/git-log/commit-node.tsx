@@ -1,6 +1,5 @@
 import React from 'react';
 import { backend } from 'wailsjs/go/models';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -57,7 +56,7 @@ export function CommitNode({
 	};
 
 	return (
-		<div className="relative flex items-start py-1">
+		<div className="relative flex items-start py-0.5">
 			{/* Graph visualization area */}
 			<div
 				className="relative flex-shrink-0"
@@ -66,14 +65,14 @@ export function CommitNode({
 				{/* Connection lines */}
 				<svg
 					className="absolute inset-0 w-full h-full pointer-events-none"
-					style={{ height: '80px' }}
+					style={{ height: '60px' }}
 				>
 					{!isFirst && (
 						<line
 							x1={leftPadding + 15}
 							y1={0}
 							x2={leftPadding + 15}
-							y2={40}
+							y2={30}
 							stroke="currentColor"
 							strokeWidth="2"
 							className="text-muted-foreground/60"
@@ -84,8 +83,8 @@ export function CommitNode({
 						<ConnectionLine
 							key={index}
 							connection={connection}
-							fromY={40}
-							toY={80}
+							fromY={30}
+							toY={60}
 							columnWidth={30}
 						/>
 					))}
@@ -93,9 +92,9 @@ export function CommitNode({
 					{!isLast && (
 						<line
 							x1={leftPadding + 15}
-							y1={40}
+							y1={30}
 							x2={leftPadding + 15}
-							y2={80}
+							y2={60}
 							stroke="currentColor"
 							strokeWidth="2"
 							className="text-muted-foreground/60"
@@ -108,7 +107,7 @@ export function CommitNode({
 					className="absolute z-10 w-4 h-4 rounded-full border-2 border-primary bg-background flex items-center justify-center shadow-sm"
 					style={{
 						left: leftPadding + 7,
-						top: 32,
+						top: 22,
 					}}
 				>
 					{commit.parentCommitHashes.length > 1 ? (
@@ -121,68 +120,66 @@ export function CommitNode({
 
 			{/* Commit details */}
 			<div className="flex-1 p-0">
-				<Card
-					className="hover:shadow-md transition-all duration-200 hover:border-primary/20 cursor-pointer"
+				<div
+					className="px-3 py-2 rounded-md hover:bg-accent/50 hover:shadow-sm transition-all duration-200 cursor-pointer group border-l-2 border-transparent hover:border-primary/30"
 					onClick={handleCommitClick}
 				>
-					<CardContent className="p-2">
-						<div className="flex items-start justify-between gap-3">
-							<div className="flex-1 min-w-0">
-								{/* Commit message and refs */}
-								<div className="flex items-start gap-2 mb-2">
-									<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0">
-										{displayMessage}
-									</h3>
-									{refs.branches.length > 0 && (
-										<div className="flex gap-1 flex-wrap">
-											{refs.branches.map((branch, index) => (
-												<Badge
-													key={index}
-													variant="secondary"
-													className="text-xs shrink-0"
-												>
-													<GitBranch className="w-3 h-3 mr-1" />
-													{branch}
-												</Badge>
-											))}
-										</div>
-									)}
-									{refs.tags.length > 0 && (
-										<div className="flex gap-1 flex-wrap">
-											{refs.tags.map((tag, index) => (
-												<Badge
-													key={index}
-													variant="outline"
-													className="text-xs shrink-0"
-												>
-													{tag}
-												</Badge>
-											))}
-										</div>
-									)}
-								</div>
+					<div className="flex items-start justify-between gap-3">
+						<div className="flex-1 min-w-0">
+							{/* Commit message and refs */}
+							<div className="flex items-start gap-2 mb-1.5">
+								<h3 className="font-medium text-sm leading-tight text-foreground truncate flex-1 min-w-0 group-hover:text-primary transition-colors">
+									{displayMessage}
+								</h3>
+								{refs.branches.length > 0 && (
+									<div className="flex gap-1 flex-wrap">
+										{refs.branches.map((branch, index) => (
+											<Badge
+												key={index}
+												variant="secondary"
+												className="text-xs shrink-0"
+											>
+												<GitBranch className="w-3 h-3 mr-1" />
+												{branch}
+											</Badge>
+										))}
+									</div>
+								)}
+								{refs.tags.length > 0 && (
+									<div className="flex gap-1 flex-wrap">
+										{refs.tags.map((tag, index) => (
+											<Badge
+												key={index}
+												variant="outline"
+												className="text-xs shrink-0"
+											>
+												{tag}
+											</Badge>
+										))}
+									</div>
+								)}
+							</div>
 
-								{/* Author and timestamp */}
-								<div className="flex items-center gap-3 text-xs text-muted-foreground overflow-hidden">
-									<div className="flex items-center gap-1 truncate">
-										<User className="w-3 h-3 flex-shrink-0" />
-										<span className="truncate">{commit.username}</span>
-									</div>
-									<div className="flex items-center gap-1 flex-shrink-0">
-										<Calendar className="w-3 h-3" />
-										<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
-									</div>
-									<div className="flex items-center gap-1 flex-shrink-0">
-										<Hash className="w-3 h-3" />
-										<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
-											{shortHash}
-										</code>
-									</div>
+							{/* Author and timestamp */}
+							<div className="flex items-center gap-3 text-xs text-muted-foreground overflow-hidden">
+								<div className="flex items-center gap-1 truncate">
+									<User className="w-3 h-3 flex-shrink-0" />
+									<span className="truncate">{commit.username}</span>
+								</div>
+								<div className="flex items-center gap-1 flex-shrink-0">
+									<Calendar className="w-3 h-3" />
+									<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
+								</div>
+								<div className="flex items-center gap-1 flex-shrink-0">
+									<Hash className="w-3 h-3" />
+									<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono group-hover:bg-primary/10 transition-colors">
+										{shortHash}
+									</code>
 								</div>
 							</div>
 						</div>
-					</CardContent>
-				</Card>
+					</div>
+				</div>
 			</div>
 		</div>
 	);

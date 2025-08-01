@@ -65,7 +65,7 @@ export default function RepoLogView() {
 							onCommitClick={onCommitSelect}
 							generateCommitPageUrl={generateCommitPageUrl}
 							loading={loading}
-							className="border rounded-lg p-4 bg-background h-full"
+							className="rounded-lg p-0 bg-background h-full"
 						/>
 					</ResizablePanel>
 					
