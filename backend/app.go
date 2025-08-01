@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/runletapp/go-console"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -21,8 +22,8 @@ type App struct {
 }
 
 type TerminalSession struct {
-	ptySession *os.File
-	waiter     sync.WaitGroup
+	consoleSession *console.Console
+	waiter         sync.WaitGroup
 }
 
 // NewApp creates a new App application struct
@@ -140,7 +141,7 @@ func (app *App) OnTerminalSessionWasResized(repoPath string, newSize TTYSize) {
 		return
 	}
 
-	ResizePtySession(session, newSize)
+	ResizeConsoleSession(session, newSize)
 }
 
 func (app *App) CleanupTerminalSession(repoPath string) {
