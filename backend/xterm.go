@@ -69,7 +69,7 @@ func CreateXTermSession(app *App, repoPath string) {
 	// console >> xterm.js (read from terminal and send to frontend)
 	go func() {
 		defer session.waiter.Done()
-		
+
 		for {
 			buffer := make([]byte, maxBufferSizeBytes)
 			readLength, err := proc.Read(buffer)

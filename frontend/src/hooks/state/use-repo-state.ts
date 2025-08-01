@@ -22,7 +22,7 @@ const xTermRefMap = new Map<string, { terminal: Terminal; fitAddon: FitAddon; el
 function getTerminalState(repoPath: string) {
 	const createTerminal = () => {
 		const fitAddon = new FitAddon();
-		const newTerminal = new Terminal({ cursorBlink: true, cursorStyle: 'bar' });
+		const newTerminal = new Terminal({  });
 		const element = document.createElement('div');
 		element.className = 'w-full h-full';
 
@@ -76,6 +76,8 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 	});
 
 	await InitNewTerminalSession(repoPath);
+
+	terminal.write('\n')
 }
 
 function base64ToByteArray(base64: string) {
