@@ -270,89 +270,116 @@ function calculateGitGraphLayout(commits: backend.GitLogCommitInfo[]): { nodes: 
 	const commitToColumn = new Map<string, number>();
 	const columnToColor = new Map<number, string>();
 	
-	// Active lanes: array where each index represents a column, value is the commit hash currently "owning" that column
-	const activeLanes: (string)[] = [];
+	// Track which parents have already had a child claim their column
+	const parentColumnClaimed = new Map<string, boolean>();
+	
+	// Available columns (null means available, string means occupied by that commit)
+	const columns: (string | null)[] = [];
 	let colorIndex = 0;
 
 	// Process commits in chronological order (newest first, as they appear in the UI)
-	for (let index = commits.length - 1; index >= 0; index--) {
-		const commit = commits[index];
+	commits.forEach((commit, index) => {
 		const parentHashes = commit.parentCommitHashes.filter(h => h.trim() !== '');
 		
 		let assignedColumn = -1;
-		
-		debugger;
 
-		// Strategy: Try to continue from parent's column when possible
+		// Strategy for column assignment:
+		// 1. If this commit has a parent and no other child has claimed that parent's column, continue in parent's column
+		// 2. Otherwise, find the first available column or create a new one
+		
+		debugger
 		if (parentHashes.length > 0) {
 			const primaryParent = parentHashes[0];
 			const parentColumn = commitToColumn.get(primaryParent);
 			
-			if (parentColumn !== undefined) {
-				// Continue in the same column as the primary parent
+			// Check if we can continue in the parent's column
+			if (parentColumn !== undefined && !parentColumnClaimed.get(primaryParent)) {
 				assignedColumn = parentColumn;
+				parentColumnClaimed.set(primaryParent, true); // Mark this parent's column as claimed
 			}
 		}
 		
 		// If we couldn't continue from parent, find or create a new column
 		if (assignedColumn === -1) {
-			// No empty column, create a new one
-			assignedColumn = activeLanes.length;
-			activeLanes.push(commit.commitHash);
+			// Look for the first available column
+			assignedColumn = columns.findIndex(col => col === null);
+			
+			if (assignedColumn === -1) {
+				// No available column, create a new one
+				assignedColumn = columns.length;
+				columns.push(commit.commitHash);
+			} else {
+				// Use the available column
+				columns[assignedColumn] = commit.commitHash;
+			}
 			
 			// Assign a new color for this branch
-			columnToColor.set(assignedColumn, COLORS[colorIndex % COLORS.length]);
-			colorIndex++;
+			if (!columnToColor.has(assignedColumn)) {
+				columnToColor.set(assignedColumn, COLORS[colorIndex % COLORS.length]);
+				colorIndex++;
+			}
+		} else {
+			// Update the column with this commit
+			if (assignedColumn < columns.length) {
+				columns[assignedColumn] = commit.commitHash;
+			} else {
+				// Extend columns array if needed
+				while (columns.length <= assignedColumn) {
+					columns.push(null);
+				}
+				columns[assignedColumn] = commit.commitHash;
+			}
 		}
 		
-		// Claim this column for this commit
+		// Record this commit's column assignment
 		commitToColumn.set(commit.commitHash, assignedColumn);
 		
 		// For merge commits, ensure all parents get assigned columns if they don't have them
 		if (parentHashes.length > 1) {
-			parentHashes.forEach(parentHash => {
+			parentHashes.slice(1).forEach(parentHash => {
 				if (!commitToColumn.has(parentHash)) {
-					// Find an empty column for this merge parent
-					const parentColumn = activeLanes.length;
-					activeLanes.push(parentHash);
+					// Find an available column for this merge parent
+					let parentColumn = columns.findIndex(col => col === null);
+					if (parentColumn === -1) {
+						parentColumn = columns.length;
+						columns.push(parentHash);
+					} else {
+						columns[parentColumn] = parentHash;
+					}
+					
 					commitToColumn.set(parentHash, parentColumn);
 					
-					columnToColor.set(parentColumn, COLORS[colorIndex % COLORS.length]);
-					colorIndex++;
+					if (!columnToColor.has(parentColumn)) {
+						columnToColor.set(parentColumn, COLORS[colorIndex % COLORS.length]);
+						colorIndex++;
+					}
 				}
 			});
 		}
 		
-		// Create the node
-		const column = assignedColumn;
-		const color = columnToColor.get(column) || COLORS[COLORS.length- 1];
+		// Get color for this commit's column
+		const color = columnToColor.get(assignedColumn) || COLORS[0];
 		
+		// Create the node
 		nodes.push({
 			id: commit.commitHash,
 			commit,
-			x: column * COLUMN_WIDTH + 36,
+			x: assignedColumn * COLUMN_WIDTH + 20 + 16,
 			y: index * ROW_HEIGHT + 24,
-			column,
+			column: assignedColumn,
 			color
 		});
 		
-		// Clean up lanes: remove commits that have no more children coming up
-		// const remainingCommits = commits.slice(index + 1);
-		// activeLanes.forEach((laneCommit, laneIndex) => {
-		// 	if (laneCommit && laneCommit !== commit.commitHash) {
-		// 		// Check if this commit has any children in the remaining commits
-		// 		const hasChildren = remainingCommits.some(futureCommit =>
-		// 			futureCommit.parentCommitHashes.includes(laneCommit)
-		// 		);
-				
-		// 		if (!hasChildren) {
-		// 			activeLanes[laneIndex] = null;
-		// 		}
-		// 	}
-		// });
-	};
-
-	console.debug({ nodes, links, commitToColumn, columnToColor });
+		// Clean up columns: mark as available if this commit has no more children
+		const remainingCommits = commits.slice(index + 1);
+		const hasChildren = remainingCommits.some(futureCommit =>
+			futureCommit.parentCommitHashes.includes(commit.commitHash)
+		);
+		
+		if (!hasChildren) {
+			columns[assignedColumn] = null; // Mark column as available
+		}
+	});
 	
 	// Create links between commits and their parents
 	nodes.forEach(node => {
