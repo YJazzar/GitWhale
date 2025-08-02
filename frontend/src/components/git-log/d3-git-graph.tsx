@@ -271,21 +271,24 @@ function calculateGitGraphLayout(commits: backend.GitLogCommitInfo[]): { nodes: 
 	const columnToColor = new Map<number, string>();
 	
 	// Active lanes: array where each index represents a column, value is the commit hash currently "owning" that column
-	const activeLanes: (string | null)[] = [];
+	const activeLanes: (string)[] = [];
 	let colorIndex = 0;
 
 	// Process commits in chronological order (newest first, as they appear in the UI)
-	commits.forEach((commit, index) => {
+	for (let index = commits.length - 1; index >= 0; index--) {
+		const commit = commits[index];
 		const parentHashes = commit.parentCommitHashes.filter(h => h.trim() !== '');
 		
 		let assignedColumn = -1;
 		
+		debugger;
+
 		// Strategy: Try to continue from parent's column when possible
 		if (parentHashes.length > 0) {
 			const primaryParent = parentHashes[0];
 			const parentColumn = commitToColumn.get(primaryParent);
 			
-			if (parentColumn !== undefined && activeLanes[parentColumn] === primaryParent) {
+			if (parentColumn !== undefined) {
 				// Continue in the same column as the primary parent
 				assignedColumn = parentColumn;
 			}
@@ -293,76 +296,63 @@ function calculateGitGraphLayout(commits: backend.GitLogCommitInfo[]): { nodes: 
 		
 		// If we couldn't continue from parent, find or create a new column
 		if (assignedColumn === -1) {
-			// Look for an empty column first
-			assignedColumn = activeLanes.findIndex(lane => lane === null);
-			
-			if (assignedColumn === -1) {
-				// No empty column, create a new one
-				assignedColumn = activeLanes.length;
-				activeLanes.push(null);
-			}
+			// No empty column, create a new one
+			assignedColumn = activeLanes.length;
+			activeLanes.push(commit.commitHash);
 			
 			// Assign a new color for this branch
-			if (!columnToColor.has(assignedColumn)) {
-				columnToColor.set(assignedColumn, COLORS[colorIndex % COLORS.length]);
-				colorIndex++;
-			}
+			columnToColor.set(assignedColumn, COLORS[colorIndex % COLORS.length]);
+			colorIndex++;
 		}
 		
 		// Claim this column for this commit
-		activeLanes[assignedColumn] = commit.commitHash;
 		commitToColumn.set(commit.commitHash, assignedColumn);
 		
 		// For merge commits, ensure all parents get assigned columns if they don't have them
 		if (parentHashes.length > 1) {
-			parentHashes.slice(1).forEach(parentHash => {
+			parentHashes.forEach(parentHash => {
 				if (!commitToColumn.has(parentHash)) {
 					// Find an empty column for this merge parent
-					let parentColumn = activeLanes.findIndex(lane => lane === null);
-					if (parentColumn === -1) {
-						parentColumn = activeLanes.length;
-						activeLanes.push(null);
-					}
-					
-					activeLanes[parentColumn] = parentHash;
+					const parentColumn = activeLanes.length;
+					activeLanes.push(parentHash);
 					commitToColumn.set(parentHash, parentColumn);
 					
-					if (!columnToColor.has(parentColumn)) {
-						columnToColor.set(parentColumn, COLORS[colorIndex % COLORS.length]);
-						colorIndex++;
-					}
+					columnToColor.set(parentColumn, COLORS[colorIndex % COLORS.length]);
+					colorIndex++;
 				}
 			});
 		}
 		
 		// Create the node
 		const column = assignedColumn;
-		const color = columnToColor.get(column) || COLORS[0];
+		const color = columnToColor.get(column) || COLORS[COLORS.length- 1];
 		
 		nodes.push({
 			id: commit.commitHash,
 			commit,
-			x: column * COLUMN_WIDTH + 20 + 16,
+			x: column * COLUMN_WIDTH + 36,
 			y: index * ROW_HEIGHT + 24,
 			column,
 			color
 		});
 		
 		// Clean up lanes: remove commits that have no more children coming up
-		const remainingCommits = commits.slice(index + 1);
-		activeLanes.forEach((laneCommit, laneIndex) => {
-			if (laneCommit && laneCommit !== commit.commitHash) {
-				// Check if this commit has any children in the remaining commits
-				const hasChildren = remainingCommits.some(futureCommit =>
-					futureCommit.parentCommitHashes.includes(laneCommit)
-				);
+		// const remainingCommits = commits.slice(index + 1);
+		// activeLanes.forEach((laneCommit, laneIndex) => {
+		// 	if (laneCommit && laneCommit !== commit.commitHash) {
+		// 		// Check if this commit has any children in the remaining commits
+		// 		const hasChildren = remainingCommits.some(futureCommit =>
+		// 			futureCommit.parentCommitHashes.includes(laneCommit)
+		// 		);
 				
-				if (!hasChildren) {
-					activeLanes[laneIndex] = null;
-				}
-			}
-		});
-	});
+		// 		if (!hasChildren) {
+		// 			activeLanes[laneIndex] = null;
+		// 		}
+		// 	}
+		// });
+	};
+
+	console.debug({ nodes, links, commitToColumn, columnToColor });
 	
 	// Create links between commits and their parents
 	nodes.forEach(node => {
