@@ -100,60 +100,95 @@ function calculateAdvancedBranchLayout(commits: backend.GitLogCommitInfo[]): Map
 		'#6366f1'  // indigo
 	];
 	
-	// Much simpler approach: assign all commits to column 0 initially
-	// Only create new columns when we actually need them for merges
+	// Track active lanes - each lane represents a branch line
+	const lanes: Array<string | null> = []; // commitHash currently in each lane, null if empty
 	const commitColumns = new Map<string, { column: number; color: string }>();
 	let nextColorIndex = 0;
 	
-	// First pass: assign columns based on parent relationships
-	commits.forEach((commit) => {
+	commits.forEach((commit, commitIndex) => {
 		const parentHashes = commit.parentCommitHashes.filter(hash => hash.trim() !== '');
 		
-		let assignedColumn = 0; // Default to column 0 for linear history
-		let assignedColor = branchColors[0]; // Default to first color
+		let assignedColumn = -1;
+		let assignedColor = '';
 		
-		if (parentHashes.length === 0) {
-			// Root commit - column 0
-			assignedColumn = 0;
-			assignedColor = branchColors[0];
-		} else if (parentHashes.length === 1) {
-			// Single parent - ALWAYS use parent's column (this ensures linear history stays straight)
-			const parentInfo = commitColumns.get(parentHashes[0]);
-			if (parentInfo) {
-				assignedColumn = parentInfo.column;
-				assignedColor = parentInfo.color;
-			} else {
-				// Parent not found, default to column 0
-				assignedColumn = 0;
-				assignedColor = branchColors[0];
-			}
-		} else {
-			// Merge commit - use primary parent's column
-			const primaryParentInfo = commitColumns.get(parentHashes[0]);
-			if (primaryParentInfo) {
-				assignedColumn = primaryParentInfo.column;
-				assignedColor = primaryParentInfo.color;
-			} else {
-				assignedColumn = 0;
-				assignedColor = branchColors[0];
-			}
-			
-			// Ensure secondary parents have columns assigned
-			parentHashes.slice(1).forEach(parentHash => {
-				if (!commitColumns.has(parentHash)) {
-					nextColorIndex++;
-					commitColumns.set(parentHash, {
-						column: nextColorIndex,
-						color: branchColors[nextColorIndex % branchColors.length]
-					});
+		// Find if this commit should continue an existing lane
+		if (parentHashes.length > 0) {
+			// Look for the primary parent in existing lanes
+			const primaryParent = parentHashes[0];
+			for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
+				if (lanes[laneIndex] === primaryParent) {
+					assignedColumn = laneIndex;
+					const parentInfo = commitColumns.get(primaryParent);
+					assignedColor = parentInfo?.color || branchColors[laneIndex % branchColors.length];
+					break;
 				}
-			});
+			}
 		}
+		
+		// If no existing lane found, assign a new one
+		if (assignedColumn === -1) {
+			// Find the first available lane
+			assignedColumn = lanes.findIndex(lane => lane === null);
+			if (assignedColumn === -1) {
+				// No empty lane, create a new one
+				assignedColumn = lanes.length;
+				lanes.push(null);
+			}
+			assignedColor = branchColors[nextColorIndex % branchColors.length];
+			nextColorIndex++;
+		}
+		
+		// Place this commit in the assigned lane
+		lanes[assignedColumn] = commit.commitHash;
 		
 		commitColumns.set(commit.commitHash, {
 			column: assignedColumn,
 			color: assignedColor
 		});
+		
+		// For merge commits, ensure all parents have columns assigned
+		if (parentHashes.length > 1) {
+			parentHashes.slice(1).forEach(parentHash => {
+				if (!commitColumns.has(parentHash)) {
+					// Find if this parent is in any future commits (to assign it a proper lane)
+					const futureCommits = commits.slice(commitIndex + 1);
+					const parentInFuture = futureCommits.find(c => c.commitHash === parentHash);
+					
+					if (parentInFuture) {
+						// This parent will appear later, assign it a lane
+						let parentLane = lanes.findIndex(lane => lane === null);
+						if (parentLane === -1) {
+							parentLane = lanes.length;
+							lanes.push(null);
+						}
+						lanes[parentLane] = parentHash;
+						
+						commitColumns.set(parentHash, {
+							column: parentLane,
+							color: branchColors[nextColorIndex % branchColors.length]
+						});
+						nextColorIndex++;
+					}
+				}
+			});
+		}
+		
+		// Clean up lanes that are no longer needed
+		const remainingCommits = commits.slice(commitIndex + 1);
+		for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
+			const laneCommit = lanes[laneIndex];
+			if (laneCommit && laneCommit !== commit.commitHash) {
+				// Check if this lane's commit has any children in remaining commits
+				const hasChildren = remainingCommits.some(futureCommit =>
+					futureCommit.parentCommitHashes.includes(laneCommit)
+				);
+				
+				if (!hasChildren) {
+					// This lane is no longer needed
+					lanes[laneIndex] = null;
+				}
+			}
+		}
 	});
 	
 	// Second pass: create connections

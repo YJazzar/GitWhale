@@ -1,14 +1,12 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { useUnixTime } from '@/hooks/use-unix-time';
-import { Calendar, ExternalLink, GitBranch, Hash, User } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Calendar, ExternalLink, Hash, User } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { CommitHash } from './commit-hash';
 import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
+import { GitRefs } from './git-refs';
 
 interface CommitDetailsProps {
 	commit: backend.GitLogCommitInfo;
@@ -20,8 +18,6 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 		? commit.commitMessage.join('\n')
 		: commit.commitMessage;
 
-	// Parse refs to identify branches and tags
-	const refs = parseRefs(commit.refs);
 
     let isMergeCommit = commit.parentCommitHashes.length > 1;
     const handleViewFullCommit = useNavigateToCommit(commit.commitHash, isMergeCommit);
@@ -111,22 +107,10 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 					</div>
 
 					{/* Refs (branches and tags) */}
-					{(refs.branches.length > 0 || refs.tags.length > 0) && (
+					{commit.refs && commit.refs.trim() !== '' && (
 						<div>
 							<h3 className="font-semibold mb-2">Branches & Tags</h3>
-							<div className="flex items-center gap-2 flex-wrap">
-								{refs.branches.map((branch, index) => (
-									<Badge key={index} variant="secondary" className="text-xs">
-										<GitBranch className="w-3 h-3 mr-1" />
-										{branch}
-									</Badge>
-								))}
-								{refs.tags.map((tag, index) => (
-									<Badge key={index} variant="outline" className="text-xs">
-										{tag}
-									</Badge>
-								))}
-							</div>
+							<GitRefs refs={commit.refs} size="md" showHead={true} />
 						</div>
 					)}
 
@@ -147,32 +131,3 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 	);
 }
 
-interface ParsedRefs {
-	branches: string[];
-	tags: string[];
-}
-
-function parseRefs(refs: string): ParsedRefs {
-	if (!refs || refs.trim() === '') {
-		return { branches: [], tags: [] };
-	}
-
-	const branches: string[] = [];
-	const tags: string[] = [];
-
-	// Parse refs like "(origin/main, main)" or "(tag: v1.0.0)"
-	const refParts = refs
-		.replace(/[()]/g, '')
-		.split(',')
-		.map((r) => r.trim());
-
-	for (const ref of refParts) {
-		if (ref.startsWith('tag:')) {
-			tags.push(ref.substring(4).trim());
-		} else if ((ref && !ref.includes('/')) || ref.startsWith('origin/')) {
-			branches.push(ref);
-		}
-	}
-
-	return { branches, tags };
-}

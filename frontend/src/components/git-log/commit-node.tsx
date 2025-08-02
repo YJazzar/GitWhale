@@ -1,7 +1,7 @@
 import { backend } from 'wailsjs/go/models';
-import { Badge } from '@/components/ui/badge';
-import { GitBranch, GitCommit, GitMerge, User, Calendar, Hash, Tag } from 'lucide-react';
+import { GitCommit, GitMerge, User, Calendar, Hash } from 'lucide-react';
 import { useUnixTime } from '@/hooks/use-unix-time';
+import { GitRefs } from '@/components/git-refs';
 
 interface Connection {
 	fromColumn: number;
@@ -40,8 +40,7 @@ export function CommitNode({
 	const firstLine = commitMessage.split('\n')[0];
 	const displayMessage = firstLine.length > 75 ? firstLine.slice(0, 75) + '...' : firstLine;
 
-	// Parse refs to identify branches, origin refs, and tags
-	const refs = parseRefs(commit.refs);
+	// Parse refs using shared component
 
 	// Calculate the left padding based on branch column
 	const leftPadding = branchColumn * 32; // 32px per column
@@ -173,54 +172,8 @@ export function CommitNode({
 									{displayMessage}
 								</h3>
 								
-								{/* Display all refs in a single row with different styles */}
-								<div className="flex gap-1 flex-wrap items-center">
-									{/* HEAD indicator */}
-									{refs.head && (
-										<Badge
-											variant="default"
-											className="text-xs shrink-0 bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
-										>
-											HEAD
-										</Badge>
-									)}
-									
-									{/* Local branches */}
-									{refs.localBranches.map((branch, index) => (
-										<Badge
-											key={`local-${index}`}
-											variant="secondary"
-											className="text-xs shrink-0 bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
-										>
-											<GitBranch className="w-3 h-3 mr-1" />
-											{branch}
-										</Badge>
-									))}
-									
-									{/* Remote branches */}
-									{refs.remoteBranches.map((branch, index) => (
-										<Badge
-											key={`remote-${index}`}
-											variant="outline"
-											className="text-xs shrink-0 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-										>
-											<GitBranch className="w-3 h-3 mr-1" />
-											{branch}
-										</Badge>
-									))}
-									
-									{/* Tags */}
-									{refs.tags.map((tag, index) => (
-										<Badge
-											key={`tag-${index}`}
-											variant="outline"
-											className="text-xs shrink-0 bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-										>
-											<Tag className="w-3 h-3 mr-1" />
-											{tag}
-										</Badge>
-									))}
-								</div>
+								{/* Display all refs using shared component */}
+								<GitRefs refs={commit.refs} size="sm" />
 							</div>
 
 							{/* Author and timestamp */}
@@ -320,53 +273,3 @@ function ConnectionLine({ connection, fromY, toY, columnWidth }: ConnectionLineP
 	}
 }
 
-interface ParsedRefs {
-	localBranches: string[];
-	remoteBranches: string[];
-	tags: string[];
-	head: string | null;
-}
-
-function parseRefs(refs: string): ParsedRefs {
-	if (!refs || refs.trim() === '') {
-		return { localBranches: [], remoteBranches: [], tags: [], head: null };
-	}
-
-	const localBranches: string[] = [];
-	const remoteBranches: string[] = [];
-	const tags: string[] = [];
-	let head: string | null = null;
-
-	// Parse refs like "(HEAD -> main, origin/main, origin/HEAD)" or "(tag: v1.0.0, main)"
-	const refParts = refs
-		.replace(/[()]/g, '')
-		.split(',')
-		.map((r) => r.trim())
-		.filter(r => r.length > 0);
-
-	for (const ref of refParts) {
-		if (ref.startsWith('tag:')) {
-			// Handle tags like "tag: v1.0.0"
-			tags.push(ref.substring(4).trim());
-		} else if (ref.startsWith('HEAD ->')) {
-			// Handle "HEAD -> branch-name"
-			const branchName = ref.substring(7).trim();
-			head = branchName;
-			if (!localBranches.includes(branchName)) {
-				localBranches.push(branchName);
-			}
-		} else if (ref.includes('/')) {
-			// Handle remote refs like "origin/main", "upstream/develop"
-			if (!remoteBranches.includes(ref)) {
-				remoteBranches.push(ref);
-			}
-		} else if (ref && ref !== 'HEAD') {
-			// Handle local branch refs
-			if (!localBranches.includes(ref)) {
-				localBranches.push(ref);
-			}
-		}
-	}
-
-	return { localBranches, remoteBranches, tags, head };
-}
