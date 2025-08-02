@@ -61,9 +61,9 @@ function getTerminalState(repoPath: string) {
 async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 	// Subscribe to new stuff getting written from the terminal
 	EventsOn(`onTerminalDataReturned://${repoPath}`, (event: string) => {
-		const byteData = base64ToByteArray(event);
-		// console.debug('got data: ', byteData);
-		terminal.write(byteData);
+		const stringData = atob(event)
+
+		terminal.write(stringData);
 		terminal.scrollToBottom();
 	});
 
@@ -79,19 +79,4 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 	await InitNewTerminalSession(repoPath);
 
 	terminal.write('\n')
-}
-
-function base64ToByteArray(base64: string) {
-	// Decode the base64 string into an ASCII string
-	const decodedString = atob(base64);
-
-	// Create an array to hold the byte values
-	const byteArray = new Uint8Array(decodedString.length);
-
-	// Loop through each character and convert it to a byte
-	for (let i = 0; i < decodedString.length; i++) {
-		byteArray[i] = decodedString.charCodeAt(i);
-	}
-
-	return byteArray;
 }

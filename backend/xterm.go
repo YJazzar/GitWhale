@@ -47,8 +47,8 @@ func DisposeXTermSession(app *App, repoPath string) {
 // TTYSize represents a JSON structure to be sent by the frontend
 // xterm.js implementation to the xterm.js websocket handler
 type TTYSize struct {
-	Cols uint16 `json:"cols"`
-	Rows uint16 `json:"rows"`
+	Cols int `json:"cols"`
+	Rows int `json:"rows"`
 }
 
 func CreateXTermSession(app *App, repoPath string) {
@@ -144,7 +144,5 @@ func CreateXTermSession(app *App, repoPath string) {
 }
 
 func ResizeConsoleSession(session *TerminalSession, newSize TTYSize) {
-	// Note: go-console library doesn't support runtime resizing
-	// This is a no-op for now
-	Log.Debug("Console resize requested to %dx%d (not supported by go-console)", newSize.Cols, newSize.Rows)
+	(*session.consoleSession).SetSize(newSize.Cols, newSize.Rows)
 }
