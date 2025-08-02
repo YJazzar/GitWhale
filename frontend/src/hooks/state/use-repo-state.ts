@@ -43,6 +43,7 @@ function getTerminalState(repoPath: string) {
 			return;
 		}
 
+		console.log("disposing terminal for repo: ", repoPath);
 		terminal.dispose();
 		EventsOff(`onTerminalDataReturned://${repoPath}`);
 		CleanupTerminalSession(repoPath);

@@ -145,12 +145,7 @@ func (app *App) OnTerminalSessionWasResized(repoPath string, newSize TTYSize) {
 }
 
 func (app *App) CleanupTerminalSession(repoPath string) {
-	// Remove the session from the map of sessions, and run any clean up logic
-	if session, exists := app.terminalSessions[repoPath]; exists {
-		Log.Info("Deleting the session for repo: %v", repoPath)
-		session.waiter.Done() // This should invoke the defer logic where the session got created
-		delete(app.terminalSessions, repoPath)
-	}
+	DisposeXTermSession(app, repoPath)
 }
 
 func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {

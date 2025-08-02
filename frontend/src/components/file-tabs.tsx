@@ -111,7 +111,6 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 			setAvailableFiles([...newAvailableTabs]);
 
 			const actuallyClosingFile = newAvailableTabs.length !== availableFiles.length;
-			debugger
 			if (actuallyClosingFile) {
 				fileToClose.onTabClose?.();
 			}

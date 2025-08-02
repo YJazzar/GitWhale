@@ -23,6 +23,27 @@ func SetupXTermForNewRepo(app *App, repoPath string) {
 	}()
 }
 
+func DisposeXTermSession(app *App, repoPath string) {
+	Log.Info("Disposing terminal session for repo: %v", repoPath)
+
+	session, exists := app.terminalSessions[repoPath]
+	if !exists {
+		Log.Warning("No terminal session found for repo: %v", repoPath)
+		return
+	}
+
+	// End the go routine
+	session.waiter.Done()
+
+	// Remove the event listener for terminal data
+	runtime.EventsOff(app.ctx, fmt.Sprintf("onTerminalData://%v", repoPath))
+
+	// Remove the session from the map
+	delete(app.terminalSessions, repoPath)
+
+	Log.Info("Terminal session for repo %v disposed successfully", repoPath)
+}
+
 // TTYSize represents a JSON structure to be sent by the frontend
 // xterm.js implementation to the xterm.js websocket handler
 type TTYSize struct {
@@ -91,7 +112,7 @@ func CreateXTermSession(app *App, repoPath string) {
 
 	// console << xterm.js (receive from frontend and write to terminal)
 	runtime.EventsOn(app.ctx, fmt.Sprintf("onTerminalData://%v", repoPath), func(optionalData ...interface{}) {
-		Log.Info("Received data: %v", PrettyPrint(optionalData))
+		// Log.Info("Received data: %v", PrettyPrint(optionalData))
 
 		var dataBuffer bytes.Buffer
 		for _, input := range optionalData {
