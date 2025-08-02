@@ -44,7 +44,7 @@ export function GitLogGraph({
 	commits.forEach(commit => commitMap.set(commit.commitHash, commit));
 
 	// Calculate branches and positioning for visual layout
-	const branchInfo = calculateBranchLayout(commits);
+	const branchInfo = calculateAdvancedBranchLayout(commits);
 
 	return (
 		<div className={cn("git-log-graph overflow-auto w-full", className)}>
@@ -57,6 +57,7 @@ export function GitLogGraph({
 							commit={commit}
 							branchColumn={branchData?.column ?? 0}
 							connections={branchData?.connections ?? []}
+							incomingConnections={branchData?.incomingConnections ?? []}
 							isFirst={index === 0}
 							isLast={index === commits.length - 1}
 							onCommitClick={onCommitClick}
@@ -72,72 +73,137 @@ export function GitLogGraph({
 interface BranchData {
 	column: number;
 	connections: Connection[];
+	incomingConnections: Connection[];
 }
 
 interface Connection {
 	fromColumn: number;
 	toColumn: number;
 	type: 'straight' | 'merge' | 'branch';
+	color: string;
 }
 
-function calculateBranchLayout(commits: backend.GitLogCommitInfo[]): Map<string, BranchData> {
+
+function calculateAdvancedBranchLayout(commits: backend.GitLogCommitInfo[]): Map<string, BranchData> {
 	const branchInfo = new Map<string, BranchData>();
-	const activeBranches: string[] = [];
 	
-	// Simple layout: assign columns based on first appearance
-	commits.forEach((commit, index) => {
-		const connections: Connection[] = [];
-		let column = 0;
+	const branchColors = [
+		'#3b82f6', // blue
+		'#10b981', // emerald  
+		'#f59e0b', // amber
+		'#ef4444', // red
+		'#8b5cf6', // violet
+		'#06b6d4', // cyan
+		'#f97316', // orange
+		'#84cc16', // lime
+		'#ec4899', // pink
+		'#6366f1'  // indigo
+	];
+	
+	// Much simpler approach: assign all commits to column 0 initially
+	// Only create new columns when we actually need them for merges
+	const commitColumns = new Map<string, { column: number; color: string }>();
+	let nextColorIndex = 0;
+	
+	// First pass: assign columns based on parent relationships
+	commits.forEach((commit) => {
+		const parentHashes = commit.parentCommitHashes.filter(hash => hash.trim() !== '');
 		
-		// Check if this commit is a continuation of an existing branch
-		let foundExistingBranch = false;
-		for (let i = 0; i < activeBranches.length; i++) {
-			if (activeBranches[i] === commit.commitHash) {
-				column = i;
-				foundExistingBranch = true;
-				break;
+		let assignedColumn = 0; // Default to column 0 for linear history
+		let assignedColor = branchColors[0]; // Default to first color
+		
+		if (parentHashes.length === 0) {
+			// Root commit - column 0
+			assignedColumn = 0;
+			assignedColor = branchColors[0];
+		} else if (parentHashes.length === 1) {
+			// Single parent - ALWAYS use parent's column (this ensures linear history stays straight)
+			const parentInfo = commitColumns.get(parentHashes[0]);
+			if (parentInfo) {
+				assignedColumn = parentInfo.column;
+				assignedColor = parentInfo.color;
+			} else {
+				// Parent not found, default to column 0
+				assignedColumn = 0;
+				assignedColor = branchColors[0];
 			}
+		} else {
+			// Merge commit - use primary parent's column
+			const primaryParentInfo = commitColumns.get(parentHashes[0]);
+			if (primaryParentInfo) {
+				assignedColumn = primaryParentInfo.column;
+				assignedColor = primaryParentInfo.color;
+			} else {
+				assignedColumn = 0;
+				assignedColor = branchColors[0];
+			}
+			
+			// Ensure secondary parents have columns assigned
+			parentHashes.slice(1).forEach(parentHash => {
+				if (!commitColumns.has(parentHash)) {
+					nextColorIndex++;
+					commitColumns.set(parentHash, {
+						column: nextColorIndex,
+						color: branchColors[nextColorIndex % branchColors.length]
+					});
+				}
+			});
 		}
 		
-		// If not found in active branches, check if it's a child of any active branch
-		if (!foundExistingBranch) {
-			for (let i = 0; i < activeBranches.length; i++) {
-				const activeBranch = activeBranches[i];
-				// Check if the current commit is a parent of the active branch
-				const nextCommit = commits.find(c => c.commitHash === activeBranch);
-				if (nextCommit && nextCommit.parentCommitHashes.includes(commit.commitHash)) {
-					column = i;
-					activeBranches[i] = commit.commitHash;
-					foundExistingBranch = true;
-					break;
+		commitColumns.set(commit.commitHash, {
+			column: assignedColumn,
+			color: assignedColor
+		});
+	});
+	
+	// Second pass: create connections
+	commits.forEach((commit) => {
+		const commitInfo = commitColumns.get(commit.commitHash)!;
+		const parentHashes = commit.parentCommitHashes.filter(hash => hash.trim() !== '');
+		
+		const connections: Connection[] = [];
+		
+		parentHashes.forEach((parentHash, parentIndex) => {
+			const parentInfo = commitColumns.get(parentHash);
+			if (!parentInfo) return;
+			
+			const connectionType = parentIndex === 0 ? 'straight' : 'merge';
+			const connectionColor = parentIndex === 0 ? commitInfo.color : parentInfo.color;
+			
+			connections.push({
+				fromColumn: commitInfo.column,
+				toColumn: parentInfo.column,
+				type: connectionType,
+				color: connectionColor
+			});
+		});
+		
+		branchInfo.set(commit.commitHash, {
+			column: commitInfo.column,
+			connections,
+			incomingConnections: []
+		});
+	});
+	
+	// Third pass: calculate incoming connections
+	commits.forEach(commit => {
+		const commitData = branchInfo.get(commit.commitHash)!;
+		
+		commit.parentCommitHashes.forEach(parentHash => {
+			if (parentHash.trim() === '') return;
+			
+			const parentData = branchInfo.get(parentHash);
+			if (parentData) {
+				// Find the connection from commit to this parent
+				const connection = commitData.connections.find(conn => {
+					const parentInfo = commitColumns.get(parentHash);
+					return parentInfo && conn.toColumn === parentInfo.column;
+				});
+				
+				if (connection) {
+					parentData.incomingConnections.push(connection);
 				}
 			}
-		}
-		
-		// If still not found, assign a new column
-		if (!foundExistingBranch) {
-			column = activeBranches.length;
-			activeBranches.push(commit.commitHash);
-		}
-
-		// Create connections to parent commits
-		commit.parentCommitHashes.forEach((parentHash, parentIndex) => {
-			// Find the column of the parent
-			const nextCommits = commits.slice(index + 1);
-			const parentCommit = nextCommits.find(c => c.commitHash === parentHash);
-			if (parentCommit) {
-				// We'll determine parent column when we process that commit
-				connections.push({
-					fromColumn: column,
-					toColumn: column, // Will be updated when parent is processed
-					type: parentIndex === 0 ? 'straight' : 'merge'
-				});
-			}
-		});
-
-		branchInfo.set(commit.commitHash, {
-			column,
-			connections
 		});
 	});
 
