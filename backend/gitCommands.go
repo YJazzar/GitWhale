@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -11,10 +12,10 @@ func getCurrentBranchName(repoPath string) string {
 	return strings.TrimSpace(runCommandAndLogErr(cmd))
 }
 
-func readGitLog(repoPath string) []GitLogCommitInfo {
+func readGitLog(repoPath string, commitsToLoad int) []GitLogCommitInfo {
 	Log.Info("Running git log on repo: %v", repoPath)
 
-	gitLogCmdString := "git log --format=%H%n%aN%n%aE%n%at%n%ct%n%P%n%D%n%B -z --shortstat --diff-merges=first-parent -n50 --skip=0 --topo-order --decorate=full --stdin"
+	gitLogCmdString := fmt.Sprintf("git log --format=%%H%%n%%aN%%n%%aE%%n%%at%%n%%ct%%n%%P%%n%%D%%n%%B -z --shortstat --diff-merges=first-parent -n%d --skip=0 --topo-order --decorate=full --stdin", commitsToLoad)
 	cmd := exec.Command("bash", "-c", gitLogCmdString)
 	cmd.Dir = repoPath
 

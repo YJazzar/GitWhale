@@ -38,6 +38,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@radix-ui/react-label": "^2.1.7",
     "@types/d3": "^7.1.0",
     "@types/node": "^22.10.2",
     "@types/react": "^18.0.17",

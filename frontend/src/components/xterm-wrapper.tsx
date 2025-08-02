@@ -1,11 +1,13 @@
 import { useRepoState } from '@/hooks/state/use-repo-state';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
+import { UseAppState } from '@/hooks/state/use-app-state';
 import '@xterm/xterm/css/xterm.css';
 import { useLayoutEffect, useRef } from 'react';
 
 export default function XTermWrapper() {
 	const { repoPath } = useCurrentRepoParams();
+	const { appState } = UseAppState();
 	const divNodeRef = useRef<HTMLDivElement | null>(null);
 
 	// This will not cause a re-render and we can treat it like a ref
@@ -16,7 +18,9 @@ export default function XTermWrapper() {
 
 		// first visit for this repo
 		if (!state) {
-			state = terminalState.createTerminal();
+			// Get terminal settings from app state
+			const terminalSettings = appState?.appConfig?.settings?.terminal;
+			state = terminalState.createTerminal(terminalSettings);
 		}
 
 		// ① put (or move) the DOM node into place
@@ -27,11 +31,11 @@ export default function XTermWrapper() {
 
 		state.fitAddon.fit();
 
-		// ② detach—**don’t dispose**—on unmount so scroll back & PID survive
+		// ② detach—**don't dispose**—on unmount so scroll back & PID survive
 		return () => {
 			state?.element.parentNode?.removeChild(state.element);
 		};
-	}, [repoPath]);
+	}, []);
 
 
 	useResizeObserver(divNodeRef as unknown as React.MutableRefObject<null>, () => {

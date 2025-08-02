@@ -49,3 +49,7 @@ export function Startup(arg1, arg2) {
 export function ToggleStarRepo(arg1) {
   return window['go']['backend']['App']['ToggleStarRepo'](arg1);
 }
+
+export function UpdateSettings(arg1) {
+  return window['go']['backend']['App']['UpdateSettings'](arg1);
+}

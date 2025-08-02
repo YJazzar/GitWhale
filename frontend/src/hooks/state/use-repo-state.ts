@@ -6,8 +6,45 @@ import {
 	OnTerminalSessionWasResized,
 } from '../../../wailsjs/go/backend/App';
 import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
+import { backend } from '../../../wailsjs/go/models';
 
-
+// Map color schemes to xterm themes
+function getXTermTheme(colorScheme: string) {
+	switch (colorScheme) {
+		case 'dark':
+			return {
+				background: '#1e1e1e',
+				foreground: '#d4d4d4',
+				cursor: '#ffffff',
+			};
+		case 'light':
+			return {
+				background: '#ffffff',
+				foreground: '#000000',
+				cursor: '#000000',
+			};
+		case 'solarized':
+			return {
+				background: '#002b36',
+				foreground: '#839496',
+				cursor: '#93a1a1',
+			};
+		case 'monokai':
+			return {
+				background: '#272822',
+				foreground: '#f8f8f2',
+				cursor: '#f8f8f0',
+			};
+		case 'tomorrow':
+			return {
+				background: '#1d1f21',
+				foreground: '#c5c8c6',
+				cursor: '#aeafad',
+			};
+		default:
+			return undefined; // Use default xterm theme
+	}
+}
 
 export const useRepoState = (repoPath: string) => {
 	return {
@@ -20,9 +57,27 @@ export const useRepoState = (repoPath: string) => {
 
 const xTermRefMap = new Map<string, { terminal: Terminal; fitAddon: FitAddon; element: HTMLDivElement }>();
 function getTerminalState(repoPath: string) {
-	const createTerminal = () => {
+	const createTerminal = (terminalSettings?: backend.TerminalSettings) => {
 		const fitAddon = new FitAddon();
-		const newTerminal = new Terminal({  });
+		
+		// Use provided terminal settings or defaults
+		let terminalOptions: any = {};
+		if (terminalSettings) {
+			terminalOptions = {
+				fontSize: terminalSettings.fontSize,
+				cursorStyle: terminalSettings.cursorStyle,
+				// Map color schemes to xterm themes
+				theme: getXTermTheme(terminalSettings.colorScheme),
+			};
+		} else {
+			// Use defaults
+			terminalOptions = {
+				fontSize: 14,
+				cursorStyle: 'block',
+			};
+		}
+		
+		const newTerminal = new Terminal(terminalOptions);
 		const element = document.createElement('div');
 		element.className = 'w-full h-full';
 

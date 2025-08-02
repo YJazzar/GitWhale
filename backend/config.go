@@ -8,6 +8,9 @@ type AppConfig struct {
 	// The file path where the AppConfig struct lives
 	FilePath string `json:"filePath"`
 
+	// Application settings
+	Settings AppSettings `json:"settings"`
+
 	// The git repos that are currently open, and their tab orders
 	GitReposMap         map[string]RepoContext `json:"openGitRepos"`
 	OrderedOpenGitRepos []string               `json:"orderedOpenGitRepos"`
@@ -17,6 +20,22 @@ type AppConfig struct {
 
 	// A list of starred/favorited repos that persist at the top
 	StarredGitRepos []string `json:"starredGitRepos"`
+}
+
+type AppSettings struct {
+	Git      GitSettings      `json:"git"`
+	Terminal TerminalSettings `json:"terminal"`
+}
+
+type GitSettings struct {
+	CommitsToLoad int `json:"commitsToLoad"`
+}
+
+type TerminalSettings struct {
+	DefaultCommand string `json:"defaultCommand"`
+	FontSize       int    `json:"fontSize"`
+	ColorScheme    string `json:"colorScheme"`
+	CursorStyle    string `json:"cursorStyle"`
 }
 
 func LoadAppConfig() (*AppConfig, error) {
@@ -29,11 +48,36 @@ func LoadAppConfig() (*AppConfig, error) {
 	config, err := LoadJSON[*AppConfig](appConfigFile)
 	if err != nil || config == nil {
 		config = &AppConfig{
-			FilePath:        appConfigFile,
+			FilePath: appConfigFile,
+			Settings: AppSettings{
+				Git: GitSettings{
+					CommitsToLoad: 100,
+				},
+				Terminal: TerminalSettings{
+					DefaultCommand: "",
+					FontSize:       14,
+					ColorScheme:    "default",
+					CursorStyle:    "block",
+				},
+			},
 			GitReposMap:     make(map[string]RepoContext),
 			RecentGitRepos:  []string{},
 			StarredGitRepos: []string{},
 		}
+	}
+
+	// Ensure settings have default values if they're missing
+	if config.Settings.Git.CommitsToLoad == 0 {
+		config.Settings.Git.CommitsToLoad = 100
+	}
+	if config.Settings.Terminal.FontSize == 0 {
+		config.Settings.Terminal.FontSize = 14
+	}
+	if config.Settings.Terminal.ColorScheme == "" {
+		config.Settings.Terminal.ColorScheme = "default"
+	}
+	if config.Settings.Terminal.CursorStyle == "" {
+		config.Settings.Terminal.CursorStyle = "block"
 	}
 
 	return config, err
@@ -97,4 +141,9 @@ func (config *AppConfig) toggleStarRepo(gitRepoPath string) bool {
 		config.StarredGitRepos = append(config.StarredGitRepos, gitRepoPath)
 		return true
 	}
+}
+
+func (config *AppConfig) updateSettings(newSettings AppSettings) error {
+	config.Settings = newSettings
+	return config.SaveAppConfig()
 }

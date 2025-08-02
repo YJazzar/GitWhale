@@ -287,7 +287,6 @@ function calculateGitGraphLayout(commits: backend.GitLogCommitInfo[]): { nodes: 
 		// 1. If this commit has a parent and no other child has claimed that parent's column, continue in parent's column
 		// 2. Otherwise, find the first available column or create a new one
 		
-		debugger
 		if (parentHashes.length > 0) {
 			const primaryParent = parentHashes[0];
 			const parentColumn = commitToColumn.get(primaryParent);

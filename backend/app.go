@@ -149,9 +149,14 @@ func (app *App) CleanupTerminalSession(repoPath string) {
 }
 
 func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {
-	return readGitLog(gitRepoPath)
+	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
+	return readGitLog(gitRepoPath, commitsToLoad)
 }
 
 func (app *App) ToggleStarRepo(gitRepoPath string) bool {
 	return app.AppConfig.toggleStarRepo(gitRepoPath)
+}
+
+func (app *App) UpdateSettings(newSettings AppSettings) error {
+	return app.AppConfig.updateSettings(newSettings)
 }

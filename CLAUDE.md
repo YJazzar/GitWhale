@@ -35,10 +35,45 @@ GitWhale is a cross-platform Git diff viewer built with Wails (Go backend + Reac
 - **Diff viewer**: Monaco Editor for file diff visualization
 
 ### State Management Pattern
-- Backend state exposed through Wails bindings
-- Frontend uses `UseAppState()` hook to sync with Go backend state
-- Individual repo state managed via `use-repo-state.ts`
-- Terminal sessions managed per repository path
+
+#### Application-Level State (Persistent)
+- **Central State**: All application-level data is maintained in the `AppConfig` struct (`backend/config.go`)
+- **Persistence**: AppConfig is automatically saved to JSON file on app shutdown and loaded on startup
+- **Access Pattern**: Frontend accesses this state via `UseAppState()` hook which syncs with Go backend
+- **What Goes Here**: User settings, repository lists, preferences, and any data that should persist between sessions
+
+#### State Management Guidelines
+- **Default to AppConfig**: When adding new application-level features, store data in AppConfig struct where reasonable
+- **Auto-generated Types**: Wails automatically generates TypeScript types from Go structs in `frontend/wailsjs/go/models.ts`
+- **State Updates**: Use backend methods that update AppConfig and call `refreshAppState()` on frontend to sync
+- **Example Pattern**:
+  ```go
+  // backend/config.go - Add to AppConfig struct
+  type AppConfig struct {
+      Settings AppSettings `json:"settings"`
+      // ... other persistent data
+  }
+  
+  // backend/app.go - Add method to update and save
+  func (app *App) UpdateSomething(newData SomeType) error {
+      app.AppConfig.SomeField = newData
+      return app.AppConfig.SaveAppConfig()
+  }
+  ```
+  ```typescript
+  // frontend - Access via UseAppState hook
+  const { appState, refreshAppState } = UseAppState();
+  const someData = appState?.appConfig?.someField;
+  
+  // Update and refresh
+  await UpdateSomething(newData);
+  await refreshAppState();
+  ```
+
+#### Component-Level State (Ephemeral)
+- **Individual repo state**: Managed via `use-repo-state.ts` for repository-specific data that doesn't need persistence
+- **Terminal sessions**: Managed per repository path, disposed when repo is closed
+- **UI state**: Use React state hooks or Jotai atoms for temporary UI state
 
 ### Key Integrations
 - Git difftool integration via `.gitconfig` setup

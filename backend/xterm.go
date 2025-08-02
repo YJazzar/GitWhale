@@ -60,9 +60,15 @@ func CreateXTermSession(app *App, repoPath string) {
 	}
 	defer proc.Close()
 
-	// Choose terminal based on OS
+	// Get terminal settings
+	defaultCommand := app.AppConfig.Settings.Terminal.DefaultCommand
+	
+	// Choose terminal based on settings or OS default
 	var args []string
-	if goruntime.GOOS == "windows" {
+	if defaultCommand != "" {
+		// Use the custom command from settings
+		args = []string{defaultCommand}
+	} else if goruntime.GOOS == "windows" {
 		// Use Git Bash on Windows
 		args = []string{"C:\\Program Files\\Git\\bin\\bash.exe", "--login", "-i"}
 	} else {
