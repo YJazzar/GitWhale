@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import useCommitGraphBuilder from '@/hooks/use-commit-graph-builder';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { backend } from 'wailsjs/go/models';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
@@ -47,6 +47,10 @@ export default function RepoLogView() {
 	const handleCloseCommitDetails = () => {
 		setSelectedCommit(null);
 	};
+
+	useEffect(() => {
+		refreshLogs();
+	}, [repoPath]);
 
 	return (
 		<div className="flex flex-col gap-4 p-4 h-full">
