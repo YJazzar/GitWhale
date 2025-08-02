@@ -7,7 +7,6 @@ import { GitBranch } from 'lucide-react';
 interface GitLogGraphProps {
 	commits: backend.GitLogCommitInfo[];
 	onCommitClick?: (commitHash: string) => void;
-	generateCommitPageUrl?: (commitHash: string) => string;
 	className?: string;
 	loading?: boolean;
 }
@@ -15,7 +14,6 @@ interface GitLogGraphProps {
 export function GitLogGraph({ 
 	commits, 
 	onCommitClick, 
-	generateCommitPageUrl,
 	className,
 	loading = false
 }: GitLogGraphProps) {

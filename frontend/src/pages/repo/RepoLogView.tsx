@@ -33,10 +33,6 @@ export default function RepoLogView() {
 		}
 	};
 
-	const generateCommitPageUrl = (commitHash: string) => {
-		return `/repo/${encodedRepoPath}/commit/${commitHash}`;
-	};
-
 	const onCommitSelect = (commitHash: string) => {
 		const commit = logs.find(log => log.commitHash === commitHash);
 		if (commit) {
@@ -67,7 +63,6 @@ export default function RepoLogView() {
 						<GitLogGraph 
 							commits={logs}
 							onCommitClick={onCommitSelect}
-							generateCommitPageUrl={generateCommitPageUrl}
 							loading={loading}
 							className="rounded-lg p-0 bg-background h-full"
 						/>
