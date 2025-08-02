@@ -1,7 +1,7 @@
 import { FileTabsHandle } from '@/components/file-tabs';
 import { Button } from '@/components/ui/button';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { Star, StarOff, Settings } from 'lucide-react';
+import { Star, StarOff, Settings, FolderOpen } from 'lucide-react';
 import { Link } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
@@ -105,19 +105,15 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 
 	return (
 		<div className="h-full flex items-center justify-center p-8">
-			<div className="grid grid-cols-2 gap-6 max-w-4xl w-full">
+			<div className="grid grid-cols-2 gap-6 max-w-xl w-full">
 				{/* Column 1: Start Menu */}
-				<div className="flex flex-col items-start">
-					<h2 className="text-xl font-semibold mb-4">Start:</h2>
+				<div className="flex flex-col items-center justify-center">
+					{/* <h2 className="text-xl font-semibold mb-4">Start:</h2> */}
 					<ul className="space-y-2">
 						<li>
 							<Button variant={'link'} onClick={onOpenNewRepo} className="justify-start p-0">
+								<FolderOpen/>
 								Open Repository
-							</Button>
-						</li>
-						<li>
-							<Button disabled variant={'link'} className="justify-start p-0">
-								New Repository
 							</Button>
 						</li>
 						<li>
