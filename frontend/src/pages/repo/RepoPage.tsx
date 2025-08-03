@@ -23,7 +23,7 @@ import {
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import clsx from 'clsx';
-import { GitGraph, House, Terminal } from 'lucide-react';
+import { GitGraph, House, Terminal, GitCompare } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router';
 
@@ -79,6 +79,11 @@ function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 			title: 'Log',
 			url: `/repo/${encodedRepoPath}/log`,
 			icon: <GitGraph />,
+		},
+		{
+			title: 'Diff',
+			url: `/repo/${encodedRepoPath}/diff`,
+			icon: <GitCompare />,
 		},
 		{
 			title: 'Terminal',

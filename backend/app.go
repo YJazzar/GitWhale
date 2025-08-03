@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/runletapp/go-console"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -20,6 +21,7 @@ type App struct {
 	StartupState     *StartupState `json:"startupState"`
 	AppConfig        *AppConfig    `json:"appConfig"`
 	terminalSessions map[string]*TerminalSession
+	diffSessions     map[string]*DiffSession
 }
 
 type TerminalSession struct {
@@ -52,6 +54,7 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 	app.StartupState = startupState
 	app.AppConfig = appConfig
 	app.terminalSessions = make(map[string]*TerminalSession)
+	app.diffSessions = make(map[string]*DiffSession)
 
 	if startupState.DirectoryDiff != nil {
 		if startupState.DirectoryDiff.ShouldStartFileWatcher {
@@ -190,4 +193,71 @@ func (app *App) UpdateSettings(newSettings AppSettings) error {
 
 func (app *App) GetDefaultShellCommand() string {
 	return strings.Join(getDefaultShellCommand(), " ")
+}
+
+// Diff session management methods
+
+func (app *App) StartDiffSession(options DiffOptions) (*DiffSession, error) {
+	Log.Info("Starting diff session for repo: %s", options.RepoPath)
+	
+	session, err := CreateDiffSession(options)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Store session in app
+	app.diffSessions[session.SessionId] = session
+	
+	// Cleanup old sessions periodically
+	go CleanupOldDiffSessions()
+	
+	return session, nil
+}
+
+func (app *App) GetDiffSessionData(sessionId string) *Directory {
+	session, exists := app.diffSessions[sessionId]
+	if !exists {
+		Log.Error("Diff session not found: %s", sessionId)
+		return nil
+	}
+	
+	return GetDiffSessionDirectory(session)
+}
+
+func (app *App) GetDiffSession(sessionId string) *DiffSession {
+	session, exists := app.diffSessions[sessionId]
+	if !exists {
+		return nil
+	}
+	
+	// Update last accessed time
+	session.LastAccessed = time.Now()
+	return session
+}
+
+func (app *App) EndDiffSession(sessionId string) error {
+	_, exists := app.diffSessions[sessionId]
+	if !exists {
+		return fmt.Errorf("diff session not found: %s", sessionId)
+	}
+	
+	// Cleanup temp directories
+	err := CleanupDiffSession(sessionId)
+	if err != nil {
+		Log.Error("Failed to cleanup diff session %s: %v", sessionId, err)
+	}
+	
+	// Remove from app sessions
+	delete(app.diffSessions, sessionId)
+	
+	Log.Info("Ended diff session: %s", sessionId)
+	return nil
+}
+
+func (app *App) ListDiffSessions() []*DiffSession {
+	sessions := make([]*DiffSession, 0, len(app.diffSessions))
+	for _, session := range app.diffSessions {
+		sessions = append(sessions, session)
+	}
+	return sessions
 }

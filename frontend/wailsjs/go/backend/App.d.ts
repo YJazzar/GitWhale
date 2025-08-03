@@ -7,11 +7,17 @@ export function CleanupTerminalSession(arg1:string):Promise<void>;
 
 export function CloseRepo(arg1:string):Promise<backend.App>;
 
+export function EndDiffSession(arg1:string):Promise<void>;
+
 export function GetAppState():Promise<backend.App>;
 
 export function GetBranches(arg1:string):Promise<Array<backend.GitRef>>;
 
 export function GetDefaultShellCommand():Promise<string>;
+
+export function GetDiffSession(arg1:string):Promise<backend.DiffSession>;
+
+export function GetDiffSessionData(arg1:string):Promise<backend.Directory>;
 
 export function GetDirectoryDiffDetails():Promise<backend.Directory>;
 
@@ -22,6 +28,8 @@ export function GitFetch(arg1:string,arg2:string,arg3:string):Promise<void>;
 export function InitNewTerminalSession(arg1:string):Promise<void>;
 
 export function IsInDirDiffMode():Promise<boolean>;
+
+export function ListDiffSessions():Promise<Array<backend.DiffSession>>;
 
 export function OnTerminalSessionWasResized(arg1:string,arg2:backend.TTYSize):Promise<void>;
 
@@ -36,6 +44,8 @@ export function RunGitLogFromRef(arg1:string,arg2:string):Promise<Array<backend.
 export function RunGitLogWithOptions(arg1:string,arg2:backend.GitLogOptions):Promise<Array<backend.GitLogCommitInfo>>;
 
 export function SearchCommits(arg1:string,arg2:string):Promise<Array<backend.GitLogCommitInfo>>;
+
+export function StartDiffSession(arg1:backend.DiffOptions):Promise<backend.DiffSession>;
 
 export function Startup(arg1:context.Context,arg2:backend.StartupState):Promise<void>;
 

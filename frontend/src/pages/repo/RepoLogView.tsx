@@ -8,9 +8,11 @@ import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { CommitDetails } from '@/components/commit-details';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
+import { useNavigate } from 'react-router';
 
 export default function RepoLogView() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
+	const navigate = useNavigate();
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [selectedCommit, setSelectedCommit] = useState<backend.GitLogCommitInfo | null>(null);
@@ -45,6 +47,17 @@ export default function RepoLogView() {
 		setSelectedCommit(null);
 	};
 
+	const handleCompareRefs = (fromRef: string, toRef: string) => {
+		// Navigate to diff view with pre-filled refs
+		navigate(`/repo/${encodedRepoPath}/diff`, {
+			state: {
+				fromRef,
+				toRef,
+				autoStart: true
+			}
+		});
+	};
+
 	useEffect(() => {
 		refreshLogs();
 	}, [repoPath]);
@@ -58,6 +71,7 @@ export default function RepoLogView() {
 				onLoadingChange={setLoading}
 				currentRef={currentRef}
 				onRefChange={setCurrentRef}
+				onCompareRefs={handleCompareRefs}
 			/>
 			
 			<div className="flex-1 min-h-0 w-full">

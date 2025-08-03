@@ -10,6 +10,10 @@ export function CloseRepo(arg1) {
   return window['go']['backend']['App']['CloseRepo'](arg1);
 }
 
+export function EndDiffSession(arg1) {
+  return window['go']['backend']['App']['EndDiffSession'](arg1);
+}
+
 export function GetAppState() {
   return window['go']['backend']['App']['GetAppState']();
 }
@@ -20,6 +24,14 @@ export function GetBranches(arg1) {
 
 export function GetDefaultShellCommand() {
   return window['go']['backend']['App']['GetDefaultShellCommand']();
+}
+
+export function GetDiffSession(arg1) {
+  return window['go']['backend']['App']['GetDiffSession'](arg1);
+}
+
+export function GetDiffSessionData(arg1) {
+  return window['go']['backend']['App']['GetDiffSessionData'](arg1);
 }
 
 export function GetDirectoryDiffDetails() {
@@ -40,6 +52,10 @@ export function InitNewTerminalSession(arg1) {
 
 export function IsInDirDiffMode() {
   return window['go']['backend']['App']['IsInDirDiffMode']();
+}
+
+export function ListDiffSessions() {
+  return window['go']['backend']['App']['ListDiffSessions']();
 }
 
 export function OnTerminalSessionWasResized(arg1, arg2) {
@@ -68,6 +84,10 @@ export function RunGitLogWithOptions(arg1, arg2) {
 
 export function SearchCommits(arg1, arg2) {
   return window['go']['backend']['App']['SearchCommits'](arg1, arg2);
+}
+
+export function StartDiffSession(arg1) {
+  return window['go']['backend']['App']['StartDiffSession'](arg1);
 }
 
 export function Startup(arg1, arg2) {
