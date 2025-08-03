@@ -14,8 +14,24 @@ export function GetAppState() {
   return window['go']['backend']['App']['GetAppState']();
 }
 
+export function GetBranches(arg1) {
+  return window['go']['backend']['App']['GetBranches'](arg1);
+}
+
+export function GetDefaultShellCommand() {
+  return window['go']['backend']['App']['GetDefaultShellCommand']();
+}
+
 export function GetDirectoryDiffDetails() {
   return window['go']['backend']['App']['GetDirectoryDiffDetails']();
+}
+
+export function GetTags(arg1) {
+  return window['go']['backend']['App']['GetTags'](arg1);
+}
+
+export function GitFetch(arg1, arg2, arg3) {
+  return window['go']['backend']['App']['GitFetch'](arg1, arg2, arg3);
 }
 
 export function InitNewTerminalSession(arg1) {
@@ -40,6 +56,18 @@ export function ReadFile(arg1) {
 
 export function RunGitLog(arg1) {
   return window['go']['backend']['App']['RunGitLog'](arg1);
+}
+
+export function RunGitLogFromRef(arg1, arg2) {
+  return window['go']['backend']['App']['RunGitLogFromRef'](arg1, arg2);
+}
+
+export function RunGitLogWithOptions(arg1, arg2) {
+  return window['go']['backend']['App']['RunGitLogWithOptions'](arg1, arg2);
+}
+
+export function SearchCommits(arg1, arg2) {
+  return window['go']['backend']['App']['SearchCommits'](arg1, arg2);
 }
 
 export function Startup(arg1, arg2) {

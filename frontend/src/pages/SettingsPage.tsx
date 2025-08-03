@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,17 @@ import {
 	FONT_SIZE_OPTIONS,
 } from '@/types/settings';
 import { UseAppState } from '@/hooks/state/use-app-state';
+import { GetDefaultShellCommand } from '../../wailsjs/go/backend/App';
 
 export default function SettingsPage() {
 	const { appState } = UseAppState();
 	const { settings, isLoading, updateSettings, resetSettings } = useSettings();
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+	const [defaultShellCommand, setDefaultShellCommand] = useState('');
+
+	useEffect(() => {
+		GetDefaultShellCommand().then(setDefaultShellCommand).catch(console.error);
+	}, []);
 
 	if (isLoading) {
 		return (
@@ -61,28 +67,27 @@ export default function SettingsPage() {
 	};
 
 	return (
-		<div className="container mx-auto p-6 space-y-6">
-			<div className="flex flex-col space-y-2">
-				<h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-				<p className="text-muted-foreground">Configure your GitWhale preferences and settings.</p>
+		<div className="container mx-auto p-4 max-w-4xl">
+			<div className="mb-6">
+				<h1 className="text-2xl font-bold">Settings</h1>
+				<p className="text-sm text-muted-foreground">Configure your GitWhale preferences</p>
 			</div>
 
-			<div className="grid gap-6">
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 				{/* Git Settings */}
 				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<GitBranch className="w-5 h-5" />
-							Git Configuration
+					<CardHeader className="pb-3">
+						<CardTitle className="flex items-center gap-2 text-lg">
+							<GitBranch className="w-4 h-4" />
+							Git
 						</CardTitle>
-						<CardDescription>Configure Git-related settings and behaviors.</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-6">
-						<div className="space-y-2">
-							<Label htmlFor="commits-to-load">Commits to Load</Label>
+					<CardContent className="space-y-3">
+						<div>
+							<Label htmlFor="commits-to-load" className="text-sm font-medium">Commits to Load</Label>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="outline" className="w-full justify-between">
+									<Button variant="outline" size="sm" className="w-full justify-between mt-1">
 										{COMMITS_LOAD_OPTIONS.find(
 											(opt) => opt.value === settings.git.commitsToLoad
 										)?.label || `${settings.git.commitsToLoad} commits`}
@@ -106,87 +111,99 @@ export default function SettingsPage() {
 									))}
 								</DropdownMenuContent>
 							</DropdownMenu>
-							<p className="text-xs text-muted-foreground">
-								Number of git commits to display in the git log view.
-							</p>
 						</div>
 					</CardContent>
 				</Card>
 
 				{/* Terminal Settings */}
 				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<Terminal className="w-5 h-5" />
-							Terminal Configuration
+					<CardHeader className="pb-3">
+						<CardTitle className="flex items-center gap-2 text-lg">
+							<Terminal className="w-4 h-4" />
+							Terminal
 						</CardTitle>
-						<CardDescription>
-							Configure terminal behavior, appearance, and default commands.
-						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-6">
-						{/* Default Command */}
-						<div className="space-y-2">
-							<Label htmlFor="terminal-command">Default Terminal Command</Label>
+					<CardContent className="space-y-3">
+						<div>
+							<Label htmlFor="terminal-command" className="text-sm font-medium">Default Command</Label>
 							<Input
 								id="terminal-command"
-								type="text"
-								placeholder="Leave empty for system default shell"
+								className="mt-1"
+								placeholder={defaultShellCommand || "System default shell"}
 								value={settings.terminal.defaultCommand}
 								onChange={(e) =>
 									handleTerminalSettingsChange('defaultCommand', e.target.value)
 								}
 							/>
-							<p className="text-xs text-muted-foreground">
-								Command to run when creating a new terminal session. Leave empty to use your
-								system's default shell.
-							</p>
 						</div>
 
-						<Separator />
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<Label className="text-sm font-medium">Font Size</Label>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+											{FONT_SIZE_OPTIONS.find(
+												(opt) => opt.value === settings.terminal.fontSize
+											)?.label || `${settings.terminal.fontSize}px`}
+											<ChevronDown className="h-4 w-4 opacity-50" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent>
+										{FONT_SIZE_OPTIONS.map((option) => (
+											<DropdownMenuItem
+												key={option.value}
+												onClick={() =>
+													handleTerminalSettingsChange('fontSize', option.value)
+												}
+												className="flex items-center justify-between"
+											>
+												{option.label}
+												{settings.terminal.fontSize === option.value && (
+													<Check className="h-4 w-4" />
+												)}
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</div>
 
-						{/* Font Size */}
-						<div className="space-y-2">
-							<Label htmlFor="font-size">Font Size</Label>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline" className="w-full justify-between">
-										{FONT_SIZE_OPTIONS.find(
-											(opt) => opt.value === settings.terminal.fontSize
-										)?.label || `${settings.terminal.fontSize}px`}
-										<ChevronDown className="h-4 w-4 opacity-50" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent className="w-full">
-									{FONT_SIZE_OPTIONS.map((option) => (
-										<DropdownMenuItem
-											key={option.value}
-											onClick={() =>
-												handleTerminalSettingsChange('fontSize', option.value)
-											}
-											className="flex items-center justify-between"
-										>
-											{option.label}
-											{settings.terminal.fontSize === option.value && (
-												<Check className="h-4 w-4" />
-											)}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuContent>
-							</DropdownMenu>
-							<p className="text-xs text-muted-foreground">
-								Font size for terminal text display.
-							</p>
+							<div>
+								<Label className="text-sm font-medium">Cursor Style</Label>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+											{TERMINAL_CURSOR_STYLES.find(
+												(opt) => opt.value === settings.terminal.cursorStyle
+											)?.label || settings.terminal.cursorStyle}
+											<ChevronDown className="h-4 w-4 opacity-50" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent>
+										{TERMINAL_CURSOR_STYLES.map((option) => (
+											<DropdownMenuItem
+												key={option.value}
+												onClick={() =>
+													handleTerminalSettingsChange('cursorStyle', option.value)
+												}
+												className="flex items-center justify-between"
+											>
+												{option.label}
+												{settings.terminal.cursorStyle === option.value && (
+													<Check className="h-4 w-4" />
+												)}
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</div>
 						</div>
 
-						<Separator />
-
-						{/* Color Scheme */}
-						<div className="space-y-2">
-							<Label htmlFor="color-scheme">Color Scheme</Label>
+						<div>
+							<Label className="text-sm font-medium">Color Scheme</Label>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="outline" className="w-full justify-between">
+									<Button variant="outline" size="sm" className="w-full justify-between mt-1">
 										{TERMINAL_COLOR_SCHEMES.find(
 											(opt) => opt.value === settings.terminal.colorScheme
 										)?.label || settings.terminal.colorScheme}
@@ -210,80 +227,37 @@ export default function SettingsPage() {
 									))}
 								</DropdownMenuContent>
 							</DropdownMenu>
-							<p className="text-xs text-muted-foreground">
-								Color theme for the terminal interface.
-							</p>
-						</div>
-
-						<Separator />
-
-						{/* Cursor Style */}
-						<div className="space-y-2">
-							<Label htmlFor="cursor-style">Cursor Style</Label>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline" className="w-full justify-between">
-										{TERMINAL_CURSOR_STYLES.find(
-											(opt) => opt.value === settings.terminal.cursorStyle
-										)?.label || settings.terminal.cursorStyle}
-										<ChevronDown className="h-4 w-4 opacity-50" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent className="w-full">
-									{TERMINAL_CURSOR_STYLES.map((option) => (
-										<DropdownMenuItem
-											key={option.value}
-											onClick={() =>
-												handleTerminalSettingsChange('cursorStyle', option.value)
-											}
-											className="flex items-center justify-between"
-										>
-											{option.label}
-											{settings.terminal.cursorStyle === option.value && (
-												<Check className="h-4 w-4" />
-											)}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuContent>
-							</DropdownMenu>
-							<p className="text-xs text-muted-foreground">
-								Visual style of the terminal cursor.
-							</p>
 						</div>
 					</CardContent>
 				</Card>
 
-				{/* Application Info & Actions */}
-				<Card>
-					<CardHeader>
-						<CardTitle>Application Information</CardTitle>
-						<CardDescription>Application details and settings management.</CardDescription>
+				{/* Application Info */}
+				<Card className="lg:col-span-2">
+					<CardHeader className="pb-3">
+						<CardTitle className="text-lg">Application</CardTitle>
 					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<p className="text-sm font-medium">Version</p>
-								<p className="text-xs text-muted-foreground">GitWhale v1.0.0</p>
+					<CardContent>
+						<div className="flex items-center justify-between">
+							<div className="flex gap-8">
+								<div>
+									<p className="text-sm font-medium">Version</p>
+									<p className="text-xs text-muted-foreground">GitWhale v1.0.0</p>
+								</div>
+								<div>
+									<p className="text-sm font-medium">Repositories</p>
+									<p className="text-xs text-muted-foreground">
+										{appState?.appConfig?.recentGitRepos?.length || 0} tracked
+									</p>
+								</div>
 							</div>
-							<div className="space-y-2">
-								<p className="text-sm font-medium">Repository Count</p>
-								<p className="text-xs text-muted-foreground">
-									{appState?.appConfig?.recentGitRepos?.length || 0} repositories tracked
-								</p>
-							</div>
-						</div>
-
-						<Separator />
-
-						<div className="flex gap-3">
 							<Button
-								variant="destructive"
+								variant="outline"
 								size="sm"
 								onClick={handleReset}
 								className="flex items-center gap-2"
 							>
 								<RotateCcw className="w-4 h-4" />
-								Reset to Defaults
+								Reset
 							</Button>
 						</div>
 					</CardContent>

@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import useCommitGraphBuilder from '@/hooks/use-commit-graph-builder';
 import { useEffect, useState } from 'react';
@@ -6,6 +5,7 @@ import { backend } from 'wailsjs/go/models';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
+import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { CommitDetails } from '@/components/commit-details';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 
@@ -14,6 +14,7 @@ export default function RepoLogView() {
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [selectedCommit, setSelectedCommit] = useState<backend.GitLogCommitInfo | null>(null);
+	const [currentRef, setCurrentRef] = useState('HEAD');
 
 	const commitGraph = useCommitGraphBuilder(logs);
 
@@ -49,13 +50,15 @@ export default function RepoLogView() {
 	}, [repoPath]);
 
 	return (
-		<div className="flex flex-col gap-4 p-4 h-full">
-			<div className="flex items-center justify-between">
-				<h2 className="text-2xl font-bold">Git Log</h2>
-				<Button onClick={refreshLogs} disabled={loading}>
-					{loading ? 'Loading...' : 'Refresh'}
-				</Button>
-			</div>
+		<div className="flex flex-col h-full">
+			<GitLogToolbar
+				repoPath={repoPath}
+				onCommitsUpdate={setLogs}
+				loading={loading}
+				onLoadingChange={setLoading}
+				currentRef={currentRef}
+				onRefChange={setCurrentRef}
+			/>
 			
 			<div className="flex-1 min-h-0 w-full">
 				<ResizablePanelGroup direction="vertical" className="h-full">

@@ -9,7 +9,15 @@ export function CloseRepo(arg1:string):Promise<backend.App>;
 
 export function GetAppState():Promise<backend.App>;
 
+export function GetBranches(arg1:string):Promise<Array<backend.GitRef>>;
+
+export function GetDefaultShellCommand():Promise<string>;
+
 export function GetDirectoryDiffDetails():Promise<backend.Directory>;
+
+export function GetTags(arg1:string):Promise<Array<backend.GitRef>>;
+
+export function GitFetch(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function InitNewTerminalSession(arg1:string):Promise<void>;
 
@@ -22,6 +30,12 @@ export function OpenNewRepo():Promise<string>;
 export function ReadFile(arg1:string):Promise<string>;
 
 export function RunGitLog(arg1:string):Promise<Array<backend.GitLogCommitInfo>>;
+
+export function RunGitLogFromRef(arg1:string,arg2:string):Promise<Array<backend.GitLogCommitInfo>>;
+
+export function RunGitLogWithOptions(arg1:string,arg2:backend.GitLogOptions):Promise<Array<backend.GitLogCommitInfo>>;
+
+export function SearchCommits(arg1:string,arg2:string):Promise<Array<backend.GitLogCommitInfo>>;
 
 export function Startup(arg1:context.Context,arg2:backend.StartupState):Promise<void>;
 

@@ -11,6 +11,15 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+// getDefaultShellArgs returns the default shell command args for the current OS
+func getDefaultShellCommand() []string {
+	if goruntime.GOOS == "windows" {
+		return []string{"C:\\Program Files\\Git\\bin\\bash.exe", "--login", "-i"}
+	} else {
+		return []string{"/bin/zsh", "-il"}
+	}
+}
+
 func SetupXTermForNewRepo(app *App, repoPath string) {
 	if _, exists := app.terminalSessions[repoPath]; exists {
 		return
@@ -62,18 +71,15 @@ func CreateXTermSession(app *App, repoPath string) {
 
 	// Get terminal settings
 	defaultCommand := app.AppConfig.Settings.Terminal.DefaultCommand
-	
+
 	// Choose terminal based on settings or OS default
 	var args []string
 	if defaultCommand != "" {
 		// Use the custom command from settings
 		args = []string{defaultCommand}
-	} else if goruntime.GOOS == "windows" {
-		// Use Git Bash on Windows
-		args = []string{"C:\\Program Files\\Git\\bin\\bash.exe", "--login", "-i"}
 	} else {
-		// Use zsh on Unix-based systems
-		args = []string{"/bin/zsh", "-il"}
+		// Use the system default shell
+		args = getDefaultShellCommand()
 	}
 
 	// Set working directory

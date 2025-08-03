@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/runletapp/go-console"
@@ -150,7 +151,33 @@ func (app *App) CleanupTerminalSession(repoPath string) {
 
 func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {
 	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
-	return readGitLog(gitRepoPath, commitsToLoad)
+	return readGitLog(gitRepoPath, commitsToLoad, "", false, "")
+}
+
+func (app *App) RunGitLogFromRef(gitRepoPath, ref string) []GitLogCommitInfo {
+	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
+	return readGitLog(gitRepoPath, commitsToLoad, ref, false, "")
+}
+
+func (app *App) RunGitLogWithOptions(gitRepoPath string, options GitLogOptions) []GitLogCommitInfo {
+	return readGitLogWithOptions(gitRepoPath, options)
+}
+
+func (app *App) GetBranches(gitRepoPath string) []GitRef {
+	return getBranches(gitRepoPath)
+}
+
+func (app *App) GetTags(gitRepoPath string) []GitRef {
+	return getTags(gitRepoPath)
+}
+
+func (app *App) GitFetch(gitRepoPath, remote, ref string) error {
+	return gitFetch(gitRepoPath, remote, ref)
+}
+
+func (app *App) SearchCommits(gitRepoPath, query string) []GitLogCommitInfo {
+	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
+	return readGitLog(gitRepoPath, commitsToLoad, "", false, query)
 }
 
 func (app *App) ToggleStarRepo(gitRepoPath string) bool {
@@ -159,4 +186,8 @@ func (app *App) ToggleStarRepo(gitRepoPath string) bool {
 
 func (app *App) UpdateSettings(newSettings AppSettings) error {
 	return app.AppConfig.updateSettings(newSettings)
+}
+
+func (app *App) GetDefaultShellCommand() string {
+	return strings.Join(getDefaultShellCommand(), " ")
 }
