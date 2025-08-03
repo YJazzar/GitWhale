@@ -57,21 +57,19 @@ const useDiffSessions = (repoPath: string) => {
 	};
 
 	const closeSession = async (sessionId: string) => {
-			try {
-				await EndDiffSession(sessionId);
-				const newSessions = diffState.sessions.filter((s) => s.sessionId !== sessionId);
-				diffState.setSessions(newSessions);
+		try {
+			await EndDiffSession(sessionId);
+			const newSessions = diffState.sessions.filter((s) => s.sessionId !== sessionId);
+			diffState.setSessions(newSessions);
 
-				if (diffState.selectedSessionId === sessionId) {
-					diffState.setSelectedSessionId(
-						newSessions.length > 0 ? newSessions[0].sessionId : null
-					);
-				}
-			} catch (error) {
-				console.error('Failed to close diff session:', error);
-				throw error;
+			if (diffState.selectedSessionId === sessionId) {
+				diffState.setSelectedSessionId(newSessions.length > 0 ? newSessions[0].sessionId : null);
 			}
+		} catch (error) {
+			console.error('Failed to close diff session:', error);
+			throw error;
 		}
+	};
 
 	const selectedSession = useMemo(
 		() => diffState.sessions.find((s) => s.sessionId === diffState.selectedSessionId) || null,
@@ -126,21 +124,33 @@ const useDiffOptions = (repoPath: string, routerState?: DiffRouterState) => {
 	const showAdvanced = currentOptions.showAdvanced;
 	const filePathFilters = currentOptions.filePathFilters;
 
-	const setFromRef = useCallback((newFromRef: string) => {
-		diffState.setOptions({ ...currentOptions, fromRef: newFromRef });
-	}, [diffState, currentOptions]);
+	const setFromRef = useCallback(
+		(newFromRef: string) => {
+			diffState.setOptions({ ...currentOptions, fromRef: newFromRef });
+		},
+		[diffState, currentOptions]
+	);
 
-	const setToRef = useCallback((newToRef: string) => {
-		diffState.setOptions({ ...currentOptions, toRef: newToRef });
-	}, [diffState, currentOptions]);
+	const setToRef = useCallback(
+		(newToRef: string) => {
+			diffState.setOptions({ ...currentOptions, toRef: newToRef });
+		},
+		[diffState, currentOptions]
+	);
 
-	const setShowAdvanced = useCallback((newShowAdvanced: boolean) => {
-		diffState.setOptions({ ...currentOptions, showAdvanced: newShowAdvanced });
-	}, [diffState, currentOptions]);
+	const setShowAdvanced = useCallback(
+		(newShowAdvanced: boolean) => {
+			diffState.setOptions({ ...currentOptions, showAdvanced: newShowAdvanced });
+		},
+		[diffState, currentOptions]
+	);
 
-	const setFilePathFilters = useCallback((newFilters: string) => {
-		diffState.setOptions({ ...currentOptions, filePathFilters: newFilters });
-	}, [diffState, currentOptions]);
+	const setFilePathFilters = useCallback(
+		(newFilters: string) => {
+			diffState.setOptions({ ...currentOptions, filePathFilters: newFilters });
+		},
+		[diffState, currentOptions]
+	);
 
 	const options = useMemo(
 		(): backend.DiffOptions => ({
@@ -167,13 +177,16 @@ const useDiffOptions = (repoPath: string, routerState?: DiffRouterState) => {
 		[]
 	);
 
-	const setQuickOption = useCallback((option: (typeof quickOptions)[0]) => {
-		diffState.setOptions({ 
-			...currentOptions, 
-			fromRef: option.fromRef, 
-			toRef: option.toRef 
-		});
-	}, [diffState, currentOptions]);
+	const setQuickOption = useCallback(
+		(option: (typeof quickOptions)[0]) => {
+			diffState.setOptions({
+				...currentOptions,
+				fromRef: option.fromRef,
+				toRef: option.toRef,
+			});
+		},
+		[diffState, currentOptions]
+	);
 
 	const diffDescription = useMemo(() => {
 		if (!toRef || toRef === '') {
@@ -209,40 +222,43 @@ const ViewToolbar = ({
 	gitRefs: ReturnType<typeof useGitRefs>;
 	onCreateDiff: () => void;
 	loading: boolean;
-}) => (
-	<div className="border-b bg-muted/20 p-3">
-		<div className="flex items-center justify-between mb-3">
-			<div className="flex items-center gap-3">
-				<GitCompare className="w-4 h-4" />
-				<span className="font-medium">Repository Diff</span>
+}) => {
+
+	return (
+		<div className="border-b bg-muted/20 p-3">
+			<div className="flex items-center justify-between mb-3">
+				<div className="flex items-center gap-3">
+					<GitCompare className="w-4 h-4" />
+					<span className="font-medium">Repository Diff</span>
+				</div>
+				<div className="flex items-center gap-2">
+					<Button
+						onClick={gitRefs.loadRefs}
+						variant="outline"
+						size="sm"
+						disabled={loading}
+						title="Refresh branches and tags"
+					>
+						<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+					</Button>
+					<QuickOptionsDropdown
+						options={diffOptions.quickOptions}
+						onSelect={diffOptions.setQuickOption}
+					/>
+					<Button onClick={onCreateDiff} disabled={loading || !diffOptions.fromRef} size="sm">
+						{loading ? (
+							<Loader2 className="w-3 h-3 animate-spin" />
+						) : (
+							<GitCompare className="w-3 h-3" />
+						)}
+						Compare
+					</Button>
+				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				<Button
-					onClick={gitRefs.loadRefs}
-					variant="outline"
-					size="sm"
-					disabled={loading}
-					title="Refresh branches and tags"
-				>
-					<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-				</Button>
-				<QuickOptionsDropdown
-					options={diffOptions.quickOptions}
-					onSelect={diffOptions.setQuickOption}
-				/>
-				<Button onClick={onCreateDiff} disabled={loading || !diffOptions.fromRef} size="sm">
-					{loading ? (
-						<Loader2 className="w-3 h-3 animate-spin" />
-					) : (
-						<GitCompare className="w-3 h-3" />
-					)}
-					Compare
-				</Button>
-			</div>
+			<DiffOptionsForm diffOptions={diffOptions} gitRefs={gitRefs} />
 		</div>
-		<DiffOptionsForm diffOptions={diffOptions} gitRefs={gitRefs} />
-	</div>
-);
+	);
+};
 
 const QuickOptionsDropdown = ({
 	options,
@@ -534,9 +550,7 @@ export default function RepoDiffView() {
 			/>
 
 			<div className="flex-1 overflow-hidden min-h-0">
-				{!!diffSessions.selectedSession?.directoryData && (
-					<DirDiffViewer />
-				)}
+				{!!diffSessions.selectedSession?.directoryData && <DirDiffViewer />}
 			</div>
 		</div>
 	);

@@ -48,10 +48,20 @@ function getXTermTheme(colorScheme: string) {
 }
 
 export const useRepoState = (repoPath: string) => {
-	return {
+	const stateObjects = {
 		terminalState: getTerminalState(repoPath),
 		diffState: getDiffState(repoPath),
 	};
+
+	const onCloseRepo = () => {
+		stateObjects.terminalState.disposeTerminal();
+		stateObjects.diffState.disposeSessions();
+	}
+
+	return {
+		...stateObjects,
+		onCloseRepo
+	}
 };
 
 // MARK: Terminal related state. A bit special because we actually want
@@ -63,22 +73,6 @@ const xTermRefMap = new Map<string, {
 	element: HTMLDivElement;
 	isDisposed: boolean;
 }>();
-
-// Cleanup helper for disposing all terminals (useful for app shutdown)
-export const disposeAllTerminals = () => {
-	console.log('Disposing all terminals, total count:', xTermRefMap.size);
-	for (const [repoPath, terminalData] of xTermRefMap.entries()) {
-		if (!terminalData.isDisposed) {
-			console.log('Force disposing terminal for repo:', repoPath);
-			terminalData.terminal.dispose();
-			EventsOff(`onTerminalDataReturned://${repoPath}`);
-			CleanupTerminalSession(repoPath).catch(err => 
-				console.warn('Failed to cleanup terminal session for', repoPath, err)
-			);
-		}
-	}
-	xTermRefMap.clear();
-};
 
 function getTerminalState(repoPath: string) {
 	const createTerminal = (terminalSettings?: backend.TerminalSettings) => {
@@ -284,5 +278,24 @@ function getDiffState(repoPath: string) {
 			newMap.set(repoPath, options);
 			setDiffOptionsMap(newMap);
 		},
+
+		// Clear all diff state for this repo
+		disposeSessions: () => {
+			const newSessionsMap = new Map(diffSessions);
+			newSessionsMap.delete(repoPath);
+			setDiffSessions(newSessionsMap);
+
+			const newSelectedMap = new Map(selectedSessions);
+			newSelectedMap.delete(repoPath);
+			setSelectedSessions(newSelectedMap);
+
+			const newFileInfoMap = new Map(fileInfoMaps);
+			newFileInfoMap.delete(repoPath);
+			setFileInfoMaps(newFileInfoMap);
+
+			const newOptionsMap = new Map(diffOptions);
+			newOptionsMap.delete(repoPath);
+			setDiffOptionsMap(newOptionsMap);
+		}
 	};
 }

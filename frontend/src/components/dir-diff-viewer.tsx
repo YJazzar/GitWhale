@@ -21,7 +21,7 @@ export function DirDiffViewer() {
 	const selectedSession = useMemo(() => {
 		const sessions = diffState.sessions;
 		const selectedId = diffState.selectedSessionId;
-		return sessions.find(s => s.sessionId === selectedId) || null;
+		return sessions.find((s) => s.sessionId === selectedId) || null;
 	}, [diffState.sessions, diffState.selectedSessionId]);
 
 	const directoryData = selectedSession?.directoryData || null;
@@ -85,9 +85,7 @@ export function DirDiffViewer() {
 							initialPages={[]}
 							noTabSelectedPath="./no-file-selected"
 							routerConfig={() => {
-								return (
-									<Outlet/>
-								);
+								return <Outlet />;
 							}}
 						/>
 					</div>
@@ -127,7 +125,11 @@ export function FileDiffViewWrapper() {
 	}, [tabKey, diffState.fileInfoMap]);
 
 	if (!fileInfo) {
-		return <div className="w-full h-full grid place-content-center text-muted-foreground">No file was selected</div>;
+		return (
+			<div className="w-full h-full grid place-content-center text-muted-foreground">
+				No file was selected
+			</div>
+		);
 	}
 
 	return <FileDiffView file={fileInfo} />;

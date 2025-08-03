@@ -6,6 +6,7 @@ import { Link } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
 import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useEffect, useState } from 'react';
 
 // Helper function to extract folder name from full path
 const getRepoDisplayName = (repoPath: string): string => {
@@ -19,6 +20,18 @@ const getRepoDisplayName = (repoPath: string): string => {
 export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHandle> }) {
 	const { fileTabRef } = props;
 	const { appState, refreshAppState } = UseAppState();
+
+	// Anytime a repo gets closed, we should be good stewards of memory and dispose of the repo state
+	const [repoToCleanup, setRepoToCleanup] = useState<string | null>(null);
+	const repoState = useRepoState(repoToCleanup ?? '');
+
+	useEffect(() => {
+		debugger
+		if (!!repoToCleanup && repoToCleanup !== '') {
+			repoState?.onCloseRepo();
+			setRepoToCleanup(null);
+		}
+	}, [repoToCleanup, repoState]);
 
 	const onOpenRecentRepo = (repoPath: string) => {
 		if (!appState) {
@@ -64,8 +77,8 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 			// Feels weird not to set this to true unless there's a fancy way for me to detect if the user performs an action inside the repo tab
 			isPermanentlyOpen: true,
 			onTabClose: () => {
-				const repoState = useRepoState(repoPath);
-				repoState.terminalState.disposeTerminal();
+				debugger
+				setRepoToCleanup(repoPath);
 			},
 			titleRender: function (): JSX.Element {
 				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranchName;

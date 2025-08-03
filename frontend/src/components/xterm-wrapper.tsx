@@ -39,14 +39,10 @@ export default function XTermWrapper() {
 		};
 	}, []);
 
-
 	useResizeObserver(divNodeRef as unknown as React.MutableRefObject<null>, () => {
 		const fitAddon = terminalState.getTerminalState()?.fitAddon;
 		fitAddon?.fit();
 	});
 
-	return (
-		<div className="w-full h-full" ref={divNodeRef}>
-		</div>
-	);
+	return <div className="w-full h-full" ref={divNodeRef}></div>;
 }
