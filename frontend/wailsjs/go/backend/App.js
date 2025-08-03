@@ -30,14 +30,6 @@ export function GetDiffSession(arg1) {
   return window['go']['backend']['App']['GetDiffSession'](arg1);
 }
 
-export function GetDiffSessionData(arg1) {
-  return window['go']['backend']['App']['GetDiffSessionData'](arg1);
-}
-
-export function GetDirectoryDiffDetails() {
-  return window['go']['backend']['App']['GetDirectoryDiffDetails']();
-}
-
 export function GetTags(arg1) {
   return window['go']['backend']['App']['GetTags'](arg1);
 }
@@ -48,10 +40,6 @@ export function GitFetch(arg1, arg2, arg3) {
 
 export function InitNewTerminalSession(arg1) {
   return window['go']['backend']['App']['InitNewTerminalSession'](arg1);
-}
-
-export function IsInDirDiffMode() {
-  return window['go']['backend']['App']['IsInDirDiffMode']();
 }
 
 export function ListDiffSessions() {

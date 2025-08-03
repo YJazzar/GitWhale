@@ -78,9 +78,9 @@ func (app *App) Shutdown(ctx context.Context) {
 		}
 	}
 
-	if app.IsInDirDiffMode() {
-		return // no need to update config in this case
-	}
+	// if app.IsInDirDiffMode() {
+	// 	return // no need to update config in this case
+	// }
 
 	err := app.AppConfig.SaveAppConfig()
 	if err != nil {
@@ -93,23 +93,13 @@ func (a *App) GetAppState() *App {
 	return a
 }
 
-// Walks the directories we need to diff
-func (app *App) GetDirectoryDiffDetails() *Directory {
-	if !app.IsInDirDiffMode() {
-		return nil
-	}
+// func (app *App) IsInDirDiffMode() bool {
+// 	if app.StartupState == nil || app.StartupState.DirectoryDiff == nil {
+// 		return false
+// 	}
 
-	dirDiff := app.StartupState.DirectoryDiff
-	return readDiffs(dirDiff)
-}
-
-func (app *App) IsInDirDiffMode() bool {
-	if app.StartupState == nil || app.StartupState.DirectoryDiff == nil {
-		return false
-	}
-
-	return true
-}
+// 	return true
+// }
 
 // Reads any arbitrary file and provides it to the web process
 func (a *App) ReadFile(filePath string) string {
@@ -206,29 +196,19 @@ func (app *App) GetDefaultShellCommand() string {
 
 func (app *App) StartDiffSession(options DiffOptions) (*DiffSession, error) {
 	Log.Info("Starting diff session for repo: %s", options.RepoPath)
-	
+
 	session, err := CreateDiffSession(options)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Store session in app
 	app.diffSessions[session.SessionId] = session
-	
+
 	// Cleanup old sessions periodically
 	go CleanupOldDiffSessions()
-	
-	return session, nil
-}
 
-func (app *App) GetDiffSessionData(sessionId string) *Directory {
-	session, exists := app.diffSessions[sessionId]
-	if !exists {
-		Log.Error("Diff session not found: %s", sessionId)
-		return nil
-	}
-	
-	return GetDiffSessionDirectory(session)
+	return session, nil
 }
 
 func (app *App) GetDiffSession(sessionId string) *DiffSession {
@@ -236,7 +216,7 @@ func (app *App) GetDiffSession(sessionId string) *DiffSession {
 	if !exists {
 		return nil
 	}
-	
+
 	// Update last accessed time
 	session.LastAccessed = time.Now()
 	return session
@@ -247,16 +227,16 @@ func (app *App) EndDiffSession(sessionId string) error {
 	if !exists {
 		return fmt.Errorf("diff session not found: %s", sessionId)
 	}
-	
+
 	// Cleanup temp directories
 	err := CleanupDiffSession(sessionId)
 	if err != nil {
 		Log.Error("Failed to cleanup diff session %s: %v", sessionId, err)
 	}
-	
+
 	// Remove from app sessions
 	delete(app.diffSessions, sessionId)
-	
+
 	Log.Info("Ended diff session: %s", sessionId)
 	return nil
 }

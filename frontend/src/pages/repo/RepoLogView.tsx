@@ -46,18 +46,7 @@ export default function RepoLogView() {
 	const handleCloseCommitDetails = () => {
 		setSelectedCommit(null);
 	};
-
-	const handleCompareRefs = (fromRef: string, toRef: string) => {
-		// Navigate to diff view with pre-filled refs
-		navigate(`/repo/${encodedRepoPath}/diff`, {
-			state: {
-				fromRef,
-				toRef,
-				autoStart: true
-			}
-		});
-	};
-
+	
 	useEffect(() => {
 		refreshLogs();
 	}, [repoPath]);
@@ -71,7 +60,6 @@ export default function RepoLogView() {
 				onLoadingChange={setLoading}
 				currentRef={currentRef}
 				onRefChange={setCurrentRef}
-				onCompareRefs={handleCompareRefs}
 			/>
 			
 			<div className="flex-1 min-h-0 w-full">

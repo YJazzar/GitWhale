@@ -17,17 +17,11 @@ export function GetDefaultShellCommand():Promise<string>;
 
 export function GetDiffSession(arg1:string):Promise<backend.DiffSession>;
 
-export function GetDiffSessionData(arg1:string):Promise<backend.Directory>;
-
-export function GetDirectoryDiffDetails():Promise<backend.Directory>;
-
 export function GetTags(arg1:string):Promise<Array<backend.GitRef>>;
 
 export function GitFetch(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function InitNewTerminalSession(arg1:string):Promise<void>;
-
-export function IsInDirDiffMode():Promise<boolean>;
 
 export function ListDiffSessions():Promise<Array<backend.DiffSession>>;
 
