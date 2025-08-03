@@ -55,7 +55,29 @@ export const useRepoState = (repoPath: string) => {
 // MARK: Terminal related state. A bit special because we actually want
 // the data to NOT cause re-renders
 
-const xTermRefMap = new Map<string, { terminal: Terminal; fitAddon: FitAddon; element: HTMLDivElement }>();
+const xTermRefMap = new Map<string, { 
+	terminal: Terminal; 
+	fitAddon: FitAddon; 
+	element: HTMLDivElement;
+	isDisposed: boolean;
+}>();
+
+// Cleanup helper for disposing all terminals (useful for app shutdown)
+export const disposeAllTerminals = () => {
+	console.log('Disposing all terminals, total count:', xTermRefMap.size);
+	for (const [repoPath, terminalData] of xTermRefMap.entries()) {
+		if (!terminalData.isDisposed) {
+			console.log('Force disposing terminal for repo:', repoPath);
+			terminalData.terminal.dispose();
+			EventsOff(`onTerminalDataReturned://${repoPath}`);
+			CleanupTerminalSession(repoPath).catch(err => 
+				console.warn('Failed to cleanup terminal session for', repoPath, err)
+			);
+		}
+	}
+	xTermRefMap.clear();
+};
+
 function getTerminalState(repoPath: string) {
 	const createTerminal = (terminalSettings?: backend.TerminalSettings) => {
 		const fitAddon = new FitAddon();
@@ -82,7 +104,16 @@ function getTerminalState(repoPath: string) {
 		element.className = 'w-full h-full';
 
 		newTerminal.loadAddon(fitAddon);
-		xTermRefMap.set(repoPath, { terminal: newTerminal, fitAddon, element });
+		
+		// Dispose existing terminal if it exists (prevents memory leaks)
+		const existingTerminal = xTermRefMap.get(repoPath);
+		if (existingTerminal && !existingTerminal.isDisposed) {
+			console.log('Disposing existing terminal before creating new one for:', repoPath);
+			existingTerminal.terminal.dispose();
+			EventsOff(`onTerminalDataReturned://${repoPath}`);
+		}
+		
+		xTermRefMap.set(repoPath, { terminal: newTerminal, fitAddon, element, isDisposed: false });
 
 		setupTerminalEvents(repoPath, newTerminal);
 
@@ -93,21 +124,37 @@ function getTerminalState(repoPath: string) {
 	};
 
 	const disposeTerminal = () => {
-		const { terminal } = xTermRefMap.get(repoPath) || {};
-		if (!terminal) {
+		const terminalData = xTermRefMap.get(repoPath);
+		if (!terminalData || terminalData.isDisposed) {
+			console.log("Terminal already disposed or doesn't exist for repo:", repoPath);
 			return;
 		}
 
-		console.log("disposing terminal for repo: ", repoPath);
-		terminal.dispose();
+		console.log("Disposing terminal for repo:", repoPath);
+		
+		// Mark as disposed first to prevent double disposal
+		terminalData.isDisposed = true;
+		
+		// Clean up terminal resources
+		terminalData.terminal.dispose();
+		
+		// Clean up event listeners
 		EventsOff(`onTerminalDataReturned://${repoPath}`);
-		CleanupTerminalSession(repoPath);
+		
+		// Clean up backend terminal session
+		CleanupTerminalSession(repoPath).catch(err => 
+			console.warn('Failed to cleanup backend terminal session for', repoPath, err)
+		);
+		
+		// Remove from map to free memory
 		xTermRefMap.delete(repoPath);
 	};
 
 
 	const getTerminalState = () => {
-		return xTermRefMap.get(repoPath);
+		const terminalData = xTermRefMap.get(repoPath);
+		// Return undefined if terminal is disposed to prevent usage of stale references
+		return terminalData && !terminalData.isDisposed ? terminalData : undefined;
 	};
 
 	return { createTerminal, disposeTerminal, getTerminalState };
@@ -115,23 +162,44 @@ function getTerminalState(repoPath: string) {
 
 async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 	// Subscribe to new stuff getting written from the terminal
+	// Check if terminal is still alive before writing to prevent errors
 	EventsOn(`onTerminalDataReturned://${repoPath}`, (event: string) => {
-		const stringData = atob(event)
+		const terminalData = xTermRefMap.get(repoPath);
+		if (!terminalData || terminalData.isDisposed) {
+			console.warn('Received terminal data for disposed terminal:', repoPath);
+			return;
+		}
 
-		terminal.write(stringData);
-		terminal.scrollToBottom();
+		try {
+			const stringData = atob(event);
+			terminal.write(stringData);
+			terminal.scrollToBottom();
+		} catch (error) {
+			console.error('Error writing to terminal for repo', repoPath, error);
+		}
 	});
 
 	terminal.onResize((newSize) => {
+		const terminalData = xTermRefMap.get(repoPath);
+		if (!terminalData || terminalData.isDisposed) {
+			return;
+		}
 		OnTerminalSessionWasResized(repoPath, { cols: newSize.cols, rows: newSize.rows });
 	});
 
 	terminal.onData((event) => {
+		const terminalData = xTermRefMap.get(repoPath);
+		if (!terminalData || terminalData.isDisposed) {
+			return;
+		}
 		console.log(event);
 		EventsEmit(`onTerminalData://${repoPath}`, event);
 	});
 
-	await InitNewTerminalSession(repoPath);
-
-	terminal.write('\n')
+	try {
+		await InitNewTerminalSession(repoPath);
+		terminal.write('\n');
+	} catch (error) {
+		console.error('Failed to initialize terminal session for repo', repoPath, error);
+	}
 }

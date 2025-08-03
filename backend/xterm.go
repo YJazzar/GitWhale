@@ -2,6 +2,7 @@ package backend
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	goruntime "runtime"
@@ -21,7 +22,11 @@ func getDefaultShellCommand() []string {
 }
 
 func SetupXTermForNewRepo(app *App, repoPath string) {
-	if _, exists := app.terminalSessions[repoPath]; exists {
+	app.terminalSessionsMutex.RLock()
+	_, exists := app.terminalSessions[repoPath]
+	app.terminalSessionsMutex.RUnlock()
+	
+	if exists {
 		return
 	}
 
@@ -35,10 +40,21 @@ func SetupXTermForNewRepo(app *App, repoPath string) {
 func DisposeXTermSession(app *App, repoPath string) {
 	Log.Info("Disposing terminal session for repo: %v", repoPath)
 
+	app.terminalSessionsMutex.Lock()
 	session, exists := app.terminalSessions[repoPath]
 	if !exists {
+		app.terminalSessionsMutex.Unlock()
 		Log.Warning("No terminal session found for repo: %v", repoPath)
 		return
+	}
+
+	// Remove the session from the map first
+	delete(app.terminalSessions, repoPath)
+	app.terminalSessionsMutex.Unlock()
+
+	// Cancel the context to signal goroutines to stop
+	if session.cancel != nil {
+		session.cancel()
 	}
 
 	// End the go routine
@@ -46,9 +62,6 @@ func DisposeXTermSession(app *App, repoPath string) {
 
 	// Remove the event listener for terminal data
 	runtime.EventsOff(app.ctx, fmt.Sprintf("onTerminalData://%v", repoPath))
-
-	// Remove the session from the map
-	delete(app.terminalSessions, repoPath)
 
 	Log.Info("Terminal session for repo %v disposed successfully", repoPath)
 }
@@ -61,6 +74,10 @@ type TTYSize struct {
 }
 
 func CreateXTermSession(app *App, repoPath string) {
+	// Create context for this session
+	ctx, cancel := context.WithCancel(app.ctx)
+	defer cancel()
+
 	// Create console with default size
 	proc, err := console.New(120, 60)
 	if err != nil {
@@ -94,9 +111,15 @@ func CreateXTermSession(app *App, repoPath string) {
 	session := &TerminalSession{
 		consoleSession: &proc,
 		waiter:         sync.WaitGroup{},
+		cancel:         cancel,
 	}
 	session.waiter.Add(1)
+	
+	// Thread-safe session storage
+	app.terminalSessionsMutex.Lock()
 	app.terminalSessions[repoPath] = session
+	app.terminalSessionsMutex.Unlock()
+	
 	maxBufferSizeBytes := 512
 
 	// console >> xterm.js (read from terminal and send to frontend)
@@ -104,27 +127,39 @@ func CreateXTermSession(app *App, repoPath string) {
 		defer session.waiter.Done()
 
 		for {
-			buffer := make([]byte, maxBufferSizeBytes)
-			readLength, err := proc.Read(buffer)
-
-			// We get an io.EOF error when the terminal is shutting down
-			if err == io.EOF {
-				Log.Debug("Received EOF err, ending terminal infinite read loop...")
+			select {
+			case <-ctx.Done():
+				Log.Debug("Terminal session context cancelled, ending read loop...")
 				return
-			}
+			default:
+				buffer := make([]byte, maxBufferSizeBytes)
+				readLength, err := proc.Read(buffer)
 
-			if err != nil {
-				Log.Warning("Ending session... Failed to read from console: %s", err)
-				return
+				// We get an io.EOF error when the terminal is shutting down
+				if err == io.EOF {
+					Log.Debug("Received EOF err, ending terminal infinite read loop...")
+					return
+				}
+
+				if err != nil {
+					Log.Warning("Ending session... Failed to read from console: %s", err)
+					return
+				}
+				Log.Trace("Sending data to client: %v", buffer[:readLength])
+				runtime.EventsEmit(app.ctx, fmt.Sprintf("onTerminalDataReturned://%v", repoPath), buffer[:readLength])
 			}
-			Log.Trace("Sending data to client: %v", buffer[:readLength])
-			runtime.EventsEmit(app.ctx, fmt.Sprintf("onTerminalDataReturned://%v", repoPath), buffer[:readLength])
 		}
 	}()
 
 	// console << xterm.js (receive from frontend and write to terminal)
 	runtime.EventsOn(app.ctx, fmt.Sprintf("onTerminalData://%v", repoPath), func(optionalData ...interface{}) {
-		// Log.Info("Received data: %v", PrettyPrint(optionalData))
+		// Check if context is cancelled before processing
+		select {
+		case <-ctx.Done():
+			Log.Debug("Terminal session context cancelled, ignoring input data...")
+			return
+		default:
+		}
 
 		var dataBuffer bytes.Buffer
 		for _, input := range optionalData {
@@ -153,6 +188,14 @@ func CreateXTermSession(app *App, repoPath string) {
 	}
 
 	session.waiter.Wait()
+}
+
+// getTerminalSession safely retrieves a terminal session
+func getTerminalSession(app *App, repoPath string) (*TerminalSession, bool) {
+	app.terminalSessionsMutex.RLock()
+	defer app.terminalSessionsMutex.RUnlock()
+	session, exists := app.terminalSessions[repoPath]
+	return session, exists
 }
 
 func ResizeConsoleSession(session *TerminalSession, newSize TTYSize) {

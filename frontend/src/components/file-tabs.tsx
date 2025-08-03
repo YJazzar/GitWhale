@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Link, To, useLocation, useNavigate, useParams } from 'react-router';
 
 export type FileTabsHandle = {
@@ -44,11 +44,128 @@ export type FileTabPageProps = {
 	onTabClose?: () => void;
 };
 
-export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) => {
-	const { defaultTabKey, initialPages, routerConfig, noTabSelectedPath } = props;
-
+// Custom hook for file management logic
+function useFileTabsState(initialPages: FileTabPageProps[], defaultTabKey: string) {
 	const [activeTabKey, setActiveTabKey] = useState<string | undefined>(defaultTabKey);
 	const [availableFiles, setAvailableFiles] = useState<FileTabPageProps[]>(initialPages);
+
+	// Convert the availablePages into a map for easy lookup
+	const availableFileMap = useMemo(() => {
+		const map: Map<string, FileTabPageProps> = new Map();
+		availableFiles.forEach((page) => {
+			map.set(page.tabKey, page);
+		});
+		return map;
+	}, [availableFiles]);
+
+	const getOpenFile = useCallback((): FileTabPageProps | undefined => {
+		if (activeTabKey) {
+			return availableFileMap.get(activeTabKey);
+		}
+	}, [activeTabKey, availableFileMap]);
+
+	const getFileProps = useCallback((fileKey: string): FileTabPageProps | undefined => {
+		return availableFileMap.get(fileKey);
+	}, [availableFileMap]);
+
+	return {
+		activeTabKey,
+		setActiveTabKey,
+		availableFiles,
+		setAvailableFiles,
+		availableFileMap,
+		getOpenFile,
+		getFileProps,
+	};
+}
+
+// Custom hook for file operations
+function useFileTabsOperations(
+	fileState: ReturnType<typeof useFileTabsState>,
+	navigate: (to: To) => void,
+	noTabSelectedPath: To
+) {
+	const { activeTabKey, availableFiles, setAvailableFiles, setActiveTabKey, availableFileMap } = fileState;
+
+	const navigateToFile = useCallback((file: FileTabPageProps | undefined) => {
+		setActiveTabKey(file?.tabKey);
+
+		if (!file?.linkPath) {
+			console.log('navigating to parent path');
+			navigate(noTabSelectedPath);
+		} else {
+			console.log('navigating to new path: ', file);
+			navigate(file.linkPath);
+		}
+	}, [navigate, noTabSelectedPath, setActiveTabKey]);
+
+	const closeFile = useCallback((fileToClose: FileTabPageProps): void => {
+		let prevActiveIndex = availableFiles.findIndex((file) => file.tabKey === activeTabKey);
+		if (fileToClose.tabKey === activeTabKey) {
+			prevActiveIndex += 1;
+		}
+
+		const newAvailableTabs = availableFiles.filter((openFile) => {
+			if (openFile.preventUserClose) { 
+				return true; // don't close things the user isn't allowed to close
+			}
+			if (openFile.tabKey === fileToClose.tabKey) {
+				return false; // close the tab
+			}
+			return true;
+		});
+
+		// Update state
+		prevActiveIndex %= newAvailableTabs.length;
+		if (prevActiveIndex < newAvailableTabs.length) {
+			navigateToFile(newAvailableTabs[prevActiveIndex]);
+		} else {
+			navigateToFile(undefined);
+		}
+		setAvailableFiles([...newAvailableTabs]);
+
+		const actuallyClosingFile = newAvailableTabs.length !== availableFiles.length;
+		if (actuallyClosingFile) {
+			fileToClose.onTabClose?.();
+		}
+	}, [availableFiles, activeTabKey, navigateToFile, setAvailableFiles]);
+
+	const openFile = useCallback((newPage: FileTabPageProps): void => {
+		// If the page is already open in a different tab
+		if (!!availableFileMap.get(newPage.tabKey)) {
+			navigateToFile(newPage);
+			return;
+		}
+
+		//  Filter out any non-permanently open files
+		const newAvailableTabs = availableFiles.filter((openFile) => {
+			return openFile.isPermanentlyOpen || openFile.preventUserClose;
+		});
+
+		setAvailableFiles([...newAvailableTabs, newPage]);
+		navigateToFile(newPage);
+	}, [availableFiles, availableFileMap, navigateToFile, setAvailableFiles]);
+
+	const setFilePermaOpen = useCallback((fileToKeepOpen: FileTabPageProps): void => {
+		let newAvailableTabs = availableFiles.map((file) => {
+			if (file.tabKey === fileToKeepOpen.tabKey) {
+				file.isPermanentlyOpen = true;
+			}
+			return file;
+		});
+		setAvailableFiles(newAvailableTabs);
+	}, [availableFiles, setAvailableFiles]);
+
+	return {
+		closeFile,
+		openFile,
+		setFilePermaOpen,
+		navigateToFile,
+	};
+}
+
+export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) => {
+	const { defaultTabKey, initialPages, routerConfig, noTabSelectedPath } = props;
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -57,112 +174,33 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 		console.log('Location changed to: ' + JSON.stringify(location));
 	}, [location]);
 
-	// Convert the availablePages into a map for easy lookup
-	const availableFileMap = useMemo(() => {
-		const map: Map<string, FileTabPageProps> = new Map();
-		availableFiles.forEach((page) => {
-			map.set(page.tabKey, page);
-		});
+	// Use our custom hooks for better separation of concerns
+	const fileState = useFileTabsState(initialPages, defaultTabKey);
+	const operations = useFileTabsOperations(fileState, navigate, noTabSelectedPath);
 
-		return map;
-	}, [availableFiles]);
-
-	const navigateToFile = (file: FileTabPageProps | undefined) => {
-		setActiveTabKey(file?.tabKey);
-
-		// Need to go back to the parent path
-		if (!file?.linkPath) {
-			console.log('navigating to parent path');
-			navigate(noTabSelectedPath);
-		} else {
-			console.log('navigating to new path: ');
-			console.log(file);
-			navigate(file.linkPath);
-		}
-	};
-
-	const handlers: FileTabsHandle = {
-		closeFile: function (fileToClose: FileTabPageProps): void {
-			// Get the current active index, and then increment it if the file is open
-			let prevActiveIndex = availableFiles.findIndex((file) => file.tabKey === activeTabKey);
-			if (fileToClose.tabKey === activeTabKey) {
-				prevActiveIndex += 1;
-			}
-
-			const newAvailableTabs = availableFiles.filter((openFile) => {
-				if (openFile.preventUserClose) { 
-					return true // don't close things the user isn't allowed to close
-				}
-
-				if (openFile.tabKey === fileToClose.tabKey) {
-					return false; // close the tab
-				}
-
-				return true;
-			});
-
-			// Update state
-			prevActiveIndex %= newAvailableTabs.length;
-			if (prevActiveIndex < newAvailableTabs.length) {
-				navigateToFile(newAvailableTabs[prevActiveIndex]);
-			} else {
-				navigateToFile(undefined);
-			}
-			setAvailableFiles([...newAvailableTabs]);
-
-			const actuallyClosingFile = newAvailableTabs.length !== availableFiles.length;
-			if (actuallyClosingFile) {
-				fileToClose.onTabClose?.();
-			}
-		},
-		openFile: function (newPage: FileTabPageProps): void {
-			// If the page is already open in a different tab
-			if (!!availableFileMap.get(newPage.tabKey)) {
-				navigateToFile(newPage);
-				return;
-			}
-
-			//  Filter out any non-permanently open files
-			const newAvailableTabs = availableFiles.filter((openFile) => {
-				return openFile.isPermanentlyOpen || openFile.preventUserClose;
-			});
-
-			setAvailableFiles([...newAvailableTabs, newPage]);
-			navigateToFile(newPage);
-		},
-		getOpenFile: function (): FileTabPageProps | undefined {
-			if (activeTabKey) {
-				return availableFileMap.get(activeTabKey);
-			}
-		},
-		getFileProps: function (fileKey: string): FileTabPageProps | undefined {
-			return availableFileMap.get(fileKey);
-		},
-		setFilePermaOpen: function (fileToKeepOpen: FileTabPageProps): void {
-			let newAvailableTabs = availableFiles.map((file) => {
-				if (file.tabKey === fileToKeepOpen.tabKey) {
-					file.isPermanentlyOpen = true;
-				}
-				return file;
-			});
-			setAvailableFiles(newAvailableTabs);
-		},
-	};
+	// Create handlers for the imperative API
+	const handlers: FileTabsHandle = useMemo(() => ({
+		closeFile: operations.closeFile,
+		openFile: operations.openFile,
+		getOpenFile: fileState.getOpenFile,
+		getFileProps: fileState.getFileProps,
+		setFilePermaOpen: operations.setFilePermaOpen,
+	}), [operations.closeFile, operations.openFile, operations.setFilePermaOpen, fileState.getOpenFile, fileState.getFileProps]);
 
 	// Hooks that can be called by the parent component
-	useImperativeHandle(ref, () => handlers);
+	useImperativeHandle(ref, () => handlers, [handlers]);
 
 	// Handles the keyboard shortcut to close stuff
-	// ... right now it only lets one of the file tab components from recognizing the short cut
+	// Stable handlers prevent unnecessary re-renders and event listener changes
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if ((event.metaKey || event.ctrlKey) && event.key === 'w') {
 				event.preventDefault();
 				event.stopPropagation();
 
-				let currentFile = handlers.getOpenFile();
+				let currentFile = fileState.getOpenFile();
 				if (currentFile) {
-					handlers.closeFile(currentFile);
+					operations.closeFile(currentFile);
 				}
 			}
 		};
@@ -172,13 +210,13 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 		return () => {
 			document.removeEventListener('keydown', handleKeyDown);
 		};
-	}, [handlers]);
+	}, [fileState.getOpenFile, operations.closeFile]);
 
 	return (
 		<div className="h-full w-full flex flex-col">
 			{/* The tabs */}
 			<div className="h-fit flex flex-row border-b-2 text-sm">
-				{availableFiles.map((file) => {
+				{fileState.availableFiles.map((file) => {
 					return <FileTabHeader key={file.tabKey} file={file} handlers={handlers} />;
 				})}
 			</div>

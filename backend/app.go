@@ -16,17 +16,19 @@ var APP_NAME = "GitWhale"
 
 // App struct
 type App struct {
-	ctx              context.Context
-	IsLoading        bool          `json:"isLoading"`
-	StartupState     *StartupState `json:"startupState"`
-	AppConfig        *AppConfig    `json:"appConfig"`
-	terminalSessions map[string]*TerminalSession
-	diffSessions     map[string]*DiffSession
+	ctx                   context.Context
+	IsLoading             bool          `json:"isLoading"`
+	StartupState          *StartupState `json:"startupState"`
+	AppConfig             *AppConfig    `json:"appConfig"`
+	terminalSessions      map[string]*TerminalSession
+	terminalSessionsMutex sync.RWMutex
+	diffSessions          map[string]*DiffSession
 }
 
 type TerminalSession struct {
 	consoleSession *console.Console
 	waiter         sync.WaitGroup
+	cancel         context.CancelFunc
 }
 
 // NewApp creates a new App application struct
@@ -58,7 +60,12 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 
 	if startupState.DirectoryDiff != nil {
 		if startupState.DirectoryDiff.ShouldStartFileWatcher {
-			startupState.fileDiffWatcher = StartFileDiffWatcher(ctx)
+			watcher, err := StartFileDiffWatcher(ctx)
+			if err != nil {
+				Log.Error("Failed to start file diff watcher: %v", err)
+			} else {
+				startupState.fileDiffWatcher = watcher
+			}
 		}
 	}
 }

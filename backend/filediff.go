@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,28 +13,22 @@ import (
 
 const NotificationFilePrefix = "FileDiff_"
 
-func SendFileDiffNotification(leftFilePath string, rightFilePath string) {
+func SendFileDiffNotification(leftFilePath string, rightFilePath string) error {
 	lockFolderPath, err := getFileDiffNotificationsFolderPath()
 	if err != nil {
-		Log.Fatal("Could not get the folder path to the notification folder:")
-		Log.Fatal("%v", err)
-		return
+		return fmt.Errorf("could not get the folder path to the notification folder: %w", err)
 	}
 
 	// normalize path
 	leftFilePath, err = filepath.Abs(leftFilePath)
 	if err != nil {
-		Log.Fatal("Could not get the Absolute file path to the file: %v", leftFilePath)
-		Log.Fatal("%v", err)
-		return
+		return fmt.Errorf("could not get the absolute file path to the file %v: %w", leftFilePath, err)
 	}
 
 	// normalize path
 	rightFilePath, err = filepath.Abs(rightFilePath)
 	if err != nil {
-		Log.Fatal("Could not get the Absolute file path to the file: %v", rightFilePath)
-		Log.Fatal("%v", err)
-		return
+		return fmt.Errorf("could not get the absolute file path to the file %v: %w", rightFilePath, err)
 	}
 
 	fileContent := fmt.Sprintf("%v\n%v", leftFilePath, rightFilePath)
@@ -44,36 +37,40 @@ func SendFileDiffNotification(leftFilePath string, rightFilePath string) {
 
 	err = WriteToFileAndReplaceOld(filePath, fileContent)
 	if err != nil {
-		Log.Fatal("Could not write to the file: %v", filePath)
-		Log.Fatal("The following error occurred: %v", err)
+		return fmt.Errorf("could not write to the file %v: %w", filePath, err)
 	}
+	
+	return nil
 }
 
 // Starts a watcher to the temporary file where we can get notifications for what new files to diff
-func StartFileDiffWatcher(ctx context.Context) *fsnotify.Watcher {
+func StartFileDiffWatcher(ctx context.Context) (*fsnotify.Watcher, error) {
 	lockFolderPath, err := getFileDiffNotificationsFolderPath()
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("could not get notification folder path: %w", err)
 	}
 
 	// Create new watcher.
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
-		return nil
+		return nil, fmt.Errorf("could not create file watcher: %w", err)
 	}
 
-	createFileDiffWatcherLockFile()
+	if err := createFileDiffWatcherLockFile(); err != nil {
+		watcher.Close()
+		return nil, fmt.Errorf("could not create watcher lock file: %w", err)
+	}
 
 	// Start listening for events.
 	go func() {
+		defer watcher.Close()
 		for {
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
-				log.Println("event:", event)
+				Log.Debug("Received file diff event: %v", event)
 				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 					onReceivedFileDiffNotification(ctx, event.Name)
 				}
@@ -81,7 +78,10 @@ func StartFileDiffWatcher(ctx context.Context) *fsnotify.Watcher {
 				if !ok {
 					return
 				}
-				log.Println("error:", err)
+				Log.Error("File diff watcher error: %v", err)
+			case <-ctx.Done():
+				Log.Debug("File diff watcher stopping due to context cancellation")
+				return
 			}
 		}
 	}()
@@ -89,10 +89,11 @@ func StartFileDiffWatcher(ctx context.Context) *fsnotify.Watcher {
 	// Add a path.
 	err = watcher.Add(lockFolderPath)
 	if err != nil {
-		log.Fatal(err)
+		watcher.Close()
+		return nil, fmt.Errorf("could not add path to watcher: %w", err)
 	}
 
-	return watcher
+	return watcher, nil
 }
 
 func CloseFileDiffWatcher(watcher *fsnotify.Watcher) {
