@@ -140,16 +140,16 @@ export default function RepoDiffView() {
 
 	const getDiffTypeDescription = () => {
 		if (!toRef || toRef === '') {
-			return `Comparing ${fromRef} with working tree`;
+			return `Comparing ${fromRef} with current changes`;
 		}
 		return `Comparing ${fromRef} with ${toRef}`;
 	};
 
 	const getQuickDiffOptions = () => [
-		{ label: 'Working Tree vs HEAD', fromRef: 'HEAD', toRef: '' },
-		{ label: 'Working Tree vs Staged', fromRef: '', toRef: 'HEAD' }, // Special case
-		{ label: 'HEAD vs HEAD~1', fromRef: 'HEAD~1', toRef: 'HEAD' },
-		{ label: 'HEAD vs HEAD~2', fromRef: 'HEAD~2', toRef: 'HEAD' },
+		{ label: 'Current Changes vs HEAD', fromRef: 'HEAD', toRef: '' },
+		{ label: 'Current Changes vs Staged', fromRef: '', toRef: 'HEAD' }, // Special case
+		{ label: 'HEAD vs Previous Commit', fromRef: 'HEAD~1', toRef: 'HEAD' },
+		{ label: 'HEAD vs 2 Commits Back', fromRef: 'HEAD~2', toRef: 'HEAD' },
 	];
 
 	const selectedSession = activeSessions.find(s => s.sessionId === selectedSessionId);
@@ -157,21 +157,43 @@ export default function RepoDiffView() {
 
 	return (
 		<div className="flex flex-col h-full">
-			{/* Diff Options Panel */}
-			<div className="border-b bg-muted/30">
-				<div className="p-4 space-y-4">
-					<div className="flex items-center justify-between">
-						<h2 className="text-xl font-semibold flex items-center gap-2">
-							<GitCompare className="w-5 h-5" />
-							Repository Diff
-						</h2>
-						<Button
-							onClick={() => setShowAdvanced(!showAdvanced)}
-							variant="outline"
-							size="sm"
-						>
-							{showAdvanced ? 'Simple' : 'Advanced'} Options
-						</Button>
+			{/* Compact Diff Options Header */}
+			<div className="border-b bg-muted/20">
+				<div className="p-3">
+					<div className="flex items-center justify-between mb-3">
+						<div className="flex items-center gap-3">
+							<GitCompare className="w-4 h-4" />
+							<span className="font-medium">Repository Diff</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Button
+								onClick={loadRefsData}
+								variant="outline"
+								size="sm"
+								disabled={loading}
+							>
+								<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+							</Button>
+							<Button
+								onClick={() => setShowAdvanced(!showAdvanced)}
+								variant="ghost"
+								size="sm"
+							>
+								{showAdvanced ? 'Simple' : 'Advanced'}
+							</Button>
+							<Button
+								onClick={createDiffSession}
+								disabled={loading || !fromRef}
+								size="sm"
+							>
+								{loading ? (
+									<Loader2 className="w-3 h-3 animate-spin" />
+								) : (
+									<GitCompare className="w-3 h-3" />
+								)}
+								Compare
+							</Button>
+						</div>
 					</div>
 
 					{!showAdvanced ? (
@@ -180,7 +202,7 @@ export default function RepoDiffView() {
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								{/* From Reference */}
 								<div className="space-y-2">
-									<Label htmlFor="fromRef">From Reference</Label>
+									<Label htmlFor="fromRef">Compare From</Label>
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button variant="outline" className="w-full justify-between">
@@ -211,13 +233,13 @@ export default function RepoDiffView() {
 
 								{/* To Reference */}
 								<div className="space-y-2">
-									<Label htmlFor="toRef">To Reference</Label>
+									<Label htmlFor="toRef">Compare To</Label>
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button variant="outline" className="w-full justify-between">
 												<span className="flex items-center gap-2">
 													<FolderTree className="w-4 h-4" />
-													{toRef || 'Working Tree'}
+													{toRef || 'Current Changes'}
 												</span>
 												<ChevronDown className="w-4 h-4" />
 											</Button>
@@ -228,7 +250,7 @@ export default function RepoDiffView() {
 											<DropdownMenuItem onClick={() => setToRef('')}>
 												<span className="flex items-center gap-2">
 													<FolderTree className="w-4 h-4" />
-													Working Tree
+													Current Changes
 												</span>
 											</DropdownMenuItem>
 											<DropdownMenuSeparator />
@@ -268,27 +290,29 @@ export default function RepoDiffView() {
 						</div>
 					) : (
 						// Advanced options
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="fromRefInput">From Reference</Label>
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+							<div className="space-y-1">
+								<Label htmlFor="fromRefInput" className="text-xs">Compare From</Label>
 								<Input
 									id="fromRefInput"
 									value={fromRef}
 									onChange={(e) => setFromRef(e.target.value)}
 									placeholder="HEAD, branch, tag, commit hash..."
+									className="text-xs h-8"
 								/>
 							</div>
-							<div className="space-y-2">
-								<Label htmlFor="toRefInput">To Reference</Label>
+							<div className="space-y-1">
+								<Label htmlFor="toRefInput" className="text-xs">Compare To</Label>
 								<Input
 									id="toRefInput"
 									value={toRef}
 									onChange={(e) => setToRef(e.target.value)}
-									placeholder="Leave empty for working tree"
+									placeholder="Leave empty for current changes"
+									className="text-xs h-8"
 								/>
 							</div>
-							<div className="space-y-2">
-								<Label htmlFor="contextLines">Context Lines</Label>
+							<div className="space-y-1">
+								<Label htmlFor="contextLines" className="text-xs">Context Lines</Label>
 								<Input
 									id="contextLines"
 									type="number"
@@ -296,72 +320,50 @@ export default function RepoDiffView() {
 									onChange={(e) => setContextLines(parseInt(e.target.value) || 3)}
 									min="0"
 									max="20"
+									className="text-xs h-8"
 								/>
 							</div>
-							<div className="md:col-span-2 lg:col-span-3 space-y-2">
-								<Label htmlFor="filePaths">File Paths (optional)</Label>
+							<div className="md:col-span-3 space-y-1">
+								<Label htmlFor="filePaths" className="text-xs">File Paths (optional)</Label>
 								<Input
 									id="filePaths"
 									value={filePaths}
 									onChange={(e) => setFilePaths(e.target.value)}
 									placeholder="src/, README.md, *.js (comma-separated)"
+									className="text-xs h-8"
 								/>
 							</div>
 						</div>
 					)}
-
-					{/* Diff description and action */}
-					<div className="flex items-center justify-between pt-2">
-						<p className="text-sm text-muted-foreground">
-							{getDiffTypeDescription()}
-						</p>
-						<div className="flex items-center gap-2">
-							<Button
-								onClick={loadRefsData}
-								variant="outline"
-								size="sm"
-								disabled={loading}
-							>
-								<RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-								Refresh Refs
-							</Button>
-							<Button
-								onClick={createDiffSession}
-								disabled={loading || !fromRef}
-							>
-								{loading ? (
-									<Loader2 className="w-4 h-4 mr-2 animate-spin" />
-								) : (
-									<GitCompare className="w-4 h-4 mr-2" />
-								)}
-								Create Diff
-							</Button>
-						</div>
+					
+					{/* Current comparison display */}
+					<div className="text-xs text-muted-foreground mt-2">
+						{getDiffTypeDescription()}
 					</div>
 				</div>
 			</div>
 
 			{/* Active Sessions Tabs */}
 			{activeSessions.length > 0 && (
-				<div className="border-b bg-muted/20">
-					<div className="flex items-center gap-2 p-2 overflow-x-auto">
+				<div className="border-b bg-muted/10">
+					<div className="flex items-center gap-1 p-1 overflow-x-auto">
 						{activeSessions.map((session) => (
 							<Button
 								key={session.sessionId}
 								variant={selectedSessionId === session.sessionId ? "default" : "ghost"}
 								size="sm"
-								className="shrink-0 justify-between min-w-[200px]"
+								className="shrink-0 justify-between min-w-[150px] h-7 text-xs"
 								onClick={() => setSelectedSessionId(session.sessionId)}
 							>
-								<span className="truncate">{session.title}</span>
+								<span className="truncate text-xs">{session.title}</span>
 								<span
-									className="h-auto w-auto p-1 ml-2 hover:bg-destructive/20 rounded cursor-pointer flex items-center justify-center"
+									className="h-auto w-auto p-0.5 ml-1 hover:bg-destructive/20 rounded cursor-pointer flex items-center justify-center"
 									onClick={(e) => {
 										e.stopPropagation();
 										closeDiffSession(session.sessionId);
 									}}
 								>
-									<X className="w-3 h-3" />
+									<X className="w-2.5 h-2.5" />
 								</span>
 							</Button>
 						))}
@@ -370,7 +372,7 @@ export default function RepoDiffView() {
 			)}
 
 			{/* Diff Viewer */}
-			<div className="flex-1 overflow-hidden">
+			<div className="flex-1 overflow-hidden min-h-0">
 				{selectedSession ? (
 					<DirDiffViewer
 						directoryData={selectedSession.directoryData}
