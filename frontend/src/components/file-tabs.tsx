@@ -172,7 +172,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 	const location = useLocation();
 
 	useEffect(() => {
-		console.log('Location changed to: ' + JSON.stringify(location));
+		console.debug('Location changed to: ', location);
 	}, [location]);
 
 	// Use our custom hooks for better separation of concerns

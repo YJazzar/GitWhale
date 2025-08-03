@@ -18,13 +18,14 @@ import RepoCommitDetailsView from './pages/repo/RepoCommitDetailsView';
 import RepoLogView from './pages/repo/RepoLogView';
 import RepoTerminalView from './pages/repo/RepoTerminalView';
 import RepoDiffView from './pages/repo/RepoDiffView';
+import { FileDiffViewWrapper, NoFileSelected } from './components/dir-diff-viewer';
 
 // Create a client
 const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
 			refetchOnWindowFocus: false,
-		}
+		},
 	},
 });
 
@@ -74,7 +75,7 @@ function App() {
 					routerConfig={() => {
 						return (
 							<Routes>
-								<Route path="/" element={<Navigate to="/home"  />} />
+								<Route path="/" element={<Navigate to="/home" />} />
 								<Route path="/home" element={<HomePage fileTabRef={fileTabRef} />} />
 								<Route path="/settings" element={<SettingsPage />} />
 								<Route path="/repo" element={<RepoPage />}>
@@ -84,7 +85,15 @@ function App() {
 										<Route index={true} element={<Navigate to="log" />} />
 										<Route path="home" element={<RepoHomeView />} />
 										<Route path="log" element={<RepoLogView />} />
-										<Route path="diff/*" element={<RepoDiffView />} />
+										<Route path="diff" element={<RepoDiffView />}>
+											<Route
+												index
+												element={<Navigate to="no-file-selected" replace />}
+											/>
+											<Route path="no-file-selected" element={<NoFileSelected />} />
+											<Route path=":tabKey" element={<FileDiffViewWrapper />} />
+										</Route>
+
 										<Route path="terminal" element={<RepoTerminalView />} />
 										<Route
 											path="commit/:commitHash"

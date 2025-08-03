@@ -4,7 +4,7 @@ import { FileTabPageProps, FileTabs, FileTabsHandle } from '@/components/file-ta
 import LoadingSpinner from '@/components/loading-spinner';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { Navigate, Route, Routes, useParams } from 'react-router';
+import { Navigate, Outlet, Route, Routes, useParams } from 'react-router';
 import { backend } from '../../wailsjs/go/models';
 
 interface DirDiffViewerProps {
@@ -14,7 +14,6 @@ interface DirDiffViewerProps {
 	error?: any;
 	onAddFile?: (file: backend.FileInfo) => void;
 	title?: string;
-	emptyMessage?: string;
 }
 
 const getFileKey = (file: backend.FileInfo) => {
@@ -28,7 +27,6 @@ export function DirDiffViewer({
 	error = null,
 	onAddFile,
 	title = "Directory Diff",
-	emptyMessage = "Select a file to view diff"
 }: DirDiffViewerProps) {
 	const fileTabRef = useRef<FileTabsHandle>(null);
 
@@ -52,6 +50,8 @@ export function DirDiffViewer({
 
 		return map;
 	}, [directoryData]);
+
+	(window as any).fileInfoMap = fileInfoMap; // temp because it's not in useRepoState yet
 
 	// Listen for additional files to diff (for external notifications)
 	useEffect(() => {
@@ -120,17 +120,10 @@ export function DirDiffViewer({
 								ref={fileTabRef}
 								defaultTabKey=""
 								initialPages={[]}
-								noTabSelectedPath="no-file-selected"
+								noTabSelectedPath="./no-file-selected"
 								routerConfig={() => {
 									return (
-										<Routes>
-											<Route index element={<Navigate to="no-file-selected" replace />} />
-											<Route path="no-file-selected" element={<NoFileSelected message={emptyMessage} />} />
-											<Route
-												path=":tabKey"
-												element={<FileDiffViewWrapper fileInfoMap={fileInfoMap} />}
-											/>
-										</Routes>
+										<Outlet/>
 									);
 								}}
 							/>
@@ -142,19 +135,19 @@ export function DirDiffViewer({
 	);
 }
 
-function NoFileSelected({ message }: { message: string }) {
+export function NoFileSelected() {
 	return (
 		<div className="w-full h-full grid place-content-center">
 			<div className="text-center text-muted-foreground">
-				<p>{message}</p>
+				<p>Select a file to view diff</p>
 			</div>
 		</div>
 	);
 }
 
 // Gets the file to render from react-router, and renders the actual diff view
-function FileDiffViewWrapper(props: { fileInfoMap: Map<string, backend.FileInfo> }) {
-	const { fileInfoMap } = props;
+export function FileDiffViewWrapper() {
+	const fileInfoMap = (window as any).fileInfoMap // Temp: until I raise the state to the useRepoState() hook and I can dynamically get this data
 	const { tabKey } = useParams();
 
 	const fileInfo = useMemo(() => {
@@ -181,7 +174,7 @@ function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle>; directo
 			tabKey: tabKey,
 			titleRender: () => <>{file.Name}</>,
 			isPermanentlyOpen: keepFileOpen,
-			linkPath: btoa(tabKey),
+			linkPath: `./${btoa(tabKey)}`,
 		};
 		props.fileTreeRef.current?.openFile(fileToOpen);
 		if (keepFileOpen) {
