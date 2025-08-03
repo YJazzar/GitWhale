@@ -13,6 +13,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DirDiffViewer } from '@/components/dir-diff-viewer';
+import { Routes, Route, Navigate } from 'react-router';
 import {
 	GitBranch,
 	GitCompare,
@@ -62,7 +63,6 @@ export default function RepoDiffView() {
 	const [branches, setBranches] = useState<backend.GitRef[]>([]);
 	const [tags, setTags] = useState<backend.GitRef[]>([]);
 	const [showAdvanced, setShowAdvanced] = useState(false);
-	const [contextLines, setContextLines] = useState(3);
 	const [filePaths, setFilePaths] = useState<string>(''); // Comma-separated paths
 
 	if (!repoPath) {
@@ -102,7 +102,6 @@ export default function RepoDiffView() {
 				fromRef: fromRef,
 				toRef: toRef,
 				filePaths: filePaths ? filePaths.split(',').map(p => p.trim()).filter(p => p) : [],
-				contextLines: contextLines
 			};
 
 			const session = await StartDiffSession(options);
@@ -171,9 +170,33 @@ export default function RepoDiffView() {
 								variant="outline"
 								size="sm"
 								disabled={loading}
+								title="Refresh branches and tags"
 							>
 								<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
 							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="outline" size="sm">
+										Quick Options
+										<ChevronDown className="w-3 h-3 ml-1" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuLabel>Quick Diff Options</DropdownMenuLabel>
+									<DropdownMenuSeparator />
+									{getQuickDiffOptions().map((option, index) => (
+										<DropdownMenuItem
+											key={index}
+											onClick={() => {
+												setFromRef(option.fromRef);
+												setToRef(option.toRef);
+											}}
+										>
+											{option.label}
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
 							<Button
 								onClick={() => setShowAdvanced(!showAdvanced)}
 								variant="ghost"
@@ -270,27 +293,10 @@ export default function RepoDiffView() {
 								</div>
 							</div>
 
-							{/* Quick Options */}
-							<div className="flex flex-wrap gap-2">
-								<Label className="text-sm text-muted-foreground">Quick options:</Label>
-								{getQuickDiffOptions().map((option, index) => (
-									<Button
-										key={index}
-										variant="outline"
-										size="sm"
-										onClick={() => {
-											setFromRef(option.fromRef);
-											setToRef(option.toRef);
-										}}
-									>
-										{option.label}
-									</Button>
-								))}
-							</div>
 						</div>
 					) : (
 						// Advanced options
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
 							<div className="space-y-1">
 								<Label htmlFor="fromRefInput" className="text-xs">Compare From</Label>
 								<Input
@@ -311,19 +317,7 @@ export default function RepoDiffView() {
 									className="text-xs h-8"
 								/>
 							</div>
-							<div className="space-y-1">
-								<Label htmlFor="contextLines" className="text-xs">Context Lines</Label>
-								<Input
-									id="contextLines"
-									type="number"
-									value={contextLines}
-									onChange={(e) => setContextLines(parseInt(e.target.value) || 3)}
-									min="0"
-									max="20"
-									className="text-xs h-8"
-								/>
-							</div>
-							<div className="md:col-span-3 space-y-1">
+							<div className="md:col-span-2 space-y-1">
 								<Label htmlFor="filePaths" className="text-xs">File Paths (optional)</Label>
 								<Input
 									id="filePaths"
@@ -335,72 +329,89 @@ export default function RepoDiffView() {
 							</div>
 						</div>
 					)}
-					
-					{/* Current comparison display */}
-					<div className="text-xs text-muted-foreground mt-2">
-						{getDiffTypeDescription()}
-					</div>
 				</div>
 			</div>
 
 			{/* Active Sessions Tabs */}
 			{activeSessions.length > 0 && (
-				<div className="border-b bg-muted/10">
-					<div className="flex items-center gap-1 p-1 overflow-x-auto">
+				<div className="border-b bg-gradient-to-r from-muted/5 to-muted/10 backdrop-blur-sm">
+					<div className="flex items-center gap-2 p-2 overflow-x-auto scrollbar-hide">
 						{activeSessions.map((session) => (
-							<Button
+							<div
 								key={session.sessionId}
-								variant={selectedSessionId === session.sessionId ? "default" : "ghost"}
-								size="sm"
-								className="shrink-0 justify-between min-w-[150px] h-7 text-xs"
+								className={`
+									flex items-center gap-2 px-3 py-1.5 rounded-lg shrink-0 min-w-[160px] 
+									transition-all duration-200 ease-in-out cursor-pointer group
+									${selectedSessionId === session.sessionId 
+										? 'bg-primary/10 border border-primary/20 shadow-sm text-primary' 
+										: 'bg-background/80 border border-border/50 hover:bg-muted/50 hover:border-border text-muted-foreground hover:text-foreground'
+									}
+								`}
 								onClick={() => setSelectedSessionId(session.sessionId)}
 							>
-								<span className="truncate text-xs">{session.title}</span>
-								<span
-									className="h-auto w-auto p-0.5 ml-1 hover:bg-destructive/20 rounded cursor-pointer flex items-center justify-center"
+								<span className="truncate text-sm font-medium">{session.title}</span>
+								<button
+									className="
+										w-5 h-5 rounded-md flex items-center justify-center 
+										transition-colors duration-150
+										hover:bg-destructive/20 hover:text-destructive
+										group-hover:opacity-100 opacity-60
+									"
 									onClick={(e) => {
 										e.stopPropagation();
 										closeDiffSession(session.sessionId);
 									}}
+									title="Close diff session"
 								>
-									<X className="w-2.5 h-2.5" />
-								</span>
-							</Button>
+									<X className="w-3 h-3" />
+								</button>
+							</div>
 						))}
 					</div>
 				</div>
 			)}
 
-			{/* Diff Viewer */}
+			{/* Diff Viewer with Routes */}
 			<div className="flex-1 overflow-hidden min-h-0">
-				{selectedSession ? (
-					<DirDiffViewer
-						directoryData={selectedSession.directoryData}
-						isLoading={false}
-						isError={false}
-						title={selectedSession.title}
-						emptyMessage="No differences found between the selected references"
-					/>
-				) : (
-					<div className="w-full h-full flex items-center justify-center">
-						<Card className="w-96">
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<GitCompare className="w-5 h-5" />
-									Repository Diff
-								</CardTitle>
-								<CardDescription>
-									Compare different versions of your repository
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<p className="text-sm text-muted-foreground">
-									Select your source and target references above, then click "Create Diff" to begin comparing.
-								</p>
-							</CardContent>
-						</Card>
-					</div>
-				)}
+				<Routes>
+					<Route index element={
+						selectedSession ? (
+							<Navigate to="no-file-selected" replace />
+						) : (
+							<div className="w-full h-full flex items-center justify-center">
+								<Card className="w-96">
+									<CardHeader>
+										<CardTitle className="flex items-center gap-2">
+											<GitCompare className="w-5 h-5" />
+											Repository Diff
+										</CardTitle>
+										<CardDescription>
+											Compare different versions of your repository
+										</CardDescription>
+									</CardHeader>
+									<CardContent>
+										<p className="text-sm text-muted-foreground">
+											Select your source and target references above, then click "Create Diff" to begin comparing.
+										</p>
+									</CardContent>
+								</Card>
+							</div>
+						)
+					} />
+					<Route path="*" element={
+						selectedSession ? (
+							<DirDiffViewer
+								directoryData={selectedSession.directoryData}
+								isLoading={false}
+								isError={false}
+								title={selectedSession.title}
+								emptyMessage="No differences found between the selected references"
+							/>
+						) : (
+							<Navigate to="/" replace />
+						)
+					} />
+				</Routes>
 			</div>
 		</div>
 	);

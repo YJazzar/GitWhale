@@ -27,7 +27,6 @@ type DiffOptions struct {
 	FromRef     string `json:"fromRef"`     // Source ref (commit, branch, tag)
 	ToRef       string `json:"toRef"`       // Target ref (commit, branch, tag, or empty for working tree)
 	FilePaths   []string `json:"filePaths"` // Optional: specific files/dirs to diff
-	ContextLines int    `json:"contextLines"` // Number of context lines for diffs
 }
 
 // Creates a new diff session with managed temporary directories

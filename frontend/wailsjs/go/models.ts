@@ -205,7 +205,6 @@ export namespace backend {
 	    fromRef: string;
 	    toRef: string;
 	    filePaths: string[];
-	    contextLines: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new DiffOptions(source);
@@ -217,7 +216,6 @@ export namespace backend {
 	        this.fromRef = source["fromRef"];
 	        this.toRef = source["toRef"];
 	        this.filePaths = source["filePaths"];
-	        this.contextLines = source["contextLines"];
 	    }
 	}
 	export class DiffSession {

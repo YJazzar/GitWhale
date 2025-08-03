@@ -102,11 +102,11 @@ export function DirDiffViewer({
 				</div>
 			)}
 			
-			<div className="flex-1 flex flex-row">
+			<div className="flex-1 flex flex-row min-h-0">
 				<ResizablePanelGroup direction="horizontal">
 					{/* Left pane that contains the file structure */}
 					<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
-						<div className="border-r h-full overflow-y-auto">
+						<div className="border-r h-full overflow-y-auto overflow-x-hidden">
 							<FileTree fileTreeRef={fileTabRef} directoryData={directoryData} />
 						</div>
 					</ResizablePanel>
@@ -115,7 +115,7 @@ export function DirDiffViewer({
 
 					{/* Right pane containing the actual diffs */}
 					<ResizablePanel id="diff-content-panel">
-						<div className="grow h-full flex flex-col">
+						<div className="grow h-full flex flex-col min-h-0">
 							<FileTabs
 								ref={fileTabRef}
 								defaultTabKey=""
@@ -124,7 +124,7 @@ export function DirDiffViewer({
 								routerConfig={() => {
 									return (
 										<Routes>
-											<Route path="/" element={<Navigate to="no-file-selected" />} />
+											<Route index element={<Navigate to="no-file-selected" replace />} />
 											<Route path="no-file-selected" element={<NoFileSelected message={emptyMessage} />} />
 											<Route
 												path=":tabKey"
@@ -190,7 +190,7 @@ function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle>; directo
 	};
 
 	return (
-		<div className="w-full h-full p-2">
+		<div className="w-full h-full p-2 overflow-y-auto">
 			<TreeNode directory={directoryData} onFileClick={onOpenFile} />
 		</div>
 	);
