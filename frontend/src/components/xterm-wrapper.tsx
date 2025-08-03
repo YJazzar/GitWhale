@@ -24,12 +24,14 @@ export default function XTermWrapper() {
 		}
 
 		// ① put (or move) the DOM node into place
-		if (divNodeRef.current && state.element.parentNode !== divNodeRef.current) {
+		if (divNodeRef.current && state && state.element.parentNode !== divNodeRef.current) {
 			divNodeRef.current.appendChild(state.element);
 			state.fitAddon.fit(); // make it fill the new box
 		}
 
-		state.fitAddon.fit();
+		if (state) {
+			state.fitAddon.fit();
+		}
 
 		// ② detach—**don't dispose**—on unmount so scroll back & PID survive
 		return () => {

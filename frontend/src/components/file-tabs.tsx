@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Link, To, useLocation, useNavigate, useParams } from 'react-router';
+import { X, FileText, Circle } from 'lucide-react';
 
 export type FileTabsHandle = {
 	closeFile: (fileToClose: FileTabPageProps) => void;
@@ -215,10 +216,12 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 	return (
 		<div className="h-full w-full flex flex-col">
 			{/* The tabs */}
-			<div className="h-fit flex flex-row border-b-2 text-sm">
-				{fileState.availableFiles.map((file) => {
-					return <FileTabHeader key={file.tabKey} file={file} handlers={handlers} />;
+			<div className="h-fit flex flex-row bg-muted/30 border-b border-border overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+				{fileState.availableFiles.map((file, index) => {
+					return <FileTabHeader key={file.tabKey} file={file} handlers={handlers} isFirst={index === 0} />;
 				})}
+				{/* Add some space at the end for better UX when scrolling */}
+				<div className="w-4 flex-shrink-0" />
 			</div>
 
 			{/* The tab contents */}
@@ -230,24 +233,22 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 type FileTabHeaderProps = {
 	file: FileTabPageProps;
 	handlers: FileTabsHandle;
+	isFirst?: boolean;
 };
 
 const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
-	const { file, handlers } = props;
+	const { file, handlers, isFirst = false } = props;
 
 	const isTemporarilyOpen = !file.isPermanentlyOpen && !file.preventUserClose;
 	const isCurrentFileOpen = handlers.getOpenFile()?.tabKey === file.tabKey;
 
-	const onCloseClick: React.MouseEventHandler<HTMLSpanElement> = (event) => {
+	const onCloseClick: React.MouseEventHandler<HTMLButtonElement> = (event) => {
 		event.preventDefault();
 		event.stopPropagation();
 		handlers.closeFile(file);
 	};
 
 	const onOpenFileClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
-		// event.preventDefault();
-		// event.stopPropagation();
-
 		if (isCurrentFileOpen && isTemporarilyOpen) {
 			handlers.setFilePermaOpen(file);
 			return;
@@ -257,46 +258,59 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 	};
 
 	const onDoubleClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
-		// event.preventDefault();
-		// event.stopPropagation();
-
 		handlers.setFilePermaOpen(file);
 	};
 
 	return (
-		<Link
-			key={file.tabKey}
-			to={file.linkPath}
-			className={clsx([
-				'flex flex-row h-full border border-b-0 pt-2 pb-1 pl-2 cursor-pointer items-baseline',
-				{
-					'pr-2': file.preventUserClose,
-					'bg-sidebar-accent': isCurrentFileOpen,
-				},
-			])}
-			onDoubleClick={onDoubleClick}
-			onClick={onOpenFileClick}
-		>
-			<span
-				className={clsx('pr-1', {
-					italic: isTemporarilyOpen,
-				})}
-			>
-				{file.titleRender()}
-			</span>
-
-			{/* {props.preventUserClose === true ? null : <X onClick={onCloseClick} />} */}
-			{file.preventUserClose === true ? null : (
+		<div className="relative group">
+			<Link
+				key={file.tabKey}
+				to={file.linkPath}
+				className={clsx([
+					'group relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 border-r border-border/50 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-0 max-w-48',
+					{
+						'bg-background border-t-2 border-t-primary text-foreground shadow-sm': isCurrentFileOpen,
+						'bg-muted/20 text-muted-foreground hover:text-foreground': !isCurrentFileOpen,
+						'pr-8': !file.preventUserClose, // Make room for close button
+						'pr-3': file.preventUserClose,
+						'border-l border-l-border/30': !isFirst, // Add left border except for first tab
+					},
+				])}
+				onDoubleClick={onDoubleClick}
+				onClick={onOpenFileClick}
+			>	
+				{/* File name */}
 				<span
-					className={clsx('h-6 w-6 mr-1 flex rounded-md items-center justify-center', {
-						'hover:bg-sidebar': isCurrentFileOpen,
-						'hover:bg-accent': !isCurrentFileOpen,
+					className={clsx('truncate', {
+						'italic': isTemporarilyOpen,
 					})}
-					onClick={onCloseClick}
+					title={typeof file.titleRender() === 'string' ? String(file.titleRender()) : ''}
 				>
-					x
+					{file.titleRender()}
 				</span>
+
+				{/* Temporary indicator */}
+				{isTemporarilyOpen && (
+					<Circle className="h-2 w-2 fill-current text-muted-foreground/60 flex-shrink-0" />
+				)}
+			</Link>
+
+			{/* Close button */}
+			{!file.preventUserClose && (
+				<button
+					onClick={onCloseClick}
+					className={clsx([
+						'absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+						{
+							'opacity-100': isCurrentFileOpen,
+							'hover:bg-muted': !isCurrentFileOpen,
+						}
+					])}
+					aria-label={`Close ${typeof file.titleRender() === 'string' ? String(file.titleRender()) : 'file'}`}
+				>
+					<X className="h-3.5 w-3.5" />
+				</button>
 			)}
-		</Link>
+		</div>
 	);
 };

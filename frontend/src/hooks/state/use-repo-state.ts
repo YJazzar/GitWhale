@@ -120,7 +120,7 @@ function getTerminalState(repoPath: string) {
 		// First (and only) time we ever call open():
 		newTerminal.open(element);
 
-		return { terminal: newTerminal, fitAddon, element };
+		return { terminal: newTerminal, fitAddon, element, isDisposed: false };
 	};
 
 	const disposeTerminal = () => {

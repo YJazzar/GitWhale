@@ -42,7 +42,6 @@ interface GitLogToolbarProps {
 	onLoadingChange: (loading: boolean) => void;
 	currentRef: string;
 	onRefChange: (ref: string) => void;
-	onCompareRefs?: (fromRef: string, toRef: string) => void;
 }
 
 interface GitLogOptions {
@@ -354,7 +353,6 @@ export function GitLogToolbar({
 	onLoadingChange,
 	currentRef,
 	onRefChange,
-	onCompareRefs,
 }: GitLogToolbarProps) {
 	const [branches, setBranches] = useState<backend.GitRef[]>([]);
 	const [tags, setTags] = useState<backend.GitRef[]>([]);
@@ -460,12 +458,6 @@ export function GitLogToolbar({
 		}
 	};
 
-	const handleQuickCompare = () => {
-		if (onCompareRefs) {
-			onCompareRefs(currentRef, ''); // Compare current ref with working tree
-		}
-	};
-
 	return (
 		<div className="flex items-center gap-2 p-3 border-b bg-muted/30">
 			{/* Refresh Button */}
@@ -515,16 +507,6 @@ export function GitLogToolbar({
 				setToRef={setToRef}
 				onApplyFilters={loadCommitsWithCurrentOptions}
 			/>
-
-			{onCompareRefs && (
-				<>
-					<Separator orientation="vertical" className="h-6" />
-					<Button variant="outline" size="sm" onClick={handleQuickCompare} disabled={loading}>
-						<GitCompare className="w-4 h-4 mr-2" />
-						Compare
-					</Button>
-				</>
-			)}
 		</div>
 	);
 }
