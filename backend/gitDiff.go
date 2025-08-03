@@ -450,27 +450,61 @@ func copyDirectory(src, dst string) error {
 		return fmt.Errorf("failed to create destination directory: %v", err)
 	}
 
+	var copiedFiles, skippedFiles int
+
 	// Walk through source directory
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			// Handle missing files gracefully - Git difftool only includes changed files
+			if os.IsNotExist(err) {
+				skippedFiles++
+				Log.Info("Skipping missing file/directory: %s", path)
+				return nil // Continue walking, don't fail
+			}
+			// For other errors (permissions, etc.), still fail
+			return fmt.Errorf("error accessing path %s: %v", path, err)
 		}
 
 		// Calculate destination path
 		relPath, err := filepath.Rel(src, path)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to calculate relative path for %s: %v", path, err)
 		}
 		dstPath := filepath.Join(dst, relPath)
 
 		if info.IsDir() {
 			// Create directory
-			return os.MkdirAll(dstPath, info.Mode())
+			if err := os.MkdirAll(dstPath, info.Mode()); err != nil {
+				return fmt.Errorf("failed to create directory %s: %v", dstPath, err)
+			}
+			Log.Info("Created directory: %s", relPath)
+			return nil
 		}
 
 		// Copy file
-		return copyFile(path, dstPath)
+		if err := copyFile(path, dstPath); err != nil {
+			Log.Warning("Failed to copy file %s: %v", relPath, err)
+			skippedFiles++
+			return nil // Continue copying other files
+		}
+		
+		copiedFiles++
+		Log.Info("Copied file: %s", relPath)
+		return nil
 	})
+
+	if err != nil {
+		return err
+	}
+
+	Log.Info("Copy completed: %d files copied, %d files/directories skipped", copiedFiles, skippedFiles)
+	
+	// Validate that we copied at least some files (unless the source was empty)
+	if copiedFiles == 0 && skippedFiles == 0 {
+		return fmt.Errorf("no files were found to copy from %s", src)
+	}
+
+	return nil
 }
 
 // copyFile copies a single file from src to dst
