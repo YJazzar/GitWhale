@@ -1,11 +1,14 @@
 package backend
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -56,10 +59,12 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 		DirectoryData: nil, // Will be populated later
 	}
 
-	session.DirectoryData = GetDiffSessionDirectory(session)
-
 	// Populate the directories with diff content
 	err = populateDiffDirectories(session, options)
+
+	// Now it should be safe to load the directory structure for the diff
+	session.DirectoryData = GetDiffSessionDirectory(session)
+
 	if err != nil {
 		// Cleanup on failure
 		CleanupDiffSession(sessionId)
@@ -68,278 +73,6 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 
 	Log.Info("Created diff session: %s", sessionId)
 	return session, nil
-}
-
-// Generates a unique session ID based on diff options
-func generateSessionId(options DiffOptions) string {
-	data := fmt.Sprintf("%s-%s-%s-%d", options.RepoPath, options.FromRef, options.ToRef, time.Now().UnixNano())
-	hash := md5.Sum([]byte(data))
-	return fmt.Sprintf("diff_%x", hash)[:16]
-}
-
-// Generates a human-readable title for the diff session
-func generateDiffTitle(options DiffOptions) string {
-	if options.ToRef == "" || options.ToRef == "HEAD" {
-		if options.FromRef == "" || options.FromRef == "HEAD" {
-			return "Working Tree vs HEAD"
-		}
-		return fmt.Sprintf("Working Tree vs %s", options.FromRef)
-	}
-
-	if options.FromRef == "" || options.FromRef == "HEAD" {
-		return fmt.Sprintf("HEAD vs %s", options.ToRef)
-	}
-
-	return fmt.Sprintf("%s vs %s", options.FromRef, options.ToRef)
-}
-
-// Creates temporary directories for diff session
-func createTempDiffDirectories(sessionId string) (leftPath, rightPath string, err error) {
-	tempDir := os.TempDir()
-	sessionDir := filepath.Join(tempDir, "gitwhale-diff", sessionId)
-
-	leftPath = filepath.Join(sessionDir, "left")
-	rightPath = filepath.Join(sessionDir, "right")
-
-	// Create directories
-	err = os.MkdirAll(leftPath, 0755)
-	if err != nil {
-		return "", "", err
-	}
-
-	err = os.MkdirAll(rightPath, 0755)
-	if err != nil {
-		return "", "", err
-	}
-
-	return leftPath, rightPath, nil
-}
-
-// Populates the temporary directories with diff content
-func populateDiffDirectories(session *DiffSession, options DiffOptions) error {
-	// Handle different diff scenarios
-	if options.ToRef == "" {
-		// Comparing against working tree
-		return populateWorkingTreeDiff(session, options)
-	} else {
-		// Comparing two refs
-		return populateRefDiff(session, options)
-	}
-}
-
-// Populates directories for working tree comparison
-func populateWorkingTreeDiff(session *DiffSession, options DiffOptions) error {
-	// Left side: specified ref
-	err := populateRefContent(session.LeftPath, options.RepoPath, options.FromRef, options.FilePathFilters)
-	if err != nil {
-		return fmt.Errorf("failed to populate left side (ref %s): %v", options.FromRef, err)
-	}
-
-	// Right side: working tree
-	err = populateWorkingTreeContent(session.RightPath, options.RepoPath, options.FilePathFilters)
-	if err != nil {
-		return fmt.Errorf("failed to populate right side (working tree): %v", err)
-	}
-
-	return nil
-}
-
-// Populates directories for ref-to-ref comparison
-func populateRefDiff(session *DiffSession, options DiffOptions) error {
-	// Left side: from ref
-	err := populateRefContent(session.LeftPath, options.RepoPath, options.FromRef, options.FilePathFilters)
-	if err != nil {
-		return fmt.Errorf("failed to populate left side (ref %s): %v", options.FromRef, err)
-	}
-
-	// Right side: to ref
-	err = populateRefContent(session.RightPath, options.RepoPath, options.ToRef, options.FilePathFilters)
-	if err != nil {
-		return fmt.Errorf("failed to populate right side (ref %s): %v", options.ToRef, err)
-	}
-
-	return nil
-}
-
-// Populates a directory with content from a specific git ref
-func populateRefContent(targetDir, repoPath, ref string, filePaths []string) error {
-	// Get list of files in the ref
-	files, err := getFilesInRef(repoPath, ref, filePaths)
-	if err != nil {
-		return err
-	}
-
-	// Extract each file
-	for _, file := range files {
-		err = extractFileFromRef(targetDir, repoPath, ref, file)
-		if err != nil {
-			Log.Error("Failed to extract file %s from ref %s: %v", file, ref, err)
-			// Continue with other files
-		}
-	}
-
-	return nil
-}
-
-// Populates a directory with working tree content
-func populateWorkingTreeContent(targetDir, repoPath string, filePaths []string) error {
-	// If specific paths are specified, copy only those
-	if len(filePaths) > 0 {
-		for _, path := range filePaths {
-			srcPath := filepath.Join(repoPath, path)
-			dstPath := filepath.Join(targetDir, path)
-
-			err := copyPath(srcPath, dstPath)
-			if err != nil {
-				Log.Error("Failed to copy %s: %v", path, err)
-			}
-		}
-		return nil
-	}
-
-	// Otherwise, copy entire working tree (excluding .git)
-	return copyWorkingTree(repoPath, targetDir)
-}
-
-// Gets list of files in a git ref
-func getFilesInRef(repoPath, ref string, filePaths []string) ([]string, error) {
-	var cmd *exec.Cmd
-
-	if len(filePaths) > 0 {
-		// List specific paths
-		args := append([]string{"ls-tree", "-r", "--name-only", ref}, filePaths...)
-		cmd = exec.Command("git", args...)
-	} else {
-		// List all files
-		cmd = exec.Command("git", "ls-tree", "-r", "--name-only", ref)
-	}
-
-	cmd.Dir = repoPath
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list files in ref %s: %v", ref, err)
-	}
-
-	files := strings.Split(strings.TrimSpace(string(output)), "\n")
-	var result []string
-	for _, file := range files {
-		if strings.TrimSpace(file) != "" {
-			result = append(result, file)
-		}
-	}
-
-	return result, nil
-}
-
-// Extracts a single file from a git ref to target directory
-func extractFileFromRef(targetDir, repoPath, ref, filePath string) error {
-	// Create directory structure
-	fullTargetPath := filepath.Join(targetDir, filePath)
-	targetDirPath := filepath.Dir(fullTargetPath)
-
-	err := os.MkdirAll(targetDirPath, 0755)
-	if err != nil {
-		return err
-	}
-
-	// Extract file content using git show
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", ref, filePath))
-	cmd.Dir = repoPath
-
-	output, err := cmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to extract file %s from ref %s: %v", filePath, ref, err)
-	}
-
-	// Write to target file
-	return os.WriteFile(fullTargetPath, output, 0644)
-}
-
-// Copies a path (file or directory) from source to destination
-func copyPath(src, dst string) error {
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	if srcInfo.IsDir() {
-		return copyDir(src, dst)
-	} else {
-		return copyFile(src, dst)
-	}
-}
-
-// Copies a file from source to destination
-func copyFile(src, dst string) error {
-	// Create destination directory
-	err := os.MkdirAll(filepath.Dir(dst), 0755)
-	if err != nil {
-		return err
-	}
-
-	// Read source file
-	data, err := os.ReadFile(src)
-	if err != nil {
-		return err
-	}
-
-	// Write destination file
-	return os.WriteFile(dst, data, 0644)
-}
-
-// Copies a directory recursively from source to destination
-func copyDir(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Calculate relative path
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-
-		dstPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(dstPath, info.Mode())
-		} else {
-			return copyFile(path, dstPath)
-		}
-	})
-}
-
-// Copies working tree excluding .git directory
-func copyWorkingTree(repoPath, targetDir string) error {
-	return filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip .git directory
-		if info.IsDir() && info.Name() == ".git" {
-			return filepath.SkipDir
-		}
-
-		// Skip if path is .git or inside .git
-		relPath, err := filepath.Rel(repoPath, path)
-		if err != nil {
-			return err
-		}
-
-		if strings.HasPrefix(relPath, ".git") {
-			return nil
-		}
-
-		dstPath := filepath.Join(targetDir, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(dstPath, info.Mode())
-		} else {
-			return copyFile(path, dstPath)
-		}
-	})
 }
 
 // Cleans up temporary directories for a diff session
@@ -401,4 +134,213 @@ func CleanupOldDiffSessions() error {
 	}
 
 	return nil
+}
+
+// Generates a unique session ID based on diff options
+func generateSessionId(options DiffOptions) string {
+	data := fmt.Sprintf("%s-%s-%s-%d", options.RepoPath, options.FromRef, options.ToRef, time.Now().UnixNano())
+	hash := md5.Sum([]byte(data))
+	return fmt.Sprintf("diff_%x", hash)[:16]
+}
+
+// Generates a human-readable title for the diff session
+func generateDiffTitle(options DiffOptions) string {
+	if options.ToRef == "" || options.ToRef == "HEAD" {
+		if options.FromRef == "" || options.FromRef == "HEAD" {
+			return "Working Tree vs HEAD"
+		}
+		return fmt.Sprintf("Working Tree vs %s", options.FromRef)
+	}
+
+	if options.FromRef == "" || options.FromRef == "HEAD" {
+		return fmt.Sprintf("HEAD vs %s", options.ToRef)
+	}
+
+	return fmt.Sprintf("%s vs %s", options.FromRef, options.ToRef)
+}
+
+// Creates temporary directories for diff session
+func createTempDiffDirectories(sessionId string) (leftPath, rightPath string, err error) {
+	tempDir := os.TempDir()
+	sessionDir := filepath.Join(tempDir, "gitwhale-diff", sessionId)
+
+	leftPath = filepath.Join(sessionDir, "left")
+	rightPath = filepath.Join(sessionDir, "right")
+
+	// Create directories
+	err = os.MkdirAll(leftPath, 0755)
+	if err != nil {
+		return "", "", err
+	}
+
+	err = os.MkdirAll(rightPath, 0755)
+	if err != nil {
+		return "", "", err
+	}
+
+	return leftPath, rightPath, nil
+}
+
+// Populates the temporary directories with diff content
+func populateDiffDirectories(session *DiffSession, options DiffOptions) error {
+
+	tmpLeftDir, tmpRightDir, err := getGitDifftoolPaths(session.FromRef, session.ToRef)
+	if err != nil {
+		return fmt.Errorf("failed to get difftool paths: %v", err)
+	}
+
+	fmt.Printf("Left directory (from %s): %s\n", session.FromRef, tmpLeftDir)
+	fmt.Printf("Right directory (from %s): %s\n", session.ToRef, tmpRightDir)
+
+	// Copy them to your desired locations
+	err = copyDirectory(tmpLeftDir, session.LeftPath)
+	if err != nil {
+		log.Fatal("Failed to copy left directory:", err)
+	}
+
+	err = copyDirectory(tmpRightDir, session.RightPath)
+	if err != nil {
+		log.Fatal("Failed to copy right directory:", err)
+	}
+
+	fmt.Println("Directories copied successfully!")
+
+	// Now you have the paths in variables to use as needed
+	// Example: copy them somewhere, process them, etc.
+	fmt.Println("Paths captured successfully!")
+	return nil
+}
+
+func getGitDifftoolPaths(hash1, hash2 string) (leftDir, rightDir string, err error) {
+	// Create a simple script that just prints the two directory paths
+	scriptPath, err := createPathExtractorScript()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create path extractor script: %v", err)
+	}
+	defer os.Remove(scriptPath)
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Run git difftool with our path extractor script
+	cmd := exec.CommandContext(ctx, "git", "difftool", "-d", "--tool="+scriptPath, hash1, hash2)
+
+	// Capture the output which will contain our directory paths
+	output, err := cmd.CombinedOutput()
+
+	// Parse the output to extract the paths
+	outputStr := strings.TrimSpace(string(output))
+	lines := strings.Split(outputStr, "\n")
+
+	// Look for our specific output lines
+	for _, line := range lines {
+		if strings.HasPrefix(line, "LEFT_DIR:") {
+			leftDir = strings.TrimSpace(strings.TrimPrefix(line, "LEFT_DIR:"))
+		} else if strings.HasPrefix(line, "RIGHT_DIR:") {
+			rightDir = strings.TrimSpace(strings.TrimPrefix(line, "RIGHT_DIR:"))
+		}
+	}
+
+	if leftDir == "" || rightDir == "" {
+		return "", "", fmt.Errorf("failed to extract directory paths from git difftool output")
+	}
+
+	return leftDir, rightDir, nil
+}
+
+func createPathExtractorScript() (string, error) {
+	var scriptExt, scriptContent string
+
+	if runtime.GOOS == "windows" {
+		scriptExt = ".bat"
+		scriptContent = `@echo off
+echo LEFT_DIR:%1
+echo RIGHT_DIR:%2
+REM Exit immediately after printing paths
+exit /b 0
+`
+	} else {
+		scriptExt = ".sh"
+		scriptContent = `#!/bin/bash
+echo "LEFT_DIR:$1"
+echo "RIGHT_DIR:$2"
+# Exit immediately after printing paths
+exit 0
+`
+	}
+
+	// Create temporary script file
+	tempDir := os.TempDir()
+	scriptPath := filepath.Join(tempDir, "git-path-extractor"+scriptExt)
+
+	err := os.WriteFile(scriptPath, []byte(scriptContent), 0755)
+	if err != nil {
+		return "", fmt.Errorf("failed to write script file: %v", err)
+	}
+
+	return scriptPath, nil
+}
+
+// copyDirectory recursively copies a directory from src to dst
+func copyDirectory(src, dst string) error {
+	// Create destination directory
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %v", err)
+	}
+
+	// Walk through source directory
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Calculate destination path
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		dstPath := filepath.Join(dst, relPath)
+
+		if info.IsDir() {
+			// Create directory
+			return os.MkdirAll(dstPath, info.Mode())
+		}
+
+		// Copy file
+		return copyFile(path, dstPath)
+	})
+}
+
+// copyFile copies a single file from src to dst
+func copyFile(src, dst string) error {
+	// Create destination directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return err
+	}
+
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	// Copy the file contents
+	_, err = destFile.ReadFrom(sourceFile)
+	if err != nil {
+		return err
+	}
+
+	// Copy file permissions
+	sourceInfo, err := sourceFile.Stat()
+	if err != nil {
+		return err
+	}
+	return os.Chmod(dst, sourceInfo.Mode())
 }
