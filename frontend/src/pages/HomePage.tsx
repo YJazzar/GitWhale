@@ -1,37 +1,16 @@
 import { FileTabsHandle } from '@/components/file-tabs';
 import { Button } from '@/components/ui/button';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { Star, StarOff, Settings, FolderOpen, FolderGit2 } from 'lucide-react';
-import { Link } from 'react-router';
+import { Star, Settings, FolderOpen, FolderGit2 } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
 import { useRepoState } from '@/hooks/state/use-repo-state';
-import { useEffect, useState } from 'react';
-
-// Helper function to extract folder name from full path
-const getRepoDisplayName = (repoPath: string): string => {
-	if (!repoPath) return '';
-	// Handle both Unix and Windows paths
-	const pathSeparator = repoPath.includes('/') ? '/' : '\\';
-	const pathParts = repoPath.split(pathSeparator);
-	return pathParts[pathParts.length - 1] || repoPath;
-};
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import RepoFileTab from '@/components/repo-file-tab';
 
 export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHandle> }) {
 	const { fileTabRef } = props;
 	const { appState, refreshAppState } = UseAppState();
-
-	// Anytime a repo gets closed, we should be good stewards of memory and dispose of the repo state
-	const [repoToCleanup, setRepoToCleanup] = useState<string | null>(null);
-	const repoState = useRepoState(repoToCleanup ?? '');
-
-	useEffect(() => {
-		debugger
-		if (!!repoToCleanup && repoToCleanup !== '') {
-			repoState?.onCloseRepo();
-			setRepoToCleanup(null);
-		}
-	}, [repoToCleanup, repoState]);
 
 	const onOpenRecentRepo = (repoPath: string) => {
 		if (!appState) {
@@ -58,45 +37,39 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 			tabKey: 'settings',
 			preventUserClose: false,
 			isPermanentlyOpen: true,
-			titleRender: function (): JSX.Element {
-				return (
-					<div className="flex items-center gap-2">
-						<Settings className="h-4 w-4" />
-						Settings
-					</div>
-				);
-			},
+			titleRender: () => (
+				<div className="flex items-center gap-2">
+					<Settings className="h-4 w-4" />
+					Settings
+				</div>
+			),
 		});
 	};
 
+	/**
+	 * Open a repository tab and wire up its close-handler.  The important part
+	 * is that the handler grabs `setRepoToCleanup` from the ref so it always
+	 * sees the latest version, even after HomePage has re-rendered or
+	 * re-mounted.
+	 */
 	const switchToRepo = (appState: backend.App, repoPath: string) => {
 		fileTabRef.current?.openFile({
 			linkPath: `repo/${btoa(repoPath)}`,
 			tabKey: repoPath,
 			preventUserClose: false,
-			// Feels weird not to set this to true unless there's a fancy way for me to detect if the user performs an action inside the repo tab
 			isPermanentlyOpen: true,
-			onTabClose: () => {
-				debugger
-				setRepoToCleanup(repoPath);
-			},
-			titleRender: function (): JSX.Element {
-				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranchName;
-				const repoName = getRepoDisplayName(repoPath);
-				return (
-					<div className="flex">
-						<FolderGit2 className="w-4 h-4 mr-2" />
-						{repoName}
-					</div>
-				);
+			onTabClose: () => {},
+			titleRender: () => {
+				return <RepoFileTab repoPath={repoPath} />;
 			},
 		});
 	};
 
+	/** Small presentational component for each repo row **/
 	const RepoEntry = ({ repoPath, isStarred }: { repoPath: string; isStarred: boolean }) => (
 		<div className="flex items-center">
-			{/* Start button */}
-			<Button variant={'ghost'} size={'sm'} onClick={() => onToggleStar(repoPath)} className="h-4 w-4">
+			{/* Star button */}
+			<Button variant="ghost" size="sm" onClick={() => onToggleStar(repoPath)} className="h-4 w-4">
 				{isStarred ? (
 					<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
 				) : (
@@ -104,38 +77,37 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 				)}
 			</Button>
 
-			{/* Repo open button link */}
+			{/* Repo open link */}
 			<Button
-				variant={'link'}
+				variant="link"
 				onClick={() => onOpenRecentRepo(repoPath)}
 				className="flex-1 justify-start"
-				title={repoPath} // Show full path on hover
+				title={repoPath}
 			>
 				{repoPath}
 			</Button>
 		</div>
 	);
 
-	// Get starred and non-starred repos
-	const starredRepos = appState?.appConfig?.starredGitRepos || [];
-	const recentRepos = appState?.appConfig?.recentGitRepos || [];
+	// Separate starred and non-starred repos for display
+	const starredRepos = appState?.appConfig?.starredGitRepos ?? [];
+	const recentRepos = appState?.appConfig?.recentGitRepos ?? [];
 	const nonStarredRecentRepos = recentRepos.filter((repo) => !starredRepos.includes(repo));
 
 	return (
 		<div className="h-full flex items-center justify-center p-8">
 			<div className="grid grid-cols-2 gap-6 max-w-xl w-full">
-				{/* Column 1: Start Menu */}
+				{/* Column 1: actions */}
 				<div className="flex flex-col items-center justify-center">
-					{/* <h2 className="text-xl font-semibold mb-4">Start:</h2> */}
 					<ul className="space-y-2">
 						<li>
-							<Button variant={'link'} onClick={onOpenNewRepo} className="justify-start p-0">
+							<Button variant="link" onClick={onOpenNewRepo} className="justify-start p-0">
 								<FolderOpen />
 								Open Repository
 							</Button>
 						</li>
 						<li>
-							<Button variant={'link'} onClick={onOpenSettings} className="justify-start p-0">
+							<Button variant="link" onClick={onOpenSettings} className="justify-start p-0">
 								<Settings className="h-4 w-4 mr-2" />
 								Settings
 							</Button>
@@ -143,22 +115,23 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 					</ul>
 				</div>
 
-				{/* Vertical Separator */}
+				{/* Vertical separator */}
 				<div className="relative">
-					<div className="absolute left-0 top-0 bottom-0 w-px bg-border -translate-x-3"></div>
+					<div className="absolute left-0 top-0 bottom-0 w-px bg-border -translate-x-3" />
 
-					{/* Column 2: Starred and Recent Repos */}
+					{/* Column 2: Repo lists */}
 					<div className="flex flex-col items-start">
 						{starredRepos.length > 0 && (
 							<div className="mb-8">
 								<h2 className="text-xl font-semibold mb-4">Starred:</h2>
 								<div className="space-y-2">
 									{starredRepos.map((repoPath) => (
-										<RepoEntry key={repoPath} repoPath={repoPath} isStarred={true} />
+										<RepoEntry key={repoPath} repoPath={repoPath} isStarred />
 									))}
 								</div>
 							</div>
 						)}
+
 						{nonStarredRecentRepos.length > 0 && (
 							<div>
 								<h2 className="text-xl font-semibold mb-4">Recent:</h2>
