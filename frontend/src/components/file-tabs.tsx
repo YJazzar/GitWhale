@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Link, To, useLocation, useNavigate, useParams } from 'react-router';
 import { X, FileText, Circle } from 'lucide-react';
+import { useRepoState } from '@/hooks/state/use-repo-state';
 
 export type FileTabsHandle = {
 	closeFile: (fileToClose: FileTabPageProps) => void;
@@ -23,6 +24,12 @@ export type FileTabsProps = {
 
 	// The router config to make sure the child components can be linked to properly
 	routerConfig: () => JSX.Element;
+
+	// Session key to isolate tab state per session
+	sessionKey?: string;
+
+	// Repository path for state management
+	repoPath?: string;
 };
 
 export type FileTabPageProps = {
@@ -46,9 +53,32 @@ export type FileTabPageProps = {
 };
 
 // Custom hook for file management logic
-function useFileTabsState(initialPages: FileTabPageProps[], defaultTabKey: string) {
-	const [activeTabKey, setActiveTabKey] = useState<string | undefined>(defaultTabKey);
-	const [availableFiles, setAvailableFiles] = useState<FileTabPageProps[]>(initialPages);
+function useFileTabsState(
+	initialPages: FileTabPageProps[], 
+	defaultTabKey: string, 
+	sessionKey?: string, 
+	repoPath?: string
+) {
+	// Use session-scoped state if sessionKey and repoPath are provided
+	const diffState = repoPath ? useRepoState(repoPath).diffState : null;
+	
+	// Local state as fallback
+	const [localActiveTabKey, setLocalActiveTabKey] = useState<string | undefined>(defaultTabKey);
+	const [localAvailableFiles, setLocalAvailableFiles] = useState<FileTabPageProps[]>(initialPages);
+
+	// Determine if we should use session-scoped state
+	const useSessionState = !!(sessionKey && repoPath && diffState);
+
+	// Get current session state or use local state
+	const sessionState = useSessionState ? diffState!.getTabState(sessionKey) : null;
+	
+	const activeTabKey = useSessionState ? 
+		(sessionState?.activeTabKey ?? defaultTabKey) : 
+		localActiveTabKey;
+		
+	const availableFiles = useSessionState ? 
+		(sessionState?.availableFiles ?? initialPages) : 
+		localAvailableFiles;
 
 	// Convert the availablePages into a map for easy lookup
 	const availableFileMap = useMemo(() => {
@@ -58,6 +88,28 @@ function useFileTabsState(initialPages: FileTabPageProps[], defaultTabKey: strin
 		});
 		return map;
 	}, [availableFiles]);
+
+	const setActiveTabKey = useCallback((newActiveTabKey: string | undefined) => {
+		if (useSessionState && sessionKey) {
+			diffState!.setTabState(sessionKey, {
+				availableFiles: sessionState?.availableFiles || [],
+				activeTabKey: newActiveTabKey
+			});
+		} else {
+			setLocalActiveTabKey(newActiveTabKey);
+		}
+	}, [useSessionState, sessionKey, diffState, sessionState]);
+
+	const setAvailableFiles = useCallback((newAvailableFiles: FileTabPageProps[]) => {
+		if (useSessionState && sessionKey) {
+			diffState!.setTabState(sessionKey, {
+				availableFiles: newAvailableFiles,
+				activeTabKey: sessionState?.activeTabKey
+			});
+		} else {
+			setLocalAvailableFiles(newAvailableFiles);
+		}
+	}, [useSessionState, sessionKey, diffState, sessionState]);
 
 	const getOpenFile = useCallback((): FileTabPageProps | undefined => {
 		if (activeTabKey) {
@@ -166,7 +218,7 @@ function useFileTabsOperations(
 }
 
 export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) => {
-	const { defaultTabKey, initialPages, routerConfig, noTabSelectedPath } = props;
+	const { defaultTabKey, initialPages, routerConfig, noTabSelectedPath, sessionKey, repoPath } = props;
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -176,7 +228,7 @@ export const FileTabs = forwardRef<FileTabsHandle, FileTabsProps>((props, ref) =
 	}, [location]);
 
 	// Use our custom hooks for better separation of concerns
-	const fileState = useFileTabsState(initialPages, defaultTabKey);
+	const fileState = useFileTabsState(initialPages, defaultTabKey, sessionKey, repoPath);
 	const operations = useFileTabsOperations(fileState, navigate, noTabSelectedPath);
 
 	// Create handlers for the imperative API

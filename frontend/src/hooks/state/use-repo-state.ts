@@ -51,11 +51,13 @@ export const useRepoState = (repoPath: string) => {
 	const stateObjects = {
 		terminalState: getTerminalState(repoPath),
 		diffState: getDiffState(repoPath),
+		logState: getLogState(repoPath),
 	};
 
 	const onCloseRepo = () => {
 		stateObjects.terminalState.disposeTerminal();
 		stateObjects.diffState.disposeSessions();
+		stateObjects.logState.disposeLogState();
 	}
 
 	return {
@@ -220,6 +222,19 @@ const diffOptionsAtom = atom<Map<string, {
 	filePathFilters: string;
 }>>(new Map());
 
+// Store file tab state per repository path and session ID
+const fileTabStateAtom = atom<Map<string, Map<string, {
+	availableFiles: Array<{
+		tabKey: string;
+		titleRender: () => JSX.Element;
+		linkPath: any; // Use any to avoid circular dependency with react-router's To type
+		preventUserClose?: boolean;
+		isPermanentlyOpen?: boolean;
+		onTabClose?: () => void;
+	}>;
+	activeTabKey: string | undefined;
+}>>>(new Map());
+
 // MARK: Diff state management functions
 
 function getDiffState(repoPath: string) {
@@ -227,6 +242,7 @@ function getDiffState(repoPath: string) {
 	const [selectedSessions, setSelectedSessions] = useAtom(selectedDiffSessionAtom);
 	const [fileInfoMaps, setFileInfoMaps] = useAtom(fileInfoMapAtom);
 	const [diffOptions, setDiffOptionsMap] = useAtom(diffOptionsAtom);
+	const [fileTabStates, setFileTabStates] = useAtom(fileTabStateAtom);
 
 	return {
 		// Get current sessions for this repo
@@ -279,6 +295,37 @@ function getDiffState(repoPath: string) {
 			setDiffOptionsMap(newMap);
 		},
 
+		// Get tab state for a specific session
+		getTabState: (sessionId: string) => {
+			const repoTabStates = fileTabStates.get(repoPath);
+			if (!repoTabStates) {
+				return { availableFiles: [], activeTabKey: undefined };
+			}
+			return repoTabStates.get(sessionId) || { availableFiles: [], activeTabKey: undefined };
+		},
+		
+		// Set tab state for a specific session
+		setTabState: (sessionId: string, tabState: {
+			availableFiles: Array<{
+				tabKey: string;
+				titleRender: () => JSX.Element;
+				linkPath: any;
+				preventUserClose?: boolean;
+				isPermanentlyOpen?: boolean;
+				onTabClose?: () => void;
+			}>;
+			activeTabKey: string | undefined;
+		}) => {
+			const newFileTabStates = new Map(fileTabStates);
+			let repoTabStates = newFileTabStates.get(repoPath);
+			if (!repoTabStates) {
+				repoTabStates = new Map();
+				newFileTabStates.set(repoPath, repoTabStates);
+			}
+			repoTabStates.set(sessionId, tabState);
+			setFileTabStates(newFileTabStates);
+		},
+
 		// Clear all diff state for this repo
 		disposeSessions: () => {
 			const newSessionsMap = new Map(diffSessions);
@@ -296,6 +343,137 @@ function getDiffState(repoPath: string) {
 			const newOptionsMap = new Map(diffOptions);
 			newOptionsMap.delete(repoPath);
 			setDiffOptionsMap(newOptionsMap);
+
+			const newFileTabStatesMap = new Map(fileTabStates);
+			newFileTabStatesMap.delete(repoPath);
+			setFileTabStates(newFileTabStatesMap);
+		}
+	};
+}
+
+
+// MARK: Git log-related state management using Jotai atoms
+
+// Store git log data per repository path
+const gitLogDataAtom = atom<Map<string, backend.GitLogCommitInfo[]>>(new Map());
+
+// Store selected commit for details panel per repository path
+const selectedCommitAtom = atom<Map<string, backend.GitLogCommitInfo | null>>(new Map());
+
+// Store current reference (HEAD, branch, tag) per repository path
+const currentRefAtom = atom<Map<string, string>>(new Map());
+
+// Store git refs (branches and tags) per repository path
+const gitRefsAtom = atom<Map<string, { branches: backend.GitRef[], tags: backend.GitRef[] }>>(new Map());
+
+// Store git log options/filters per repository path
+const gitLogOptionsAtom = atom<Map<string, {
+	searchQuery: string;
+	commitCount: number;
+	includeMerges: boolean;
+	fromRef: string;
+	toRef: string;
+	fetchRemote: string;
+	fetchRef: string;
+}>>(new Map());
+
+// MARK: Git log state management functions
+
+function getLogState(repoPath: string) {
+	const [logData, setLogData] = useAtom(gitLogDataAtom);
+	const [selectedCommits, setSelectedCommits] = useAtom(selectedCommitAtom);
+	const [currentRefs, setCurrentRefs] = useAtom(currentRefAtom);
+	const [gitRefs, setGitRefs] = useAtom(gitRefsAtom);
+	const [logOptions, setLogOptionsMap] = useAtom(gitLogOptionsAtom);
+
+	return {
+		// Get git log data for this repo
+		logs: logData.get(repoPath) || [],
+		
+		// Set git log data for this repo
+		setLogs: (logs: backend.GitLogCommitInfo[]) => {
+			const newMap = new Map(logData);
+			newMap.set(repoPath, logs);
+			setLogData(newMap);
+		},
+
+		// Get selected commit for this repo
+		selectedCommit: selectedCommits.get(repoPath) || null,
+		
+		// Set selected commit for this repo
+		setSelectedCommit: (commit: backend.GitLogCommitInfo | null) => {
+			const newMap = new Map(selectedCommits);
+			newMap.set(repoPath, commit);
+			setSelectedCommits(newMap);
+		},
+
+		// Get current ref for this repo
+		currentRef: currentRefs.get(repoPath) || 'HEAD',
+		
+		// Set current ref for this repo
+		setCurrentRef: (ref: string) => {
+			const newMap = new Map(currentRefs);
+			newMap.set(repoPath, ref);
+			setCurrentRefs(newMap);
+		},
+
+		// Get git refs (branches/tags) for this repo
+		refs: gitRefs.get(repoPath) || { branches: [], tags: [] },
+		
+		// Set git refs for this repo
+		setRefs: (refs: { branches: backend.GitRef[], tags: backend.GitRef[] }) => {
+			const newMap = new Map(gitRefs);
+			newMap.set(repoPath, refs);
+			setGitRefs(newMap);
+		},
+
+		// Get log options for this repo
+		options: logOptions.get(repoPath) || {
+			searchQuery: '',
+			commitCount: 100,
+			includeMerges: true,
+			fromRef: '',
+			toRef: '',
+			fetchRemote: 'origin',
+			fetchRef: '',
+		},
+		
+		// Set log options for this repo
+		setOptions: (options: {
+			searchQuery: string;
+			commitCount: number;
+			includeMerges: boolean;
+			fromRef: string;
+			toRef: string;
+			fetchRemote: string;
+			fetchRef: string;
+		}) => {
+			const newMap = new Map(logOptions);
+			newMap.set(repoPath, options);
+			setLogOptionsMap(newMap);
+		},
+
+		// Clear all log state for this repo
+		disposeLogState: () => {
+			const newLogDataMap = new Map(logData);
+			newLogDataMap.delete(repoPath);
+			setLogData(newLogDataMap);
+
+			const newSelectedMap = new Map(selectedCommits);
+			newSelectedMap.delete(repoPath);
+			setSelectedCommits(newSelectedMap);
+
+			const newRefsMap = new Map(currentRefs);
+			newRefsMap.delete(repoPath);
+			setCurrentRefs(newRefsMap);
+
+			const newGitRefsMap = new Map(gitRefs);
+			newGitRefsMap.delete(repoPath);
+			setGitRefs(newGitRefsMap);
+
+			const newOptionsMap = new Map(logOptions);
+			newOptionsMap.delete(repoPath);
+			setLogOptionsMap(newOptionsMap);
 		}
 	};
 }

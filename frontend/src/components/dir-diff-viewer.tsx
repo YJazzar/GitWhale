@@ -84,6 +84,8 @@ export function DirDiffViewer() {
 							defaultTabKey=""
 							initialPages={[]}
 							noTabSelectedPath="./no-file-selected"
+							sessionKey={selectedSession?.sessionId}
+							repoPath={repoPath}
 							routerConfig={() => {
 								return <Outlet />;
 							}}

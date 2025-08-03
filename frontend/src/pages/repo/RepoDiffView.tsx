@@ -62,6 +62,9 @@ const useDiffSessions = (repoPath: string) => {
 			const newSessions = diffState.sessions.filter((s) => s.sessionId !== sessionId);
 			diffState.setSessions(newSessions);
 
+			// Clear tab state for the closed session
+			diffState.setTabState(sessionId, { availableFiles: [], activeTabKey: undefined });
+
 			if (diffState.selectedSessionId === sessionId) {
 				diffState.setSelectedSessionId(newSessions.length > 0 ? newSessions[0].sessionId : null);
 			}

@@ -34,6 +34,7 @@ import {
 	RunGitLogFromRef,
 	SearchCommits,
 } from '../../../wailsjs/go/backend/App';
+import { useRepoState } from '@/hooks/state/use-repo-state';
 
 interface GitLogToolbarProps {
 	repoPath: string;
@@ -354,26 +355,59 @@ export function GitLogToolbar({
 	currentRef,
 	onRefChange,
 }: GitLogToolbarProps) {
-	const [branches, setBranches] = useState<backend.GitRef[]>([]);
-	const [tags, setTags] = useState<backend.GitRef[]>([]);
-	const [searchQuery, setSearchQuery] = useState('');
-	const [commitCount, setCommitCount] = useState(100);
-	const [includeMerges, setIncludeMerges] = useState(true);
-	const [fromRef, setFromRef] = useState('');
-	const [toRef, setToRef] = useState('');
-	const [fetchRemote, setFetchRemote] = useState('origin');
-	const [fetchRef, setFetchRef] = useState('');
+	const { logState } = useRepoState(repoPath);
+	
+	// Use atom-based state for all toolbar options
+	const toolbarOptions = logState.options;
+	
+	// Use atom-based state for refs
+	const branches = logState.refs.branches;
+	const tags = logState.refs.tags;
+	
+	// Helper functions to update specific options
+	const setSearchQuery = (value: string) => {
+		logState.setOptions({ ...toolbarOptions, searchQuery: value });
+	};
+	
+	const setCommitCount = (value: number) => {
+		logState.setOptions({ ...toolbarOptions, commitCount: value });
+	};
+	
+	const setIncludeMerges = (value: boolean) => {
+		logState.setOptions({ ...toolbarOptions, includeMerges: value });
+	};
+	
+	const setFromRef = (value: string) => {
+		logState.setOptions({ ...toolbarOptions, fromRef: value });
+	};
+	
+	const setToRef = (value: string) => {
+		logState.setOptions({ ...toolbarOptions, toRef: value });
+	};
+	
+	const setFetchRemote = (value: string) => {
+		logState.setOptions({ ...toolbarOptions, fetchRemote: value });
+	};
+	
+	const setFetchRef = (value: string) => {
+		logState.setOptions({ ...toolbarOptions, fetchRef: value });
+	};
 
 	// Load branches and tags when component mounts
 	useEffect(() => {
-		loadRefsData();
+		// Only load refs if we don't already have them
+		if (branches.length === 0 && tags.length === 0) {
+			loadRefsData();
+		}
 	}, [repoPath]);
 
 	const loadRefsData = async () => {
 		try {
 			const [branchesData, tagsData] = await Promise.all([GetBranches(repoPath), GetTags(repoPath)]);
-			setBranches(branchesData || []);
-			setTags(tagsData || []);
+			logState.setRefs({
+				branches: branchesData || [],
+				tags: tagsData || []
+			});
 		} catch (error) {
 			console.error('Failed to load refs:', error);
 		}
@@ -408,11 +442,11 @@ export function GitLogToolbar({
 		onLoadingChange(true);
 		try {
 			const options: GitLogOptions = {
-				commitsToLoad: commitCount,
-				fromRef: fromRef || currentRef,
-				toRef: toRef,
-				includeMerges: includeMerges,
-				searchQuery: searchQuery,
+				commitsToLoad: toolbarOptions.commitCount,
+				fromRef: toolbarOptions.fromRef || currentRef,
+				toRef: toolbarOptions.toRef,
+				includeMerges: toolbarOptions.includeMerges,
+				searchQuery: toolbarOptions.searchQuery,
 				author: '',
 			};
 
@@ -426,14 +460,14 @@ export function GitLogToolbar({
 	};
 
 	const handleSearch = async () => {
-		if (!searchQuery.trim()) {
+		if (!toolbarOptions.searchQuery.trim()) {
 			await loadCommitsWithCurrentOptions();
 			return;
 		}
 
 		onLoadingChange(true);
 		try {
-			const commits = await SearchCommits(repoPath, searchQuery);
+			const commits = await SearchCommits(repoPath, toolbarOptions.searchQuery);
 			onCommitsUpdate(commits);
 		} catch (error) {
 			console.error('Failed to search commits:', error);
@@ -443,11 +477,11 @@ export function GitLogToolbar({
 	};
 
 	const handleFetch = async () => {
-		if (!fetchRemote) return;
+		if (!toolbarOptions.fetchRemote) return;
 
 		onLoadingChange(true);
 		try {
-			await GitFetch(repoPath, fetchRemote, fetchRef);
+			await GitFetch(repoPath, toolbarOptions.fetchRemote, toolbarOptions.fetchRef);
 			await loadRefsData(); // Refresh branches/tags after fetch
 			// Show success message or notification here
 		} catch (error) {
@@ -479,15 +513,15 @@ export function GitLogToolbar({
 			<FetchDropdown
 				loading={loading}
 				onFetch={handleFetch}
-				fetchRemote={fetchRemote}
+				fetchRemote={toolbarOptions.fetchRemote}
 				setFetchRemote={setFetchRemote}
-				fetchRef={fetchRef}
+				fetchRef={toolbarOptions.fetchRef}
 				setFetchRef={setFetchRef}
 			/>
 			<Separator orientation="vertical" className="h-6" />
 
 			<SearchSection
-				searchQuery={searchQuery}
+				searchQuery={toolbarOptions.searchQuery}
 				setSearchQuery={setSearchQuery}
 				onSearch={handleSearch}
 				loading={loading}
@@ -497,13 +531,13 @@ export function GitLogToolbar({
 
 			<ViewOptionsDropdown
 				loading={loading}
-				commitCount={commitCount}
+				commitCount={toolbarOptions.commitCount}
 				setCommitCount={setCommitCount}
-				includeMerges={includeMerges}
+				includeMerges={toolbarOptions.includeMerges}
 				setIncludeMerges={setIncludeMerges}
-				fromRef={fromRef}
+				fromRef={toolbarOptions.fromRef}
 				setFromRef={setFromRef}
-				toRef={toRef}
+				toRef={toolbarOptions.toRef}
 				setToRef={setToRef}
 				onApplyFilters={loadCommitsWithCurrentOptions}
 			/>

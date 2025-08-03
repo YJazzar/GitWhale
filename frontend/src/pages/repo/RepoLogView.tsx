@@ -9,16 +9,15 @@ import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { CommitDetails } from '@/components/commit-details';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { useNavigate } from 'react-router';
+import { useRepoState } from '@/hooks/state/use-repo-state';
 
 export default function RepoLogView() {
 	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
 	const navigate = useNavigate();
-	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
+	const { logState } = useRepoState(repoPath);
 	const [loading, setLoading] = useState(false);
-	const [selectedCommit, setSelectedCommit] = useState<backend.GitLogCommitInfo | null>(null);
-	const [currentRef, setCurrentRef] = useState('HEAD');
 
-	const commitGraph = useCommitGraphBuilder(logs);
+	const commitGraph = useCommitGraphBuilder(logState.logs);
 
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
@@ -28,7 +27,7 @@ export default function RepoLogView() {
 		setLoading(true);
 		try {
 			const newLogs = await RunGitLog(repoPath);
-			setLogs(newLogs);
+			logState.setLogs(newLogs);
 		} catch (error) {
 			console.error('Failed to load git log:', error);
 		} finally {
@@ -37,48 +36,51 @@ export default function RepoLogView() {
 	};
 
 	const onCommitSelect = (commitHash: string) => {
-		const commit = logs.find(log => log.commitHash === commitHash);
+		const commit = logState.logs.find(log => log.commitHash === commitHash);
 		if (commit) {
-			setSelectedCommit(commit);
+			logState.setSelectedCommit(commit);
 		}
 	};
 
 	const handleCloseCommitDetails = () => {
-		setSelectedCommit(null);
+		logState.setSelectedCommit(null);
 	};
 	
 	useEffect(() => {
-		refreshLogs();
+		// Only refresh if we don't already have logs for this repo
+		if (logState.logs.length === 0) {
+			refreshLogs();
+		}
 	}, [repoPath]);
 
 	return (
 		<div className="flex flex-col h-full">
 			<GitLogToolbar
 				repoPath={repoPath}
-				onCommitsUpdate={setLogs}
+				onCommitsUpdate={logState.setLogs}
 				loading={loading}
 				onLoadingChange={setLoading}
-				currentRef={currentRef}
-				onRefChange={setCurrentRef}
+				currentRef={logState.currentRef}
+				onRefChange={logState.setCurrentRef}
 			/>
 			
 			<div className="flex-1 min-h-0 w-full">
 				<ResizablePanelGroup direction="vertical" className="h-full">
-					<ResizablePanel defaultSize={selectedCommit ? 60 : 100} minSize={30}>
+					<ResizablePanel defaultSize={logState.selectedCommit ? 60 : 100} minSize={30}>
 						<GitLogGraph 
-							commits={logs}
+							commits={logState.logs}
 							onCommitClick={onCommitSelect}
 							loading={loading}
 							className="rounded-lg p-0 bg-background h-full"
 						/>
 					</ResizablePanel>
 					
-					{selectedCommit && (
+					{logState.selectedCommit && (
 						<>
 							<ResizableHandle />
 							<ResizablePanel defaultSize={40} minSize={20}>
 								<CommitDetails 
-									commit={selectedCommit}
+									commit={logState.selectedCommit}
 									onClose={handleCloseCommitDetails}
 								/>
 							</ResizablePanel>
