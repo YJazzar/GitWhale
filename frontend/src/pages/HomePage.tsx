@@ -1,11 +1,20 @@
 import { FileTabsHandle } from '@/components/file-tabs';
 import { Button } from '@/components/ui/button';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { Star, StarOff, Settings, FolderOpen } from 'lucide-react';
+import { Star, StarOff, Settings, FolderOpen, FolderGit2 } from 'lucide-react';
 import { Link } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
 import { useRepoState } from '@/hooks/state/use-repo-state';
+
+// Helper function to extract folder name from full path
+const getRepoDisplayName = (repoPath: string): string => {
+	if (!repoPath) return '';
+	// Handle both Unix and Windows paths
+	const pathSeparator = repoPath.includes('/') ? '/' : '\\';
+	const pathParts = repoPath.split(pathSeparator);
+	return pathParts[pathParts.length - 1] || repoPath;
+};
 
 export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHandle> }) {
 	const { fileTabRef } = props;
@@ -55,16 +64,17 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 			// Feels weird not to set this to true unless there's a fancy way for me to detect if the user performs an action inside the repo tab
 			isPermanentlyOpen: true,
 			onTabClose: () => {
-				const repoState = useRepoState(repoPath)
-				repoState.terminalState.disposeTerminal()
+				const repoState = useRepoState(repoPath);
+				repoState.terminalState.disposeTerminal();
 			},
 			titleRender: function (): JSX.Element {
 				const currentBranchName = appState.appConfig?.openGitRepos[repoPath].currentBranchName;
-				const repoName = repoPath;
+				const repoName = getRepoDisplayName(repoPath);
 				return (
-					<>
-						{repoName + ' '}({currentBranchName})
-					</>
+					<div className="flex">
+						<FolderGit2 className="w-4 h-4 mr-2" />
+						{repoName}
+					</div>
 				);
 			},
 		});
@@ -73,12 +83,7 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 	const RepoEntry = ({ repoPath, isStarred }: { repoPath: string; isStarred: boolean }) => (
 		<div className="flex items-center">
 			{/* Start button */}
-			<Button
-				variant={'ghost'}
-				size={'sm'}
-				onClick={() => onToggleStar(repoPath)}
-				className="h-4 w-4"
-			>
+			<Button variant={'ghost'} size={'sm'} onClick={() => onToggleStar(repoPath)} className="h-4 w-4">
 				{isStarred ? (
 					<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
 				) : (
@@ -91,10 +96,10 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 				variant={'link'}
 				onClick={() => onOpenRecentRepo(repoPath)}
 				className="flex-1 justify-start"
+				title={repoPath} // Show full path on hover
 			>
 				{repoPath}
 			</Button>
-			
 		</div>
 	);
 
@@ -112,7 +117,7 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 					<ul className="space-y-2">
 						<li>
 							<Button variant={'link'} onClick={onOpenNewRepo} className="justify-start p-0">
-								<FolderOpen/>
+								<FolderOpen />
 								Open Repository
 							</Button>
 						</li>
@@ -128,7 +133,7 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 				{/* Vertical Separator */}
 				<div className="relative">
 					<div className="absolute left-0 top-0 bottom-0 w-px bg-border -translate-x-3"></div>
-					
+
 					{/* Column 2: Starred and Recent Repos */}
 					<div className="flex flex-col items-start">
 						{starredRepos.length > 0 && (
