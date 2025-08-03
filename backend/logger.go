@@ -32,7 +32,7 @@ func (logger *Logger) setContext(context context.Context) {
 func (logger *Logger) Log(level LogLevel, message string, args ...interface{}) {
 
 	if logger.ctx == nil {
-		fmt.Printf("[NO CTX DEFINED IN LOGGER]: %v", fmt.Sprintf(message, args...))
+		fmt.Printf("[NO CTX DEFINED IN LOGGER]: %v\n", fmt.Sprintf(message, args...))
 		return
 	}
 

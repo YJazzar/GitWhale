@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,6 +38,7 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 
 	// Generate unique session ID
 	sessionId := generateSessionId(options)
+	Log.Debug("Created diff session ID: %s", sessionId)
 
 	// Create temp directories for this session
 	leftPath, rightPath, err := createTempDiffDirectories(sessionId)
@@ -189,25 +189,27 @@ func populateDiffDirectories(session *DiffSession, options DiffOptions) error {
 		return fmt.Errorf("failed to get difftool paths: %v", err)
 	}
 
-	fmt.Printf("Left directory (from %s): %s\n", session.FromRef, tmpLeftDir)
-	fmt.Printf("Right directory (from %s): %s\n", session.ToRef, tmpRightDir)
+	Log.Info("Left directory (from %s): %s", session.FromRef, tmpLeftDir)
+	Log.Info("Right directory (from %s): %s", session.ToRef, tmpRightDir)
 
 	// Copy them to your desired locations
 	err = copyDirectory(tmpLeftDir, session.LeftPath)
 	if err != nil {
-		log.Fatal("Failed to copy left directory:", err)
+		Log.Error("Failed to copy left directory: %v", err)
+		return fmt.Errorf("failed to copy left directory: %v", err)
 	}
 
 	err = copyDirectory(tmpRightDir, session.RightPath)
 	if err != nil {
-		log.Fatal("Failed to copy right directory:", err)
+		Log.Error("Failed to copy right directory: %v", err)
+		return fmt.Errorf("failed to copy right directory: %v", err)
 	}
 
-	fmt.Println("Directories copied successfully!")
+	Log.Info("Directories copied successfully!")
 
 	// Now you have the paths in variables to use as needed
 	// Example: copy them somewhere, process them, etc.
-	fmt.Println("Paths captured successfully!")
+	Log.Info("Paths captured successfully!")
 	return nil
 }
 
@@ -223,8 +225,22 @@ func getGitDifftoolPaths(hash1, hash2 string) (leftDir, rightDir string, err err
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Run git difftool with our path extractor script
-	cmd := exec.CommandContext(ctx, "git", "difftool", "-d", "--tool="+scriptPath, hash1, hash2)
+	// Configure a temporary difftool and run git difftool
+	tempToolName := "gitwhale-path-extractor"
+
+	// Set up the temporary difftool configuration
+	cmd := exec.CommandContext(ctx, "git", "config", "--local", "difftool."+tempToolName+".cmd", scriptPath+" \"$LOCAL\" \"$REMOTE\"")
+	if err := cmd.Run(); err != nil {
+		return "", "", fmt.Errorf("failed to configure temporary difftool: %v", err)
+	}
+
+	// Clean up the temporary configuration
+	defer func() {
+		exec.Command("git", "config", "--local", "--unset", "difftool."+tempToolName+".cmd").Run()
+	}()
+
+	// Run git difftool with our configured tool
+	cmd = exec.CommandContext(ctx, "git", "difftool", "-d", "--tool="+tempToolName, "--no-prompt", hash1, hash2)
 
 	// Capture the output which will contain our directory paths
 	output, err := cmd.CombinedOutput()
