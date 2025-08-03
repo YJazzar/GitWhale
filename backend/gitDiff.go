@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"bufio"
 	"context"
 	"crypto/md5"
 	"fmt"
@@ -60,7 +61,7 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 	}
 
 	// Populate the directories with diff content
-	err = populateDiffDirectories(session, options)
+	err = getGitDifftoolPathsAndCopy(session)
 
 	// Now it should be safe to load the directory structure for the diff
 	session.DirectoryData = GetDiffSessionDirectory(session)
@@ -181,25 +182,211 @@ func createTempDiffDirectories(sessionId string) (leftPath, rightPath string, er
 	return leftPath, rightPath, nil
 }
 
-// Populates the temporary directories with diff content
-func populateDiffDirectories(session *DiffSession, options DiffOptions) error {
+// Gets git difftool paths and copies directories while script is running
+func getGitDifftoolPathsAndCopy(session *DiffSession) error {
+	hash1 := session.FromRef
+	hash2 := session.ToRef
+	leftDestPath := session.LeftPath
+	rightDestPath := session.RightPath
+	repoPath := session.RepoPath
 
-	tmpLeftDir, tmpRightDir, err := getGitDifftoolPaths(session.FromRef, session.ToRef)
+	Log.Info("Starting difftool operation for repo: %s, from: %s, to: %s", repoPath, hash1, hash2)
+
+	// Create a simple script that prints the two directory paths and hangs
+	scriptPath, err := createPathExtractorScript()
 	if err != nil {
-		return fmt.Errorf("failed to get difftool paths: %v", err)
+		return fmt.Errorf("failed to create path extractor script: %v", err)
+	}
+	defer os.Remove(scriptPath)
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Configure a temporary difftool and run git difftool
+	tempToolName := "gitwhale-path-extractor"
+
+	// Set up the temporary difftool configuration
+	configValue := scriptPath + " \"$LOCAL\" \"$REMOTE\""
+	configCmd := exec.CommandContext(ctx, "git", "config", "--local", "difftool."+tempToolName+".cmd", configValue)
+	configCmd.Dir = repoPath // Set working directory to repo
+	Log.Info("Configuring git difftool in repo: %s with command: %s", repoPath, configValue)
+	
+	if output, err := configCmd.CombinedOutput(); err != nil {
+		Log.Error("Git config command failed. Output: %s", string(output))
+		return fmt.Errorf("failed to configure temporary difftool in repo %s: %v", repoPath, err)
 	}
 
-	Log.Info("Left directory (from %s): %s", session.FromRef, tmpLeftDir)
-	Log.Info("Right directory (from %s): %s", session.ToRef, tmpRightDir)
+	// Verify the configuration was set correctly
+	verifyCmd := exec.CommandContext(ctx, "git", "config", "--local", "difftool."+tempToolName+".cmd")
+	verifyCmd.Dir = repoPath
+	if output, err := verifyCmd.Output(); err != nil {
+		Log.Warning("Could not verify difftool configuration: %v", err)
+	} else {
+		Log.Info("Verified difftool configuration: %s", strings.TrimSpace(string(output)))
+	}
 
-	// Copy them to your desired locations
-	err = copyDirectory(tmpLeftDir, session.LeftPath)
+	// Clean up the temporary configuration
+	defer func() {
+		Log.Info("Cleaning up git difftool configuration")
+		cleanupCmd := exec.Command("git", "config", "--local", "--unset", "difftool."+tempToolName+".cmd")
+		cleanupCmd.Dir = repoPath
+		if err := cleanupCmd.Run(); err != nil {
+			Log.Warning("Failed to cleanup git difftool configuration: %v", err)
+		}
+	}()
+
+	// Run git difftool with our configured tool
+	cmd := exec.CommandContext(ctx, "git", "difftool", "-d", "--tool="+tempToolName, "--no-prompt", hash1, hash2)
+	cmd.Dir = repoPath // Set working directory to repo
+	Log.Info("Running git difftool in repo: %s with refs: %s -> %s", repoPath, hash1, hash2)
+
+	// Get both stdout and stderr pipes to monitor the process
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdout pipe: %v", err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stderr pipe: %v", err)
+	}
+
+	// Start the process
+	Log.Info("Starting git difftool process with command: %v", cmd.Args)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start git difftool: %v", err)
+	}
+
+	Log.Info("Git difftool process started with PID: %d", cmd.Process.Pid)
+
+	// Monitor stderr in a separate goroutine
+	go func() {
+		stderrScanner := bufio.NewScanner(stderr)
+		for stderrScanner.Scan() {
+			Log.Warning("Git difftool stderr: %s", stderrScanner.Text())
+		}
+	}()
+
+	// Ensure we kill the process when done
+	defer func() {
+		if cmd.Process != nil {
+			Log.Info("Terminating git difftool process (PID: %d)", cmd.Process.Pid)
+			if err := cmd.Process.Kill(); err != nil {
+				Log.Warning("Failed to kill git difftool process: %v", err)
+			}
+		}
+	}()
+
+	// Read output line by line until we get the DONE signal
+	scanner := bufio.NewScanner(stdout)
+	var leftDir, rightDir string
+	var allOutput []string
+	done := false
+
+	// Use a channel to handle timeout during scanning
+	scanComplete := make(chan error, 1)
+
+	go func() {
+		defer close(scanComplete)
+		lineCount := 0
+		for scanner.Scan() {
+			line := scanner.Text()
+			lineCount++
+			allOutput = append(allOutput, line)
+			Log.Info("Git difftool stdout line %d: '%s'", lineCount, line)
+
+			if strings.HasPrefix(line, "LEFT_DIR:") {
+				leftDir = strings.TrimSpace(strings.TrimPrefix(line, "LEFT_DIR:"))
+				Log.Info("Extracted LEFT_DIR: %s", leftDir)
+			} else if strings.HasPrefix(line, "RIGHT_DIR:") {
+				rightDir = strings.TrimSpace(strings.TrimPrefix(line, "RIGHT_DIR:"))
+				Log.Info("Extracted RIGHT_DIR: %s", rightDir)
+			} else if strings.TrimSpace(line) == "DONE" {
+				done = true
+				Log.Info("Received DONE signal")
+				break
+			}
+		}
+		Log.Info("Finished reading stdout. Total lines: %d, Done: %v", lineCount, done)
+		scanComplete <- scanner.Err()
+	}()
+
+	// Wait for scanning to complete or timeout
+	select {
+	case err := <-scanComplete:
+		if err != nil {
+			return fmt.Errorf("error reading script output: %v", err)
+		}
+	case <-ctx.Done():
+		return fmt.Errorf("timeout waiting for script output: %v", ctx.Err())
+	}
+
+	if !done {
+		Log.Error("Script did not send DONE signal. All output received:")
+		for i, line := range allOutput {
+			Log.Error("  Line %d: '%s'", i+1, line)
+		}
+		return fmt.Errorf("script did not complete successfully - DONE signal not received")
+	}
+
+	if leftDir == "" || rightDir == "" {
+		Log.Error("Failed to extract directory paths. All output received:")
+		for i, line := range allOutput {
+			Log.Error("  Line %d: '%s'", i+1, line)
+		}
+		return fmt.Errorf("failed to extract directory paths from script output")
+	}
+
+	Log.Info("Left directory (from %s): %s", hash1, leftDir)
+	Log.Info("Right directory (from %s): %s", hash2, rightDir)
+
+	// Check if directories exist before attempting to copy
+	if _, err := os.Stat(leftDir); os.IsNotExist(err) {
+		Log.Error("Left directory does not exist: %s", leftDir)
+		return fmt.Errorf("left directory does not exist: %s", leftDir)
+	} else if err != nil {
+		Log.Error("Error checking left directory: %v", err)
+		return fmt.Errorf("error checking left directory: %v", err)
+	}
+
+	if _, err := os.Stat(rightDir); os.IsNotExist(err) {
+		Log.Error("Right directory does not exist: %s", rightDir)
+		return fmt.Errorf("right directory does not exist: %s", rightDir)
+	} else if err != nil {
+		Log.Error("Error checking right directory: %v", err)
+		return fmt.Errorf("error checking right directory: %v", err)
+	}
+
+	// List contents of directories for debugging
+	Log.Info("Listing contents of left directory: %s", leftDir)
+	if entries, err := os.ReadDir(leftDir); err == nil {
+		for _, entry := range entries {
+			Log.Info("  - %s (dir: %v)", entry.Name(), entry.IsDir())
+		}
+	} else {
+		Log.Warning("Could not list left directory contents: %v", err)
+	}
+
+	Log.Info("Listing contents of right directory: %s", rightDir)
+	if entries, err := os.ReadDir(rightDir); err == nil {
+		for _, entry := range entries {
+			Log.Info("  - %s (dir: %v)", entry.Name(), entry.IsDir())
+		}
+	} else {
+		Log.Warning("Could not list right directory contents: %v", err)
+	}
+
+	// Copy directories while the script is still running (keeping Git's temp dirs alive)
+	Log.Info("Starting copy of left directory: %s -> %s", leftDir, leftDestPath)
+	err = copyDirectory(leftDir, leftDestPath)
 	if err != nil {
 		Log.Error("Failed to copy left directory: %v", err)
 		return fmt.Errorf("failed to copy left directory: %v", err)
 	}
 
-	err = copyDirectory(tmpRightDir, session.RightPath)
+	Log.Info("Starting copy of right directory: %s -> %s", rightDir, rightDestPath)
+	err = copyDirectory(rightDir, rightDestPath)
 	if err != nil {
 		Log.Error("Failed to copy right directory: %v", err)
 		return fmt.Errorf("failed to copy right directory: %v", err)
@@ -207,83 +394,38 @@ func populateDiffDirectories(session *DiffSession, options DiffOptions) error {
 
 	Log.Info("Directories copied successfully!")
 
-	// Now you have the paths in variables to use as needed
-	// Example: copy them somewhere, process them, etc.
-	Log.Info("Paths captured successfully!")
+	// Script will be killed by defer function, allowing Git to clean up its temp directories
 	return nil
-}
-
-func getGitDifftoolPaths(hash1, hash2 string) (leftDir, rightDir string, err error) {
-	// Create a simple script that just prints the two directory paths
-	scriptPath, err := createPathExtractorScript()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create path extractor script: %v", err)
-	}
-	defer os.Remove(scriptPath)
-
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Configure a temporary difftool and run git difftool
-	tempToolName := "gitwhale-path-extractor"
-
-	// Set up the temporary difftool configuration
-	cmd := exec.CommandContext(ctx, "git", "config", "--local", "difftool."+tempToolName+".cmd", scriptPath+" \"$LOCAL\" \"$REMOTE\"")
-	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("failed to configure temporary difftool: %v", err)
-	}
-
-	// Clean up the temporary configuration
-	defer func() {
-		exec.Command("git", "config", "--local", "--unset", "difftool."+tempToolName+".cmd").Run()
-	}()
-
-	// Run git difftool with our configured tool
-	cmd = exec.CommandContext(ctx, "git", "difftool", "-d", "--tool="+tempToolName, "--no-prompt", hash1, hash2)
-
-	// Capture the output which will contain our directory paths
-	output, err := cmd.CombinedOutput()
-
-	// Parse the output to extract the paths
-	outputStr := strings.TrimSpace(string(output))
-	lines := strings.Split(outputStr, "\n")
-
-	// Look for our specific output lines
-	for _, line := range lines {
-		if strings.HasPrefix(line, "LEFT_DIR:") {
-			leftDir = strings.TrimSpace(strings.TrimPrefix(line, "LEFT_DIR:"))
-		} else if strings.HasPrefix(line, "RIGHT_DIR:") {
-			rightDir = strings.TrimSpace(strings.TrimPrefix(line, "RIGHT_DIR:"))
-		}
-	}
-
-	if leftDir == "" || rightDir == "" {
-		return "", "", fmt.Errorf("failed to extract directory paths from git difftool output")
-	}
-
-	return leftDir, rightDir, nil
 }
 
 func createPathExtractorScript() (string, error) {
 	var scriptExt, scriptContent string
+	
+	// Create debug log file path
+	debugLogPath := filepath.Join(os.TempDir(), "gitwhale-difftool-debug.log")
 
 	if runtime.GOOS == "windows" {
 		scriptExt = ".bat"
-		scriptContent = `@echo off
-echo LEFT_DIR:%1
-echo RIGHT_DIR:%2
-REM Exit immediately after printing paths
-exit /b 0
-`
+		scriptContent = fmt.Sprintf(`@echo off
+echo [%%date%% %%time%%] Script called with args: %%1 %%2 >> "%s"
+echo LEFT_DIR:%%1
+echo RIGHT_DIR:%%2
+echo DONE
+echo [%%date%% %%time%%] Script output sent, now hanging >> "%s"
+REM Hang indefinitely until killed by parent process
+pause >nul
+`, debugLogPath, debugLogPath)
 	} else {
 		scriptExt = ".sh"
-		scriptContent = `#!/bin/bash
+		scriptContent = fmt.Sprintf(`#!/bin/bash
+echo "$(date): Script called with args: $1 $2" >> "%s"
 echo "LEFT_DIR:$1"
 echo "RIGHT_DIR:$2"
-# Exit immediately after printing paths
-exit 0
-`
+echo "DONE"
+echo "$(date): Script output sent, now hanging" >> "%s"
+# Hang indefinitely until killed by parent process
+read -r
+`, debugLogPath, debugLogPath)
 	}
 
 	// Create temporary script file
@@ -294,6 +436,9 @@ exit 0
 	if err != nil {
 		return "", fmt.Errorf("failed to write script file: %v", err)
 	}
+
+	Log.Info("Created path extractor script at: %s", scriptPath)
+	Log.Info("Debug log will be written to: %s", debugLogPath)
 
 	return scriptPath, nil
 }

@@ -55,6 +55,7 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
+		LogLevel:           logger.DEBUG,
 		LogLevelProduction: logger.DEBUG,
 		// LogLevel: logger.INFO,
 		Mac: &mac.Options{
