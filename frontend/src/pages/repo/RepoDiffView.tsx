@@ -12,7 +12,6 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DirDiffViewer } from '@/components/dir-diff-viewer';
-import { Routes, Route, Navigate } from 'react-router';
 import {
 	GitBranch,
 	GitCompare,
@@ -28,6 +27,7 @@ import { backend } from 'wailsjs/go/models';
 import { StartDiffSession, EndDiffSession, GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { useLocation } from 'react-router';
+import { useRepoState } from '@/hooks/state/use-repo-state';
 
 interface DiffRouterState {
 	fromRef?: string;
@@ -35,18 +35,18 @@ interface DiffRouterState {
 	autoStart?: boolean;
 }
 
-// Custom hooks for state management
-const useDiffSessions = () => {
+// Custom hooks for state management using atoms
+const useDiffSessions = (repoPath: string) => {
+	const { diffState } = useRepoState(repoPath);
 	const [loading, setLoading] = useState(false);
-	const [sessions, setSessions] = useState<backend.DiffSession[]>([]);
-	const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
-	const createSession = useCallback(async (options: backend.DiffOptions) => {
+	const createSession = async (options: backend.DiffOptions) => {
 		setLoading(true);
 		try {
 			const session = await StartDiffSession(options);
-			setSessions((prev) => [...prev, session]);
-			setSelectedSessionId(session.sessionId);
+			const newSessions = [...diffState.sessions, session];
+			diffState.setSessions(newSessions);
+			diffState.setSelectedSessionId(session.sessionId);
 			return session;
 		} catch (error) {
 			console.error('Failed to create diff session:', error);
@@ -54,39 +54,36 @@ const useDiffSessions = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	};
 
-	const closeSession = useCallback(
-		async (sessionId: string) => {
+	const closeSession = async (sessionId: string) => {
 			try {
 				await EndDiffSession(sessionId);
-				setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+				const newSessions = diffState.sessions.filter((s) => s.sessionId !== sessionId);
+				diffState.setSessions(newSessions);
 
-				if (selectedSessionId === sessionId) {
-					const remainingSessions = sessions.filter((s) => s.sessionId !== sessionId);
-					setSelectedSessionId(
-						remainingSessions.length > 0 ? remainingSessions[0].sessionId : null
+				if (diffState.selectedSessionId === sessionId) {
+					diffState.setSelectedSessionId(
+						newSessions.length > 0 ? newSessions[0].sessionId : null
 					);
 				}
 			} catch (error) {
 				console.error('Failed to close diff session:', error);
 				throw error;
 			}
-		},
-		[selectedSessionId, sessions]
-	);
+		}
 
 	const selectedSession = useMemo(
-		() => sessions.find((s) => s.sessionId === selectedSessionId) || null,
-		[sessions, selectedSessionId]
+		() => diffState.sessions.find((s) => s.sessionId === diffState.selectedSessionId) || null,
+		[diffState.sessions, diffState.selectedSessionId]
 	);
 
 	return {
 		loading,
-		sessions,
-		selectedSessionId,
+		sessions: diffState.sessions,
+		selectedSessionId: diffState.selectedSessionId,
 		selectedSession,
-		setSelectedSessionId,
+		setSelectedSessionId: diffState.setSelectedSessionId,
 		createSession,
 		closeSession,
 	};
@@ -119,11 +116,31 @@ const useGitRefs = (repoPath: string) => {
 	return { branches, tags, allRefs, loading, loadRefs };
 };
 
-const useDiffOptions = (routerState?: DiffRouterState) => {
-	const [fromRef, setFromRef] = useState(routerState?.fromRef || 'HEAD');
-	const [toRef, setToRef] = useState(routerState?.toRef || '');
-	const [showAdvanced, setShowAdvanced] = useState(false);
-	const [filePathFilters, setFilePathFilters] = useState('');
+const useDiffOptions = (repoPath: string, routerState?: DiffRouterState) => {
+	const { diffState } = useRepoState(repoPath);
+
+	// Initialize from router state or existing atom state
+	const currentOptions = diffState.options;
+	const fromRef = routerState?.fromRef || currentOptions.fromRef;
+	const toRef = routerState?.toRef || currentOptions.toRef;
+	const showAdvanced = currentOptions.showAdvanced;
+	const filePathFilters = currentOptions.filePathFilters;
+
+	const setFromRef = useCallback((newFromRef: string) => {
+		diffState.setOptions({ ...currentOptions, fromRef: newFromRef });
+	}, [diffState, currentOptions]);
+
+	const setToRef = useCallback((newToRef: string) => {
+		diffState.setOptions({ ...currentOptions, toRef: newToRef });
+	}, [diffState, currentOptions]);
+
+	const setShowAdvanced = useCallback((newShowAdvanced: boolean) => {
+		diffState.setOptions({ ...currentOptions, showAdvanced: newShowAdvanced });
+	}, [diffState, currentOptions]);
+
+	const setFilePathFilters = useCallback((newFilters: string) => {
+		diffState.setOptions({ ...currentOptions, filePathFilters: newFilters });
+	}, [diffState, currentOptions]);
 
 	const options = useMemo(
 		(): backend.DiffOptions => ({
@@ -151,9 +168,12 @@ const useDiffOptions = (routerState?: DiffRouterState) => {
 	);
 
 	const setQuickOption = useCallback((option: (typeof quickOptions)[0]) => {
-		setFromRef(option.fromRef);
-		setToRef(option.toRef);
-	}, []);
+		diffState.setOptions({ 
+			...currentOptions, 
+			fromRef: option.fromRef, 
+			toRef: option.toRef 
+		});
+	}, [diffState, currentOptions]);
 
 	const diffDescription = useMemo(() => {
 		if (!toRef || toRef === '') {
@@ -488,9 +508,9 @@ export default function RepoDiffView() {
 		return <div>Error: No repository path provided</div>;
 	}
 
-	const diffSessions = useDiffSessions();
+	const diffSessions = useDiffSessions(repoPath);
 	const gitRefs = useGitRefs(repoPath);
-	const diffOptions = useDiffOptions(routerState);
+	const diffOptions = useDiffOptions(repoPath, routerState);
 
 	const handleCreateDiff = useCallback(async () => {
 		const options = { ...diffOptions.options, repoPath };
@@ -515,13 +535,7 @@ export default function RepoDiffView() {
 
 			<div className="flex-1 overflow-hidden min-h-0">
 				{!!diffSessions.selectedSession?.directoryData && (
-					<DirDiffViewer
-						directoryData={diffSessions.selectedSession.directoryData}
-						isLoading={false}
-						isError={false}
-						title={diffSessions.selectedSession.title}
-						emptyMessage="No differences found between the selected references"
-					/>
+					<DirDiffViewer />
 				)}
 			</div>
 		</div>

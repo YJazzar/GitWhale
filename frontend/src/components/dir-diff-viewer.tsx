@@ -1,34 +1,30 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import FileDiffView from '@/components/file-diff-view';
 import { FileTabPageProps, FileTabs, FileTabsHandle } from '@/components/file-tabs';
-import LoadingSpinner from '@/components/loading-spinner';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { Navigate, Outlet, Route, Routes, useParams } from 'react-router';
+import { Outlet, useParams } from 'react-router';
 import { backend } from '../../wailsjs/go/models';
-
-interface DirDiffViewerProps {
-	directoryData: backend.Directory | null;
-	isLoading?: boolean;
-	isError?: boolean;
-	error?: any;
-	onAddFile?: (file: backend.FileInfo) => void;
-	title?: string;
-}
+import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
 };
 
-export function DirDiffViewer({
-	directoryData,
-	isLoading = false,
-	isError = false,
-	error = null,
-	onAddFile,
-	title = "Directory Diff",
-}: DirDiffViewerProps) {
+export function DirDiffViewer() {
+	const { repoPath } = useCurrentRepoParams();
+	const { diffState } = useRepoState(repoPath);
 	const fileTabRef = useRef<FileTabsHandle>(null);
+
+	// Get directory data from the selected diff session
+	const selectedSession = useMemo(() => {
+		const sessions = diffState.sessions;
+		const selectedId = diffState.selectedSessionId;
+		return sessions.find(s => s.sessionId === selectedId) || null;
+	}, [diffState.sessions, diffState.selectedSessionId]);
+
+	const directoryData = selectedSession?.directoryData || null;
 
 	const fileInfoMap = useMemo(() => {
 		const map: Map<string, backend.FileInfo> = new Map();
@@ -51,37 +47,12 @@ export function DirDiffViewer({
 		return map;
 	}, [directoryData]);
 
-	(window as any).fileInfoMap = fileInfoMap; // temp because it's not in useRepoState yet
-
-	// Listen for additional files to diff (for external notifications)
+	// Store fileInfoMap in state for FileDiffViewWrapper to access
 	useEffect(() => {
-		// Note: We can't use EventsOn here since we don't have access to the 
-		// Wails runtime context in a reusable component. The parent component
-		// should handle events and pass files via onAddFile.
-		
-		// This is just a placeholder for potential future event handling
-	}, [onAddFile]);
-
-	if (isLoading) {
-		return (
-			<div className="w-full h-full flex items-center justify-center">
-				<LoadingSpinner />
-			</div>
-		);
-	}
-
-	if (isError) {
-		return (
-			<div className="w-full h-full flex items-center justify-center">
-				<div className="text-center">
-					<h3 className="text-lg font-medium text-destructive mb-2">Error Loading Diff</h3>
-					<pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 text-sm">
-						<code className="text-white">{JSON.stringify(error, null, 2)}</code>
-					</pre>
-				</div>
-			</div>
-		);
-	}
+		if (diffState.fileInfoMap !== fileInfoMap) {
+			diffState.setFileInfoMap(fileInfoMap);
+		}
+	}, [fileInfoMap, diffState]);
 
 	if (!directoryData) {
 		return (
@@ -94,43 +65,34 @@ export function DirDiffViewer({
 	}
 
 	return (
-		<div className="w-full h-full flex flex-col">
-			{/* Optional title header */}
-			{title && (
-				<div className="border-b p-3 bg-muted/30">
-					<h3 className="text-lg font-medium">{title}</h3>
-				</div>
-			)}
-			
-			<div className="flex-1 flex flex-row min-h-0">
-				<ResizablePanelGroup direction="horizontal">
-					{/* Left pane that contains the file structure */}
-					<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
-						<div className="border-r h-full overflow-y-auto overflow-x-hidden">
-							<FileTree fileTreeRef={fileTabRef} directoryData={directoryData} />
-						</div>
-					</ResizablePanel>
+		<div className="w-full h-full flex flex-row min-h-0">
+			<ResizablePanelGroup direction="horizontal">
+				{/* Left pane that contains the file structure */}
+				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
+					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
+						<FileTree fileTreeRef={fileTabRef} directoryData={directoryData} />
+					</div>
+				</ResizablePanel>
 
-					<ResizableHandle withHandle />
+				<ResizableHandle withHandle />
 
-					{/* Right pane containing the actual diffs */}
-					<ResizablePanel id="diff-content-panel">
-						<div className="grow h-full flex flex-col min-h-0">
-							<FileTabs
-								ref={fileTabRef}
-								defaultTabKey=""
-								initialPages={[]}
-								noTabSelectedPath="./no-file-selected"
-								routerConfig={() => {
-									return (
-										<Outlet/>
-									);
-								}}
-							/>
-						</div>
-					</ResizablePanel>
-				</ResizablePanelGroup>
-			</div>
+				{/* Right pane containing the actual diffs */}
+				<ResizablePanel id="diff-content-panel">
+					<div className="grow h-full flex flex-col min-h-0">
+						<FileTabs
+							ref={fileTabRef}
+							defaultTabKey=""
+							initialPages={[]}
+							noTabSelectedPath="./no-file-selected"
+							routerConfig={() => {
+								return (
+									<Outlet/>
+								);
+							}}
+						/>
+					</div>
+				</ResizablePanel>
+			</ResizablePanelGroup>
 		</div>
 	);
 }
@@ -147,7 +109,8 @@ export function NoFileSelected() {
 
 // Gets the file to render from react-router, and renders the actual diff view
 export function FileDiffViewWrapper() {
-	const fileInfoMap = (window as any).fileInfoMap // Temp: until I raise the state to the useRepoState() hook and I can dynamically get this data
+	const { repoPath } = useCurrentRepoParams();
+	const { diffState } = useRepoState(repoPath);
 	const { tabKey } = useParams();
 
 	const fileInfo = useMemo(() => {
@@ -155,8 +118,13 @@ export function FileDiffViewWrapper() {
 			return undefined;
 		}
 
+		const fileInfoMap = diffState.fileInfoMap;
+		if (!fileInfoMap) {
+			return undefined;
+		}
+
 		return fileInfoMap.get(atob(tabKey));
-	}, [tabKey, fileInfoMap]);
+	}, [tabKey, diffState.fileInfoMap]);
 
 	if (!fileInfo) {
 		return <div className="w-full h-full grid place-content-center text-muted-foreground">No file was selected</div>;

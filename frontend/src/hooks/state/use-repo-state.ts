@@ -7,6 +7,7 @@ import {
 } from '../../../wailsjs/go/backend/App';
 import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
 import { backend } from '../../../wailsjs/go/models';
+import { atom, useAtom } from 'jotai';
 
 // Map color schemes to xterm themes
 function getXTermTheme(colorScheme: string) {
@@ -49,6 +50,7 @@ function getXTermTheme(colorScheme: string) {
 export const useRepoState = (repoPath: string) => {
 	return {
 		terminalState: getTerminalState(repoPath),
+		diffState: getDiffState(repoPath),
 	};
 };
 
@@ -202,4 +204,85 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 	} catch (error) {
 		console.error('Failed to initialize terminal session for repo', repoPath, error);
 	}
+}
+
+
+// MARK: Diff-related state management using Jotai atoms
+
+// Store diff sessions per repository path
+const diffSessionsAtom = atom<Map<string, backend.DiffSession[]>>(new Map());
+
+// Store selected session ID per repository path  
+const selectedDiffSessionAtom = atom<Map<string, string | null>>(new Map());
+
+// Store file info mapping for directory diffs per repository path
+const fileInfoMapAtom = atom<Map<string, Map<string, backend.FileInfo>>>(new Map());
+
+// Store diff options/configuration per repository path
+const diffOptionsAtom = atom<Map<string, {
+	fromRef: string;
+	toRef: string;
+	showAdvanced: boolean;
+	filePathFilters: string;
+}>>(new Map());
+
+// MARK: Diff state management functions
+
+function getDiffState(repoPath: string) {
+	const [diffSessions, setDiffSessions] = useAtom(diffSessionsAtom);
+	const [selectedSessions, setSelectedSessions] = useAtom(selectedDiffSessionAtom);
+	const [fileInfoMaps, setFileInfoMaps] = useAtom(fileInfoMapAtom);
+	const [diffOptions, setDiffOptionsMap] = useAtom(diffOptionsAtom);
+
+	return {
+		// Get current sessions for this repo
+		sessions: diffSessions.get(repoPath) || [],
+		
+		// Update sessions for this repo
+		setSessions: (sessions: backend.DiffSession[]) => {
+			const newMap = new Map(diffSessions);
+			newMap.set(repoPath, sessions);
+			setDiffSessions(newMap);
+		},
+		
+		// Get selected session ID for this repo
+		selectedSessionId: selectedSessions.get(repoPath) || null,
+		
+		// Set selected session ID for this repo
+		setSelectedSessionId: (sessionId: string | null) => {
+			const newMap = new Map(selectedSessions);
+			newMap.set(repoPath, sessionId);
+			setSelectedSessions(newMap);
+		},
+		
+		// Get file info map for this repo
+		fileInfoMap: fileInfoMaps.get(repoPath),
+		
+		// Set file info map for this repo
+		setFileInfoMap: (fileInfoMap: Map<string, backend.FileInfo>) => {
+			const newMap = new Map(fileInfoMaps);
+			newMap.set(repoPath, fileInfoMap);
+			setFileInfoMaps(newMap);
+		},
+		
+		// Get diff options for this repo
+		options: diffOptions.get(repoPath) || {
+			fromRef: 'HEAD',
+			toRef: '',
+			showAdvanced: false,
+			filePathFilters: '',
+		},
+		
+		// Set diff options for this repo
+		setOptions: (options: {
+			fromRef: string;
+			toRef: string;
+			showAdvanced: boolean;
+			filePathFilters: string;
+		}) => {
+			const newMap = new Map(diffOptions);
+			newMap.set(repoPath, options);
+			setDiffOptionsMap(newMap);
+		},
+	};
 }
