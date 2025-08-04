@@ -21,14 +21,20 @@ import {
 	useRepoPageHandlers,
 } from '@/hooks/repo-page-handler-context';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import clsx from 'clsx';
 import { GitGraph, House, Terminal, GitCompare } from 'lucide-react';
-import { useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router';
+import { useState, useCallback } from 'react';
+import { FileTabs } from '@/components/file-tabs';
+import RepoHomeView from './RepoHomeView';
+import RepoLogView from './RepoLogView';
+import RepoDiffView from './RepoDiffView';
+import RepoTerminalView from './RepoTerminalView';
+import RepoCommitDetailsView from './RepoCommitDetailsView';
+import { TabProps } from '@/hooks/state/use-file-manager-state';
 
-export default function RepoPage() {
+export default function RepoPage({ repoPath }: { repoPath: string }) {
 	const [dynamicMenuItems, setDynamicMenuItems] = useState<SideBarMenuItem[]>([]);
+	const [activeRepoView, setActiveRepoView] = useState('log');
 
 	const handlers = {
 		onAddNewDynamicRoute: (newItem: SideBarMenuItem) => {
@@ -45,49 +51,120 @@ export default function RepoPage() {
 		},
 	};
 
+	// Handle opening commit details
+	const handleOpenCommit = useCallback((commitHash: string) => {
+		const commitItem: SideBarMenuItem = {
+			title: `Commit ${commitHash.substring(0, 7)}`,
+			url: `commit-${commitHash}`,
+			icon: <GitGraph />,
+		};
+		
+		if (!dynamicMenuItems.some(item => item.url === commitItem.url)) {
+			setDynamicMenuItems(prev => [...prev, commitItem]);
+		}
+		setActiveRepoView(commitItem.url);
+	}, [dynamicMenuItems]);
+
+	// Create tabs for repo views
+	const repoTabs: TabProps[] = [
+		{
+			tabKey: 'home',
+			titleRender: () => <>Home</>,
+			component: RepoHomeView,
+			componentProps: { repoPath },
+		},
+		{
+			tabKey: 'log',
+			titleRender: () => <>Log</>,
+			component: RepoLogView,
+			componentProps: { repoPath, onCommitSelect: handleOpenCommit },
+		},
+		{
+			tabKey: 'diff',
+			titleRender: () => <>Diff</>,
+			component: RepoDiffView,
+			componentProps: { repoPath },
+		},
+		{
+			tabKey: 'terminal',
+			titleRender: () => <>Terminal</>,
+			component: RepoTerminalView,
+			componentProps: { repoPath },
+		},
+		// Dynamic commit tabs
+		...dynamicMenuItems.map(item => ({
+			tabKey: item.url,
+			titleRender: () => <>{item.title}</>,
+			component: RepoCommitDetailsView,
+			componentProps: { 
+				repoPath, 
+				commitHash: item.url.replace('commit-', '') 
+			},
+			onTabClose: () => {
+				setDynamicMenuItems(prev => prev.filter(dynItem => dynItem.url !== item.url));
+			}
+		}))
+	];
+
 	return (
 		<SidebarProvider>
 			<RepoPageHandlersContext.Provider value={handlers}>
-				<RepoPageSideBar dynamicMenuItems={dynamicMenuItems} />
-				<div className="w-full h-full overflow-auto">
-					<Outlet />
+				<RepoPageSideBar 
+					dynamicMenuItems={dynamicMenuItems} 
+					repoPath={repoPath}
+					activeView={activeRepoView}
+					onViewChange={setActiveRepoView}
+				/>
+				<div className="w-full h-full overflow-hidden">
+					<FileTabs
+						tabs={repoTabs}
+						activeTabKey={activeRepoView}
+						onTabChange={setActiveRepoView}
+						defaultTabKey="log"
+						sessionKey={`repo-${repoPath}`}
+						repoPath={repoPath}
+					/>
 				</div>
 			</RepoPageHandlersContext.Provider>
 		</SidebarProvider>
 	);
 }
 
-function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
+function RepoPageSideBar(props: { 
+	dynamicMenuItems: SideBarMenuItem[]; 
+	repoPath: string;
+	activeView: string;
+	onViewChange: (view: string) => void;
+}) {
 	const sidebar = useSidebar();
 	const { appState } = UseAppState();
-
-	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
-	const { dynamicMenuItems } = props;
+	const { dynamicMenuItems, repoPath, activeView, onViewChange } = props;
 
 	// Close the sidebar on mobile because it's nicer
-	const onLinkClick = () => {
+	const onMenuClick = (viewKey: string) => {
 		sidebar.setOpenMobile(false);
+		onViewChange(viewKey);
 	};
 
 	const menuItems: SideBarMenuItem[] = [
 		{
 			title: 'Home',
-			url: `/repo/${encodedRepoPath}/home`,
+			url: 'home',
 			icon: <House />,
 		},
 		{
 			title: 'Log',
-			url: `/repo/${encodedRepoPath}/log`,
+			url: 'log',
 			icon: <GitGraph />,
 		},
 		{
 			title: 'Diff',
-			url: `/repo/${encodedRepoPath}/diff`,
+			url: 'diff',
 			icon: <GitCompare />,
 		},
 		{
 			title: 'Terminal',
-			url: `/repo/${encodedRepoPath}/terminal`,
+			url: 'terminal',
 			icon: <Terminal />,
 		},
 	];
@@ -109,7 +186,8 @@ function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 									<SidebarMenuItemRender
 										key={item.url}
 										menuItem={item}
-										onLinkClick={onLinkClick}
+										onMenuClick={onMenuClick}
+										activeView={activeView}
 										isDynamicRoute={false}
 									/>
 								);
@@ -127,7 +205,8 @@ function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 									<SidebarMenuItemRender
 										key={item.url}
 										menuItem={item}
-										onLinkClick={onLinkClick}
+										onMenuClick={onMenuClick}
+										activeView={activeView}
 										isDynamicRoute
 									/>
 								);
@@ -148,46 +227,49 @@ function RepoPageSideBar(props: { dynamicMenuItems: SideBarMenuItem[] }) {
 
 function SidebarMenuItemRender(props: {
 	menuItem: SideBarMenuItem;
-	onLinkClick: () => void;
+	onMenuClick: (viewKey: string) => void;
+	activeView: string;
 	isDynamicRoute: boolean;
 }) {
-	const { menuItem, onLinkClick, isDynamicRoute } = props;
+	const { menuItem, onMenuClick, activeView, isDynamicRoute } = props;
 	const repoPageHandlers = useRepoPageHandlers();
-
-	const location = useLocation();
-	const navigate = useNavigate();
 
 	const onCloseClick = (event: React.MouseEvent<HTMLSpanElement>) => {
 		event.preventDefault();
 		event.stopPropagation();
 
 		repoPageHandlers?.onCloseDynamicRoute(menuItem);
-		if (location.pathname === menuItem.url) {
-			console.log('navigating to prev');
-			navigate(-1);
+		// Switch to log view if we're closing the current view
+		if (activeView === menuItem.url) {
+			onMenuClick('log');
 		}
+	};
+
+	const handleClick = () => {
+		onMenuClick(menuItem.url);
 	};
 
 	return (
 		<SidebarMenuItem>
-			<SidebarMenuButton asChild isActive={menuItem.url === location.pathname}>
-				<Link to={menuItem.url} onClick={onLinkClick} className="flex flex-row h-4 w-4">
-					{menuItem.icon}
-					<span className="grow">{menuItem.title}</span>
+			<SidebarMenuButton 
+				onClick={handleClick}
+				isActive={menuItem.url === activeView}
+				className="flex flex-row h-4 w-4 cursor-pointer"
+			>
+				{menuItem.icon}
+				<span className="grow">{menuItem.title}</span>
 
-					{isDynamicRoute ? (
-						<span
-							className={clsx(
-								'h-5 w-5 mr-1 box-border flex rounded-md items-center justify-center',
-								'hover:bg-destructive text-destructive-foreground shadow-sm'
-							)}
-							onClick={onCloseClick}
-						>
-							x
-						</span>
-					) : null}
-				</Link>
-				{/* </div>	 */}
+				{isDynamicRoute ? (
+					<span
+						className={clsx(
+							'h-5 w-5 mr-1 box-border flex rounded-md items-center justify-center',
+							'hover:bg-destructive text-destructive-foreground shadow-sm'
+						)}
+						onClick={onCloseClick}
+					>
+						x
+					</span>
+				) : null}
 			</SidebarMenuButton>
 		</SidebarMenuItem>
 	);

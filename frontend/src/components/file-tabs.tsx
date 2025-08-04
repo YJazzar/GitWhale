@@ -69,8 +69,21 @@ function useFileTabsState(
 	// Determine if we should use session-scoped state
 	const useSessionState = !!(sessionKey && repoPath && diffState);
 
-	// Get current session state or use local state
-	const sessionState = useSessionState ? diffState!.getTabState(sessionKey) : null;
+	// Create a reactive session state using a separate state variable that updates when the atom changes
+	const [sessionState, setSessionState] = useState(() => {
+		if (useSessionState && sessionKey) {
+			return diffState!.getTabState(sessionKey);
+		}
+		return { availableFiles: [], activeTabKey: undefined };
+	});
+
+	// Update session state when the underlying atom changes
+	useEffect(() => {
+		if (useSessionState && sessionKey && diffState) {
+			const newState = diffState.getTabState(sessionKey);
+			setSessionState(newState);
+		}
+	}, [useSessionState, sessionKey, diffState]);
 	
 	const activeTabKey = useSessionState ? 
 		(sessionState?.activeTabKey ?? defaultTabKey) : 
@@ -90,26 +103,32 @@ function useFileTabsState(
 	}, [availableFiles]);
 
 	const setActiveTabKey = useCallback((newActiveTabKey: string | undefined) => {
-		if (useSessionState && sessionKey) {
-			diffState!.setTabState(sessionKey, {
-				availableFiles: sessionState?.availableFiles || [],
+		if (useSessionState && sessionKey && diffState) {
+			const currentState = diffState.getTabState(sessionKey);
+			const newState = {
+				availableFiles: currentState.availableFiles,
 				activeTabKey: newActiveTabKey
-			});
+			};
+			diffState.setTabState(sessionKey, newState);
+			setSessionState(newState); // Also update local state for immediate re-render
 		} else {
 			setLocalActiveTabKey(newActiveTabKey);
 		}
-	}, [useSessionState, sessionKey, diffState, sessionState]);
+	}, [useSessionState, sessionKey, diffState]);
 
 	const setAvailableFiles = useCallback((newAvailableFiles: FileTabPageProps[]) => {
-		if (useSessionState && sessionKey) {
-			diffState!.setTabState(sessionKey, {
+		if (useSessionState && sessionKey && diffState) {
+			const currentState = diffState.getTabState(sessionKey);
+			const newState = {
 				availableFiles: newAvailableFiles,
-				activeTabKey: sessionState?.activeTabKey
-			});
+				activeTabKey: currentState.activeTabKey
+			};
+			diffState.setTabState(sessionKey, newState);
+			setSessionState(newState); // Also update local state for immediate re-render
 		} else {
 			setLocalAvailableFiles(newAvailableFiles);
 		}
-	}, [useSessionState, sessionKey, diffState, sessionState]);
+	}, [useSessionState, sessionKey, diffState]);
 
 	const getOpenFile = useCallback((): FileTabPageProps | undefined => {
 		if (activeTabKey) {

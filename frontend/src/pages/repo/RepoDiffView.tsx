@@ -26,7 +26,7 @@ import {
 import { backend } from 'wailsjs/go/models';
 import { StartDiffSession, EndDiffSession, GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useRepoState } from '@/hooks/state/use-repo-state';
 
 interface DiffRouterState {
@@ -521,6 +521,7 @@ const EmptyState = () => (
 export default function RepoDiffView() {
 	const { repoPath } = useCurrentRepoParams();
 	const location = useLocation();
+	const navigate = useNavigate();
 	const routerState = location.state as DiffRouterState | undefined;
 
 	if (!repoPath) {
@@ -534,7 +535,30 @@ export default function RepoDiffView() {
 	const handleCreateDiff = useCallback(async () => {
 		const options = { ...diffOptions.options, repoPath };
 		await diffSessions.createSession(options);
-	}, [diffOptions.options, repoPath, diffSessions]);
+		// Navigate to "no file selected" state when creating a new session
+		navigate('./no-file-selected');
+	}, [diffOptions.options, repoPath, diffSessions, navigate]);
+
+	const handleSessionSelect = useCallback((sessionId: string) => {
+		diffSessions.setSelectedSessionId(sessionId);
+		// Navigate to "no file selected" state when switching sessions
+		navigate('./no-file-selected');
+	}, [diffSessions, navigate]);
+
+	// Get the repo state once at the top level to avoid hook dependency issues
+	const { diffState } = useRepoState(repoPath);
+
+	// Effect to handle path sync when selected session changes
+	useEffect(() => {
+		if (diffSessions.selectedSession) {
+			const tabState = diffState.getTabState(diffSessions.selectedSession.sessionId);
+			
+			// If no tabs are open in the current session, make sure we're on the no-file-selected path
+			if (tabState.availableFiles.length === 0 && !location.pathname.endsWith('no-file-selected')) {
+				navigate('./no-file-selected');
+			}
+		}
+	}, [diffSessions.selectedSession, diffState, location.pathname, navigate]);
 
 	return (
 		<div className="flex flex-col h-full">
@@ -548,7 +572,7 @@ export default function RepoDiffView() {
 			<SessionTabs
 				sessions={diffSessions.sessions}
 				selectedSessionId={diffSessions.selectedSessionId}
-				onSelect={diffSessions.setSelectedSessionId}
+				onSelect={handleSessionSelect}
 				onClose={diffSessions.closeSession}
 			/>
 
