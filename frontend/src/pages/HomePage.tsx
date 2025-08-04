@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { Star, Settings, FolderOpen, FolderGit2 } from 'lucide-react';
+import { Star, Settings, FolderOpen, FolderGit2, FileText } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
 import { useEffect, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
@@ -8,8 +8,9 @@ import { useEffect, useRef, useState, useCallback, useLayoutEffect, memo } from 
 export default function HomePage(props: {
 	onOpenRepo: (repoPath: string) => void;
 	onOpenSettings: () => void;
+	onOpenApplicationLogs: () => void;
 }) {
-	const { onOpenRepo, onOpenSettings } = props;
+	const { onOpenRepo, onOpenSettings, onOpenApplicationLogs } = props;
 	const { appState, refreshAppState } = UseAppState();
 
 	const onOpenRecentRepo = (repoPath: string) => {
@@ -76,6 +77,12 @@ export default function HomePage(props: {
 							<Button variant="link" onClick={onOpenSettings} className="justify-start p-0">
 								<Settings className="h-4 w-4 mr-2" />
 								Settings
+							</Button>
+						</li>
+						<li>
+							<Button variant="link" onClick={onOpenApplicationLogs} className="justify-start p-0">
+								<FileText className="h-4 w-4 mr-2" />
+								Application Logs
 							</Button>
 						</li>
 					</ul>

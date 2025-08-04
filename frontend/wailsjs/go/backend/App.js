@@ -6,6 +6,10 @@ export function CleanupTerminalSession(arg1) {
   return window['go']['backend']['App']['CleanupTerminalSession'](arg1);
 }
 
+export function ClearApplicationLogHistory() {
+  return window['go']['backend']['App']['ClearApplicationLogHistory']();
+}
+
 export function CloseRepo(arg1) {
   return window['go']['backend']['App']['CloseRepo'](arg1);
 }
@@ -16,6 +20,10 @@ export function EndDiffSession(arg1) {
 
 export function GetAppState() {
   return window['go']['backend']['App']['GetAppState']();
+}
+
+export function GetApplicationLogHistory() {
+  return window['go']['backend']['App']['GetApplicationLogHistory']();
 }
 
 export function GetBranches(arg1) {

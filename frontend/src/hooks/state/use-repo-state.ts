@@ -10,37 +10,37 @@ import { backend } from '../../../wailsjs/go/models';
 import { atom, useAtom } from 'jotai';
 
 // Map color schemes to xterm themes
-function getXTermTheme(colorScheme: string) {
+export function getXTermTheme(colorScheme: string) {
 	switch (colorScheme) {
 		case 'dark':
 			return {
 				background: '#1e1e1e',
 				foreground: '#d4d4d4',
-				cursor: '#ffffff',
+				cursor: 'transparent', // Hidden cursor
 			};
 		case 'light':
 			return {
 				background: '#ffffff',
 				foreground: '#000000',
-				cursor: '#000000',
+				cursor: 'transparent',
 			};
 		case 'solarized':
 			return {
 				background: '#002b36',
 				foreground: '#839496',
-				cursor: '#93a1a1',
+				cursor: 'transparent',
 			};
 		case 'monokai':
 			return {
 				background: '#272822',
 				foreground: '#f8f8f2',
-				cursor: '#f8f8f0',
+				cursor: 'transparent',
 			};
 		case 'tomorrow':
 			return {
 				background: '#1d1f21',
 				foreground: '#c5c8c6',
-				cursor: '#aeafad',
+				cursor: 'transparent',
 			};
 		default:
 			return undefined; // Use default xterm theme

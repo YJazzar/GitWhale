@@ -12,6 +12,7 @@ import RepoPage from './pages/repo/RepoPage';
 import { Toaster } from './components/ui/toaster';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
+import ApplicationLogsPage from './pages/ApplicationLogsPage';
 import RepoFileTab from './components/repo-file-tab';
 import { TabProps } from './hooks/state/use-file-manager-state';
 
@@ -72,12 +73,22 @@ function App() {
 		});
 	}, []);
 
+	// Callback to open application logs tab
+	const handleOpenApplicationLogs = useCallback(() => {
+		fileTabRef.current?.openTab({
+			tabKey: '$$logs$$',
+			titleRender: () => <>Application Logs</>,
+			component: <ApplicationLogsPage />,
+			isPermanentlyOpen: true,
+		});
+	}, []);
+
 	// Base application tabs (consistent structure)
 	const initialTabs: TabProps[] = [
 		{
 			tabKey: '$$home$$',
 			titleRender: () => <House className="box-content h-5" />,
-			component: <HomePage onOpenRepo={handleOpenRepo} onOpenSettings={handleOpenSettings} />,
+			component: <HomePage onOpenRepo={handleOpenRepo} onOpenSettings={handleOpenSettings} onOpenApplicationLogs={handleOpenApplicationLogs} />,
 			isPermanentlyOpen: true,
 			preventUserClose: true,
 		},

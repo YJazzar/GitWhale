@@ -5,11 +5,15 @@ import {context} from '../models';
 
 export function CleanupTerminalSession(arg1:string):Promise<void>;
 
+export function ClearApplicationLogHistory():Promise<void>;
+
 export function CloseRepo(arg1:string):Promise<backend.App>;
 
 export function EndDiffSession(arg1:string):Promise<void>;
 
 export function GetAppState():Promise<backend.App>;
+
+export function GetApplicationLogHistory():Promise<Array<backend.LogEntry>>;
 
 export function GetBranches(arg1:string):Promise<Array<backend.GitRef>>;
 
