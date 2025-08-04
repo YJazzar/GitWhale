@@ -33,9 +33,35 @@ type DiffOptions struct {
 	FilePathFilters []string `json:"filePathFilters"` // Optional: specific files/dirs to diff
 }
 
+// Validates that a git ref exists and is valid
+func validateGitRef(repoPath, ref string) error {
+	if ref == "" {
+		return nil // Empty ref is valid (means working tree)
+	}
+
+	// Use git rev-parse to validate the ref
+	cmd := exec.Command("git", "rev-parse", "--verify", ref+"^{commit}")
+	cmd.Dir = repoPath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("invalid git ref '%s': %s", ref, strings.TrimSpace(string(output)))
+	}
+
+	Log.Debug("Validated git ref '%s' in repo %s", ref, repoPath)
+	return nil
+}
+
 // Creates a new diff session with managed temporary directories
 func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 	Log.Info("Creating diff session for repo: %s, from: %s, to: %s", options.RepoPath, options.FromRef, options.ToRef)
+
+	// Validate git refs before proceeding
+	if err := validateGitRef(options.RepoPath, options.FromRef); err != nil {
+		return nil, fmt.Errorf("invalid fromRef: %v", err)
+	}
+	if err := validateGitRef(options.RepoPath, options.ToRef); err != nil {
+		return nil, fmt.Errorf("invalid toRef: %v", err)
+	}
 
 	// Generate unique session ID
 	sessionId := generateSessionId(options)
@@ -62,14 +88,18 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 
 	// Populate the directories with diff content
 	err = getGitDifftoolPathsAndCopy(session)
-
-	// Now it should be safe to load the directory structure for the diff
-	session.DirectoryData = GetDiffSessionDirectory(session)
-
 	if err != nil {
 		// Cleanup on failure
 		CleanupDiffSession(sessionId)
 		return nil, fmt.Errorf("failed to populate diff directories: %v", err)
+	}
+
+	// Now it should be safe to load the directory structure for the diff
+	session.DirectoryData = GetDiffSessionDirectory(session)
+	if session.DirectoryData == nil {
+		// Cleanup on failure
+		CleanupDiffSession(sessionId)
+		return nil, fmt.Errorf("failed to load directory structure for diff session")
 	}
 
 	Log.Info("Created diff session: %s", sessionId)
@@ -260,11 +290,16 @@ func getGitDifftoolPathsAndCopy(session *DiffSession) error {
 
 	Log.Info("Git difftool process started with PID: %d", cmd.Process.Pid)
 
-	// Monitor stderr in a separate goroutine
+	// Monitor stderr in a separate goroutine and collect error messages
+	var stderrOutput []string
+	stderrDone := make(chan struct{})
 	go func() {
+		defer close(stderrDone)
 		stderrScanner := bufio.NewScanner(stderr)
 		for stderrScanner.Scan() {
-			Log.Warning("Git difftool stderr: %s", stderrScanner.Text())
+			line := stderrScanner.Text()
+			stderrOutput = append(stderrOutput, line)
+			Log.Warning("Git difftool stderr: %s", line)
 		}
 	}()
 
@@ -323,11 +358,24 @@ func getGitDifftoolPathsAndCopy(session *DiffSession) error {
 	}
 
 	if !done {
+		// Wait for stderr collection to complete
+		<-stderrDone
+		
 		Log.Error("Script did not send DONE signal. All output received:")
 		for i, line := range allOutput {
 			Log.Error("  Line %d: '%s'", i+1, line)
 		}
-		return fmt.Errorf("script did not complete successfully - DONE signal not received")
+		
+		// Include stderr in error message if available
+		if len(stderrOutput) > 0 {
+			Log.Error("Git difftool stderr output:")
+			for i, line := range stderrOutput {
+				Log.Error("  Stderr %d: '%s'", i+1, line)
+			}
+			return fmt.Errorf("git difftool failed - check that the git references are valid. Error: %s", strings.Join(stderrOutput, "; "))
+		}
+		
+		return fmt.Errorf("script did not complete successfully - DONE signal not received (no stderr output)")
 	}
 
 	if leftDir == "" || rightDir == "" {

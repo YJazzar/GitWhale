@@ -280,12 +280,12 @@ export function CommitDetails({
 														<span
 															className={`px-1.5 py-0.5 rounded text-xs font-mono ${
 																file.status === 'M'
-																	? 'bg-blue-100 text-blue-800'
+																	? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
 																	: file.status === 'A'
-																	? 'bg-green-100 text-green-800'
+																	? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
 																	: file.status === 'D'
-																	? 'bg-red-100 text-red-800'
-																	: 'bg-gray-100 text-gray-800'
+																	? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+																	: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
 															}`}
 														>
 															{file.status}
@@ -294,7 +294,7 @@ export function CommitDetails({
 															{file.path}
 														</span>
 														{file.binaryFile && (
-															<span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+															<span className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 px-1.5 py-0.5 rounded">
 																Binary
 															</span>
 														)}
@@ -567,12 +567,12 @@ export function CommitDetails({
 													<span
 														className={`text-xs px-2 py-1 rounded font-mono ${
 															file.status === 'M'
-																? 'bg-blue-100 text-blue-800'
+																? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
 																: file.status === 'A'
-																? 'bg-green-100 text-green-800'
+																? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
 																: file.status === 'D'
-																? 'bg-red-100 text-red-800'
-																: 'bg-gray-100 text-gray-800'
+																? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+																: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
 														}`}
 													>
 														{file.status}
@@ -581,7 +581,7 @@ export function CommitDetails({
 														{file.path}
 													</span>
 													{file.binaryFile && (
-														<span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+														<span className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 px-2 py-1 rounded">
 															Binary
 														</span>
 													)}

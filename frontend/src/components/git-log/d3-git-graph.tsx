@@ -67,6 +67,11 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 			.attr('viewBox', `0 0 ${graphWidth} ${height}`)
 			.style('flex-shrink', '0');
 
+		// Get theme-aware colors from CSS custom properties
+		const rootStyles = getComputedStyle(document.documentElement);
+		const borderColor = rootStyles.getPropertyValue('--border').trim() || '210 214 220'; // fallback to gray-300
+		const columnLineColor = `hsl(${borderColor})`;
+
 		// Create background lines for each column
 		svg.selectAll('.column-line')
 			.data(Array.from({ length: maxColumn + 1 }, (_, i) => i))
@@ -77,7 +82,7 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 			.attr('y1', 0)
 			.attr('x2', (d: number) => d * COLUMN_WIDTH + 20 + 16)
 			.attr('y2', height)
-			.attr('stroke', '#e5e7eb')
+			.attr('stroke', columnLineColor)
 			.attr('stroke-width', 1)
 			.attr('opacity', 0.3);
 
@@ -151,6 +156,10 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				onCommitClick?.(d.commit.commitHash);
 			});
 
+		// Get theme-aware background color for circle strokes
+		const backgroundColor = rootStyles.getPropertyValue('--background').trim() || '0 0% 100%'; // fallback to white
+		const circleStrokeColor = `hsl(${backgroundColor})`;
+
 		// Add commit circles
 		node.append('circle')
 			.attr('r', (d: GitGraphNode) => {
@@ -161,7 +170,7 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				const parentCount = d.commit.parentCommitHashes.filter((h: string) => h.trim()).length;
 				return parentCount > 1 ? '#fbbf24' : d.color;
 			})
-			.attr('stroke', '#ffffff')
+			.attr('stroke', circleStrokeColor)
 			.attr('stroke-width', 2)
 			.style('filter', 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))')
 			.on('mouseover', function() {
