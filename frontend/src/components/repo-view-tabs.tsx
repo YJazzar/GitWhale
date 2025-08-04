@@ -106,9 +106,6 @@ export function RepoViewTabs({ repoPath, className }: RepoViewTabsProps) {
 		setActiveTabId(tab.id);
 	};
 
-	// Expose API for adding dynamic tabs
-	(window as any).addRepoViewTab = addDynamicTab;
-
 	return (
 		<div className={clsx('h-full w-full flex', className)}>
 			{/* Sidebar */}
