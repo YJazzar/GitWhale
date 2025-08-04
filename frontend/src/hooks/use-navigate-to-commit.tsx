@@ -1,37 +1,38 @@
 import { GitCommit, GitMerge } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { CommitDetails } from '@/components/commit-details';
+import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
+import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
 
 export function useNavigateToCommit(commitHash: string, isMergeCommit: boolean): () => void {
-	// const handleViewFullCommit = () => {
-	// 	// Create a commit object for the details view
-	// 	const commit: backend.GitLogCommitInfo = {
-	// 		commitHash,
-	// 		username: '',
-	// 		userEmail: '',
-	// 		commitTimeStamp: '',
-	// 		authoredTimeStamp: '',
-	// 		parentCommitHashes: [],
-	// 		refs: '',
-	// 		commitMessage: [],
-	// 		shortStat: '',
-	// 	};
+	const sidebar = useSidebarContext();
 
-	// 	// Add dynamic tab via global API
-	// 	const addRepoViewTab = (window as any).addRepoViewTab;
-	// 	if (addRepoViewTab) {
-	// 		addRepoViewTab({
-	// 			id: `commit-${commitHash}`,
-	// 			title: commitHash.slice(0, 7),
-	// 			icon: isMergeCommit ? <GitMerge className="h-4 w-4" /> : <GitCommit className="h-4 w-4" />,
-	// 			component: <CommitDetails commit={commit} onClose={() => {}} />,
-	// 			onClose: () => {
-	// 				console.log(`Closing commit view for ${commitHash}`);
-	// 			},
-	// 		});
-	// 	}
-	// };
+	const handleViewFullCommit = () => {
+		// Check if this commit is already open in the sidebar
+		const existingItems = sidebar.getAllItems();
+		const existingCommit = existingItems.find(item => item.id === `commit-${commitHash}`);
+		
+		if (existingCommit) {
+			// If it already exists, just switch to it
+			sidebar.setActiveItem(`commit-${commitHash}`);
+			return;
+		}
 
-	// return handleViewFullCommit;
-	return () => {}
+		// Create the sidebar item
+		const commitItem: SidebarItemProps = {
+			id: `commit-${commitHash}`,
+			title: commitHash.slice(0, 7),
+			icon: isMergeCommit ? <GitMerge className="h-4 w-4" /> : <GitCommit className="h-4 w-4" />,
+			component: <CommitDetails commitHash={commitHash} />,
+			isDynamic: true,
+			onClose: () => {
+				console.log(`Closing commit view for ${commitHash}`);
+			},
+		};
+
+		// Add the item to the sidebar and set it as active
+		sidebar.addDynamicItem(commitItem);
+	};
+
+	return handleViewFullCommit;
 }

@@ -1,5 +1,4 @@
 import { GitCommit, GitMerge } from 'lucide-react';
-import { useNavigate } from 'react-router';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { cn } from '@/lib/utils';
 import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
@@ -21,8 +20,6 @@ export function CommitHash({
 	showIcon = true,
 	clickable = true
 }: CommitHashProps) {
-	const navigate = useNavigate();
-
 	const displayHash = shortHash ? commitHash.slice(0, 7) : commitHash;
 
     let isMergeCommit = commitHash.length > 1;

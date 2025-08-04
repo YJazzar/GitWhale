@@ -9,18 +9,19 @@ import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 import { GitRefs } from './git-refs';
 
 interface CommitDetailsProps {
-	commit: backend.GitLogCommitInfo;
+	commitHash: string;
+	commit?: backend.GitLogCommitInfo;
 	onClose?: () => void;
 }
 
-export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
-	const commitMessage = Array.isArray(commit.commitMessage)
+export function CommitDetails({ commitHash, commit, onClose }: CommitDetailsProps) {
+	const commitMessage = Array.isArray(commit?.commitMessage)
 		? commit.commitMessage.join('\n')
-		: commit.commitMessage;
+		: commit?.commitMessage;
 
 
-    let isMergeCommit = commit.parentCommitHashes.length > 1;
-    const handleViewFullCommit = useNavigateToCommit(commit.commitHash, isMergeCommit);
+    let isMergeCommit = commit?.parentCommitHashes?.length !== 1;
+    const handleViewFullCommit = useNavigateToCommit(commitHash, isMergeCommit);
 
 	return (
 		<div className="h-full flex flex-col border-t bg-background">
@@ -30,8 +31,8 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 						<CardTitle className="text-lg flex items-center gap-2">
 							<div className="mt-2">
 								<CommitHash
-									commitHash={commit.commitHash}
-									isMerge={commit.parentCommitHashes.length > 1}
+									commitHash={commitHash}
+									isMerge={isMergeCommit}
 								/>
 							</div>
 						</CardTitle>
@@ -60,16 +61,16 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 						<div className="flex items-center gap-2">
 							<User className="w-4 h-4 text-muted-foreground" />
 							<span className="font-medium">Author:</span>
-							<span>{commit.username}</span>
+							<span>{commit?.username}</span>
 						</div>
 
 						{/* Parent Commits */}
-						{commit.parentCommitHashes.length > 0 && (
+						{commit?.parentCommitHashes?.length !== 0 && (
 							<div className="flex items-center gap-2">
 								<Hash className="w-4 h-4 text-muted-foreground" />
 								<span className="font-medium">Parent Commits:</span>
 								<span className="flex items-center gap-2">
-									{commit.parentCommitHashes.map((parentHash, index) => (
+									{commit?.parentCommitHashes.map((parentHash, index) => (
 										<CommitHash
 											key={index}
 											commitHash={parentHash}
@@ -86,13 +87,13 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 						<div className="flex items-center gap-2">
 							<Calendar className="w-4 h-4 text-muted-foreground" />
 							<span className="font-medium">Commit Date:</span>
-							<span>{useUnixTime(commit.commitTimeStamp).toLocaleString()}</span>
+							<span>{useUnixTime(commit?.commitTimeStamp??'0').toLocaleString()}</span>
 						</div>
 
 						<div className="flex items-center gap-2">
 							<Calendar className="w-4 h-4 text-muted-foreground" />
 							<span className="font-medium">Authored Date:</span>
-							<span>{useUnixTime(commit.authoredTimeStamp).toLocaleString()}</span>
+							<span>{useUnixTime(commit?.authoredTimeStamp??'0').toLocaleString()}</span>
 						</div>
 					</div>
 
@@ -107,7 +108,7 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 					</div>
 
 					{/* Refs (branches and tags) */}
-					{commit.refs && commit.refs.trim() !== '' && (
+					{commit?.refs && commit.refs.trim() !== '' && (
 						<div>
 							<h3 className="font-semibold mb-2">Branches & Tags</h3>
 							<GitRefs refs={commit.refs} size="md" showHead={true} />
@@ -115,7 +116,7 @@ export function CommitDetails({ commit, onClose }: CommitDetailsProps) {
 					)}
 
 					{/* File Statistics */}
-					{commit.shortStat && (
+					{commit?.shortStat && (
 						<div>
 							<h3 className="font-semibold mb-2">Changes Summary</h3>
 							<Card>
