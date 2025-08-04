@@ -23,7 +23,7 @@ func main() {
 	// Create an instance of the app structure
 	app := backend.NewApp()
 
-	backend.Log.Debug("Parsed OS Args: '%v'\n", os.Args)
+	backend.Log.Debug("Parsed OS Args: '%v'", os.Args)
 
 	pid := os.Getpid()
 

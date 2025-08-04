@@ -507,7 +507,6 @@ export namespace backend {
 	    timestamp: any;
 	    level: string;
 	    message: string;
-	    id: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LogEntry(source);
@@ -518,7 +517,6 @@ export namespace backend {
 	        this.timestamp = this.convertValues(source["timestamp"], null);
 	        this.level = source["level"];
 	        this.message = source["message"];
-	        this.id = source["id"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

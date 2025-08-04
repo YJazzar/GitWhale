@@ -89,7 +89,7 @@ func (app *App) Shutdown(ctx context.Context) {
 }
 
 func (a *App) GetAppState() *App {
-	Log.Debug("AppState: %v\n", PrettyPrint(a))
+	// Log.Debug("AppState: %v", PrettyPrint(a))
 	return a
 }
 
@@ -249,27 +249,11 @@ func (app *App) ListDiffSessions() []*DiffSession {
 	return sessions
 }
 
-// GetApplicationLogHistory returns buffered log entries for initial load
 func (app *App) GetApplicationLogHistory() []LogEntry {
-	logBuffer.mutex.RLock()
-	defer logBuffer.mutex.RUnlock()
-
-	// Return a copy of the log entries to avoid race conditions
-	entries := make([]LogEntry, len(logBuffer.entries))
-	copy(entries, logBuffer.entries)
-
-	Log.Debug("Retrieved %d log entries from history", len(entries))
+	entries := logBuffer.entries
 	return entries
 }
 
-// ClearApplicationLogHistory clears the log buffer
-func (app *App) ClearApplicationLogHistory() error {
-	logBuffer.mutex.Lock()
-	defer logBuffer.mutex.Unlock()
-
-	previousCount := len(logBuffer.entries)
+func (app *App) ClearApplicationLogHistory() {
 	logBuffer.entries = make([]LogEntry, 0)
-
-	Log.Info("Cleared log history (%d entries)", previousCount)
-	return nil
 }

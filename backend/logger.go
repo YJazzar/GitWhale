@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -25,12 +24,10 @@ type LogEntry struct {
 	Timestamp time.Time `json:"timestamp"`
 	Level     string    `json:"level"`
 	Message   string    `json:"message"`
-	ID        string    `json:"id"`
 }
 
 type LogBuffer struct {
 	entries []LogEntry
-	mutex   sync.RWMutex
 	maxSize int
 }
 
@@ -55,10 +52,6 @@ func levelToString(level LogLevel) string {
 	}
 }
 
-func generateLogID() string {
-	return fmt.Sprintf("log_%d", time.Now().UnixNano())
-}
-
 type Logger struct {
 	ctx context.Context
 }
@@ -77,28 +70,21 @@ func (logger *Logger) setContext(context context.Context) {
 func (logger *Logger) Log(level LogLevel, message string, args ...interface{}) {
 	formattedMessage := fmt.Sprintf(message, args...)
 
-	// Always buffer the log entry
 	entry := LogEntry{
 		Timestamp: time.Now(),
 		Level:     levelToString(level),
 		Message:   formattedMessage,
-		ID:        generateLogID(),
 	}
 
-	logBuffer.mutex.Lock()
 	logBuffer.entries = append(logBuffer.entries, entry)
 	if len(logBuffer.entries) > logBuffer.maxSize {
 		logBuffer.entries = logBuffer.entries[1:] // Remove oldest
 	}
-	logBuffer.mutex.Unlock()
 
-	// Emit event to frontend if context is available
 	if logger.ctx != nil {
 		runtime.EventsEmit(logger.ctx, "log:entry", entry)
-	}
-
-	// Continue with existing Wails logging
-	if logger.ctx == nil {
+	} else {
+		// Continue with existing Wails logging
 		fmt.Printf("[NO CTX DEFINED IN LOGGER]: %v\n", formattedMessage)
 		return
 	}
