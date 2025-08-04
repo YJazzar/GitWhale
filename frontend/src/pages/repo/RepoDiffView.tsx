@@ -26,6 +26,7 @@ import {
 import { backend } from 'wailsjs/go/models';
 import { StartDiffSession, EndDiffSession, GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
 import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useToast } from '@/hooks/use-toast';
 
 interface DiffRouterState {
 	fromRef?: string;
@@ -37,6 +38,7 @@ interface DiffRouterState {
 const useDiffSessions = (repoPath: string) => {
 	const { diffState } = useRepoState(repoPath);
 	const [loading, setLoading] = useState(false);
+	const { toast } = useToast();
 
 	const createSession = async (options: backend.DiffOptions) => {
 		setLoading(true);
@@ -48,6 +50,14 @@ const useDiffSessions = (repoPath: string) => {
 			return session;
 		} catch (error) {
 			console.error('Failed to create diff session:', error);
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+			
+			toast({
+				variant: "destructive",
+				title: "Failed to create diff session",
+				description: errorMessage,
+			});
+			
 			throw error;
 		} finally {
 			setLoading(false);
