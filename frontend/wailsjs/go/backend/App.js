@@ -26,6 +26,10 @@ export function GetDefaultShellCommand() {
   return window['go']['backend']['App']['GetDefaultShellCommand']();
 }
 
+export function GetDetailedCommitInfo(arg1, arg2) {
+  return window['go']['backend']['App']['GetDetailedCommitInfo'](arg1, arg2);
+}
+
 export function GetDiffSession(arg1) {
   return window['go']['backend']['App']['GetDiffSession'](arg1);
 }

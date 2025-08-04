@@ -10,6 +10,7 @@ interface CommitHashProps {
 	shortHash?: boolean;
 	showIcon?: boolean;
 	clickable?: boolean;
+	repoPath?: string; // Optional override for repoPath
 }
 
 export function CommitHash({ 
@@ -18,26 +19,32 @@ export function CommitHash({
 	className,
 	shortHash = false,
 	showIcon = true,
-	clickable = true
+	clickable = true,
+	repoPath: propRepoPath
 }: CommitHashProps) {
+	const { repoPath: contextRepoPath } = useCurrentRepoParams();
 	const displayHash = shortHash ? commitHash.slice(0, 7) : commitHash;
+	
+	// Use provided repoPath or fall back to context repoPath
+	const repoPath = propRepoPath || contextRepoPath || '';
 
-    let isMergeCommit = commitHash.length > 1;
-    const handleViewFullCommit = useNavigateToCommit(commitHash, isMergeCommit);
+    const handleViewFullCommit = useNavigateToCommit(commitHash, repoPath, isMerge);
 
 	const handleClick = () => {
-		if (clickable) {
+		if (clickable && repoPath && repoPath.trim() !== '') {
 			handleViewFullCommit();
 		}
 	};
 
     
 
+	const isActuallyClickable = clickable && repoPath && repoPath.trim() !== '';
+
 	return (
 		<div 
 			className={cn(
 				"flex items-center gap-2",
-				clickable && "cursor-pointer hover:opacity-70 transition-opacity",
+				isActuallyClickable && "cursor-pointer hover:opacity-70 transition-opacity",
 				className
 			)}
 			onClick={handleClick}

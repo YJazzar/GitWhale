@@ -15,6 +15,8 @@ export function GetBranches(arg1:string):Promise<Array<backend.GitRef>>;
 
 export function GetDefaultShellCommand():Promise<string>;
 
+export function GetDetailedCommitInfo(arg1:string,arg2:string):Promise<backend.DetailedCommitInfo>;
+
 export function GetDiffSession(arg1:string):Promise<backend.DiffSession>;
 
 export function GetTags(arg1:string):Promise<Array<backend.GitRef>>;

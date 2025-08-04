@@ -200,6 +200,112 @@ export namespace backend {
 	}
 	
 	
+	export class CommitStats {
+	    filesChanged: number;
+	    linesAdded: number;
+	    linesDeleted: number;
+	    totalLines: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CommitStats(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.filesChanged = source["filesChanged"];
+	        this.linesAdded = source["linesAdded"];
+	        this.linesDeleted = source["linesDeleted"];
+	        this.totalLines = source["totalLines"];
+	    }
+	}
+	export class FileChange {
+	    path: string;
+	    oldPath: string;
+	    status: string;
+	    linesAdded: number;
+	    linesDeleted: number;
+	    binaryFile: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new FileChange(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.oldPath = source["oldPath"];
+	        this.status = source["status"];
+	        this.linesAdded = source["linesAdded"];
+	        this.linesDeleted = source["linesDeleted"];
+	        this.binaryFile = source["binaryFile"];
+	    }
+	}
+	export class DetailedCommitInfo {
+	    commitHash: string;
+	    username: string;
+	    userEmail: string;
+	    commitTimeStamp: string;
+	    authoredTimeStamp: string;
+	    parentCommitHashes: string[];
+	    refs: string;
+	    commitMessage: string[];
+	    shortStat: string;
+	    fullDiff: string;
+	    changedFiles: FileChange[];
+	    commitStats: CommitStats;
+	    authorDate: string;
+	    committerName: string;
+	    committerEmail: string;
+	    gpgSignature: string;
+	    treeHash: string;
+	    commitSize: number;
+	    encoding: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DetailedCommitInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commitHash = source["commitHash"];
+	        this.username = source["username"];
+	        this.userEmail = source["userEmail"];
+	        this.commitTimeStamp = source["commitTimeStamp"];
+	        this.authoredTimeStamp = source["authoredTimeStamp"];
+	        this.parentCommitHashes = source["parentCommitHashes"];
+	        this.refs = source["refs"];
+	        this.commitMessage = source["commitMessage"];
+	        this.shortStat = source["shortStat"];
+	        this.fullDiff = source["fullDiff"];
+	        this.changedFiles = this.convertValues(source["changedFiles"], FileChange);
+	        this.commitStats = this.convertValues(source["commitStats"], CommitStats);
+	        this.authorDate = source["authorDate"];
+	        this.committerName = source["committerName"];
+	        this.committerEmail = source["committerEmail"];
+	        this.gpgSignature = source["gpgSignature"];
+	        this.treeHash = source["treeHash"];
+	        this.commitSize = source["commitSize"];
+	        this.encoding = source["encoding"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DiffOptions {
 	    repoPath: string;
 	    fromRef: string;
@@ -324,6 +430,7 @@ export namespace backend {
 		    return a;
 		}
 	}
+	
 	
 	
 	export class GitLogCommitInfo {

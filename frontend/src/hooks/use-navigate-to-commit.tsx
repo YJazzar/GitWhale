@@ -4,7 +4,7 @@ import { CommitDetails } from '@/components/commit-details';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
 
-export function useNavigateToCommit(commitHash: string, isMergeCommit: boolean): () => void {
+export function useNavigateToCommit(commitHash: string, repoPath: string, isMergeCommit?: boolean): () => void {
 	const sidebar = useSidebarContext();
 
 	const handleViewFullCommit = () => {
@@ -23,7 +23,7 @@ export function useNavigateToCommit(commitHash: string, isMergeCommit: boolean):
 			id: `commit-${commitHash}`,
 			title: commitHash.slice(0, 7),
 			icon: isMergeCommit ? <GitMerge className="h-4 w-4" /> : <GitCommit className="h-4 w-4" />,
-			component: <CommitDetails commitHash={commitHash} />,
+			component: <CommitDetails commitHash={commitHash} repoPath={repoPath} hideViewFullButton={true} />,
 			isDynamic: true,
 			onClose: () => {
 				console.log(`Closing commit view for ${commitHash}`);

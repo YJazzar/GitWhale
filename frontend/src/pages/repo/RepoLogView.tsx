@@ -76,8 +76,10 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 							<ResizableHandle />
 							<ResizablePanel defaultSize={40} minSize={20}>
 								<CommitDetails 
-									commit={logState.selectedCommit}
+									commitHash={logState.selectedCommit.commitHash}
+									repoPath={repoPath}
 									onClose={handleCloseCommitDetails}
+									variant="compact"
 								/>
 							</ResizablePanel>
 						</>
