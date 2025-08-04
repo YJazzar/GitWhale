@@ -6,6 +6,7 @@ import { FileTabs, TabsManagerHandle } from './components/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
+import { Logger } from './utils/logger';
 
 import DirDiffPage from './pages/DirDiffPage';
 import RepoPage from './pages/repo/RepoPage';
@@ -45,7 +46,7 @@ function App() {
 	const handleOpenRepo = useCallback((repoPath: string) => {
 		const fileTabsHandler = fileTabRef.current;
 		if (!fileTabsHandler) {
-			console.error('File tab handler is not initialized');
+			Logger.error('File tab handler is not initialized', 'App');
 			return;
 		}
 

@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUnixTime } from '@/hooks/use-unix-time';
 import { useDetailedCommit } from '@/hooks/use-detailed-commit';
+import { Logger } from '@/utils/logger';
 import {
 	Calendar,
 	ExternalLink,
@@ -126,7 +127,7 @@ export function CommitDetails({
 	const copyToClipboard = (text: string, label: string) => {
 		navigator.clipboard.writeText(text);
 		// You could add a toast notification here
-		console.log(`Copied ${label}: ${text}`);
+		Logger.debug(`Copied ${label}: ${text}`, 'commit-details');
 	};
 
 	// Parse diff content for syntax highlighting

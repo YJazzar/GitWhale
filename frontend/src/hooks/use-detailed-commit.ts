@@ -1,6 +1,7 @@
 import { useQuery } from 'react-query';
 import { GetDetailedCommitInfo } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
+import { Logger } from '../utils/logger';
 
 interface UseDetailedCommitOptions {
 	enabled?: boolean;
@@ -40,7 +41,7 @@ export function useDetailedCommit(
 				const result = await GetDetailedCommitInfo(repoPath, commitHash);
 				return result;
 			} catch (error) {
-				console.error(`Failed to fetch detailed commit info for ${commitHash}:`, error);
+				Logger.error(`Failed to fetch detailed commit info for ${commitHash}: ${error}`, 'use-detailed-commit');
 				throw error;
 			}
 		},

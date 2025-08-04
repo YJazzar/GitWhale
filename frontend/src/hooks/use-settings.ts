@@ -2,6 +2,7 @@ import { DEFAULT_SETTINGS } from '@/types/settings';
 import { UseAppState } from './state/use-app-state';
 import { UpdateSettings } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
+import { Logger } from '../utils/logger';
 
 export function useSettings() {
 	const { appState, refreshAppState } = UseAppState();
@@ -30,7 +31,7 @@ export function useSettings() {
 			await UpdateSettings(updatedSettings);
 			await refreshAppState();
 		} catch (error) {
-			console.error('Failed to save settings to backend:', error);
+			Logger.error(`Failed to save settings to backend: ${error}`, 'use-settings');
 		}
 	};
 
@@ -43,7 +44,7 @@ export function useSettings() {
 			await UpdateSettings(defaultSettings);
 			await refreshAppState();
 		} catch (error) {
-			console.error('Failed to reset settings in backend:', error);
+			Logger.error(`Failed to reset settings in backend: ${error}`, 'use-settings');
 		}
 	};
 

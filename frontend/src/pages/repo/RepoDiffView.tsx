@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Logger } from '@/utils/logger';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -49,7 +50,7 @@ const useDiffSessions = (repoPath: string) => {
 			diffState.setSelectedSessionId(session.sessionId);
 			return session;
 		} catch (error) {
-			console.error('Failed to create diff session:', error);
+			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 			
 			toast({
@@ -77,7 +78,7 @@ const useDiffSessions = (repoPath: string) => {
 				diffState.setSelectedSessionId(newSessions.length > 0 ? newSessions[0].sessionId : null);
 			}
 		} catch (error) {
-			console.error('Failed to close diff session:', error);
+			Logger.error(`Failed to close diff session: ${error}`, 'RepoDiffView');
 			throw error;
 		}
 	};
@@ -110,7 +111,7 @@ const useGitRefs = (repoPath: string) => {
 			setBranches(branchesData || []);
 			setTags(tagsData || []);
 		} catch (error) {
-			console.error('Failed to load refs:', error);
+			Logger.error(`Failed to load refs: ${error}`, 'RepoDiffView');
 		} finally {
 			setLoading(false);
 		}

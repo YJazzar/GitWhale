@@ -8,6 +8,7 @@ import RepoDiffView from '@/pages/repo/RepoDiffView';
 import { Sidebar, SidebarHandle } from '@/components/sidebar';
 import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
 import { SidebarContextProvider } from '@/hooks/state/use-sidebar-context';
+import { Logger } from '@/utils/logger';
 
 export type RepoViewType = 'home' | 'log' | 'diff' | 'terminal';
 
@@ -56,7 +57,7 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 	// Handler for when sidebar items are clicked
 	const handleItemClick = (itemId: string) => {
 		// Additional logic can be added here if needed
-		console.log(`Clicked sidebar item: ${itemId}`);
+		Logger.debug(`Clicked sidebar item: ${itemId}`, 'RepoPage');
 	};
 
 	// Function to add dynamic items (for future use)

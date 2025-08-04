@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Logger } from '@/utils/logger';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -409,7 +410,7 @@ export function GitLogToolbar({
 				tags: tagsData || []
 			});
 		} catch (error) {
-			console.error('Failed to load refs:', error);
+			Logger.error(`Failed to load refs: ${error}`, 'git-log-toolbar');
 		}
 	};
 
@@ -419,7 +420,7 @@ export function GitLogToolbar({
 			await loadRefsData();
 			await loadCommitsWithCurrentOptions();
 		} catch (error) {
-			console.error('Failed to refresh:', error);
+			Logger.error(`Failed to refresh: ${error}`, 'git-log-toolbar');
 		} finally {
 			onLoadingChange(false);
 		}
@@ -432,7 +433,7 @@ export function GitLogToolbar({
 			const commits = await RunGitLogFromRef(repoPath, newRef);
 			onCommitsUpdate(commits);
 		} catch (error) {
-			console.error('Failed to load commits from ref:', error);
+			Logger.error(`Failed to load commits from ref: ${error}`, 'git-log-toolbar');
 		} finally {
 			onLoadingChange(false);
 		}
@@ -453,7 +454,7 @@ export function GitLogToolbar({
 			const commits = await RunGitLogWithOptions(repoPath, options);
 			onCommitsUpdate(commits);
 		} catch (error) {
-			console.error('Failed to load commits with options:', error);
+			Logger.error(`Failed to load commits with options: ${error}`, 'git-log-toolbar');
 		} finally {
 			onLoadingChange(false);
 		}
@@ -470,7 +471,7 @@ export function GitLogToolbar({
 			const commits = await SearchCommits(repoPath, toolbarOptions.searchQuery);
 			onCommitsUpdate(commits);
 		} catch (error) {
-			console.error('Failed to search commits:', error);
+			Logger.error(`Failed to search commits: ${error}`, 'git-log-toolbar');
 		} finally {
 			onLoadingChange(false);
 		}
@@ -485,7 +486,7 @@ export function GitLogToolbar({
 			await loadRefsData(); // Refresh branches/tags after fetch
 			// Show success message or notification here
 		} catch (error) {
-			console.error('Failed to fetch:', error);
+			Logger.error(`Failed to fetch: ${error}`, 'git-log-toolbar');
 			// Show error message or notification here
 		} finally {
 			onLoadingChange(false);

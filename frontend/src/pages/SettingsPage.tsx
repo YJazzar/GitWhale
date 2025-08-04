@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Logger } from '@/utils/logger';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -30,7 +31,9 @@ export default function SettingsPage() {
 	const [defaultShellCommand, setDefaultShellCommand] = useState('');
 
 	useEffect(() => {
-		GetDefaultShellCommand().then(setDefaultShellCommand).catch(console.error);
+		GetDefaultShellCommand().then(setDefaultShellCommand).catch(error => 
+			Logger.error(`Failed to get default shell command: ${error}`, 'SettingsPage')
+		);
 	}, []);
 
 	if (isLoading) {

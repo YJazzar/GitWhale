@@ -8,6 +8,7 @@ import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { CommitDetails } from '@/components/commit-details';
 import { useRepoState } from '@/hooks/state/use-repo-state';
+import { Logger } from '@/utils/logger';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
@@ -25,7 +26,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 			const newLogs = await RunGitLog(repoPath);
 			logState.setLogs(newLogs);
 		} catch (error) {
-			console.error('Failed to load git log:', error);
+			Logger.error(`Failed to load git log: ${error}`, 'RepoLogView');
 		} finally {
 			setLoading(false);
 		}

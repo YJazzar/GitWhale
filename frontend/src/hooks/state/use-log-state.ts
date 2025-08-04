@@ -5,6 +5,7 @@ import { getXTermTheme } from './use-repo-state';
 import { EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
 import { atom, useAtom } from 'jotai';
 import { ClearApplicationLogHistory, GetApplicationLogHistory } from '../../../wailsjs/go/backend/App';
+import { Logger } from '../../utils/logger';
 
 // Map for persistent log terminals - similar to xTermRefMap pattern
 const logTerminalMap = new Map<
@@ -149,7 +150,7 @@ export const useAppLogState = () => {
 	const appendLogEntry = (entry: backend.LogEntry) => {
 		const terminalData = getLogTerminalState();
 		if (!terminalData) {
-			console.warn('No log terminal available to append entry');
+			Logger.warning('No log terminal available to append entry', 'use-log-state');
 			return;
 		}
 
@@ -170,7 +171,7 @@ export const useAppLogState = () => {
 				appendLogEntry(entry);
 			});
 		} catch (error) {
-			console.error('Failed to load log history:', error);
+			Logger.error(`Failed to load log history: ${error}`, 'use-log-state');
 		} finally {
 			setIsLoading(false);
 		}

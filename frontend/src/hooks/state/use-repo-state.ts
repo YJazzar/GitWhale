@@ -8,6 +8,7 @@ import {
 import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
 import { backend } from '../../../wailsjs/go/models';
 import { atom, useAtom } from 'jotai';
+import { Logger } from '../../utils/logger';
 
 // Map color schemes to xterm themes
 export function getXTermTheme(colorScheme: string) {
@@ -106,7 +107,7 @@ function getTerminalState(repoPath: string) {
 		// Dispose existing terminal if it exists (prevents memory leaks)
 		const existingTerminal = xTermRefMap.get(repoPath);
 		if (existingTerminal && !existingTerminal.isDisposed) {
-			console.log('Disposing existing terminal before creating new one for:', repoPath);
+			Logger.debug('Disposing existing terminal before creating new one', 'use-repo-state');
 			existingTerminal.terminal.dispose();
 			EventsOff(`onTerminalDataReturned://${repoPath}`);
 		}
@@ -124,11 +125,11 @@ function getTerminalState(repoPath: string) {
 	const disposeTerminal = () => {
 		const terminalData = xTermRefMap.get(repoPath);
 		if (!terminalData || terminalData.isDisposed) {
-			console.log("Terminal already disposed or doesn't exist for repo:", repoPath);
+			Logger.debug("Terminal already disposed or doesn't exist for repo: " + repoPath, 'use-repo-state');
 			return;
 		}
 
-		console.log("Disposing terminal for repo:", repoPath);
+		Logger.debug("Disposing terminal for repo: " + repoPath, 'use-repo-state');
 		
 		// Mark as disposed first to prevent double disposal
 		terminalData.isDisposed = true;
@@ -141,7 +142,7 @@ function getTerminalState(repoPath: string) {
 		
 		// Clean up backend terminal session
 		CleanupTerminalSession(repoPath).catch(err => 
-			console.warn('Failed to cleanup backend terminal session for', repoPath, err)
+			Logger.warning(`Failed to cleanup backend terminal session for ${repoPath}: ${err}`, 'use-repo-state')
 		);
 		
 		// Remove from map to free memory
@@ -164,7 +165,7 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 	EventsOn(`onTerminalDataReturned://${repoPath}`, (event: string) => {
 		const terminalData = xTermRefMap.get(repoPath);
 		if (!terminalData || terminalData.isDisposed) {
-			console.warn('Received terminal data for disposed terminal:', repoPath);
+			Logger.warning('Received terminal data for disposed terminal: ' + repoPath, 'use-repo-state');
 			return;
 		}
 
@@ -173,7 +174,7 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 			terminal.write(stringData);
 			terminal.scrollToBottom();
 		} catch (error) {
-			console.error('Error writing to terminal for repo', repoPath, error);
+			Logger.error(`Error writing to terminal for repo ${repoPath}: ${error}`, 'use-repo-state');
 		}
 	});
 
@@ -190,7 +191,7 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 		if (!terminalData || terminalData.isDisposed) {
 			return;
 		}
-		console.log(event);
+		Logger.trace(`Terminal input data: ${event}`, 'use-repo-state');
 		EventsEmit(`onTerminalData://${repoPath}`, event);
 	});
 
@@ -198,7 +199,7 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 		await InitNewTerminalSession(repoPath);
 		terminal.write('\n');
 	} catch (error) {
-		console.error('Failed to initialize terminal session for repo', repoPath, error);
+		Logger.error(`Failed to initialize terminal session for repo ${repoPath}: ${error}`, 'use-repo-state');
 	}
 }
 
