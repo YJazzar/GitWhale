@@ -1,12 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { OpenNewRepo, RunGitLog } from '../../../wailsjs/go/backend/App';
 import { useState } from 'react';
-import { useParams } from 'react-router';
 import { backend } from 'wailsjs/go/models';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 
-export default function RepoHomeView() {
-	const { repoPath } = useCurrentRepoParams();
+export default function RepoHomeView({ repoPath }: { repoPath: string }) {
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 
 	if (!repoPath) {

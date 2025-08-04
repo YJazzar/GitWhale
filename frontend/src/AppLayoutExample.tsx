@@ -13,7 +13,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 	useSidebar,
-} from '@/components/ui/sidebar';
+} from '@/components/ui/__sidebar__do_not_use';
 import { Toaster } from '@/components/ui/toaster';
 import { House } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';

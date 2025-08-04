@@ -1,9 +1,6 @@
 import XTermWrapper from '@/components/xterm-wrapper';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 
-export default function RepoTerminalView() {
-	const { repoPath } = useCurrentRepoParams();
-
+export default function RepoTerminalView({ repoPath }: { repoPath: string }) {
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoTerminalView when there's no repo provided?</>;
 	}

@@ -1,12 +1,12 @@
-import React, { useMemo, useRef, useEffect } from 'react';
-import FileDiffView from '@/components/file-diff-view';
-import { FileTabPageProps, FileTabs, FileTabsHandle } from '@/components/file-tabs';
+import FileDiffView, { FileDiffViewProps } from '@/components/file-diff-view';
+import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { Outlet, useParams } from 'react-router';
-import { backend } from '../../wailsjs/go/models';
 import { useRepoState } from '@/hooks/state/use-repo-state';
 import { useCurrentRepoParams } from '@/hooks/use-current-repo';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { backend } from '../../wailsjs/go/models';
+import { TabProps } from '@/hooks/state/use-file-manager-state';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
@@ -15,7 +15,8 @@ const getFileKey = (file: backend.FileInfo) => {
 export function DirDiffViewer() {
 	const { repoPath } = useCurrentRepoParams();
 	const { diffState } = useRepoState(repoPath);
-	const fileTabRef = useRef<FileTabsHandle>(null);
+	const fileTabRef = useRef<TabsManagerHandle>(null);
+	const [activeFileKey, setActiveFileKey] = useState<string>('');
 
 	// Get directory data from the selected diff session
 	const selectedSession = useMemo(() => {
@@ -47,12 +48,23 @@ export function DirDiffViewer() {
 		return map;
 	}, [directoryData]);
 
-	// Store fileInfoMap in state for FileDiffViewWrapper to access
+	// Store fileInfoMap in state for components to access
 	useEffect(() => {
 		if (diffState.fileInfoMap !== fileInfoMap) {
 			diffState.setFileInfoMap(fileInfoMap);
 		}
 	}, [fileInfoMap, diffState]);
+
+	// Get active tab key from session state
+	const sessionActiveTabKey = useMemo(() => {
+		if (!selectedSession) return undefined;
+		const sessionTabState = diffState.getTabState(selectedSession.sessionId);
+		return sessionTabState.activeTabKey;
+	}, [selectedSession, diffState]);
+
+	const handleTabChange = useCallback((tabKey: string) => {
+		setActiveFileKey(tabKey);
+	}, []);
 
 	if (!directoryData) {
 		return (
@@ -70,7 +82,7 @@ export function DirDiffViewer() {
 				{/* Left pane that contains the file structure */}
 				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
 					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
-						<FileTree fileTreeRef={fileTabRef} directoryData={directoryData} />
+						<FileTree tabManagerHandler={fileTabRef} directoryData={directoryData} />
 					</div>
 				</ResizablePanel>
 
@@ -81,14 +93,8 @@ export function DirDiffViewer() {
 					<div className="grow h-full flex flex-col min-h-0">
 						<FileTabs
 							ref={fileTabRef}
-							defaultTabKey=""
-							initialPages={[]}
-							noTabSelectedPath="./no-file-selected"
-							sessionKey={selectedSession?.sessionId}
-							repoPath={repoPath}
-							routerConfig={() => {
-								return <Outlet />;
-							}}
+							initialTabs={[]}
+							fileTabManageSessionKey={`diff-session-${repoPath}`}
 						/>
 					</div>
 				</ResizablePanel>
@@ -107,50 +113,29 @@ export function NoFileSelected() {
 	);
 }
 
-// Gets the file to render from react-router, and renders the actual diff view
-export function FileDiffViewWrapper() {
-	const { repoPath } = useCurrentRepoParams();
-	const { diffState } = useRepoState(repoPath);
-	const { tabKey } = useParams();
-
-	const fileInfo = useMemo(() => {
-		if (!tabKey) {
-			return undefined;
-		}
-
-		const fileInfoMap = diffState.fileInfoMap;
-		if (!fileInfoMap) {
-			return undefined;
-		}
-
-		return fileInfoMap.get(atob(tabKey));
-	}, [tabKey, diffState.fileInfoMap]);
-
-	if (!fileInfo) {
-		return (
-			<div className="w-full h-full grid place-content-center text-muted-foreground">
-				No file was selected
-			</div>
-		);
-	}
-
-	return <FileDiffView file={fileInfo} />;
-}
-
-function FileTree(props: { fileTreeRef: React.RefObject<FileTabsHandle>; directoryData: backend.Directory }) {
-	const { directoryData } = props;
+function FileTree(props: {
+	tabManagerHandler: React.RefObject<TabsManagerHandle>;
+	directoryData: backend.Directory;
+}) {
+	const { directoryData, tabManagerHandler } = props;
 
 	const onOpenFile = (file: backend.FileInfo, keepFileOpen: boolean) => {
 		const tabKey = getFileKey(file);
-		let fileToOpen: FileTabPageProps = {
+
+		const fileDiffViewProps: FileDiffViewProps = {
+			file,
+		};
+
+		let fileToOpen: TabProps = {
 			tabKey: tabKey,
 			titleRender: () => <>{file.Name}</>,
+			component: <FileDiffView file={file}/>,
 			isPermanentlyOpen: keepFileOpen,
-			linkPath: `./${btoa(tabKey)}`,
 		};
-		props.fileTreeRef.current?.openFile(fileToOpen);
+
+		tabManagerHandler.current?.openTab(fileToOpen);
 		if (keepFileOpen) {
-			props.fileTreeRef.current?.setFilePermaOpen(fileToOpen);
+			tabManagerHandler.current?.setTabPermaOpen(fileToOpen);
 		}
 	};
 

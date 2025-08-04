@@ -1,15 +1,15 @@
-import { FileTabsHandle } from '@/components/file-tabs';
 import { Button } from '@/components/ui/button';
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { Star, Settings, FolderOpen, FolderGit2 } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
-import { useRepoState } from '@/hooks/state/use-repo-state';
-import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
-import RepoFileTab from '@/components/repo-file-tab';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
 
-export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHandle> }) {
-	const { fileTabRef } = props;
+export default function HomePage(props: {
+	onOpenRepo: (repoPath: string) => void;
+	onOpenSettings: () => void;
+}) {
+	const { onOpenRepo, onOpenSettings } = props;
 	const { appState, refreshAppState } = UseAppState();
 
 	const onOpenRecentRepo = (repoPath: string) => {
@@ -17,13 +17,13 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 			return;
 		}
 
-		switchToRepo(appState, repoPath);
+		onOpenRepo(repoPath);
 	};
 
 	const onOpenNewRepo = async () => {
 		const newRepoPath = await OpenNewRepo();
-		const newAppState = await refreshAppState();
-		switchToRepo(newAppState, newRepoPath);
+		await refreshAppState();
+		onOpenRepo(newRepoPath);
 	};
 
 	const onToggleStar = async (repoPath: string) => {
@@ -31,42 +31,8 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 		await refreshAppState();
 	};
 
-	const onOpenSettings = () => {
-		fileTabRef.current?.openFile({
-			linkPath: 'settings',
-			tabKey: 'settings',
-			preventUserClose: false,
-			isPermanentlyOpen: true,
-			titleRender: () => (
-				<div className="flex items-center gap-2">
-					<Settings className="h-4 w-4" />
-					Settings
-				</div>
-			),
-		});
-	};
-
-	/**
-	 * Open a repository tab and wire up its close-handler.  The important part
-	 * is that the handler grabs `setRepoToCleanup` from the ref so it always
-	 * sees the latest version, even after HomePage has re-rendered or
-	 * re-mounted.
-	 */
-	const switchToRepo = (appState: backend.App, repoPath: string) => {
-		fileTabRef.current?.openFile({
-			linkPath: `repo/${btoa(repoPath)}`,
-			tabKey: repoPath,
-			preventUserClose: false,
-			isPermanentlyOpen: true,
-			onTabClose: () => {},
-			titleRender: () => {
-				return <RepoFileTab repoPath={repoPath} />;
-			},
-		});
-	};
-
-	/** Small presentational component for each repo row **/
-	const RepoEntry = ({ repoPath, isStarred }: { repoPath: string; isStarred: boolean }) => (
+	// Memoized RepoEntry component to prevent unnecessary re-renders
+	const RepoEntry = memo(({ repoPath, isStarred }: { repoPath: string; isStarred: boolean }) => (
 		<div className="flex items-center">
 			{/* Star button */}
 			<Button variant="ghost" size="sm" onClick={() => onToggleStar(repoPath)} className="h-4 w-4">
@@ -87,7 +53,7 @@ export default function HomePage(props: { fileTabRef: React.RefObject<FileTabsHa
 				{repoPath}
 			</Button>
 		</div>
-	);
+	));
 
 	// Separate starred and non-starred repos for display
 	const starredRepos = appState?.appConfig?.starredGitRepos ?? [];

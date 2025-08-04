@@ -25,8 +25,6 @@ import {
 } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { StartDiffSession, EndDiffSession, GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
-import { useLocation, useNavigate } from 'react-router';
 import { useRepoState } from '@/hooks/state/use-repo-state';
 
 interface DiffRouterState {
@@ -117,13 +115,13 @@ const useGitRefs = (repoPath: string) => {
 	return { branches, tags, allRefs, loading, loadRefs };
 };
 
-const useDiffOptions = (repoPath: string, routerState?: DiffRouterState) => {
+const useDiffOptions = (repoPath: string) => {
 	const { diffState } = useRepoState(repoPath);
 
-	// Initialize from router state or existing atom state
+	// Initialize from existing atom state
 	const currentOptions = diffState.options;
-	const fromRef = routerState?.fromRef || currentOptions.fromRef;
-	const toRef = routerState?.toRef || currentOptions.toRef;
+	const fromRef = currentOptions.fromRef;
+	const toRef = currentOptions.toRef;
 	const showAdvanced = currentOptions.showAdvanced;
 	const filePathFilters = currentOptions.filePathFilters;
 
@@ -518,47 +516,23 @@ const EmptyState = () => (
 	</div>
 );
 
-export default function RepoDiffView() {
-	const { repoPath } = useCurrentRepoParams();
-	const location = useLocation();
-	const navigate = useNavigate();
-	const routerState = location.state as DiffRouterState | undefined;
-
+export default function RepoDiffView({ repoPath }: { repoPath: string }) {
 	if (!repoPath) {
 		return <div>Error: No repository path provided</div>;
 	}
 
 	const diffSessions = useDiffSessions(repoPath);
 	const gitRefs = useGitRefs(repoPath);
-	const diffOptions = useDiffOptions(repoPath, routerState);
+	const diffOptions = useDiffOptions(repoPath);
 
 	const handleCreateDiff = useCallback(async () => {
 		const options = { ...diffOptions.options, repoPath };
 		await diffSessions.createSession(options);
-		// Navigate to "no file selected" state when creating a new session
-		navigate('./no-file-selected');
-	}, [diffOptions.options, repoPath, diffSessions, navigate]);
+	}, [diffOptions.options, repoPath, diffSessions]);
 
 	const handleSessionSelect = useCallback((sessionId: string) => {
 		diffSessions.setSelectedSessionId(sessionId);
-		// Navigate to "no file selected" state when switching sessions
-		navigate('./no-file-selected');
-	}, [diffSessions, navigate]);
-
-	// Get the repo state once at the top level to avoid hook dependency issues
-	const { diffState } = useRepoState(repoPath);
-
-	// Effect to handle path sync when selected session changes
-	useEffect(() => {
-		if (diffSessions.selectedSession) {
-			const tabState = diffState.getTabState(diffSessions.selectedSession.sessionId);
-			
-			// If no tabs are open in the current session, make sure we're on the no-file-selected path
-			if (tabState.availableFiles.length === 0 && !location.pathname.endsWith('no-file-selected')) {
-				navigate('./no-file-selected');
-			}
-		}
-	}, [diffSessions.selectedSession, diffState, location.pathname, navigate]);
+	}, [diffSessions]);
 
 	return (
 		<div className="flex flex-col h-full">

@@ -7,13 +7,9 @@ import { RunGitLog } from '../../../wailsjs/go/backend/App';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { CommitDetails } from '@/components/commit-details';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
-import { useNavigate } from 'react-router';
 import { useRepoState } from '@/hooks/state/use-repo-state';
 
-export default function RepoLogView() {
-	const { encodedRepoPath, repoPath } = useCurrentRepoParams();
-	const navigate = useNavigate();
+export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
 	const [loading, setLoading] = useState(false);
 

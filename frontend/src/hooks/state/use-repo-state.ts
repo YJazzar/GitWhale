@@ -227,7 +227,8 @@ const fileTabStateAtom = atom<Map<string, Map<string, {
 	availableFiles: Array<{
 		tabKey: string;
 		titleRender: () => JSX.Element;
-		linkPath: any; // Use any to avoid circular dependency with react-router's To type
+		component: React.ComponentType<any>;
+		componentProps?: any;
 		preventUserClose?: boolean;
 		isPermanentlyOpen?: boolean;
 		onTabClose?: () => void;
@@ -309,7 +310,8 @@ function getDiffState(repoPath: string) {
 			availableFiles: Array<{
 				tabKey: string;
 				titleRender: () => JSX.Element;
-				linkPath: any;
+				component: React.ComponentType<any>;
+				componentProps?: any;
 				preventUserClose?: boolean;
 				isPermanentlyOpen?: boolean;
 				onTabClose?: () => void;
