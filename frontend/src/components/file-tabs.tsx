@@ -91,9 +91,6 @@ function useFileTabsOperations(state: ReturnType<typeof useFileManagerState>) {
 export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((props, ref) => {
 	const { fileTabManageSessionKey, initialTabs, defaultTabKey } = props;
 
-	// Store refs for each tab to preserve scroll position
-	const tabRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-
 	const state = useFileManagerState(fileTabManageSessionKey, initialTabs, defaultTabKey);
 	const operations = useFileTabsOperations(state);
 

@@ -115,7 +115,7 @@ export function useFileManagerState(
 
 	useEffect(() => {
 		// Copy all initial tabs into the state
-		if (!openTabs.length && initialTabs.length > 0) {
+		if (!openTabs.length) {
 			setOpenTabs(initialTabs);
 		}
 
@@ -127,7 +127,7 @@ export function useFileManagerState(
 			}
 			setActiveTabKey(initialTabKeyToOpen);
 		}
-	}, [openTabs.length, initialTabs, defaultTabKey, activeTabKey, setActiveTabKey, setOpenTabs]);
+	}, []);
 
 	return {
 		activeTab,
