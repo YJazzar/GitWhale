@@ -1,14 +1,15 @@
+import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
+import { atom, useAtom } from 'jotai';
 import {
 	CleanupTerminalSession,
 	InitNewTerminalSession,
 	OnTerminalSessionWasResized,
 } from '../../../wailsjs/go/backend/App';
-import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
 import { backend } from '../../../wailsjs/go/models';
-import { atom, useAtom } from 'jotai';
 import { Logger } from '../../utils/logger';
+import { useFileManagerStatesCleanup } from './use-file-manager-state';
 
 // Map color schemes to xterm themes
 export function getXTermTheme(colorScheme: string) {
@@ -238,28 +239,6 @@ const diffOptionsAtom = atom<
 	>
 >(new Map());
 
-// Store file tab state per repository path and session ID
-const fileTabStateAtom = atom<
-	Map<
-		string,
-		Map<
-			string,
-			{
-				availableFiles: Array<{
-					tabKey: string;
-					titleRender: () => JSX.Element;
-					component: React.ComponentType<any>;
-					componentProps?: any;
-					preventUserClose?: boolean;
-					isPermanentlyOpen?: boolean;
-					onTabClose?: () => void;
-				}>;
-				activeTabKey: string | undefined;
-			}
-		>
-	>
->(new Map());
-
 // MARK: Diff state management functions
 
 function getDiffState(repoPath: string) {
@@ -267,11 +246,14 @@ function getDiffState(repoPath: string) {
 	const [selectedSessions, setSelectedSessions] = useAtom(selectedDiffSessionAtom);
 	const [fileInfoMaps, setFileInfoMaps] = useAtom(fileInfoMapAtom);
 	const [diffOptions, setDiffOptionsMap] = useAtom(diffOptionsAtom);
-	const [fileTabStates, setFileTabStates] = useAtom(fileTabStateAtom);
 
 	// Get selected session ID for this repo
+	const repoDiffSessions = diffSessions.get(repoPath)
 	const selectedSessionId = selectedSessions.get(repoPath) || null;
-	const selectedSession = diffSessions.get(repoPath)?.find((s) => s.sessionId === selectedSessionId);
+	const selectedSession = repoDiffSessions?.find((s) => s.sessionId === selectedSessionId);
+
+	const repoDiffSessionIds = repoDiffSessions?.map(session => session.sessionId) ?? []
+	const { cleanupFileManagerStates } = useFileManagerStatesCleanup(repoDiffSessionIds);
 
 	return {
 		// Get current sessions for this repo
@@ -324,41 +306,6 @@ function getDiffState(repoPath: string) {
 			setDiffOptionsMap(newMap);
 		},
 
-		// Get tab state for a specific session
-		getTabState: (sessionId: string) => {
-			const repoTabStates = fileTabStates.get(repoPath);
-			if (!repoTabStates) {
-				return { availableFiles: [], activeTabKey: undefined };
-			}
-			return repoTabStates.get(sessionId) || { availableFiles: [], activeTabKey: undefined };
-		},
-
-		// Set tab state for a specific session
-		setTabState: (
-			sessionId: string,
-			tabState: {
-				availableFiles: Array<{
-					tabKey: string;
-					titleRender: () => JSX.Element;
-					component: React.ComponentType<any>;
-					componentProps?: any;
-					preventUserClose?: boolean;
-					isPermanentlyOpen?: boolean;
-					onTabClose?: () => void;
-				}>;
-				activeTabKey: string | undefined;
-			}
-		) => {
-			const newFileTabStates = new Map(fileTabStates);
-			let repoTabStates = newFileTabStates.get(repoPath);
-			if (!repoTabStates) {
-				repoTabStates = new Map();
-				newFileTabStates.set(repoPath, repoTabStates);
-			}
-			repoTabStates.set(sessionId, tabState);
-			setFileTabStates(newFileTabStates);
-		},
-
 		// Clear all diff state for this repo
 		disposeSessions: () => {
 			const newSessionsMap = new Map(diffSessions);
@@ -377,9 +324,7 @@ function getDiffState(repoPath: string) {
 			newOptionsMap.delete(repoPath);
 			setDiffOptionsMap(newOptionsMap);
 
-			const newFileTabStatesMap = new Map(fileTabStates);
-			newFileTabStatesMap.delete(repoPath);
-			setFileTabStates(newFileTabStatesMap);
+			cleanupFileManagerStates()
 		},
 	};
 }

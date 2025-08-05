@@ -47,6 +47,34 @@ export type FileTabManagerProps = {
 const activeTabKeyAtom = atom<Map<FileTabManagerSessionKey, TabKey>>(new Map());
 const openTabsAtom = atom<Map<FileTabManagerSessionKey, TabProps[]>>(new Map());
 
+export function useFileManagerStatesCleanup(fileTabManageSessionKeys: FileTabManagerSessionKey[]) {
+	const [activeTabMap, setActiveTabMap] = useAtom(activeTabKeyAtom);
+	const [openTabsMap, setOpenTabsMap] = useAtom(openTabsAtom);
+
+	const removeActiveTabKey = useCallback(() => {
+		setActiveTabMap((prevMap) => {
+			const newMap = new Map(prevMap);
+			fileTabManageSessionKeys.forEach((key) => newMap.delete(key));
+			return newMap;
+		});
+	}, [fileTabManageSessionKeys, setActiveTabMap]);
+
+	const removeOpenTabs = useCallback(() => {
+		setOpenTabsMap((prevMap) => {
+			const newMap = new Map(prevMap);
+			fileTabManageSessionKeys.forEach((key) => newMap.delete(key));
+			return newMap;
+		});
+	}, [fileTabManageSessionKeys, setOpenTabsMap]);
+
+	return {
+		cleanupFileManagerStates: () => {
+			removeActiveTabKey();
+			removeOpenTabs();
+		},
+	};
+}
+
 export function useFileManagerState(
 	fileTabManageSessionKey: FileTabManagerSessionKey,
 	initialTabs: TabProps[],
@@ -56,26 +84,32 @@ export function useFileManagerState(
 	const [openTabsMap, setOpenTabsMap] = useAtom(openTabsAtom);
 
 	const activeTabKey = activeTabMap.get(fileTabManageSessionKey);
-	const setActiveTabKey = useCallback((tabKey: TabKey | undefined) => {
-		setActiveTabMap(prevMap => {
-			const newMap = new Map(prevMap);
-			if (tabKey === undefined) {
-				newMap.delete(fileTabManageSessionKey);
-			} else {
-				newMap.set(fileTabManageSessionKey, tabKey);
-			}
-			return newMap;
-		});
-	}, [fileTabManageSessionKey, setActiveTabMap]);
+	const setActiveTabKey = useCallback(
+		(tabKey: TabKey | undefined) => {
+			setActiveTabMap((prevMap) => {
+				const newMap = new Map(prevMap);
+				if (tabKey === undefined) {
+					newMap.delete(fileTabManageSessionKey);
+				} else {
+					newMap.set(fileTabManageSessionKey, tabKey);
+				}
+				return newMap;
+			});
+		},
+		[fileTabManageSessionKey, setActiveTabMap]
+	);
 
 	const openTabs = openTabsMap.get(fileTabManageSessionKey) || [];
-	const setOpenTabs = useCallback((tabs: TabProps[]) => {
-		setOpenTabsMap(prevMap => {
-			const newMap = new Map(prevMap);
-			newMap.set(fileTabManageSessionKey, tabs);
-			return newMap;
-		});
-	}, [fileTabManageSessionKey, setOpenTabsMap]);
+	const setOpenTabs = useCallback(
+		(tabs: TabProps[]) => {
+			setOpenTabsMap((prevMap) => {
+				const newMap = new Map(prevMap);
+				newMap.set(fileTabManageSessionKey, tabs);
+				return newMap;
+			});
+		},
+		[fileTabManageSessionKey, setOpenTabsMap]
+	);
 
 	const activeTab = openTabs.find((tab) => tab.tabKey === activeTabKey);
 
@@ -85,7 +119,7 @@ export function useFileManagerState(
 			setOpenTabs(initialTabs);
 		}
 
-		// Figure out a default tab 
+		// Figure out a default tab
 		if (!activeTabKey) {
 			let initialTabKeyToOpen = defaultTabKey;
 			if (!initialTabKeyToOpen && initialTabs.length > 0) {
@@ -93,7 +127,6 @@ export function useFileManagerState(
 			}
 			setActiveTabKey(initialTabKeyToOpen);
 		}
-
 	}, [openTabs.length, initialTabs, defaultTabKey, activeTabKey, setActiveTabKey, setOpenTabs]);
 
 	return {

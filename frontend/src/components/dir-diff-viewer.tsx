@@ -19,6 +19,9 @@ export function DirDiffViewer(props: { repoPath: string }) {
 
 	const directoryData = diffState.selectedSession?.directoryData || null;
 
+	// Force FileTabs to remount when session changes by using session ID as key
+	const sessionKey = diffState.selectedSessionId || 'none';
+
 	const fileInfoMap = useMemo(() => {
 		const map: Map<string, backend.FileInfo> = new Map();
 
@@ -73,9 +76,10 @@ export function DirDiffViewer(props: { repoPath: string }) {
 				<ResizablePanel id="diff-content-panel">
 					<div className="grow h-full flex flex-col min-h-0">
 						<FileTabs
+							key={sessionKey}
 							ref={fileTabRef}
 							initialTabs={[]}
-							fileTabManageSessionKey={`diff-session-${repoPath}`}
+							fileTabManageSessionKey={`diff-session-${sessionKey}`}
 						/>
 					</div>
 				</ResizablePanel>

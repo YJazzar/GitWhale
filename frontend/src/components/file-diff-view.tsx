@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
 import { ReadFile } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
@@ -82,8 +82,47 @@ export default function FileDiffView(props: FileDiffViewProps) {
 
 	const editorDivRef = useRef<HTMLDivElement>(null);
 	const [editor, setEditor] = useState<monaco.editor.IStandaloneDiffEditor | undefined>(undefined);
+	const [isVisible, setIsVisible] = useState(false);
 
 	const monacoModel = useMonacoDiffModel(file);
+
+	// Function to trigger editor layout when component becomes visible
+	const triggerLayout = useCallback(() => {
+		if (editor) {
+			// Small delay to ensure DOM is ready
+			setTimeout(() => {
+				editor.layout();
+			}, 10);
+		}
+	}, [editor]);
+
+	// Intersection Observer to detect when component becomes visible
+	useEffect(() => {
+		if (!editorDivRef.current) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const entry = entries[0];
+				if (entry.isIntersecting !== isVisible) {
+					setIsVisible(entry.isIntersecting);
+				}
+			},
+			{ threshold: 0.1 }
+		);
+
+		observer.observe(editorDivRef.current);
+
+		return () => {
+			observer.disconnect();
+		};
+	}, [isVisible]);
+
+	// Trigger layout when component becomes visible
+	useEffect(() => {
+		if (isVisible) {
+			triggerLayout();
+		}
+	}, [isVisible, triggerLayout]);
 
 	useEffect(() => {
 		if (editor || !editorDivRef.current) {
@@ -114,7 +153,10 @@ export default function FileDiffView(props: FileDiffViewProps) {
 			original: monacoModel.originalModel,
 			modified: monacoModel.modifiedModel,
 		});
-	}, [editor, monacoModel]);
+
+		// Trigger layout after setting models to ensure proper rendering
+		triggerLayout();
+	}, [editor, monacoModel, triggerLayout]);
 
 	return (
 		<div className="h-full w-full">
