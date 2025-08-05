@@ -320,9 +320,20 @@ func getGitDifftoolPathsAndCopy(session *DiffSession) error {
 	}()
 
 	// Run git difftool with our configured tool
-	cmd := exec.CommandContext(ctx, "git", "difftool", "-d", "--tool="+tempToolName, "--no-prompt", hash1, hash2)
+	// Build command args conditionally - if hash2 is empty, compare with working tree
+	var cmdArgs []string
+	if hash2 == "" {
+		// Compare with working tree (no second ref needed)
+		cmdArgs = []string{"difftool", "-d", "--tool=" + tempToolName, "--no-prompt", hash1}
+		Log.Info("Running git difftool in repo: %s with refs: %s -> working tree", repoPath, hash1)
+	} else {
+		// Compare two refs
+		cmdArgs = []string{"difftool", "-d", "--tool=" + tempToolName, "--no-prompt", hash1, hash2}
+		Log.Info("Running git difftool in repo: %s with refs: %s -> %s", repoPath, hash1, hash2)
+	}
+	
+	cmd := exec.CommandContext(ctx, "git", cmdArgs...)
 	cmd.Dir = repoPath // Set working directory to repo
-	Log.Info("Running git difftool in repo: %s with refs: %s -> %s", repoPath, hash1, hash2)
 
 	// Get both stdout and stderr pipes to monitor the process
 	stdout, err := cmd.StdoutPipe()
