@@ -2,11 +2,10 @@ import FileDiffView, { FileDiffViewProps } from '@/components/file-diff-view';
 import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useRepoState } from '@/hooks/state/use-repo-state';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { backend } from '../../wailsjs/go/models';
 import { TabProps } from '@/hooks/state/use-file-manager-state';
-import Logger from '@/utils/logger';
+import { useRepoState } from '@/hooks/state/use-repo-state';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { backend } from '../../wailsjs/go/models';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
@@ -88,17 +87,8 @@ export function DirDiffViewer(props: { repoPath: string }) {
 	);
 }
 
-export function NoFileSelected() {
-	return (
-		<div className="w-full h-full grid place-content-center">
-			<div className="text-center text-muted-foreground">
-				<p>Select a file to view diff</p>
-			</div>
-		</div>
-	);
-}
-
-function FileTree(props: {
+// TODO: generalize and move this to it's own file?
+export function FileTree(props: {
 	tabManagerHandler: React.RefObject<TabsManagerHandle>;
 	directoryData: backend.Directory;
 }) {

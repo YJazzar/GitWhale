@@ -7,7 +7,7 @@ export const UseIsDirDiffMode = () => {
 		return undefined;
 	}
 
-	if (!!appState?.startupState?.directoryDiff) {
+	if (!!appState?.startupState?.directoryDiffArgs) {
 		return true;
 	}
 

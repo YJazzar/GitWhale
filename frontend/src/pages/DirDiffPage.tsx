@@ -1,78 +1,75 @@
-import { DirDiffViewer } from '@/components/dir-diff-viewer';
-import { useEffect, useState } from 'react';
-import { useQuery } from 'react-query';
+import { FileTree } from '@/components/dir-diff-viewer';
+import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { UseAppState } from '@/hooks/state/use-app-state';
+import { TabProps } from '@/hooks/state/use-file-manager-state';
+import { atom, useAtom } from 'jotai';
+import { GitCompare, Loader2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { GetStartupDirDiffDirectory } from '../../wailsjs/go/backend/App';
 import { backend } from '../../wailsjs/go/models';
-import { EventsOff, EventsOn } from '../../wailsjs/runtime/runtime';
 
+const directoryDataAtom = atom<backend.Directory>();
 
 export default function DirDiffPage() {
-	return <>hi.... this is awkward</>
-	// const fileTreeData = useDiffFileTreeData();
+	const [directoryData, setDirectoryData] = useAtom(directoryDataAtom);
+	const fileTabRef = useRef<TabsManagerHandle>(null);
 
-	// const onAddNewFileToDiff = (event: backend.FileInfo) => {
-	// 	fileTreeData.onAddFile?.(event);
-	// };
+	useEffect(() => {
+		if (!!directoryData) {
+			return;
+		}
 
-	// // Listen for additional files we may need to diff later on:
-	// useEffect(() => {
-	// 	EventsOn('onOpenNewFileDiff', onAddNewFileToDiff);
-	// 	return () => {
-	// 		EventsOff('onOpenNewFileDiff');
-	// 	};
-	// }, []);
+		GetStartupDirDiffDirectory().then((dirData) => {
+			setDirectoryData(dirData);
+		});
+	}, []);
 
-	// return (
-	// 	<DirDiffViewer
-	// 		directoryData={fileTreeData.data || null}
-	// 		isLoading={fileTreeData.isLoading}
-	// 		isError={fileTreeData.isError}
-	// 		error={fileTreeData}
-	// 		onAddFile={fileTreeData.onAddFile}
-	// 		title="Git Directory Diff"
-	// 		emptyMessage="Select a file to view diff"
-	// 	/>
-	// );
-}
-
-function useDiffFileTreeData() { 
-	// const directoryDiffDetails = useQuery({
-	// 	queryKey: ['GetDirectoryDiffDetails'],
-	// 	queryFn: GetDirectoryDiffDetails,
-	// });
-
-	const [fileTreeData, setFileTreeData] = useState<backend.Directory | undefined>(undefined)
-	// useEffect(() => { 
-	// 	// Ignore any sub-sequent refreshes made by the query
-	// 	if (!!fileTreeData) { 
-	// 		return;
-	// 	}
-
-	// 	if (directoryDiffDetails.data && !directoryDiffDetails.isLoading)  { 
-	// 		setFileTreeData(directoryDiffDetails.data)
-	// 	}
-	// }, [directoryDiffDetails.data, fileTreeData])
-
-	// if (directoryDiffDetails.isLoading || !directoryDiffDetails.data || directoryDiffDetails.isError) {
-	// 	return  { 
-	// 		isLoading: directoryDiffDetails.isLoading, 
-	// 		isError: directoryDiffDetails.isError, 
-	// 	}
-	// }
-
-	const onAddFileToRootDir = (newFile: backend.FileInfo) => {
-		// if (!fileTreeData) { return }
-
-		// setFileTreeData({
-		// 	...fileTreeData, 
-		// 	convertValues: fileTreeData.convertValues, // idk why even the go to TS transpiler adds this
-		// 	Files: [...fileTreeData.Files, newFile]
-		// })
+	if (!directoryData) {
+		return <EmptyState />;
 	}
 
-	return {
-		data: fileTreeData, 
-		onAddFile: onAddFileToRootDir
-	}
+	return (
+		<div className="w-full h-full flex flex-row min-h-0">
+			<ResizablePanelGroup direction="horizontal">
+				{/* Left pane that contains the file structure */}
+				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
+					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
+						<FileTree tabManagerHandler={fileTabRef} directoryData={directoryData} />
+					</div>
+				</ResizablePanel>
 
+				<ResizableHandle withHandle />
+
+				{/* Right pane containing the actual diffs */}
+				<ResizablePanel id="diff-content-panel">
+					<div className="grow h-full flex flex-col min-h-0">
+						<FileTabs
+							ref={fileTabRef}
+							initialTabs={[]}
+							fileTabManageSessionKey={'startup-diff-viewer'}
+						/>
+					</div>
+				</ResizablePanel>
+			</ResizablePanelGroup>
+		</div>
+	);
 }
 
+// Empty state component (fallback)
+function EmptyState() {
+	return (
+		<div className="w-full h-full flex items-center justify-center">
+			<Card className="w-96">
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<GitCompare className="w-5 h-5" />
+						No Directory Diff Data
+					</CardTitle>
+					<CardDescription>No directory diff data is available for display.</CardDescription>
+				</CardHeader>
+			</Card>
+		</div>
+	);
+}

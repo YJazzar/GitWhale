@@ -1,5 +1,5 @@
 import { House } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import './App.css';
 import { FileTabs, TabsManagerHandle } from './components/file-tabs';
@@ -62,9 +62,6 @@ function App() {
 		fileTabsHandler.openTab(newRepoTab);
 	}, []);
 
-	// State to track if settings tab should be shown
-	const [showSettingsTab, setShowSettingsTab] = useState(false);
-
 	// Callback to open settings tab
 	const handleOpenSettings = useCallback(() => {
 		fileTabRef.current?.openTab({
@@ -90,12 +87,27 @@ function App() {
 		{
 			tabKey: '$$home$$',
 			titleRender: () => <House className="box-content h-5" />,
-			component: <HomePage onOpenRepo={handleOpenRepo} onOpenSettings={handleOpenSettings} onOpenApplicationLogs={handleOpenApplicationLogs} />,
+			component: (
+				<HomePage
+					onOpenRepo={handleOpenRepo}
+					onOpenSettings={handleOpenSettings}
+					onOpenApplicationLogs={handleOpenApplicationLogs}
+				/>
+			),
 			isPermanentlyOpen: true,
 			preventUserClose: true,
 		},
 	];
 
+	if (isInDirDiffMode) {
+		initialTabs.push({
+			tabKey: '$$dirDiff$$',
+			titleRender: () => <>Git Dir. Diff</>,
+			component: <DirDiffPage />,
+			isPermanentlyOpen: true,
+			preventUserClose: true,
+		});
+	}
 
 	if (isInDirDiffMode === undefined) {
 		return <LoadingSpinner />;
@@ -116,13 +128,13 @@ function App() {
 				/>
 				<Toaster />
 			</div>
-			
+
 			{/* Fixed zoom controls in bottom-right corner */}
 			<div className="fixed bottom-4 right-4 z-50">
-					<div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
-						<ZoomControls variant="compact" showLabel={false} />
-					</div>
+				<div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
+					<ZoomControls variant="compact" showLabel={false} />
 				</div>
+			</div>
 		</div>
 	);
 }

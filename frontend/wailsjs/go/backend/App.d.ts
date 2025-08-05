@@ -23,6 +23,8 @@ export function GetDetailedCommitInfo(arg1:string,arg2:string):Promise<backend.D
 
 export function GetDiffSession(arg1:string):Promise<backend.DiffSession>;
 
+export function GetStartupDirDiffDirectory():Promise<backend.Directory>;
+
 export function GetTags(arg1:string):Promise<Array<backend.GitRef>>;
 
 export function GitFetch(arg1:string,arg2:string,arg3:string):Promise<void>;

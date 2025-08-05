@@ -135,7 +135,7 @@ export namespace backend {
 	    }
 	}
 	export class StartupState {
-	    directoryDiff?: StartupDirectoryDiffArgs;
+	    directoryDiffArgs?: StartupDirectoryDiffArgs;
 	
 	    static createFrom(source: any = {}) {
 	        return new StartupState(source);
@@ -143,7 +143,7 @@ export namespace backend {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.directoryDiff = this.convertValues(source["directoryDiff"], StartupDirectoryDiffArgs);
+	        this.directoryDiffArgs = this.convertValues(source["directoryDiffArgs"], StartupDirectoryDiffArgs);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

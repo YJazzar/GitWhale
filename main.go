@@ -28,10 +28,10 @@ func main() {
 	pid := os.Getpid()
 
 	startupState := backend.GetStartupState()
-	if startupState != nil && startupState.DirectoryDiff != nil && startupState.DirectoryDiff.IsFileDiff {
-		if startupState.DirectoryDiff.ShouldSendNotification {
+	if startupState != nil && startupState.DirectoryDiffArgs != nil && startupState.DirectoryDiffArgs.IsFileDiff {
+		if startupState.DirectoryDiffArgs.ShouldSendNotification {
 			// Make the other GitWhale process show the diff instead
-			if err := backend.SendFileDiffNotification(startupState.DirectoryDiff.LeftPath, startupState.DirectoryDiff.RightPath); err != nil {
+			if err := backend.SendFileDiffNotification(startupState.DirectoryDiffArgs.LeftPath, startupState.DirectoryDiffArgs.RightPath); err != nil {
 				fmt.Printf("Error sending file diff notification: %v\n", err)
 				os.Exit(1)
 			}

@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
-	"os/user"
 )
 
 type DiffSession struct {
@@ -39,7 +39,7 @@ func validateDiffInputs(options DiffOptions) error {
 	if options.RepoPath == "" {
 		return fmt.Errorf("repository path cannot be empty")
 	}
-	
+
 	if _, err := os.Stat(options.RepoPath); os.IsNotExist(err) {
 		return fmt.Errorf("repository path does not exist: %s", options.RepoPath)
 	}
@@ -57,7 +57,7 @@ func validateDiffInputs(options DiffOptions) error {
 			return fmt.Errorf("invalid fromRef: %v", err)
 		}
 	}
-	
+
 	if options.ToRef != "" {
 		if err := validateGitRef(options.RepoPath, options.ToRef); err != nil {
 			return fmt.Errorf("invalid toRef: %v", err)
@@ -84,7 +84,7 @@ func validateGitRef(repoPath, ref string) error {
 		}
 		return fmt.Errorf("invalid git reference '%s'", ref)
 	}
-	
+
 	Log.Debug("Validated git ref '%s' in repo %s", ref, repoPath)
 	return nil
 }
@@ -134,16 +134,16 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 	// Execute git difftool with environment variables
 	cmd := exec.CommandContext(ctx, "git", cmdArgs...)
 	cmd.Dir = repoPath
-	
+
 	// Set environment variables for the script
 	cmd.Env = append(os.Environ(),
 		"GITWHALE_LEFT_DEST="+leftDest,
 		"GITWHALE_RIGHT_DEST="+rightDest,
 	)
-	
+
 	output, err := cmd.CombinedOutput()
 	outputStr := strings.TrimSpace(string(output))
-	
+
 	if err != nil {
 		// Check if it's a git error
 		if strings.Contains(outputStr, "fatal:") || strings.Contains(outputStr, "error:") {
@@ -178,14 +178,14 @@ func getAppHomeDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get current user: %v", err)
 	}
-	
+
 	appHomeDir := filepath.Join(usr.HomeDir, ".gitwhale")
-	
+
 	// Create directory if it doesn't exist
 	if err := os.MkdirAll(appHomeDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create app home directory: %v", err)
 	}
-	
+
 	return appHomeDir, nil
 }
 
@@ -195,7 +195,7 @@ func ensurePersistentDiffScript() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	var scriptName, scriptContent string
 	if runtime.GOOS == "windows" {
 		scriptName = "gitwhale-diff.bat"
@@ -296,21 +296,21 @@ fi
 echo "SUCCESS: Directories copied successfully"
 exit 0`
 	}
-	
+
 	scriptPath := filepath.Join(appHomeDir, scriptName)
-	
+
 	// Check if script already exists and is up to date
 	if _, err := os.Stat(scriptPath); err == nil {
 		Log.Debug("Persistent diff script already exists: %s", scriptPath)
 		return scriptPath, nil
 	}
-	
+
 	// Create the script
 	err = os.WriteFile(scriptPath, []byte(scriptContent), 0755)
 	if err != nil {
 		return "", fmt.Errorf("failed to write persistent script: %v", err)
 	}
-	
+
 	Log.Info("Created persistent diff script: %s", scriptPath)
 	return scriptPath, nil
 }
@@ -321,11 +321,11 @@ func ensureGitDiffToolConfig(repoPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to ensure persistent script: %v", err)
 	}
-	
+
 	toolName := "gitwhale-persistent"
 	configKey := "difftool." + toolName + ".cmd"
 	configValue := scriptPath + " \"$LOCAL\" \"$REMOTE\""
-	
+
 	// Check if already configured correctly
 	checkCmd := exec.Command("git", "config", "--local", configKey)
 	checkCmd.Dir = repoPath
@@ -336,18 +336,17 @@ func ensureGitDiffToolConfig(repoPath string) error {
 			return nil
 		}
 	}
-	
+
 	// Set the configuration
 	configCmd := exec.Command("git", "config", "--local", configKey, configValue)
 	configCmd.Dir = repoPath
 	if err := configCmd.Run(); err != nil {
 		return fmt.Errorf("failed to configure git difftool: %v", err)
 	}
-	
+
 	Log.Info("Configured git difftool to use persistent script: %s", scriptPath)
 	return nil
 }
-
 
 // Creates a new diff session with simplified flow
 func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
@@ -427,9 +426,24 @@ func CleanupDiffSession(sessionId string) error {
 }
 
 func GetDiffSessionDirectory(session *DiffSession) *Directory {
+	if session == nil {
+		Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided a nil session")
+		return nil
+	}
+
 	Log.Info("Getting directory structure for diff session: %s", session.SessionId)
 	session.LastAccessed = time.Now()
-	return readDiffs(session)
+
+	return readDiffs(session.LeftPath, session.RightPath)
+}
+
+func GetStartupDirDiffDirectory(diffArgs *StartupDirectoryDiffArgs) *Directory {
+	if diffArgs == nil {
+		Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided nil diffArgs")
+		return nil
+	}
+
+	return readDiffs(diffArgs.LeftPath, diffArgs.RightPath)
 }
 
 func CleanupOldDiffSessions() error {
@@ -449,7 +463,7 @@ func CleanupOldDiffSessions() error {
 		if !entry.IsDir() {
 			continue
 		}
-		
+
 		sessionPath := filepath.Join(diffDir, entry.Name())
 		info, err := entry.Info()
 		if err != nil {

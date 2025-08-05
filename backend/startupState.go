@@ -7,16 +7,16 @@ import (
 )
 
 type StartupState struct {
-	fileDiffWatcher *fsnotify.Watcher
-	DirectoryDiff   *StartupDirectoryDiffArgs `json:"directoryDiff"`
+	fileDiffWatcher   *fsnotify.Watcher
+	DirectoryDiffArgs *StartupDirectoryDiffArgs `json:"directoryDiffArgs"`
 }
 
 type StartupDirectoryDiffArgs struct {
 	LeftPath               string `json:"leftFolderPath"`
 	RightPath              string `json:"rightFolderPath"`
-	IsFileDiff             bool
-	ShouldSendNotification bool // True means that there's another active GitWhale process showing file diffs
-	ShouldStartFileWatcher bool // Mutually exclusive with ShouldSendNotification
+	IsFileDiff             bool   // TODO: unsupported flag for now
+	ShouldSendNotification bool   // True means that there's another active GitWhale process showing file diffs
+	ShouldStartFileWatcher bool   // Mutually exclusive with ShouldSendNotification
 }
 
 func GetStartupState() *StartupState {
@@ -69,7 +69,7 @@ func GetStartupState() *StartupState {
 	}
 
 	return &StartupState{
-		DirectoryDiff: &StartupDirectoryDiffArgs{
+		DirectoryDiffArgs: &StartupDirectoryDiffArgs{
 			LeftPath:               args[2],
 			RightPath:              args[3],
 			IsFileDiff:             !isLeftDir && !isRightDir,

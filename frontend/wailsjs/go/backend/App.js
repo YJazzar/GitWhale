@@ -42,6 +42,10 @@ export function GetDiffSession(arg1) {
   return window['go']['backend']['App']['GetDiffSession'](arg1);
 }
 
+export function GetStartupDirDiffDirectory() {
+  return window['go']['backend']['App']['GetStartupDirDiffDirectory']();
+}
+
 export function GetTags(arg1) {
   return window['go']['backend']['App']['GetTags'](arg1);
 }

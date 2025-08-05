@@ -26,14 +26,14 @@ type FileInfo struct {
 
 // Given a left side and a right side path (dir or filepath), the tag will figure out all the files
 // we need to show diffs for (only runs if the program was opened with the --diff-tool flag)
-func readDiffs(session *DiffSession) *Directory {
+func readDiffs(leftPath, rightPath string) *Directory {
 
-	if session == nil {
+	if leftPath == "" || rightPath == "" {
 		return nil
 	}
 
-	leftIsDir, leftErr := IsDir(session.LeftPath)
-	rightIsDir, rightErr := IsDir(session.RightPath)
+	leftIsDir, leftErr := IsDir(leftPath)
+	rightIsDir, rightErr := IsDir(rightPath)
 	if leftErr != nil || rightErr != nil {
 		Log.Error("Got errors checking if the passed paths were directories or files.")
 		Log.Error("\tLeft path error: %v", leftErr)
@@ -43,27 +43,27 @@ func readDiffs(session *DiffSession) *Directory {
 
 	if leftIsDir != rightIsDir {
 		Log.Error("The left path and the right input paths must match")
-		Log.Error("\tLeft path: %v", session.LeftPath)
-		Log.Error("\tRight path: %v", session.RightPath)
+		Log.Error("\tLeft path: %v", leftPath)
+		Log.Error("\tRight path: %v", rightPath)
 		return nil
 	}
 
 	if leftIsDir {
-		return readDirDiffStructure(session)
+		return readDirDiffStructure(leftPath, rightPath)
 	}
 
-	return readFileDiff(session)
+	return readFileDiff(leftPath, rightPath)
 }
 
-func readFileDiff(session *DiffSession) *Directory {
+func readFileDiff(leftPath, rightPath string) *Directory {
 
-	leftAbsPath, err := filepath.Abs(session.LeftPath)
+	leftAbsPath, err := filepath.Abs(leftPath)
 	if err != nil {
 		Log.Error("Could not translate the left input path to an absolute path. Error: %v", err)
 		return nil
 	}
 
-	rightAbsPath, err := filepath.Abs(session.RightPath)
+	rightAbsPath, err := filepath.Abs(rightPath)
 	if err != nil {
 		Log.Error("Could not translate the right input path to an absolute path. Error: %v", err)
 		return nil
@@ -78,8 +78,8 @@ func readFileDiff(session *DiffSession) *Directory {
 
 	fileNode := &FileInfo{
 		Path:            "",
-		Name:            filepath.Base(session.LeftPath),
-		Extension:       removeLeadingPeriod(filepath.Ext(session.LeftPath)),
+		Name:            filepath.Base(leftPath),
+		Extension:       removeLeadingPeriod(filepath.Ext(leftPath)),
 		LeftDirAbsPath:  leftAbsPath,
 		RightDirAbsPath: rightAbsPath,
 	}
@@ -90,7 +90,7 @@ func readFileDiff(session *DiffSession) *Directory {
 	return rootDir
 }
 
-func readDirDiffStructure(session *DiffSession) *Directory {
+func readDirDiffStructure(leftPath, rightPath string) *Directory {
 	rootDir := &Directory{
 		Path:    "./",
 		Name:    "./",
@@ -103,12 +103,12 @@ func readDirDiffStructure(session *DiffSession) *Directory {
 	dirMap["."] = rootDir
 
 	// Traverse the directory and get the structure
-	if err := traverseDir(filepath.Clean(session.LeftPath), InLeftDir, dirMap); err != nil {
+	if err := traverseDir(filepath.Clean(leftPath), InLeftDir, dirMap); err != nil {
 		Log.Error("Error: %v", err)
 		return nil
 	}
 
-	if err := traverseDir(filepath.Clean(session.RightPath), InRightDir, dirMap); err != nil {
+	if err := traverseDir(filepath.Clean(rightPath), InRightDir, dirMap); err != nil {
 		Log.Error("Error: %v", err)
 		return nil
 	}

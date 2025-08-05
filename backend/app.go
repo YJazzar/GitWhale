@@ -58,8 +58,8 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 	app.terminalSessions = make(map[string]*TerminalSession)
 	app.diffSessions = make(map[string]*DiffSession)
 
-	if startupState.DirectoryDiff != nil {
-		if startupState.DirectoryDiff.ShouldStartFileWatcher {
+	if startupState.DirectoryDiffArgs != nil {
+		if startupState.DirectoryDiffArgs.ShouldStartFileWatcher {
 			watcher, err := StartFileDiffWatcher(ctx)
 			if err != nil {
 				Log.Error("Failed to start file diff watcher: %v", err)
@@ -75,8 +75,8 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 
 // Saves the config file
 func (app *App) Shutdown(ctx context.Context) {
-	if app.StartupState.DirectoryDiff != nil {
-		if app.StartupState.DirectoryDiff.ShouldStartFileWatcher {
+	if app.StartupState.DirectoryDiffArgs != nil {
+		if app.StartupState.DirectoryDiffArgs.ShouldStartFileWatcher {
 			CloseFileDiffWatcher(app.StartupState.fileDiffWatcher)
 		}
 	}
@@ -196,6 +196,14 @@ func (app *App) GetDefaultShellCommand() string {
 }
 
 // Diff session management methods
+
+func (app *App) GetStartupDirDiffDirectory() *Directory {
+	if app == nil || app.StartupState == nil {
+		return nil
+	}
+
+	return GetStartupDirDiffDirectory(app.StartupState.DirectoryDiffArgs)
+}
 
 func (app *App) StartDiffSession(options DiffOptions) (*DiffSession, error) {
 	Log.Info("Starting diff session for repo: %s", options.RepoPath)
