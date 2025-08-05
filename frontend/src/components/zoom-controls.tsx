@@ -18,7 +18,6 @@ interface ZoomControlsProps {
 }
 
 export const AVAILABLE_ZOOM_LEVELS = [25, 33, 50, 67, 75, 80, 90, 100, 110, 125, 133, 140, 150, 175, 200, 250, 300, 400, 500];
-const TrimmedListOfAvailableZoomLevels = [75, 80, 90, 100, 110, 125, 133, 140, 150, 175]
 
 export function ZoomControls({ variant = 'default', showLabel = true }: ZoomControlsProps) {
 	const { zoomPercentage, zoomIn, zoomOut, resetZoom, canZoomIn, canZoomOut, isDefaultZoom, setZoom } =
@@ -90,7 +89,7 @@ export function ZoomControls({ variant = 'default', showLabel = true }: ZoomCont
 					<DropdownMenuContent align="center">
 						<DropdownMenuLabel>Zoom Level</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						{TrimmedListOfAvailableZoomLevels.map((level) => (
+						{AVAILABLE_ZOOM_LEVELS.map((level) => (
 							<DropdownMenuItem
 								key={level}
 								onClick={() => setZoom(level / 100)}
@@ -162,7 +161,7 @@ export function ZoomControls({ variant = 'default', showLabel = true }: ZoomCont
 					<DropdownMenuContent align="center">
 						<DropdownMenuLabel>Zoom Level</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						{TrimmedListOfAvailableZoomLevels.map((level) => (
+						{AVAILABLE_ZOOM_LEVELS.map((level) => (
 							<DropdownMenuItem
 								key={level}
 								onClick={() => setZoom(level / 100)}
