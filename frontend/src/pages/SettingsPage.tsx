@@ -23,7 +23,6 @@ import {
 } from '@/types/settings';
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { GetDefaultShellCommand } from '../../wailsjs/go/backend/App';
-import { AVAILABLE_ZOOM_LEVELS } from '@/components/zoom-controls';
 
 export default function SettingsPage() {
 	const { appState } = UseAppState();
@@ -294,7 +293,7 @@ export default function SettingsPage() {
 										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent className="w-full">
-										{AVAILABLE_ZOOM_LEVELS.map((level) => (
+										{[50, 75, 100, 125, 150, 200, 250, 300].map((level) => (
 											<DropdownMenuItem
 												key={level}
 												onClick={() => setZoom(level / 100)}
