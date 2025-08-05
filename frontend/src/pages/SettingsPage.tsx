@@ -11,10 +11,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Terminal, GitBranch, Save, RotateCcw, Check, ChevronDown, Palette, ZoomIn } from 'lucide-react';
+import { Terminal, GitBranch, Save, RotateCcw, Check, ChevronDown, Palette } from 'lucide-react';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/components/theme-provider';
-import { useAppZoom } from '@/hooks/use-app-zoom';
 import {
 	TERMINAL_COLOR_SCHEMES,
 	TERMINAL_CURSOR_STYLES,
@@ -28,7 +27,6 @@ export default function SettingsPage() {
 	const { appState } = UseAppState();
 	const { settings, isLoading, updateSettings, resetSettings } = useSettings();
 	const { theme, setTheme } = useTheme();
-	const { zoomPercentage, setZoom, resetZoom: resetAppZoom, isDefaultZoom } = useAppZoom();
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 	const [defaultShellCommand, setDefaultShellCommand] = useState('');
 
@@ -280,44 +278,6 @@ export default function SettingsPage() {
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>
-						</div>
-						
-						<div>
-							<Label className="text-sm font-medium">Zoom Level</Label>
-							<div className="flex items-center gap-2 mt-1">
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button variant="outline" size="sm" className="flex-1 justify-between">
-											{zoomPercentage}%
-											<ChevronDown className="h-4 w-4 opacity-50" />
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent className="w-full">
-										{[50, 75, 100, 125, 150, 200, 250, 300].map((level) => (
-											<DropdownMenuItem
-												key={level}
-												onClick={() => setZoom(level / 100)}
-												className="flex items-center justify-between"
-											>
-												{level}%
-												{level === 100 && ' (Default)'}
-												{zoomPercentage === level && <Check className="h-4 w-4" />}
-											</DropdownMenuItem>
-										))}
-									</DropdownMenuContent>
-								</DropdownMenu>
-								
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={resetAppZoom}
-									disabled={isDefaultZoom}
-									className="px-3"
-									title="Reset zoom to 100%"
-								>
-									<RotateCcw className="h-4 w-4" />
-								</Button>
-							</div>
 						</div>
 					</CardContent>
 				</Card>
