@@ -113,10 +113,6 @@ function App() {
 		return <LoadingSpinner />;
 	}
 
-	if (isInDirDiffMode) {
-		return <DirDiffPage />;
-	}
-
 	return (
 		<div className="w-full h-full flex flex-row relative">
 			<div className="border grow">
