@@ -3,29 +3,21 @@ import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useRepoState } from '@/hooks/state/use-repo-state';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { backend } from '../../wailsjs/go/models';
 import { TabProps } from '@/hooks/state/use-file-manager-state';
+import Logger from '@/utils/logger';
 
 const getFileKey = (file: backend.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
 };
 
-export function DirDiffViewer() {
-	const { repoPath } = useCurrentRepoParams();
+export function DirDiffViewer(props: { repoPath: string }) {
+	const { repoPath } = props;
 	const { diffState } = useRepoState(repoPath);
 	const fileTabRef = useRef<TabsManagerHandle>(null);
-	const [activeFileKey, setActiveFileKey] = useState<string>('');
 
-	// Get directory data from the selected diff session
-	const selectedSession = useMemo(() => {
-		const sessions = diffState.sessions;
-		const selectedId = diffState.selectedSessionId;
-		return sessions.find((s) => s.sessionId === selectedId) || null;
-	}, [diffState.sessions, diffState.selectedSessionId]);
-
-	const directoryData = selectedSession?.directoryData || null;
+	const directoryData = diffState.selectedSession?.directoryData || null;
 
 	const fileInfoMap = useMemo(() => {
 		const map: Map<string, backend.FileInfo> = new Map();
@@ -54,17 +46,6 @@ export function DirDiffViewer() {
 			diffState.setFileInfoMap(fileInfoMap);
 		}
 	}, [fileInfoMap, diffState]);
-
-	// Get active tab key from session state
-	const sessionActiveTabKey = useMemo(() => {
-		if (!selectedSession) return undefined;
-		const sessionTabState = diffState.getTabState(selectedSession.sessionId);
-		return sessionTabState.activeTabKey;
-	}, [selectedSession, diffState]);
-
-	const handleTabChange = useCallback((tabKey: string) => {
-		setActiveFileKey(tabKey);
-	}, []);
 
 	if (!directoryData) {
 		return (
@@ -129,7 +110,7 @@ function FileTree(props: {
 		let fileToOpen: TabProps = {
 			tabKey: tabKey,
 			titleRender: () => <>{file.Name}</>,
-			component: <FileDiffView file={file}/>,
+			component: <FileDiffView file={file} />,
 			isPermanentlyOpen: keepFileOpen,
 		};
 

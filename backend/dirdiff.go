@@ -136,13 +136,13 @@ func traverseDir(
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			// If there's an error accessing a file/folder, print it and skip it
-			Log.Error("filepath: \"%v\"\n", path)
-			Log.Error("File info before error: %v\n", info)
-			Log.Error("Error accessing file: %v\n", err)
+			Log.Error("filepath: \"%v\"", path)
+			Log.Error("File info before error: %v", info)
+			Log.Error("Error accessing file: %v", err)
 			return nil // Skip the file
 		}
 
-		Log.Trace("Walking into: %v\n", path)
+		Log.Trace("Walking into: %v", path)
 
 		// Skip the root directory itself
 		if path == rootPath {
@@ -152,20 +152,20 @@ func traverseDir(
 		// the relative parent directory name
 		relativeParentDir, err := filepath.Rel(rootPath, filepath.Dir(path))
 		if err != nil {
-			Log.Error("Error getting relative path for: %v\n", path)
+			Log.Error("Error getting relative path for: %v", path)
 			return nil
 		}
 
 		relativeDir, err := filepath.Rel(rootPath, path)
 		if err != nil {
-			Log.Error("Error getting relative path for: %v\n", path)
+			Log.Error("Error getting relative path for: %v", path)
 			return nil
 		}
 		// Log.Debug("Using key in map: %v\n", relativeDir)
 
 		absoluteFilePath, err := filepath.Abs(path)
 		if err != nil {
-			Log.Error("Error getting absolute path for: %v\n", path)
+			Log.Error("Error getting absolute path for: %v", path)
 			return nil
 		}
 

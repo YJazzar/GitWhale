@@ -59,28 +59,31 @@ export const useRepoState = (repoPath: string) => {
 		stateObjects.terminalState.disposeTerminal();
 		stateObjects.diffState.disposeSessions();
 		stateObjects.logState.disposeLogState();
-	}
+	};
 
 	return {
 		...stateObjects,
-		onCloseRepo
-	}
+		onCloseRepo,
+	};
 };
 
 // MARK: Terminal related state. A bit special because we actually want
 // the data to NOT cause re-renders
 
-const xTermRefMap = new Map<string, { 
-	terminal: Terminal; 
-	fitAddon: FitAddon; 
-	element: HTMLDivElement;
-	isDisposed: boolean;
-}>();
+const xTermRefMap = new Map<
+	string,
+	{
+		terminal: Terminal;
+		fitAddon: FitAddon;
+		element: HTMLDivElement;
+		isDisposed: boolean;
+	}
+>();
 
 function getTerminalState(repoPath: string) {
 	const createTerminal = (terminalSettings?: backend.TerminalSettings) => {
 		const fitAddon = new FitAddon();
-		
+
 		// Use provided terminal settings or defaults
 		let terminalOptions: any = {};
 		if (terminalSettings) {
@@ -97,13 +100,13 @@ function getTerminalState(repoPath: string) {
 				cursorStyle: 'block',
 			};
 		}
-		
+
 		const newTerminal = new Terminal(terminalOptions);
 		const element = document.createElement('div');
 		element.className = 'w-full h-full';
 
 		newTerminal.loadAddon(fitAddon);
-		
+
 		// Dispose existing terminal if it exists (prevents memory leaks)
 		const existingTerminal = xTermRefMap.get(repoPath);
 		if (existingTerminal && !existingTerminal.isDisposed) {
@@ -111,7 +114,7 @@ function getTerminalState(repoPath: string) {
 			existingTerminal.terminal.dispose();
 			EventsOff(`onTerminalDataReturned://${repoPath}`);
 		}
-		
+
 		xTermRefMap.set(repoPath, { terminal: newTerminal, fitAddon, element, isDisposed: false });
 
 		setupTerminalEvents(repoPath, newTerminal);
@@ -125,30 +128,35 @@ function getTerminalState(repoPath: string) {
 	const disposeTerminal = () => {
 		const terminalData = xTermRefMap.get(repoPath);
 		if (!terminalData || terminalData.isDisposed) {
-			Logger.debug("Terminal already disposed or doesn't exist for repo: " + repoPath, 'use-repo-state');
+			Logger.debug(
+				"Terminal already disposed or doesn't exist for repo: " + repoPath,
+				'use-repo-state'
+			);
 			return;
 		}
 
-		Logger.debug("Disposing terminal for repo: " + repoPath, 'use-repo-state');
-		
+		Logger.debug('Disposing terminal for repo: ' + repoPath, 'use-repo-state');
+
 		// Mark as disposed first to prevent double disposal
 		terminalData.isDisposed = true;
-		
+
 		// Clean up terminal resources
 		terminalData.terminal.dispose();
-		
+
 		// Clean up event listeners
 		EventsOff(`onTerminalDataReturned://${repoPath}`);
-		
+
 		// Clean up backend terminal session
-		CleanupTerminalSession(repoPath).catch(err => 
-			Logger.warning(`Failed to cleanup backend terminal session for ${repoPath}: ${err}`, 'use-repo-state')
+		CleanupTerminalSession(repoPath).catch((err) =>
+			Logger.warning(
+				`Failed to cleanup backend terminal session for ${repoPath}: ${err}`,
+				'use-repo-state'
+			)
 		);
-		
+
 		// Remove from map to free memory
 		xTermRefMap.delete(repoPath);
 	};
-
 
 	const getTerminalState = () => {
 		const terminalData = xTermRefMap.get(repoPath);
@@ -199,43 +207,58 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 		await InitNewTerminalSession(repoPath);
 		terminal.write('\n');
 	} catch (error) {
-		Logger.error(`Failed to initialize terminal session for repo ${repoPath}: ${error}`, 'use-repo-state');
+		Logger.error(
+			`Failed to initialize terminal session for repo ${repoPath}: ${error}`,
+			'use-repo-state'
+		);
 	}
 }
-
 
 // MARK: Diff-related state management using Jotai atoms
 
 // Store diff sessions per repository path
 const diffSessionsAtom = atom<Map<string, backend.DiffSession[]>>(new Map());
 
-// Store selected session ID per repository path  
+// Store selected session ID per repository path
 const selectedDiffSessionAtom = atom<Map<string, string | null>>(new Map());
 
 // Store file info mapping for directory diffs per repository path
 const fileInfoMapAtom = atom<Map<string, Map<string, backend.FileInfo>>>(new Map());
 
 // Store diff options/configuration per repository path
-const diffOptionsAtom = atom<Map<string, {
-	fromRef: string;
-	toRef: string;
-	showAdvanced: boolean;
-	filePathFilters: string;
-}>>(new Map());
+const diffOptionsAtom = atom<
+	Map<
+		string,
+		{
+			fromRef: string;
+			toRef: string;
+			showAdvanced: boolean;
+			filePathFilters: string;
+		}
+	>
+>(new Map());
 
 // Store file tab state per repository path and session ID
-const fileTabStateAtom = atom<Map<string, Map<string, {
-	availableFiles: Array<{
-		tabKey: string;
-		titleRender: () => JSX.Element;
-		component: React.ComponentType<any>;
-		componentProps?: any;
-		preventUserClose?: boolean;
-		isPermanentlyOpen?: boolean;
-		onTabClose?: () => void;
-	}>;
-	activeTabKey: string | undefined;
-}>>>(new Map());
+const fileTabStateAtom = atom<
+	Map<
+		string,
+		Map<
+			string,
+			{
+				availableFiles: Array<{
+					tabKey: string;
+					titleRender: () => JSX.Element;
+					component: React.ComponentType<any>;
+					componentProps?: any;
+					preventUserClose?: boolean;
+					isPermanentlyOpen?: boolean;
+					onTabClose?: () => void;
+				}>;
+				activeTabKey: string | undefined;
+			}
+		>
+	>
+>(new Map());
 
 // MARK: Diff state management functions
 
@@ -246,37 +269,41 @@ function getDiffState(repoPath: string) {
 	const [diffOptions, setDiffOptionsMap] = useAtom(diffOptionsAtom);
 	const [fileTabStates, setFileTabStates] = useAtom(fileTabStateAtom);
 
+	// Get selected session ID for this repo
+	const selectedSessionId = selectedSessions.get(repoPath) || null;
+	const selectedSession = diffSessions.get(repoPath)?.find((s) => s.sessionId === selectedSessionId);
+
 	return {
 		// Get current sessions for this repo
 		sessions: diffSessions.get(repoPath) || [],
-		
+
 		// Update sessions for this repo
 		setSessions: (sessions: backend.DiffSession[]) => {
 			const newMap = new Map(diffSessions);
 			newMap.set(repoPath, sessions);
 			setDiffSessions(newMap);
 		},
-		
-		// Get selected session ID for this repo
-		selectedSessionId: selectedSessions.get(repoPath) || null,
-		
+
+		selectedSessionId,
+		selectedSession,
+
 		// Set selected session ID for this repo
 		setSelectedSessionId: (sessionId: string | null) => {
 			const newMap = new Map(selectedSessions);
 			newMap.set(repoPath, sessionId);
 			setSelectedSessions(newMap);
 		},
-		
+
 		// Get file info map for this repo
 		fileInfoMap: fileInfoMaps.get(repoPath),
-		
+
 		// Set file info map for this repo
 		setFileInfoMap: (fileInfoMap: Map<string, backend.FileInfo>) => {
 			const newMap = new Map(fileInfoMaps);
 			newMap.set(repoPath, fileInfoMap);
 			setFileInfoMaps(newMap);
 		},
-		
+
 		// Get diff options for this repo
 		options: diffOptions.get(repoPath) || {
 			fromRef: 'HEAD',
@@ -284,7 +311,7 @@ function getDiffState(repoPath: string) {
 			showAdvanced: false,
 			filePathFilters: '',
 		},
-		
+
 		// Set diff options for this repo
 		setOptions: (options: {
 			fromRef: string;
@@ -305,20 +332,23 @@ function getDiffState(repoPath: string) {
 			}
 			return repoTabStates.get(sessionId) || { availableFiles: [], activeTabKey: undefined };
 		},
-		
+
 		// Set tab state for a specific session
-		setTabState: (sessionId: string, tabState: {
-			availableFiles: Array<{
-				tabKey: string;
-				titleRender: () => JSX.Element;
-				component: React.ComponentType<any>;
-				componentProps?: any;
-				preventUserClose?: boolean;
-				isPermanentlyOpen?: boolean;
-				onTabClose?: () => void;
-			}>;
-			activeTabKey: string | undefined;
-		}) => {
+		setTabState: (
+			sessionId: string,
+			tabState: {
+				availableFiles: Array<{
+					tabKey: string;
+					titleRender: () => JSX.Element;
+					component: React.ComponentType<any>;
+					componentProps?: any;
+					preventUserClose?: boolean;
+					isPermanentlyOpen?: boolean;
+					onTabClose?: () => void;
+				}>;
+				activeTabKey: string | undefined;
+			}
+		) => {
 			const newFileTabStates = new Map(fileTabStates);
 			let repoTabStates = newFileTabStates.get(repoPath);
 			if (!repoTabStates) {
@@ -350,10 +380,9 @@ function getDiffState(repoPath: string) {
 			const newFileTabStatesMap = new Map(fileTabStates);
 			newFileTabStatesMap.delete(repoPath);
 			setFileTabStates(newFileTabStatesMap);
-		}
+		},
 	};
 }
-
 
 // MARK: Git log-related state management using Jotai atoms
 
@@ -367,18 +396,23 @@ const selectedCommitAtom = atom<Map<string, backend.GitLogCommitInfo | null>>(ne
 const currentRefAtom = atom<Map<string, string>>(new Map());
 
 // Store git refs (branches and tags) per repository path
-const gitRefsAtom = atom<Map<string, { branches: backend.GitRef[], tags: backend.GitRef[] }>>(new Map());
+const gitRefsAtom = atom<Map<string, { branches: backend.GitRef[]; tags: backend.GitRef[] }>>(new Map());
 
 // Store git log options/filters per repository path
-const gitLogOptionsAtom = atom<Map<string, {
-	searchQuery: string;
-	commitCount: number;
-	includeMerges: boolean;
-	fromRef: string;
-	toRef: string;
-	fetchRemote: string;
-	fetchRef: string;
-}>>(new Map());
+const gitLogOptionsAtom = atom<
+	Map<
+		string,
+		{
+			searchQuery: string;
+			commitCount: number;
+			includeMerges: boolean;
+			fromRef: string;
+			toRef: string;
+			fetchRemote: string;
+			fetchRef: string;
+		}
+	>
+>(new Map());
 
 // MARK: Git log state management functions
 
@@ -392,7 +426,7 @@ function getLogState(repoPath: string) {
 	return {
 		// Get git log data for this repo
 		logs: logData.get(repoPath) || [],
-		
+
 		// Set git log data for this repo
 		setLogs: (logs: backend.GitLogCommitInfo[]) => {
 			const newMap = new Map(logData);
@@ -402,7 +436,7 @@ function getLogState(repoPath: string) {
 
 		// Get selected commit for this repo
 		selectedCommit: selectedCommits.get(repoPath) || null,
-		
+
 		// Set selected commit for this repo
 		setSelectedCommit: (commit: backend.GitLogCommitInfo | null) => {
 			const newMap = new Map(selectedCommits);
@@ -412,7 +446,7 @@ function getLogState(repoPath: string) {
 
 		// Get current ref for this repo
 		currentRef: currentRefs.get(repoPath) || 'HEAD',
-		
+
 		// Set current ref for this repo
 		setCurrentRef: (ref: string) => {
 			const newMap = new Map(currentRefs);
@@ -422,9 +456,9 @@ function getLogState(repoPath: string) {
 
 		// Get git refs (branches/tags) for this repo
 		refs: gitRefs.get(repoPath) || { branches: [], tags: [] },
-		
+
 		// Set git refs for this repo
-		setRefs: (refs: { branches: backend.GitRef[], tags: backend.GitRef[] }) => {
+		setRefs: (refs: { branches: backend.GitRef[]; tags: backend.GitRef[] }) => {
 			const newMap = new Map(gitRefs);
 			newMap.set(repoPath, refs);
 			setGitRefs(newMap);
@@ -440,7 +474,7 @@ function getLogState(repoPath: string) {
 			fetchRemote: 'origin',
 			fetchRef: '',
 		},
-		
+
 		// Set log options for this repo
 		setOptions: (options: {
 			searchQuery: string;
@@ -477,6 +511,6 @@ function getLogState(repoPath: string) {
 			const newOptionsMap = new Map(logOptions);
 			newOptionsMap.delete(repoPath);
 			setLogOptionsMap(newOptionsMap);
-		}
+		},
 	};
 }

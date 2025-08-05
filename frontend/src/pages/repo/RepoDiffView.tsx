@@ -48,6 +48,7 @@ const useDiffSessions = (repoPath: string) => {
 			const newSessions = [...diffState.sessions, session];
 			diffState.setSessions(newSessions);
 			diffState.setSelectedSessionId(session.sessionId);
+			Logger.debug(`Received session: ${session.sessionId}`, "RepoDiffView")
 			return session;
 		} catch (error) {
 			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
@@ -562,7 +563,7 @@ export default function RepoDiffView({ repoPath }: { repoPath: string }) {
 			/>
 
 			<div className="flex-1 overflow-hidden min-h-0">
-				{!!diffSessions.selectedSession?.directoryData && <DirDiffViewer />}
+				{!!diffSessions.selectedSession?.directoryData && <DirDiffViewer repoPath={repoPath} />}
 			</div>
 		</div>
 	);

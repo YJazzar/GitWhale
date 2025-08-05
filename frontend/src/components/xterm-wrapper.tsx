@@ -1,12 +1,11 @@
 import { useRepoState } from '@/hooks/state/use-repo-state';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { UseAppState } from '@/hooks/state/use-app-state';
 import '@xterm/xterm/css/xterm.css';
 import { useLayoutEffect, useRef } from 'react';
 
-export default function XTermWrapper() {
-	const { repoPath } = useCurrentRepoParams();
+export default function XTermWrapper(props: { repoPath: string }) {
+	const { repoPath } = props;
 	const { appState } = UseAppState();
 	const divNodeRef = useRef<HTMLDivElement | null>(null);
 

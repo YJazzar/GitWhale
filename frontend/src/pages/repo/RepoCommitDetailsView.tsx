@@ -3,13 +3,12 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { backend } from 'wailsjs/go/models';
 import { RunGitLog } from '../../../wailsjs/go/backend/App';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 
-export default function RepoCommitDetailsView() {
-	const { encodedRepoPath, commitHash, repoPath } = useCurrentRepoParams();
+export default function RepoCommitDetailsView(props: { repoPath: string; commitHash: string }) {
+	const { commitHash, repoPath } = props;
 	const [logs, setLogs] = useState<backend.GitLogCommitInfo[]>([]);
 
-	if (!encodedRepoPath || !repoPath) {
+	if (!repoPath) {
 		return <>Error: why are we rendering RepoHomeView when there's no repo provided?</>;
 	}
 

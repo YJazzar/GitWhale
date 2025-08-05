@@ -7,7 +7,7 @@ export default function RepoTerminalView({ repoPath }: { repoPath: string }) {
 
 	return (
 		<div className="flex flex-col h-full">
-			<XTermWrapper />
+			<XTermWrapper repoPath={repoPath} />
 		</div>
 	);
 }

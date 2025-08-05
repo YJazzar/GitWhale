@@ -192,7 +192,7 @@ export function CommitDetails({
 					<div className="flex items-start justify-between">
 						<div className="flex-1 min-w-0">
 							<CardTitle className="text-base flex items-center gap-2">
-								<CommitHash commitHash={commitHash} isMerge={isMergeCommit} />
+								<CommitHash repoPath={repoPath} commitHash={commitHash} isMerge={isMergeCommit} />
 							</CardTitle>
 						</div>
 						<div className="flex items-center gap-2">
@@ -331,7 +331,7 @@ export function CommitDetails({
 					<div className="flex-1 min-w-0">
 						<CardTitle className="text-lg flex items-center gap-2">
 							<div className="mt-2">
-								<CommitHash commitHash={commitHash} isMerge={isMergeCommit} />
+								<CommitHash repoPath={repoPath} commitHash={commitHash} isMerge={isMergeCommit} />
 							</div>
 						</CardTitle>
 					</div>

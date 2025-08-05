@@ -1,5 +1,4 @@
 import { GitCommit, GitMerge } from 'lucide-react';
-import { useCurrentRepoParams } from '@/hooks/use-current-repo';
 import { cn } from '@/lib/utils';
 import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 
@@ -10,7 +9,7 @@ interface CommitHashProps {
 	shortHash?: boolean;
 	showIcon?: boolean;
 	clickable?: boolean;
-	repoPath?: string; // Optional override for repoPath
+	repoPath: string; // Optional override for repoPath
 }
 
 export function CommitHash({ 
@@ -20,13 +19,10 @@ export function CommitHash({
 	shortHash = false,
 	showIcon = true,
 	clickable = true,
-	repoPath: propRepoPath
+	repoPath
 }: CommitHashProps) {
-	const { repoPath: contextRepoPath } = useCurrentRepoParams();
+
 	const displayHash = shortHash ? commitHash.slice(0, 7) : commitHash;
-	
-	// Use provided repoPath or fall back to context repoPath
-	const repoPath = propRepoPath || contextRepoPath || '';
 
     const handleViewFullCommit = useNavigateToCommit(commitHash, repoPath, isMerge);
 

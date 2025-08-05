@@ -33,10 +33,35 @@ type DiffOptions struct {
 	FilePathFilters []string `json:"filePathFilters"` // Optional: specific files/dirs to diff
 }
 
+// Cleans up git error messages for display without trying to be overly smart
+func cleanGitError(stderrLines []string) string {
+	if len(stderrLines) == 0 {
+		return ""
+	}
+
+	// Join all stderr lines
+	fullError := strings.Join(stderrLines, " ")
+	fullError = strings.TrimSpace(fullError)
+	
+	if len(fullError) == 0 {
+		return ""
+	}
+
+	// Just return the git error as-is - git's error messages are already user-friendly
+	return fullError
+}
+
 // Validates that a git ref exists and is valid
 func validateGitRef(repoPath, ref string) error {
 	if ref == "" {
 		return nil // Empty ref is valid (means working tree)
+	}
+
+	// First check if the repository is valid
+	checkRepoCmd := exec.Command("git", "rev-parse", "--git-dir")
+	checkRepoCmd.Dir = repoPath
+	if _, err := checkRepoCmd.Output(); err != nil {
+		return fmt.Errorf("not a valid git repository: %s", repoPath)
 	}
 
 	// Use git rev-parse to validate the ref
@@ -44,10 +69,33 @@ func validateGitRef(repoPath, ref string) error {
 	cmd.Dir = repoPath
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("invalid git ref '%s': %s", ref, strings.TrimSpace(string(output)))
+		// Show git's own error message - it's already user-friendly
+		gitError := strings.TrimSpace(string(output))
+		if gitError != "" {
+			return fmt.Errorf("invalid git reference '%s': %s", ref, gitError)
+		}
+		return fmt.Errorf("invalid git reference '%s'", ref)
 	}
 
 	Log.Debug("Validated git ref '%s' in repo %s", ref, repoPath)
+	return nil
+}
+
+// Basic validation to check if refs are suitable for diff operations
+func validateDiffOperation(repoPath, fromRef, toRef string) error {
+	// If both refs are empty, that's not valid for diff
+	if fromRef == "" && toRef == "" {
+		return fmt.Errorf("both references cannot be empty - at least one reference must be specified")
+	}
+
+	// Just check if repository has any commits by trying to get HEAD
+	cmd := exec.Command("git", "rev-parse", "HEAD")
+	cmd.Dir = repoPath
+	_, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("repository has no commits yet")
+	}
+
 	return nil
 }
 
@@ -61,6 +109,11 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 	}
 	if err := validateGitRef(options.RepoPath, options.ToRef); err != nil {
 		return nil, fmt.Errorf("invalid toRef: %v", err)
+	}
+	
+	// Additional validation for diff operation
+	if err := validateDiffOperation(options.RepoPath, options.FromRef, options.ToRef); err != nil {
+		return nil, err
 	}
 
 	// Generate unique session ID
@@ -317,6 +370,7 @@ func getGitDifftoolPathsAndCopy(session *DiffSession) error {
 	scanner := bufio.NewScanner(stdout)
 	var leftDir, rightDir string
 	var allOutput []string
+	var scriptErrors []string
 	done := false
 
 	// Use a channel to handle timeout during scanning
@@ -331,7 +385,12 @@ func getGitDifftoolPathsAndCopy(session *DiffSession) error {
 			allOutput = append(allOutput, line)
 			Log.Info("Git difftool stdout line %d: '%s'", lineCount, line)
 
-			if strings.HasPrefix(line, "LEFT_DIR:") {
+			// Check for script error messages
+			if strings.HasPrefix(line, "ERROR:") {
+				errorMsg := strings.TrimSpace(strings.TrimPrefix(line, "ERROR:"))
+				scriptErrors = append(scriptErrors, errorMsg)
+				Log.Error("Script error detected: %s", errorMsg)
+			} else if strings.HasPrefix(line, "LEFT_DIR:") {
 				leftDir = strings.TrimSpace(strings.TrimPrefix(line, "LEFT_DIR:"))
 				Log.Info("Extracted LEFT_DIR: %s", leftDir)
 			} else if strings.HasPrefix(line, "RIGHT_DIR:") {
@@ -366,16 +425,34 @@ func getGitDifftoolPathsAndCopy(session *DiffSession) error {
 			Log.Error("  Line %d: '%s'", i+1, line)
 		}
 		
-		// Include stderr in error message if available
+		// Prioritize script errors first (most specific)
+		if len(scriptErrors) > 0 {
+			Log.Error("Script reported errors:")
+			for i, err := range scriptErrors {
+				Log.Error("  Script error %d: '%s'", i+1, err)
+			}
+			return fmt.Errorf("diff operation failed: %s", strings.Join(scriptErrors, "; "))
+		}
+		
+		// Then check for git command errors in stderr
 		if len(stderrOutput) > 0 {
 			Log.Error("Git difftool stderr output:")
 			for i, line := range stderrOutput {
 				Log.Error("  Stderr %d: '%s'", i+1, line)
 			}
-			return fmt.Errorf("git difftool failed - check that the git references are valid. Error: %s", strings.Join(stderrOutput, "; "))
+			
+			// Show git's own error messages - they're already user-friendly
+			gitError := cleanGitError(stderrOutput)
+			if gitError != "" {
+				return fmt.Errorf("git difftool failed: %s", gitError)
+			}
+			
+			// Fallback if cleaning didn't help
+			return fmt.Errorf("git difftool failed: %s", strings.Join(stderrOutput, "; "))
 		}
 		
-		return fmt.Errorf("script did not complete successfully - DONE signal not received (no stderr output)")
+		// Generic fallback if no specific errors found
+		return fmt.Errorf("diff operation did not complete successfully - no response from git difftool")
 	}
 
 	if leftDir == "" || rightDir == "" {
@@ -456,24 +533,92 @@ func createPathExtractorScript() (string, error) {
 		scriptExt = ".bat"
 		scriptContent = fmt.Sprintf(`@echo off
 echo [%%date%% %%time%%] Script called with args: %%1 %%2 >> "%s"
+
+REM Check if both parameters are provided
+if "%%1"=="" (
+    echo ERROR: Git difftool did not provide left directory path
+    echo [%%date%% %%time%%] ERROR: Missing left directory parameter >> "%s"
+    echo DONE
+    pause >nul
+    exit /b 1
+)
+
+if "%%2"=="" (
+    echo ERROR: Git difftool did not provide right directory path  
+    echo [%%date%% %%time%%] ERROR: Missing right directory parameter >> "%s"
+    echo DONE
+    pause >nul
+    exit /b 1
+)
+
+REM Check if directories exist
+if not exist "%%1" (
+    echo ERROR: Left directory does not exist: %%1
+    echo [%%date%% %%time%%] ERROR: Left directory missing: %%1 >> "%s"
+    echo DONE
+    pause >nul
+    exit /b 1
+)
+
+if not exist "%%2" (
+    echo ERROR: Right directory does not exist: %%2
+    echo [%%date%% %%time%%] ERROR: Right directory missing: %%2 >> "%s"
+    echo DONE
+    pause >nul
+    exit /b 1
+)
+
+REM Success case - output directory paths
 echo LEFT_DIR:%%1
 echo RIGHT_DIR:%%2
 echo DONE
-echo [%%date%% %%time%%] Script output sent, now hanging >> "%s"
+echo [%%date%% %%time%%] Script output sent successfully, now hanging >> "%s"
 REM Hang indefinitely until killed by parent process
 pause >nul
-`, debugLogPath, debugLogPath)
+`, debugLogPath, debugLogPath, debugLogPath, debugLogPath, debugLogPath, debugLogPath)
 	} else {
 		scriptExt = ".sh"
 		scriptContent = fmt.Sprintf(`#!/bin/bash
 echo "$(date): Script called with args: $1 $2" >> "%s"
+
+# Check if both parameters are provided
+if [ -z "$1" ]; then
+    echo "ERROR: Git difftool did not provide left directory path"
+    echo "$(date): ERROR: Missing left directory parameter" >> "%s"
+    echo "DONE"
+    exit 1
+fi
+
+if [ -z "$2" ]; then
+    echo "ERROR: Git difftool did not provide right directory path"
+    echo "$(date): ERROR: Missing right directory parameter" >> "%s"
+    echo "DONE"
+    exit 1
+fi
+
+# Check if directories exist
+if [ ! -d "$1" ]; then
+    echo "ERROR: Left directory does not exist: $1"
+    echo "$(date): ERROR: Left directory missing: $1" >> "%s"
+    echo "DONE"
+    exit 1
+fi
+
+if [ ! -d "$2" ]; then
+    echo "ERROR: Right directory does not exist: $2"
+    echo "$(date): ERROR: Right directory missing: $2" >> "%s"
+    echo "DONE"
+    exit 1
+fi
+
+# Success case - output directory paths
 echo "LEFT_DIR:$1"
 echo "RIGHT_DIR:$2"
 echo "DONE"
-echo "$(date): Script output sent, now hanging" >> "%s"
+echo "$(date): Script output sent successfully, now hanging" >> "%s"
 # Hang indefinitely until killed by parent process
 read -r
-`, debugLogPath, debugLogPath)
+`, debugLogPath, debugLogPath, debugLogPath, debugLogPath, debugLogPath, debugLogPath)
 	}
 
 	// Create temporary script file

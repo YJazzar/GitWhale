@@ -25,7 +25,7 @@ func SetupXTermForNewRepo(app *App, repoPath string) {
 	app.terminalSessionsMutex.RLock()
 	_, exists := app.terminalSessions[repoPath]
 	app.terminalSessionsMutex.RUnlock()
-	
+
 	if exists {
 		return
 	}
@@ -114,12 +114,12 @@ func CreateXTermSession(app *App, repoPath string) {
 		cancel:         cancel,
 	}
 	session.waiter.Add(1)
-	
+
 	// Thread-safe session storage
 	app.terminalSessionsMutex.Lock()
 	app.terminalSessions[repoPath] = session
 	app.terminalSessionsMutex.Unlock()
-	
+
 	maxBufferSizeBytes := 512
 
 	// console >> xterm.js (read from terminal and send to frontend)
@@ -145,7 +145,7 @@ func CreateXTermSession(app *App, repoPath string) {
 					Log.Warning("Ending session... Failed to read from console: %s", err)
 					return
 				}
-				Log.Trace("Sending data to client: %v", buffer[:readLength])
+				// Log.Trace("Sending data to client: %v", buffer[:readLength])
 				runtime.EventsEmit(app.ctx, fmt.Sprintf("onTerminalDataReturned://%v", repoPath), buffer[:readLength])
 			}
 		}

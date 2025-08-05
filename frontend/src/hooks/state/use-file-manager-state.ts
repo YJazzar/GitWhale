@@ -8,7 +8,7 @@ import {
 import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
 import { backend } from '../../../wailsjs/go/models';
 import { atom, useAtom } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 type FileTabManagerSessionKey = string;
 type TabKey = string;
@@ -56,22 +56,26 @@ export function useFileManagerState(
 	const [openTabsMap, setOpenTabsMap] = useAtom(openTabsAtom);
 
 	const activeTabKey = activeTabMap.get(fileTabManageSessionKey);
-	const setActiveTabKey = (tabKey: TabKey | undefined) => {
-		const newMap = new Map(activeTabMap);
-		if (tabKey === undefined) {
-			newMap.delete(fileTabManageSessionKey);
-		} else {
-			newMap.set(fileTabManageSessionKey, tabKey);
-		}
-		setActiveTabMap(newMap);
-	};
+	const setActiveTabKey = useCallback((tabKey: TabKey | undefined) => {
+		setActiveTabMap(prevMap => {
+			const newMap = new Map(prevMap);
+			if (tabKey === undefined) {
+				newMap.delete(fileTabManageSessionKey);
+			} else {
+				newMap.set(fileTabManageSessionKey, tabKey);
+			}
+			return newMap;
+		});
+	}, [fileTabManageSessionKey, setActiveTabMap]);
 
 	const openTabs = openTabsMap.get(fileTabManageSessionKey) || [];
-	const setOpenTabs = (tabs: TabProps[]) => {
-		const newMap = new Map(openTabsMap);
-		newMap.set(fileTabManageSessionKey, tabs);
-		setOpenTabsMap(newMap);
-	};
+	const setOpenTabs = useCallback((tabs: TabProps[]) => {
+		setOpenTabsMap(prevMap => {
+			const newMap = new Map(prevMap);
+			newMap.set(fileTabManageSessionKey, tabs);
+			return newMap;
+		});
+	}, [fileTabManageSessionKey, setOpenTabsMap]);
 
 	const activeTab = openTabs.find((tab) => tab.tabKey === activeTabKey);
 
@@ -90,7 +94,7 @@ export function useFileManagerState(
 			setActiveTabKey(initialTabKeyToOpen);
 		}
 
-	}, [openTabs, initialTabs, defaultTabKey, activeTabKey, setActiveTabKey, setOpenTabs]);
+	}, [openTabs.length, initialTabs, defaultTabKey, activeTabKey, setActiveTabKey, setOpenTabs]);
 
 	return {
 		activeTab,
