@@ -1,21 +1,22 @@
 import { House } from 'lucide-react';
-import { useRef, useState, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import './App.css';
 import { FileTabs, TabsManagerHandle } from './components/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
+import { ZoomControls } from './components/zoom-controls';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 import { Logger } from './utils/logger';
 
-import DirDiffPage from './pages/DirDiffPage';
-import RepoPage from './pages/repo/RepoPage';
-import { Toaster } from './components/ui/toaster';
-import HomePage from './pages/HomePage';
-import SettingsPage from './pages/SettingsPage';
-import ApplicationLogsPage from './pages/ApplicationLogsPage';
 import RepoFileTab from './components/repo-file-tab';
+import { Toaster } from './components/ui/toaster';
 import { TabProps } from './hooks/state/use-file-manager-state';
+import ApplicationLogsPage from './pages/ApplicationLogsPage';
+import DirDiffPage from './pages/DirDiffPage';
+import HomePage from './pages/HomePage';
+import RepoPage from './pages/repo/RepoPage';
+import SettingsPage from './pages/SettingsPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -105,7 +106,7 @@ function App() {
 	}
 
 	return (
-		<div className=" w-full h-full flex flex-row ">
+		<div className="w-full h-full flex flex-row relative">
 			<div className="border grow">
 				<FileTabs
 					ref={fileTabRef}
@@ -115,6 +116,13 @@ function App() {
 				/>
 				<Toaster />
 			</div>
+			
+			{/* Fixed zoom controls in bottom-right corner */}
+			<div className="fixed bottom-4 right-4 z-50">
+					<div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
+						<ZoomControls variant="compact" showLabel={false} />
+					</div>
+				</div>
 		</div>
 	);
 }
