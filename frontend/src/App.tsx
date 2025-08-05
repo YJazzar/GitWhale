@@ -83,6 +83,7 @@ function App() {
 	}, []);
 
 	// Base application tabs (consistent structure)
+	let defaultTab = "$$home$$"
 	const initialTabs: TabProps[] = [
 		{
 			tabKey: '$$home$$',
@@ -100,9 +101,10 @@ function App() {
 	];
 
 	if (isInDirDiffMode) {
+		defaultTab = "$$dirDiff$$"
 		initialTabs.push({
 			tabKey: '$$dirDiff$$',
-			titleRender: () => <>Git Dir. Diff</>,
+			titleRender: () => <>Git Dir Diff</>,
 			component: <DirDiffPage />,
 			isPermanentlyOpen: true,
 			preventUserClose: true,
@@ -119,7 +121,7 @@ function App() {
 				<FileTabs
 					ref={fileTabRef}
 					initialTabs={initialTabs}
-					defaultTabKey="$$home$$"
+					defaultTabKey={defaultTab}
 					fileTabManageSessionKey={'app-workspace'}
 				/>
 				<Toaster />
