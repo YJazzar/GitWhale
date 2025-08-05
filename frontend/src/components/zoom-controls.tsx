@@ -17,6 +17,8 @@ interface ZoomControlsProps {
 	showLabel?: boolean;
 }
 
+export const AVAILABLE_ZOOM_LEVELS = [25, 33, 50, 67, 75, 80, 90, 100, 110, 125, 133, 140, 150, 175, 200, 250, 300, 400, 500];
+
 export function ZoomControls({ variant = 'default', showLabel = true }: ZoomControlsProps) {
 	const { zoomPercentage, zoomIn, zoomOut, resetZoom, canZoomIn, canZoomOut, isDefaultZoom, setZoom } =
 		useAppZoom();
@@ -47,7 +49,7 @@ export function ZoomControls({ variant = 'default', showLabel = true }: ZoomCont
 		return () => document.removeEventListener('keydown', handleKeyDown);
 	}, [zoomIn, zoomOut, resetZoom]);
 
-	const presetZoomLevels = [50, 75, 100, 125, 150, 200];
+	
 	const [customZoomInput, setCustomZoomInput] = useState('');
 
 	const handleCustomZoomSubmit = (e: React.FormEvent) => {
@@ -87,7 +89,7 @@ export function ZoomControls({ variant = 'default', showLabel = true }: ZoomCont
 					<DropdownMenuContent align="center">
 						<DropdownMenuLabel>Zoom Level</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						{presetZoomLevels.map((level) => (
+						{AVAILABLE_ZOOM_LEVELS.map((level) => (
 							<DropdownMenuItem
 								key={level}
 								onClick={() => setZoom(level / 100)}
@@ -159,7 +161,7 @@ export function ZoomControls({ variant = 'default', showLabel = true }: ZoomCont
 					<DropdownMenuContent align="center">
 						<DropdownMenuLabel>Zoom Level</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						{presetZoomLevels.map((level) => (
+						{AVAILABLE_ZOOM_LEVELS.map((level) => (
 							<DropdownMenuItem
 								key={level}
 								onClick={() => setZoom(level / 100)}
