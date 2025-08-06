@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import * as d3 from 'd3';
 import { backend } from 'wailsjs/go/models';
 import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git/use-git-graph';
@@ -18,9 +18,13 @@ const MARGIN_TOP = 24;
 const NODE_RADIUS = 6;
 const MERGE_NODE_RADIUS = 8;
 
+interface ConnectionCommit extends GitGraphCommit {
+	rowIndex: number;
+}
+
 interface Connection {
-	source: GitGraphCommit;
-	target: GitGraphCommit;
+	source: ConnectionCommit;
+	target: ConnectionCommit;
 	type: 'direct' | 'merge';
 	color: string;
 }
@@ -28,26 +32,41 @@ interface Connection {
 export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProps) {
 	const svgRef = useRef<SVGSVGElement>(null);
 	
+	console.log(`Commit length: ${commits.length}`)
+
 	// Compute graph layout using the new hook
 	const graphLayout = useMemo(() => {
+		if (!commits || commits.length === 0) {
+			return [];
+		}
 		return calculateGitGraphLayout(commits);
 	}, [commits]);
 
-	// Compute connections between commits
+	// Compute connections between commits with row indices
 	const connections = useMemo((): Connection[] => {
+		if (graphLayout.length === 0) return [];
+		
 		const commitMap = new Map<string, GitGraphCommit>();
-		graphLayout.forEach(item => commitMap.set(item.commit.commitHash, item));
+		const commitToRowIndex = new Map<string, number>();
+		
+		// Build maps with explicit row indices
+		graphLayout.forEach((item, index) => {
+			commitMap.set(item.commit.commitHash, item);
+			commitToRowIndex.set(item.commit.commitHash, index);
+		});
 
 		const links: Connection[] = [];
 
-		graphLayout.forEach(item => {
+		graphLayout.forEach((item, sourceRowIndex) => {
 			item.parentHashes.forEach((parentHash, index) => {
 				const parent = commitMap.get(parentHash);
-				if (parent) {
+				const targetRowIndex = commitToRowIndex.get(parentHash);
+				
+				if (parent && targetRowIndex !== undefined) {
 					const isDirectParent = index === 0;
 					links.push({
-						source: item,
-						target: parent,
+						source: { ...item, rowIndex: sourceRowIndex },
+						target: { ...parent, rowIndex: targetRowIndex },
 						type: isDirectParent ? 'direct' : 'merge',
 						color: isDirectParent ? item.color : parent.color
 					});
@@ -56,7 +75,7 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 		});
 
 		return links;
-	}, [graphLayout]);
+	}, [commits, graphLayout]);
 
 	// Calculate graph dimensions
 	const graphDimensions = useMemo(() => {
@@ -73,10 +92,10 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 
 	// D3.js rendering effect
 	useEffect(() => {
-		if (!svgRef.current || graphLayout.length === 0) return;
+		if (!svgRef.current || !commits || commits.length === 0 || graphLayout.length === 0 || connections.length === 0) return;
 
-		// Clear previous render
-		d3.select(svgRef.current).selectAll('*').remove();
+			// Clear previous render
+			d3.select(svgRef.current).selectAll('*').remove();
 
 		const svg = d3.select(svgRef.current);
 		const { width, height } = graphDimensions;
@@ -137,9 +156,9 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 			.attr('class', d => `connection ${d.type}`)
 			.attr('d', (d: Connection) => {
 				const sourceX = d.source.column * COLUMN_WIDTH + MARGIN_LEFT + NODE_RADIUS;
-				const sourceY = graphLayout.indexOf(d.source) * ROW_HEIGHT + MARGIN_TOP + NODE_RADIUS;
+				const sourceY = d.source.rowIndex * ROW_HEIGHT + MARGIN_TOP + NODE_RADIUS;
 				const targetX = d.target.column * COLUMN_WIDTH + MARGIN_LEFT + NODE_RADIUS;
-				const targetY = graphLayout.indexOf(d.target) * ROW_HEIGHT + MARGIN_TOP + NODE_RADIUS;
+				const targetY = d.target.rowIndex * ROW_HEIGHT + MARGIN_TOP + NODE_RADIUS;
 
 				if (d.type === 'direct' && d.source.column === d.target.column) {
 					// Straight vertical line for same column
@@ -230,7 +249,6 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				const isMerge = d.parentHashes.length > 1;
 				return isMerge ? '⚡' : '●';
 			});
-
 	}, [graphLayout, connections, graphDimensions, onCommitClick]);
 
 	// Render empty state
