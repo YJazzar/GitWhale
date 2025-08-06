@@ -127,19 +127,19 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 			.attr('stroke-width', 1)
 			.attr('opacity', 0.3);
 
-		// Create defs for filters and gradients
+		// Create defs for filters (optional subtle effects)
 		const defs = svg.append('defs');
 		
-		// Glow filter for merge connections
+		// Very subtle glow filter for merge connections (reduced intensity)
 		const filter = defs.append('filter')
-			.attr('id', 'glow')
-			.attr('x', '-50%')
-			.attr('y', '-50%')
-			.attr('width', '200%')
-			.attr('height', '200%');
+			.attr('id', 'subtle-glow')
+			.attr('x', '-20%')
+			.attr('y', '-20%')
+			.attr('width', '140%')
+			.attr('height', '140%');
 		
 		filter.append('feGaussianBlur')
-			.attr('stdDeviation', '2')
+			.attr('stdDeviation', '0.8')
 			.attr('result', 'coloredBlur');
 		
 		const feMerge = filter.append('feMerge');
@@ -188,10 +188,10 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				}
 			})
 			.attr('stroke', (d: Connection) => d.color)
-			.attr('stroke-width', (d: Connection) => d.type === 'merge' ? 2.5 : 2)
+			.attr('stroke-width', (d: Connection) => d.type === 'merge' ? 2 : 2)
 			.attr('fill', 'none')
-			.attr('opacity', (d: Connection) => d.type === 'merge' ? 0.8 : 0.7)
-			.style('filter', (d: Connection) => d.type === 'merge' ? 'url(#glow)' : 'none');
+			.attr('opacity', (d: Connection) => d.type === 'merge' ? 0.7 : 0.8)
+			.style('filter', 'none'); // Remove glow effect entirely for cleaner look
 
 		// Draw commit nodes
 		const nodeGroup = svg.append('g').attr('class', 'nodes');
