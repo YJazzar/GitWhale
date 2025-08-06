@@ -1,6 +1,7 @@
 package backend
 
 import (
+	. "gitwhale/backend/logger"
 	"os"
 
 	"github.com/fsnotify/fsnotify"

@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	. "gitwhale/backend/logger"
 	"os"
 	"strings"
 	"sync"
@@ -41,7 +42,7 @@ func NewApp() *App {
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (app *App) Startup(ctx context.Context, startupState *StartupState) {
-	Log.setContext(ctx)
+	Log.SetContext(ctx)
 
 	app.ctx = ctx
 	app.IsLoading = false
@@ -70,7 +71,7 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 	}
 
 	// Set up frontend log event listener
-	app.setupFrontendLogListener(ctx)
+	SetupFrontEndLogger(ctx)
 }
 
 // Saves the config file
@@ -81,10 +82,6 @@ func (app *App) Shutdown(ctx context.Context) {
 		}
 	}
 
-	// if app.IsInDirDiffMode() {
-	// 	return // no need to update config in this case
-	// }
-
 	err := app.AppConfig.SaveAppConfig()
 	if err != nil {
 		Log.Error("Failed to save application configuration: %v\n", err)
@@ -92,17 +89,8 @@ func (app *App) Shutdown(ctx context.Context) {
 }
 
 func (a *App) GetAppState() *App {
-	// Log.Debug("AppState: %v", PrettyPrint(a))
 	return a
 }
-
-// func (app *App) IsInDirDiffMode() bool {
-// 	if app.StartupState == nil || app.StartupState.DirectoryDiff == nil {
-// 		return false
-// 	}
-
-// 	return true
-// }
 
 // Reads any arbitrary file and provides it to the web process
 func (a *App) ReadFile(filePath string) string {
@@ -261,62 +249,9 @@ func (app *App) ListDiffSessions() []*DiffSession {
 }
 
 func (app *App) GetApplicationLogHistory() []LogEntry {
-	entries := logBuffer.entries
-	return entries
+	return Log.GetCachedLogEntries()
 }
 
 func (app *App) ClearApplicationLogHistory() {
-	logBuffer.entries = make([]LogEntry, 0)
-}
-
-// setupFrontendLogListener sets up event listener for frontend log messages
-func (app *App) setupFrontendLogListener(ctx context.Context) {
-	runtime.EventsOn(ctx, "frontend:log", func(optionalData ...interface{}) {
-		if len(optionalData) == 0 {
-			Log.Warning("Received empty frontend log event")
-			return
-		}
-
-		// The frontend sends the log entry as a structured object
-		logData, ok := optionalData[0].(map[string]interface{})
-		if !ok {
-			Log.Warning("Failed to parse frontend log data: %v", optionalData[0])
-			return
-		}
-
-		// Extract fields from the log entry
-		level, _ := logData["level"].(string)
-		message, _ := logData["message"].(string)
-		source, _ := logData["source"].(string)
-
-		// Prefix the message to indicate it's from frontend
-		var prefixedMessage string
-		if source != "" {
-			prefixedMessage = fmt.Sprintf("[Frontend:%s] %s", source, message)
-		} else {
-			prefixedMessage = fmt.Sprintf("[Frontend] %s", message)
-		}
-
-		// Route to appropriate backend log level
-		switch level {
-		case "PRINT":
-			Log.Print(prefixedMessage)
-		case "TRACE":
-			Log.Trace(prefixedMessage)
-		case "DEBUG":
-			Log.Debug(prefixedMessage)
-		case "INFO":
-			Log.Info(prefixedMessage)
-		case "WARNING":
-			Log.Warning(prefixedMessage)
-		case "ERROR":
-			Log.Error(prefixedMessage)
-		case "FATAL":
-			Log.Fatal(prefixedMessage)
-		default:
-			Log.Info("[Frontend] %s", message) // Default to info level
-		}
-	})
-
-	Log.Debug("Frontend log event listener setup complete")
+	Log.ClearLogEntries()
 }

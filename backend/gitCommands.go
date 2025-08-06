@@ -2,6 +2,8 @@ package backend
 
 import (
 	"fmt"
+	"gitwhale/backend/command_utils"
+	. "gitwhale/backend/logger"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -26,7 +28,11 @@ type GitLogOptions struct {
 func getCurrentBranchName(repoPath string) string {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	cmd.Dir = repoPath
-	return strings.TrimSpace(runCommandAndLogErr(cmd))
+	branchName, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(branchName)
 }
 
 // parseGitLogOutput parses the output lines from git log command into GitLogCommitInfo structs
@@ -115,24 +121,16 @@ func readGitLog(repoPath string, commitsToLoad int, fromRef string, includeMerge
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoPath
 
-	cmdOutput := runCommandAndLogErr(cmd)
+	cmdOutput, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return make([]GitLogCommitInfo, 0)
+	}
 
 	outputLines := strings.Split(cmdOutput, "\n")
-	// Log.Debug("Lines split up: %v", outputLines)
-
 	parsedLogs := parseGitLogOutput(outputLines)
 	Log.Info("Parsed commits: %v", len(parsedLogs))
 
 	return parsedLogs
-}
-
-func runCommandAndLogErr(command *exec.Cmd) string {
-	result, err := command.Output()
-	if err != nil {
-		Log.Error("Error running command: [%v] -> %v\n", command.Args, err)
-	}
-
-	return string(result)
 }
 
 func readGitLogWithOptions(repoPath string, options GitLogOptions) []GitLogCommitInfo {
@@ -175,10 +173,12 @@ func readGitLogWithOptions(repoPath string, options GitLogOptions) []GitLogCommi
 
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoPath
+	cmdOutput, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return make([]GitLogCommitInfo, 0)
+	}
 
-	cmdOutput := runCommandAndLogErr(cmd)
 	outputLines := strings.Split(cmdOutput, "\n")
-
 	parsedLogs := parseGitLogOutput(outputLines)
 	Log.Info("Parsed logs: %v", PrettyPrint(parsedLogs))
 	return parsedLogs
@@ -193,7 +193,10 @@ func getBranches(repoPath string) []GitRef {
 	// Get local branches
 	cmd := exec.Command("git", "branch", "-v")
 	cmd.Dir = repoPath
-	localOutput := runCommandAndLogErr(cmd)
+	localOutput, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return make([]GitRef, 0)
+	}
 
 	for _, line := range strings.Split(localOutput, "\n") {
 		line = strings.TrimSpace(line)
@@ -225,7 +228,10 @@ func getBranches(repoPath string) []GitRef {
 	// Get remote branches
 	cmd = exec.Command("git", "branch", "-rv")
 	cmd.Dir = repoPath
-	remoteOutput := runCommandAndLogErr(cmd)
+	remoteOutput, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return make([]GitRef, 0)
+	}
 
 	for _, line := range strings.Split(remoteOutput, "\n") {
 		line = strings.TrimSpace(line)
@@ -259,7 +265,10 @@ func getTags(repoPath string) []GitRef {
 	// Get all tags with their hashes
 	cmd := exec.Command("git", "tag", "-l")
 	cmd.Dir = repoPath
-	tagOutput := runCommandAndLogErr(cmd)
+	tagOutput, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return make([]GitRef, 0)
+	}
 
 	for _, line := range strings.Split(tagOutput, "\n") {
 		tagName := strings.TrimSpace(line)
@@ -270,8 +279,12 @@ func getTags(repoPath string) []GitRef {
 		// Get the hash for this tag (safely escaped)
 		hashCmd := exec.Command("git", "rev-list", "-n", "1", tagName)
 		hashCmd.Dir = repoPath
-		hash := strings.TrimSpace(runCommandAndLogErr(hashCmd))
+		hash, err := command_utils.RunCommandAndLogErr(hashCmd)
+		if err != nil {
+			return make([]GitRef, 0)
+		}
 
+		hash = strings.TrimSpace(hash)
 		if hash != "" {
 			tags = append(tags, GitRef{
 				Name:   tagName,
@@ -298,8 +311,7 @@ func gitFetch(repoPath, remote, ref string) error {
 	}
 
 	cmd.Dir = repoPath
-	output, err := cmd.CombinedOutput()
-
+	output, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil {
 		Log.Error("Error fetching %s/%s: %v, output: %s", remote, ref, err, string(output))
 		return fmt.Errorf("failed to fetch %s/%s: %v", remote, ref, err)
@@ -358,9 +370,9 @@ func (a *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*Detail
 	// Get comprehensive commit info using git show with proper formatting
 	cmd := exec.Command("git", "show", "--pretty=format:%H%n%an%n%ae%n%cn%n%ce%n%ct%n%at%n%P%n%D%n%T%n%B", "--stat", "--numstat", "--name-status", commitHash)
 	cmd.Dir = repoPath
-	output := runCommandAndLogErr(cmd)
+	output, err := command_utils.RunCommandAndLogErr(cmd)
 
-	if output == "" {
+	if output == "" || err != nil {
 		return nil, fmt.Errorf("commit %s not found", commitHash)
 	}
 
@@ -504,12 +516,17 @@ func (a *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*Detail
 	// Get full diff
 	diffCmd := exec.Command("git", "show", commitHash)
 	diffCmd.Dir = repoPath
-	commit.FullDiff = runCommandAndLogErr(diffCmd)
+	diffOutput, err := command_utils.RunCommandAndLogErr(diffCmd)
+	if err == nil {
+		commit.FullDiff = diffOutput
+	} else {
+		commit.FullDiff = "Error getting diff"
+	}
 
 	// Get GPG signature verification
 	gpgCmd := exec.Command("git", "verify-commit", commitHash)
 	gpgCmd.Dir = repoPath
-	gpgOutput, err := gpgCmd.CombinedOutput()
+	gpgOutput, err := command_utils.RunCommandAndLogErr(gpgCmd)
 	if err == nil {
 		commit.GPGSignature = string(gpgOutput)
 	} else {
@@ -519,16 +536,16 @@ func (a *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*Detail
 	// Get commit object size
 	sizeCmd := exec.Command("git", "cat-file", "-s", commitHash)
 	sizeCmd.Dir = repoPath
-	sizeOutput := runCommandAndLogErr(sizeCmd)
-	if sizeOutput != "" {
+	sizeOutput, err := command_utils.RunCommandAndLogErr(sizeCmd)
+	if sizeOutput != "" && err == nil {
 		fmt.Sscanf(strings.TrimSpace(sizeOutput), "%d", &commit.CommitSize)
 	}
 
 	// Get encoding info from commit object
 	catCmd := exec.Command("git", "cat-file", "commit", commitHash)
 	catCmd.Dir = repoPath
-	catOutput := runCommandAndLogErr(catCmd)
-	if strings.Contains(catOutput, "encoding ") {
+	catOutput, err := command_utils.RunCommandAndLogErr(catCmd)
+	if strings.Contains(catOutput, "encoding ") && err == nil {
 		for _, line := range strings.Split(catOutput, "\n") {
 			if strings.HasPrefix(line, "encoding ") {
 				commit.Encoding = strings.TrimPrefix(line, "encoding ")
@@ -536,8 +553,11 @@ func (a *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*Detail
 			}
 		}
 	}
-	if commit.Encoding == "" {
+	if commit.Encoding == "" && err == nil {
 		commit.Encoding = "UTF-8" // Default encoding
+	}
+	if err != nil {
+		commit.Encoding = "ERROR"
 	}
 
 	Log.Info("Successfully fetched detailed info for commit %s", commitHash)

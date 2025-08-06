@@ -1,4 +1,4 @@
-package backend
+package logger
 
 import (
 	"context"
@@ -63,8 +63,17 @@ var logBuffer = &LogBuffer{
 	maxSize: 1000, // Keep last 1000 log entries
 }
 
-func (logger *Logger) setContext(context context.Context) {
+func (logger *Logger) SetContext(context context.Context) {
 	logger.ctx = context
+}
+
+func (logger *Logger) GetCachedLogEntries() []LogEntry {
+	entries := logBuffer.entries
+	return entries
+}
+
+func (logger *Logger) ClearLogEntries() {
+	logBuffer.entries = make([]LogEntry, 0)
 }
 
 func (logger *Logger) Log(level LogLevel, message string, args ...interface{}) {

@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	. "gitwhale/backend/logger"
 	"os"
 	"path/filepath"
 	"unicode/utf8"

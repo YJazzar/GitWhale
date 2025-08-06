@@ -1,6 +1,7 @@
 package backend
 
 import (
+	. "gitwhale/backend/logger"
 	"path/filepath"
 )
 
@@ -18,7 +19,7 @@ type AppConfig struct {
 	// A list of all the previous repos opened by the user
 	RecentGitRepos []string `json:"recentGitRepos"`
 
-	// A list of starred/favorited repos that persist at the top
+	// A list of starred repos that persist at the top
 	StarredGitRepos []string `json:"starredGitRepos"`
 }
 

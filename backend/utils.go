@@ -3,6 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	. "gitwhale/backend/logger"
 	"hash/fnv"
 	"os"
 )

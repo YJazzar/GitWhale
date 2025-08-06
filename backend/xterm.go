@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	. "gitwhale/backend/logger"
 	"io"
 	goruntime "runtime"
 	"sync"

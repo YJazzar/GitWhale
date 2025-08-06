@@ -44,6 +44,10 @@ function App() {
 
 	// Callback to open a new repository tab
 	const handleOpenRepo = useCallback((repoPath: string) => {
+		if (!repoPath || repoPath === "") { 
+			return;
+		}
+
 		const fileTabsHandler = fileTabRef.current;
 		if (!fileTabsHandler) {
 			Logger.error('File tab handler is not initialized', 'App');

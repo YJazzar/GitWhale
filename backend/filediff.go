@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	. "gitwhale/backend/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,7 +40,7 @@ func SendFileDiffNotification(leftFilePath string, rightFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("could not write to the file %v: %w", filePath, err)
 	}
-	
+
 	return nil
 }
 
