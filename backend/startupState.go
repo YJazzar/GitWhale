@@ -1,7 +1,7 @@
 package backend
 
 import (
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"os"
 
 	"github.com/fsnotify/fsnotify"
@@ -40,32 +40,32 @@ func GetStartupState() *StartupState {
 		// 	},
 		// }
 
-		Log.Info("Returning default state from getStartupState() because the length was incorrect: %v", len(args))
+		logger.Log.Info("Returning default state from getStartupState() because the length was incorrect: %v", len(args))
 		return &StartupState{}
 	}
 
 	if args[1] != "--diff-tool" {
-		Log.Error("Returning default state from getStartupState() because the first flag was incorrect: %v", args[1])
+		logger.Log.Error("Returning default state from getStartupState() because the first flag was incorrect: %v", args[1])
 		return &StartupState{}
 	}
 
-	Log.Debug("Returning a valid startup state from getStartupState() ")
+	logger.Log.Debug("Returning a valid startup state from getStartupState() ")
 
 	isLeftDir, err := IsDir(args[2])
 	if err != nil {
-		Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[2], err)
+		logger.Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[2], err)
 		return &StartupState{}
 	}
 
 	isRightDir, err := IsDir(args[3])
 	if err != nil {
-		Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[3], err)
+		logger.Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[3], err)
 		return &StartupState{}
 	}
 
 	shouldSendNotification, err := isFileDiffNotificationLockFileExists()
 	if err != nil {
-		Log.Error("Error while checking file diff lock file: %v", err)
+		logger.Log.Error("Error while checking file diff lock file: %v", err)
 		return &StartupState{}
 	}
 

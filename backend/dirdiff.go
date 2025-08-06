@@ -2,7 +2,7 @@ package backend
 
 import (
 	"fmt"
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"os"
 	"path/filepath"
 	"unicode/utf8"
@@ -36,16 +36,16 @@ func readDiffs(leftPath, rightPath string) *Directory {
 	leftIsDir, leftErr := IsDir(leftPath)
 	rightIsDir, rightErr := IsDir(rightPath)
 	if leftErr != nil || rightErr != nil {
-		Log.Error("Got errors checking if the passed paths were directories or files.")
-		Log.Error("\tLeft path error: %v", leftErr)
-		Log.Error("\tRight path error: %v", rightErr)
+		logger.Log.Error("Got errors checking if the passed paths were directories or files.")
+		logger.Log.Error("\tLeft path error: %v", leftErr)
+		logger.Log.Error("\tRight path error: %v", rightErr)
 		return nil
 	}
 
 	if leftIsDir != rightIsDir {
-		Log.Error("The left path and the right input paths must match")
-		Log.Error("\tLeft path: %v", leftPath)
-		Log.Error("\tRight path: %v", rightPath)
+		logger.Log.Error("The left path and the right input paths must match")
+		logger.Log.Error("\tLeft path: %v", leftPath)
+		logger.Log.Error("\tRight path: %v", rightPath)
 		return nil
 	}
 
@@ -60,13 +60,13 @@ func readFileDiff(leftPath, rightPath string) *Directory {
 
 	leftAbsPath, err := filepath.Abs(leftPath)
 	if err != nil {
-		Log.Error("Could not translate the left input path to an absolute path. Error: %v", err)
+		logger.Log.Error("Could not translate the left input path to an absolute path. Error: %v", err)
 		return nil
 	}
 
 	rightAbsPath, err := filepath.Abs(rightPath)
 	if err != nil {
-		Log.Error("Could not translate the right input path to an absolute path. Error: %v", err)
+		logger.Log.Error("Could not translate the right input path to an absolute path. Error: %v", err)
 		return nil
 	}
 
@@ -105,12 +105,12 @@ func readDirDiffStructure(leftPath, rightPath string) *Directory {
 
 	// Traverse the directory and get the structure
 	if err := traverseDir(filepath.Clean(leftPath), InLeftDir, dirMap); err != nil {
-		Log.Error("Error: %v", err)
+		logger.Log.Error("Error: %v", err)
 		return nil
 	}
 
 	if err := traverseDir(filepath.Clean(rightPath), InRightDir, dirMap); err != nil {
-		Log.Error("Error: %v", err)
+		logger.Log.Error("Error: %v", err)
 		return nil
 	}
 
@@ -132,18 +132,18 @@ func traverseDir(
 		return fmt.Errorf("passed an invalid directory side")
 	}
 
-	Log.Trace("Traversing using root: %v\n", rootPath)
+	logger.Log.Trace("Traversing using root: %v\n", rootPath)
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			// If there's an error accessing a file/folder, print it and skip it
-			Log.Error("filepath: \"%v\"", path)
-			Log.Error("File info before error: %v", info)
-			Log.Error("Error accessing file: %v", err)
+			logger.Log.Error("filepath: \"%v\"", path)
+			logger.Log.Error("File info before error: %v", info)
+			logger.Log.Error("Error accessing file: %v", err)
 			return nil // Skip the file
 		}
 
-		Log.Trace("Walking into: %v", path)
+		logger.Log.Trace("Walking into: %v", path)
 
 		// Skip the root directory itself
 		if path == rootPath {
@@ -153,20 +153,20 @@ func traverseDir(
 		// the relative parent directory name
 		relativeParentDir, err := filepath.Rel(rootPath, filepath.Dir(path))
 		if err != nil {
-			Log.Error("Error getting relative path for: %v", path)
+			logger.Log.Error("Error getting relative path for: %v", path)
 			return nil
 		}
 
 		relativeDir, err := filepath.Rel(rootPath, path)
 		if err != nil {
-			Log.Error("Error getting relative path for: %v", path)
+			logger.Log.Error("Error getting relative path for: %v", path)
 			return nil
 		}
-		// Log.Debug("Using key in map: %v\n", relativeDir)
+		// logger.Log.Debug("Using key in map: %v\n", relativeDir)
 
 		absoluteFilePath, err := filepath.Abs(path)
 		if err != nil {
-			Log.Error("Error getting absolute path for: %v", path)
+			logger.Log.Error("Error getting absolute path for: %v", path)
 			return nil
 		}
 
@@ -201,7 +201,7 @@ func traverseDir(
 		// It's a file here
 		directoryNode, exists := cachedDirMap[relativeParentDir]
 		if !exists {
-			Log.Debug("current map state: %v", PrettyPrint(cachedDirMap))
+			logger.Log.Debug("current map state: %v", PrettyPrint(cachedDirMap))
 			return fmt.Errorf("need to always have a dir tracked in dirMap before reading its contents: %v", relativeParentDir)
 		}
 
@@ -229,7 +229,7 @@ func traverseDir(
 	})
 
 	if err != nil {
-		Log.Error("error: %v", err)
+		logger.Log.Error("error: %v", err)
 	}
 
 	return err

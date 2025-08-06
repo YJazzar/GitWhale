@@ -1,7 +1,7 @@
 package backend
 
 import (
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"path/filepath"
 )
 
@@ -42,7 +42,7 @@ type TerminalSettings struct {
 func LoadAppConfig() (*AppConfig, error) {
 	appConfigFile, err := getAppConfigFilePath()
 	if err != nil {
-		Log.Error("Could not get config file path because: %v", err)
+		logger.Log.Error("Could not get config file path because: %v", err)
 		return nil, err
 	}
 
@@ -92,13 +92,13 @@ func (config *AppConfig) SaveAppConfig() error {
 func (config *AppConfig) openNewRepo(gitRepoPath string) string {
 	gitRepoPath, err := filepath.Abs(gitRepoPath)
 	if err != nil {
-		Log.Error("Failed to get the absolute path for the repo: %v", gitRepoPath)
-		Log.Error("Inner error message: %v", err)
+		logger.Log.Error("Failed to get the absolute path for the repo: %v", gitRepoPath)
+		logger.Log.Error("Inner error message: %v", err)
 		return ""
 	}
 
 	// Add to the list of open git repos if it's not already open for some reason
-	Log.Info("Current config: %v", config)
+	logger.Log.Info("Current config: %v", config)
 	if _, exists := config.GitReposMap[gitRepoPath]; !exists {
 		config.GitReposMap[gitRepoPath] = *CreateContext(gitRepoPath)
 		config.OrderedOpenGitRepos = append(config.OrderedOpenGitRepos, gitRepoPath)
@@ -127,8 +127,8 @@ func (config *AppConfig) closeRepo(gitRepoPath string) {
 func (config *AppConfig) toggleStarRepo(gitRepoPath string) bool {
 	gitRepoPath, err := filepath.Abs(gitRepoPath)
 	if err != nil {
-		Log.Error("Failed to get the absolute path for the repo: %v", gitRepoPath)
-		Log.Error("Inner error message: %v", err)
+		logger.Log.Error("Failed to get the absolute path for the repo: %v", gitRepoPath)
+		logger.Log.Error("Inner error message: %v", err)
 		return false
 	}
 

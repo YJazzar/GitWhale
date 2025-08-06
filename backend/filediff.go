@@ -3,7 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -71,7 +71,7 @@ func StartFileDiffWatcher(ctx context.Context) (*fsnotify.Watcher, error) {
 				if !ok {
 					return
 				}
-				Log.Debug("Received file diff event: %v", event)
+				logger.Log.Debug("Received file diff event: %v", event)
 				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 					onReceivedFileDiffNotification(ctx, event.Name)
 				}
@@ -79,9 +79,9 @@ func StartFileDiffWatcher(ctx context.Context) (*fsnotify.Watcher, error) {
 				if !ok {
 					return
 				}
-				Log.Error("File diff watcher error: %v", err)
+				logger.Log.Error("File diff watcher error: %v", err)
 			case <-ctx.Done():
-				Log.Debug("File diff watcher stopping due to context cancellation")
+				logger.Log.Debug("File diff watcher stopping due to context cancellation")
 				return
 			}
 		}
@@ -111,25 +111,25 @@ type FileDiffNotification struct {
 }
 
 func onReceivedFileDiffNotification(ctx context.Context, notificationFilePath string) {
-	Log.Info("Found new file diff at path: %v", notificationFilePath)
+	logger.Log.Info("Found new file diff at path: %v", notificationFilePath)
 
 	dir, filename := filepath.Split(notificationFilePath)
-	Log.Debug("\t- dir: %v", dir)
-	Log.Debug("\t- filename: %v", filename)
+	logger.Log.Debug("\t- dir: %v", dir)
+	logger.Log.Debug("\t- filename: %v", filename)
 	if !strings.HasPrefix(filename, NotificationFilePrefix) {
-		Log.Info("Ignoring file due to incorrect prefix: %v", notificationFilePath)
+		logger.Log.Info("Ignoring file due to incorrect prefix: %v", notificationFilePath)
 		return
 	}
 
 	fileContent, err := ReadFileAsString(notificationFilePath)
 	if err != nil {
-		Log.Error("Error while getting file diff notification data: %v", err)
+		logger.Log.Error("Error while getting file diff notification data: %v", err)
 		return
 	}
 
 	lines := strings.Split(fileContent, "\n")
 	if len(lines) != 2 {
-		Log.Error("Received a notification, but the notification file was malformed (expected two lines inside it)")
+		logger.Log.Error("Received a notification, but the notification file was malformed (expected two lines inside it)")
 		return
 	}
 
@@ -138,13 +138,13 @@ func onReceivedFileDiffNotification(ctx context.Context, notificationFilePath st
 
 	leftDirAbsPath, err := filepath.Abs(leftPath)
 	if err != nil {
-		Log.Error("Could not get the absolute path for: %v", leftPath)
+		logger.Log.Error("Could not get the absolute path for: %v", leftPath)
 		return
 	}
 
 	rightDirAbsPath, err := filepath.Abs(rightPath)
 	if err != nil {
-		Log.Error("Could not get the absolute path for: %v", rightPath)
+		logger.Log.Error("Could not get the absolute path for: %v", rightPath)
 		return
 	}
 
@@ -156,14 +156,14 @@ func onReceivedFileDiffNotification(ctx context.Context, notificationFilePath st
 		RightDirAbsPath: rightDirAbsPath,
 	}
 
-	Log.Info("Opening new diff: %v", PrettyPrint(newFileNode))
+	logger.Log.Info("Opening new diff: %v", PrettyPrint(newFileNode))
 	runtime.EventsEmit(ctx, "onOpenNewFileDiff", newFileNode)
 }
 
 func createFileDiffWatcherLockFile() error {
 	lockFilePath, err := getFileDiffNotificationLockFilePath()
 	if err != nil {
-		Log.Error("Could not get the file lock (at '%v') path due to err: %v", lockFilePath, err)
+		logger.Log.Error("Could not get the file lock (at '%v') path due to err: %v", lockFilePath, err)
 		return nil
 	}
 
@@ -173,7 +173,7 @@ func createFileDiffWatcherLockFile() error {
 func deleteFileDiffWatcherLockFile() error {
 	lockFilePath, err := getFileDiffNotificationLockFilePath()
 	if err != nil {
-		Log.Error("Could not get the file lock (at '%v') path due to err: %v", lockFilePath, err)
+		logger.Log.Error("Could not get the file lock (at '%v') path due to err: %v", lockFilePath, err)
 		return err
 	}
 

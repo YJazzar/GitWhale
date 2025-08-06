@@ -3,7 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"os"
 	"strings"
 	"sync"
@@ -42,17 +42,17 @@ func NewApp() *App {
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (app *App) Startup(ctx context.Context, startupState *StartupState) {
-	Log.SetContext(ctx)
+	logger.Log.SetContext(ctx)
 
 	app.ctx = ctx
 	app.IsLoading = false
 
 	appConfig, err := LoadAppConfig()
 	if err != nil {
-		Log.Error("An error occurred while reading the application's saved config: %v\n", err)
+		logger.Log.Error("An error occurred while reading the application's saved config: %v\n", err)
 	}
 
-	Log.Trace("Running App.Startup()")
+	logger.Log.Trace("Running App.Startup()")
 
 	app.StartupState = startupState
 	app.AppConfig = appConfig
@@ -63,7 +63,7 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 		if startupState.DirectoryDiffArgs.ShouldStartFileWatcher {
 			watcher, err := StartFileDiffWatcher(ctx)
 			if err != nil {
-				Log.Error("Failed to start file diff watcher: %v", err)
+				logger.Log.Error("Failed to start file diff watcher: %v", err)
 			} else {
 				startupState.fileDiffWatcher = watcher
 			}
@@ -71,7 +71,7 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 	}
 
 	// Set up frontend log event listener
-	SetupFrontEndLogger(ctx)
+	logger.SetupFrontEndLogger(ctx)
 }
 
 // Saves the config file
@@ -84,7 +84,7 @@ func (app *App) Shutdown(ctx context.Context) {
 
 	err := app.AppConfig.SaveAppConfig()
 	if err != nil {
-		Log.Error("Failed to save application configuration: %v\n", err)
+		logger.Log.Error("Failed to save application configuration: %v\n", err)
 	}
 }
 
@@ -129,7 +129,7 @@ func (app *App) InitNewTerminalSession(repoPath string) {
 func (app *App) OnTerminalSessionWasResized(repoPath string, newSize TTYSize) {
 	session, exists := app.terminalSessions[repoPath]
 	if !exists {
-		Log.Error("Tried to resize a non-existent session")
+		logger.Log.Error("Tried to resize a non-existent session")
 		return
 	}
 
@@ -194,7 +194,7 @@ func (app *App) GetStartupDirDiffDirectory() *Directory {
 }
 
 func (app *App) StartDiffSession(options DiffOptions) (*DiffSession, error) {
-	Log.Info("Starting diff session for repo: %s", options.RepoPath)
+	logger.Log.Info("Starting diff session for repo: %s", options.RepoPath)
 
 	session, err := CreateDiffSession(options)
 	if err != nil {
@@ -230,13 +230,13 @@ func (app *App) EndDiffSession(sessionId string) error {
 	// Cleanup temp directories
 	err := CleanupDiffSession(sessionId)
 	if err != nil {
-		Log.Error("Failed to cleanup diff session %s: %v", sessionId, err)
+		logger.Log.Error("Failed to cleanup diff session %s: %v", sessionId, err)
 	}
 
 	// Remove from app sessions
 	delete(app.diffSessions, sessionId)
 
-	Log.Info("Ended diff session: %s", sessionId)
+	logger.Log.Info("Ended diff session: %s", sessionId)
 	return nil
 }
 
@@ -248,10 +248,10 @@ func (app *App) ListDiffSessions() []*DiffSession {
 	return sessions
 }
 
-func (app *App) GetApplicationLogHistory() []LogEntry {
-	return Log.GetCachedLogEntries()
+func (app *App) GetApplicationLogHistory() []logger.LogEntry {
+	return logger.Log.GetCachedLogEntries()
 }
 
 func (app *App) ClearApplicationLogHistory() {
-	Log.ClearLogEntries()
+	logger.Log.ClearLogEntries()
 }

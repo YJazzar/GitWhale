@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"os"
 	"os/exec"
 	"os/user"
@@ -86,7 +86,7 @@ func validateGitRef(repoPath, ref string) error {
 		return fmt.Errorf("invalid git reference '%s'", ref)
 	}
 
-	Log.Debug("Validated git ref '%s' in repo %s", ref, repoPath)
+	logger.Log.Debug("Validated git ref '%s' in repo %s", ref, repoPath)
 	return nil
 }
 
@@ -111,16 +111,16 @@ func createDiffDestinations(sessionId string) (leftPath, rightPath string, err e
 
 // Executes the diff script using persistent script and environment variables
 func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) error {
-	Log.Info("Starting diff operation for repo: %s, from: %s, to: %s", repoPath, fromRef, toRef)
-	Log.Debug("Diff destinations - Left: %s, Right: %s", leftDest, rightDest)
+	logger.Log.Info("Starting diff operation for repo: %s, from: %s, to: %s", repoPath, fromRef, toRef)
+	logger.Log.Debug("Diff destinations - Left: %s, Right: %s", leftDest, rightDest)
 
 	// Ensure git difftool is configured with persistent script
-	Log.Debug("Ensuring git difftool configuration...")
+	logger.Log.Debug("Ensuring git difftool configuration...")
 	if err := ensureGitDiffToolConfig(repoPath); err != nil {
-		Log.Error("Failed to configure git difftool: %v", err)
+		logger.Log.Error("Failed to configure git difftool: %v", err)
 		return fmt.Errorf("failed to configure git difftool: %v", err)
 	}
-	Log.Debug("Git difftool configuration completed successfully")
+	logger.Log.Debug("Git difftool configuration completed successfully")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -130,10 +130,10 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 	var cmdArgs []string
 	if toRef == "" {
 		cmdArgs = []string{"difftool", "-d", "--tool=" + toolName, "--no-prompt", fromRef}
-		Log.Info("Running git difftool: %s -> working tree", fromRef)
+		logger.Log.Info("Running git difftool: %s -> working tree", fromRef)
 	} else {
 		cmdArgs = []string{"difftool", "-d", "--tool=" + toolName, "--no-prompt", fromRef, toRef}
-		Log.Info("Running git difftool: %s -> %s", fromRef, toRef)
+		logger.Log.Info("Running git difftool: %s -> %s", fromRef, toRef)
 	}
 
 	// Execute git difftool with environment variables
@@ -148,20 +148,20 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 	cmd.Env = append(os.Environ(), envVars...)
 
 	// Log detailed command information
-	Log.Debug("Executing git difftool command: %s", strings.Join(cmdArgs, " "))
-	Log.Debug("Working directory: %s", repoPath)
-	Log.Debug("Environment variables: %v", envVars)
-	Log.Debug("Command timeout: 60 seconds")
+	logger.Log.Debug("Executing git difftool command: %s", strings.Join(cmdArgs, " "))
+	logger.Log.Debug("Working directory: %s", repoPath)
+	logger.Log.Debug("Environment variables: %v", envVars)
+	logger.Log.Debug("Command timeout: 60 seconds")
 
 	startTime := time.Now()
 	output, err := cmd.CombinedOutput()
 	duration := time.Since(startTime)
 	outputStr := strings.TrimSpace(string(output))
 
-	Log.Debug("Git difftool execution completed in %v", duration)
-	Log.Debug("Git difftool output length: %d bytes", len(output))
+	logger.Log.Debug("Git difftool execution completed in %v", duration)
+	logger.Log.Debug("Git difftool output length: %d bytes", len(output))
 	if len(outputStr) > 0 {
-		Log.Debug("Git difftool output: %s", outputStr)
+		logger.Log.Debug("Git difftool output: %s", outputStr)
 	}
 
 	// Parse and re-log [DIFF-SCRIPT] messages through backend Logger (for both success and error cases)
@@ -170,51 +170,51 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 	}
 
 	if err != nil {
-		Log.Error("Git difftool command failed with error: %v", err)
+		logger.Log.Error("Git difftool command failed with error: %v", err)
 
 		// Check for exit error to get more details
 		if exitError, ok := err.(*exec.ExitError); ok {
-			Log.Error("Git difftool exit code: %d", exitError.ExitCode())
-			Log.Error("Git difftool stderr: %s", string(exitError.Stderr))
+			logger.Log.Error("Git difftool exit code: %d", exitError.ExitCode())
+			logger.Log.Error("Git difftool stderr: %s", string(exitError.Stderr))
 		}
 
 		// Check if it's a git error
 		if strings.Contains(outputStr, "fatal:") || strings.Contains(outputStr, "error:") {
-			Log.Error("Git reported error in difftool operation: %s", outputStr)
+			logger.Log.Error("Git reported error in difftool operation: %s", outputStr)
 			return fmt.Errorf("git difftool failed: %s", outputStr)
 		}
 
-		Log.Error("Diff operation failed with non-git error: %v", err)
+		logger.Log.Error("Diff operation failed with non-git error: %v", err)
 		return fmt.Errorf("diff operation failed: %v", err)
 	}
 
-	Log.Debug("Git difftool command completed successfully")
+	logger.Log.Debug("Git difftool command completed successfully")
 
 	// Check script output for success/failure
 	if strings.Contains(outputStr, "ERROR:") {
-		Log.Error("Diff script reported error in output: %s", outputStr)
+		logger.Log.Error("Diff script reported error in output: %s", outputStr)
 
 		// Extract error message
 		lines := strings.Split(outputStr, "\n")
 		for _, line := range lines {
 			if strings.HasPrefix(line, "ERROR:") {
 				errorMsg := strings.TrimPrefix(line, "ERROR:")
-				Log.Error("Extracted error message: %s", errorMsg)
+				logger.Log.Error("Extracted error message: %s", errorMsg)
 				return fmt.Errorf("diff script failed: %s", errorMsg)
 			}
 		}
-		Log.Error("Error indicator found but no specific error message extracted")
+		logger.Log.Error("Error indicator found but no specific error message extracted")
 		return fmt.Errorf("diff script failed with unknown error")
 	}
 
 	if !strings.Contains(outputStr, "SUCCESS") {
-		Log.Warning("No SUCCESS indicator found in diff script output: %s", outputStr)
+		logger.Log.Warning("No SUCCESS indicator found in diff script output: %s", outputStr)
 		return fmt.Errorf("diff script did not report success: %s", outputStr)
 	}
 
-	Log.Debug("Diff script reported success: found SUCCESS indicator")
+	logger.Log.Debug("Diff script reported success: found SUCCESS indicator")
 
-	Log.Info("Diff operation completed successfully")
+	logger.Log.Info("Diff operation completed successfully")
 	return nil
 }
 
@@ -238,11 +238,11 @@ func parseAndRelogScriptOutput(output string) {
 
 			// Determine log level based on message content
 			if strings.Contains(message, "ERROR:") {
-				Log.Error("DIFF-SCRIPT: %s", message)
+				logger.Log.Error("DIFF-SCRIPT: %s", message)
 			} else if strings.Contains(message, "Starting") || strings.Contains(message, "completed") {
-				Log.Info("DIFF-SCRIPT: %s", message)
+				logger.Log.Info("DIFF-SCRIPT: %s", message)
 			} else {
-				Log.Debug("DIFF-SCRIPT: %s", message)
+				logger.Log.Debug("DIFF-SCRIPT: %s", message)
 			}
 		}
 	}
@@ -449,7 +449,7 @@ exit 0`
 
 	// Check if script already exists and is up to date
 	if _, err := os.Stat(scriptPath); err == nil {
-		Log.Debug("Persistent diff script already exists: %s", scriptPath)
+		logger.Log.Debug("Persistent diff script already exists: %s", scriptPath)
 		return scriptPath, nil
 	}
 
@@ -459,7 +459,7 @@ exit 0`
 		return "", fmt.Errorf("failed to write persistent script: %v", err)
 	}
 
-	Log.Info("Created persistent diff script: %s", scriptPath)
+	logger.Log.Info("Created persistent diff script: %s", scriptPath)
 	return scriptPath, nil
 }
 
@@ -480,7 +480,7 @@ func ensureGitDiffToolConfig(repoPath string) error {
 	if output, err := checkCmd.Output(); err == nil {
 		currentValue := strings.TrimSpace(string(output))
 		if currentValue == configValue {
-			Log.Debug("Git difftool already configured correctly")
+			logger.Log.Debug("Git difftool already configured correctly")
 			return nil
 		}
 	}
@@ -492,13 +492,13 @@ func ensureGitDiffToolConfig(repoPath string) error {
 		return fmt.Errorf("failed to configure git difftool: %v", err)
 	}
 
-	Log.Info("Configured git difftool to use persistent script: %s", scriptPath)
+	logger.Log.Info("Configured git difftool to use persistent script: %s", scriptPath)
 	return nil
 }
 
 // Creates a new diff session with simplified flow
 func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
-	Log.Info("Creating diff session for repo: %s, from: %s, to: %s", options.RepoPath, options.FromRef, options.ToRef)
+	logger.Log.Info("Creating diff session for repo: %s, from: %s, to: %s", options.RepoPath, options.FromRef, options.ToRef)
 
 	// Step 1: Validate all inputs
 	if err := validateDiffInputs(options); err != nil {
@@ -507,7 +507,7 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 
 	// Step 2: Generate session ID and create destinations
 	sessionId := generateSessionId(options)
-	Log.Debug("Created diff session ID: %s", sessionId)
+	logger.Log.Debug("Created diff session ID: %s", sessionId)
 
 	leftPath, rightPath, err := createDiffDestinations(sessionId)
 	if err != nil {
@@ -542,7 +542,7 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 		return nil, fmt.Errorf("failed to load directory structure for diff session")
 	}
 
-	Log.Info("Created diff session: %s", sessionId)
+	logger.Log.Info("Created diff session: %s", sessionId)
 	return session, nil
 }
 
@@ -564,10 +564,10 @@ func CleanupDiffSession(sessionId string) error {
 	tempDir := os.TempDir()
 	sessionDir := filepath.Join(tempDir, "gitwhale-diff", sessionId)
 
-	Log.Info("Cleaning up diff session: %s", sessionId)
+	logger.Log.Info("Cleaning up diff session: %s", sessionId)
 	err := os.RemoveAll(sessionDir)
 	if err != nil {
-		Log.Error("Failed to cleanup diff session %s: %v", sessionId, err)
+		logger.Log.Error("Failed to cleanup diff session %s: %v", sessionId, err)
 		return err
 	}
 	return nil
@@ -575,11 +575,11 @@ func CleanupDiffSession(sessionId string) error {
 
 func GetDiffSessionDirectory(session *DiffSession) *Directory {
 	if session == nil {
-		Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided a nil session")
+		logger.Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided a nil session")
 		return nil
 	}
 
-	Log.Info("Getting directory structure for diff session: %s", session.SessionId)
+	logger.Log.Info("Getting directory structure for diff session: %s", session.SessionId)
 	session.LastAccessed = time.Now()
 
 	return readDiffs(session.LeftPath, session.RightPath)
@@ -587,7 +587,7 @@ func GetDiffSessionDirectory(session *DiffSession) *Directory {
 
 func GetStartupDirDiffDirectory(diffArgs *StartupDirectoryDiffArgs) *Directory {
 	if diffArgs == nil {
-		Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided nil diffArgs")
+		logger.Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided nil diffArgs")
 		return nil
 	}
 
@@ -619,7 +619,7 @@ func CleanupOldDiffSessions() error {
 		}
 
 		if info.ModTime().Before(cutoff) {
-			Log.Info("Cleaning up old diff session: %s", entry.Name())
+			logger.Log.Info("Cleaning up old diff session: %s", entry.Name())
 			os.RemoveAll(sessionPath)
 		}
 	}

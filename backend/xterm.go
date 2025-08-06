@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"io"
 	goruntime "runtime"
 	"sync"
@@ -31,7 +31,7 @@ func SetupXTermForNewRepo(app *App, repoPath string) {
 		return
 	}
 
-	Log.Info("Setting up a new terminal session for the repo: %v", repoPath)
+	logger.Log.Info("Setting up a new terminal session for the repo: %v", repoPath)
 
 	go func() {
 		CreateXTermSession(app, repoPath)
@@ -39,13 +39,13 @@ func SetupXTermForNewRepo(app *App, repoPath string) {
 }
 
 func DisposeXTermSession(app *App, repoPath string) {
-	Log.Info("Disposing terminal session for repo: %v", repoPath)
+	logger.Log.Info("Disposing terminal session for repo: %v", repoPath)
 
 	app.terminalSessionsMutex.Lock()
 	session, exists := app.terminalSessions[repoPath]
 	if !exists {
 		app.terminalSessionsMutex.Unlock()
-		Log.Warning("No terminal session found for repo: %v", repoPath)
+		logger.Log.Warning("No terminal session found for repo: %v", repoPath)
 		return
 	}
 
@@ -64,7 +64,7 @@ func DisposeXTermSession(app *App, repoPath string) {
 	// Remove the event listener for terminal data
 	runtime.EventsOff(app.ctx, fmt.Sprintf("onTerminalData://%v", repoPath))
 
-	Log.Info("Terminal session for repo %v disposed successfully", repoPath)
+	logger.Log.Info("Terminal session for repo %v disposed successfully", repoPath)
 }
 
 // TTYSize represents a JSON structure to be sent by the frontend
@@ -82,7 +82,7 @@ func CreateXTermSession(app *App, repoPath string) {
 	// Create console with default size
 	proc, err := console.New(120, 60)
 	if err != nil {
-		Log.Error("Failed to create console: %s", err)
+		logger.Log.Error("Failed to create console: %s", err)
 		return
 	}
 	defer proc.Close()
@@ -105,7 +105,7 @@ func CreateXTermSession(app *App, repoPath string) {
 
 	// Start the terminal process
 	if err := proc.Start(args); err != nil {
-		Log.Error("Failed to start terminal: %s", err)
+		logger.Log.Error("Failed to start terminal: %s", err)
 		return
 	}
 
@@ -130,7 +130,7 @@ func CreateXTermSession(app *App, repoPath string) {
 		for {
 			select {
 			case <-ctx.Done():
-				Log.Debug("Terminal session context cancelled, ending read loop...")
+				logger.Log.Debug("Terminal session context cancelled, ending read loop...")
 				return
 			default:
 				buffer := make([]byte, maxBufferSizeBytes)
@@ -138,15 +138,15 @@ func CreateXTermSession(app *App, repoPath string) {
 
 				// We get an io.EOF error when the terminal is shutting down
 				if err == io.EOF {
-					Log.Debug("Received EOF err, ending terminal infinite read loop...")
+					logger.Log.Debug("Received EOF err, ending terminal infinite read loop...")
 					return
 				}
 
 				if err != nil {
-					Log.Warning("Ending session... Failed to read from console: %s", err)
+					logger.Log.Warning("Ending session... Failed to read from console: %s", err)
 					return
 				}
-				// Log.Trace("Sending data to client: %v", buffer[:readLength])
+				// logger.Log.Trace("Sending data to client: %v", buffer[:readLength])
 				runtime.EventsEmit(app.ctx, fmt.Sprintf("onTerminalDataReturned://%v", repoPath), buffer[:readLength])
 			}
 		}
@@ -157,7 +157,7 @@ func CreateXTermSession(app *App, repoPath string) {
 		// Check if context is cancelled before processing
 		select {
 		case <-ctx.Done():
-			Log.Debug("Terminal session context cancelled, ignoring input data...")
+			logger.Log.Debug("Terminal session context cancelled, ignoring input data...")
 			return
 		default:
 		}
@@ -166,26 +166,26 @@ func CreateXTermSession(app *App, repoPath string) {
 		for _, input := range optionalData {
 			data, ok := input.(string)
 			if !ok {
-				Log.Error("Could not cast optionalData into string: %v", input)
+				logger.Log.Error("Could not cast optionalData into string: %v", input)
 				continue
 			}
 			dataBuffer.WriteString(data)
 		}
 
-		Log.Debug("Parsed bytes: %v", dataBuffer)
+		logger.Log.Debug("Parsed bytes: %v", dataBuffer)
 
 		// write to console
 		bytesWritten, err := proc.Write(dataBuffer.Bytes())
 		if err != nil {
-			Log.Warning("Failed to write %v bytes to console: %s", len(dataBuffer.Bytes()), err)
+			logger.Log.Warning("Failed to write %v bytes to console: %s", len(dataBuffer.Bytes()), err)
 			return
 		}
-		Log.Trace("%v bytes written to console...", bytesWritten)
+		logger.Log.Trace("%v bytes written to console...", bytesWritten)
 	})
 
 	// Wait for the process to finish
 	if _, err := proc.Wait(); err != nil {
-		Log.Warning("Console process ended with error: %s", err)
+		logger.Log.Warning("Console process ended with error: %s", err)
 	}
 
 	session.waiter.Wait()

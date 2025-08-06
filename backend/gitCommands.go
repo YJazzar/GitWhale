@@ -3,7 +3,7 @@ package backend
 import (
 	"fmt"
 	"gitwhale/backend/command_utils"
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -43,7 +43,7 @@ func parseGitLogOutput(outputLines []string) []GitLogCommitInfo {
 	onShortStatLine := false
 
 	for _, line := range outputLines {
-		// Log.Debug("Parsing line: %v", line)
+		// logger.Log.Debug("Parsing line: %v", line)
 		currentSubLineCount += 1
 
 		// The null terminators comes right before the short-stat line
@@ -88,7 +88,7 @@ func parseGitLogOutput(outputLines []string) []GitLogCommitInfo {
 }
 
 func readGitLog(repoPath string, commitsToLoad int, fromRef string, includeMerges bool, searchQuery string) []GitLogCommitInfo {
-	Log.Info("Running git log on repo: %v", repoPath)
+	logger.Log.Info("Running git log on repo: %v", repoPath)
 
 	// Build git log command arguments safely
 	args := []string{
@@ -128,13 +128,13 @@ func readGitLog(repoPath string, commitsToLoad int, fromRef string, includeMerge
 
 	outputLines := strings.Split(cmdOutput, "\n")
 	parsedLogs := parseGitLogOutput(outputLines)
-	Log.Info("Parsed commits: %v", len(parsedLogs))
+	logger.Log.Info("Parsed commits: %v", len(parsedLogs))
 
 	return parsedLogs
 }
 
 func readGitLogWithOptions(repoPath string, options GitLogOptions) []GitLogCommitInfo {
-	Log.Info("Running git log with options on repo: %v", repoPath)
+	logger.Log.Info("Running git log with options on repo: %v", repoPath)
 
 	// Build git log command arguments safely
 	args := []string{
@@ -180,12 +180,12 @@ func readGitLogWithOptions(repoPath string, options GitLogOptions) []GitLogCommi
 
 	outputLines := strings.Split(cmdOutput, "\n")
 	parsedLogs := parseGitLogOutput(outputLines)
-	Log.Info("Parsed logs: %v", PrettyPrint(parsedLogs))
+	logger.Log.Info("Parsed logs: %v", PrettyPrint(parsedLogs))
 	return parsedLogs
 }
 
 func getBranches(repoPath string) []GitRef {
-	Log.Info("Getting branches for repo: %v", repoPath)
+	logger.Log.Info("Getting branches for repo: %v", repoPath)
 
 	branches := []GitRef{}
 	currentBranch := getCurrentBranchName(repoPath)
@@ -258,7 +258,7 @@ func getBranches(repoPath string) []GitRef {
 }
 
 func getTags(repoPath string) []GitRef {
-	Log.Info("Getting tags for repo: %v", repoPath)
+	logger.Log.Info("Getting tags for repo: %v", repoPath)
 
 	tags := []GitRef{}
 
@@ -299,7 +299,7 @@ func getTags(repoPath string) []GitRef {
 }
 
 func gitFetch(repoPath, remote, ref string) error {
-	Log.Info("Fetching %s/%s for repo: %v", remote, ref, repoPath)
+	logger.Log.Info("Fetching %s/%s for repo: %v", remote, ref, repoPath)
 
 	var cmd *exec.Cmd
 	if ref == "" {
@@ -313,11 +313,11 @@ func gitFetch(repoPath, remote, ref string) error {
 	cmd.Dir = repoPath
 	output, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil {
-		Log.Error("Error fetching %s/%s: %v, output: %s", remote, ref, err, string(output))
+		logger.Log.Error("Error fetching %s/%s: %v, output: %s", remote, ref, err, string(output))
 		return fmt.Errorf("failed to fetch %s/%s: %v", remote, ref, err)
 	}
 
-	Log.Info("Successfully fetched %s/%s", remote, ref)
+	logger.Log.Info("Successfully fetched %s/%s", remote, ref)
 	return nil
 }
 
@@ -365,7 +365,7 @@ type DetailedCommitInfo struct {
 
 // GetDetailedCommitInfo fetches comprehensive information about a specific commit
 func (a *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitInfo, error) {
-	Log.Info("Fetching detailed commit info for %s in %s", commitHash, repoPath)
+	logger.Log.Info("Fetching detailed commit info for %s in %s", commitHash, repoPath)
 
 	// Get comprehensive commit info using git show with proper formatting
 	cmd := exec.Command("git", "show", "--pretty=format:%H%n%an%n%ae%n%cn%n%ce%n%ct%n%at%n%P%n%D%n%T%n%B", "--stat", "--numstat", "--name-status", commitHash)
@@ -560,6 +560,6 @@ func (a *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*Detail
 		commit.Encoding = "ERROR"
 	}
 
-	Log.Info("Successfully fetched detailed info for commit %s", commitHash)
+	logger.Log.Info("Successfully fetched detailed info for commit %s", commitHash)
 	return commit, nil
 }

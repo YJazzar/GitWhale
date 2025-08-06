@@ -3,7 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
-	. "gitwhale/backend/logger"
+	"gitwhale/backend/logger"
 	"hash/fnv"
 	"os"
 )
@@ -61,21 +61,21 @@ func WriteToFileAndReplaceOld(filePath string, fileContent string) error {
 	content := []byte(fileContent)
 	err := os.WriteFile(filePath, content, 0644) // 0644 is the file permission
 	if err != nil {
-		Log.Error("Error writing to file: %v", err)
+		logger.Log.Error("Error writing to file: %v", err)
 		return err
 	}
-	Log.Info("File written successfully to: %v", filePath)
+	logger.Log.Info("File written successfully to: %v", filePath)
 	return nil
 }
 
 func DeleteFile(filePath string) error {
 	err := os.Remove(filePath)
 	if err != nil {
-		Log.Error("Error removing file: %v", err)
+		logger.Log.Error("Error removing file: %v", err)
 		return err
 	}
 
-	Log.Info("Deleted file successfully: %v", filePath)
+	logger.Log.Info("Deleted file successfully: %v", filePath)
 	return nil
 }
 
