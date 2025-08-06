@@ -19,19 +19,9 @@ const logTerminalMap = new Map<
 	}
 >();
 
-export enum LogLevel {
-	ALL,
-	TRACE,
-	DEBUG,
-	INFO,
-	PRINT,
-	WARNING,
-	ERROR,
-	FATAL,
-}
-
-// Get all keys (names) of the enum
-export const LOG_LEVEL_ENUM_KEYS: string[] = Object.keys(LogLevel).filter((key) => isNaN(Number(key)));
+// Log levels in order of severity (matches backend enum order)
+export const LOG_LEVELS = ['ALL', 'PRINT', 'TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'FATAL'] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
 
 // Color mapping for different log levels
 const LOG_LEVEL_COLORS = {
@@ -54,11 +44,26 @@ function formatLogEntry(entry: logger.LogEntry): string {
 	return `${color}[${timestamp}] ${entry.level.toString().padEnd(7)}${resetColor} ${entry.message}`;
 }
 
-const filterLevelAtom = atom<LogLevel>(LogLevel.ALL);
+const filterLevelAtom = atom<LogLevel>('ALL');
 const isLoadingAtom = atom<boolean>(false);
 
 function shouldIncludeLogEntry(entry: logger.LogEntry, currentFilterLevel: LogLevel): boolean {
-	return LogLevel[entry.level as keyof typeof LogLevel] >= currentFilterLevel;
+	// Show all entries when ALL is selected
+	if (currentFilterLevel === 'ALL') {
+		return true;
+	}
+
+	// Get severity index for both entry and filter
+	const entryIndex = LOG_LEVELS.indexOf(entry.level as LogLevel);
+	const filterIndex = LOG_LEVELS.indexOf(currentFilterLevel);
+
+	// If entry level is not found, show it by default
+	if (entryIndex === -1) {
+		return true;
+	}
+
+	// Show entries at or above the filter level (higher indices are more severe)
+	return entryIndex >= filterIndex;
 }
 
 export const useAppLogState = () => {
@@ -95,7 +100,7 @@ export const useAppLogState = () => {
 
 		const newTerminal = new Terminal(terminalOptions);
 		newTerminal.loadAddon(fitAddon);
-		newTerminal.loadAddon(new SearchAddon())
+		newTerminal.loadAddon(new SearchAddon());
 
 		// Create container element
 		const element = document.createElement('div');
@@ -156,13 +161,21 @@ export const useAppLogState = () => {
 			return;
 		}
 
-		if (!shouldIncludeLogEntry(entry, filterLevel)) {
+		appendLogEntryInner(entry, filterLevel,terminalData.terminal)
+	};
+
+	const appendLogEntryInner = (
+		entry: logger.LogEntry,
+		currentFilterLevel: LogLevel,
+		terminal: Terminal
+	) => {
+		if (!shouldIncludeLogEntry(entry, currentFilterLevel)) {
 			return;
 		}
 
 		const formattedEntry = formatLogEntry(entry) + '\r\n';
-		terminalData.terminal.write(formattedEntry);
-		terminalData.terminal.scrollToBottom();
+		terminal.write(formattedEntry);
+		terminal.scrollToBottom();
 	};
 
 	const loadInitialLogs = async () => {
@@ -204,14 +217,14 @@ export const useAppLogState = () => {
 			return;
 		}
 
-		const typedLevel = LogLevel[newFilter as keyof typeof LogLevel];
+		const typedLevel = newFilter as LogLevel;
 		setFilterLevel(typedLevel);
 
 		// Reload logs with new filter
 		terminalData.terminal.clear();
 		const entries = await GetApplicationLogHistory();
 		entries.forEach((entry: logger.LogEntry) => {
-			appendLogEntry(entry);
+			appendLogEntryInner(entry, typedLevel, terminalData.terminal);
 		});
 	};
 

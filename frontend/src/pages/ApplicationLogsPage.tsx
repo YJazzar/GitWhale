@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { LOG_LEVEL_ENUM_KEYS, LogLevel, useAppLogState } from '@/hooks/state/use-log-state';
+import { LOG_LEVELS, LogLevel, useAppLogState } from '@/hooks/state/use-log-state';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { ChevronDown, Filter, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -74,21 +74,21 @@ export default function ApplicationLogsPage() {
 										size="sm"
 										className="min-w-[100px] justify-between"
 									>
-										{LogLevel[filterLevel.get()]}
+										{filterLevel.get()}
 										<ChevronDown className="w-3 h-3" />
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent>
 									<DropdownMenuLabel>Log Level</DropdownMenuLabel>
 									<DropdownMenuSeparator />
-									{LOG_LEVEL_ENUM_KEYS.map((level) => (
+									{LOG_LEVELS.map((level) => (
 										<DropdownMenuItem
 											key={level}
-											onClick={() => logState.filterLevel.set(level)}
+											onClick={() => filterLevel.set(level)}
 											className="flex items-center justify-between"
 										>
 											{level}
-											{LogLevel[logState.filterLevel.get()] === level && (
+											{filterLevel.get() === level && (
 												<span className="text-xs">✓</span>
 											)}
 										</DropdownMenuItem>
@@ -117,7 +117,7 @@ export default function ApplicationLogsPage() {
 			{/* Status Bar */}
 			<div className="border-t bg-muted/10 px-4 py-2">
 				<div className="flex items-center justify-between text-xs text-muted-foreground">
-					<span>Filter: {LogLevel[logState.filterLevel.get()]}</span>
+					<span>Filter: {logState.filterLevel.get()}</span>
 					<span>{logState.isLoading ? 'Loading logs...' : 'Live logging active'}</span>
 				</div>
 			</div>
