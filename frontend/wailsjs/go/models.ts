@@ -502,6 +502,28 @@ export namespace backend {
 	    }
 	}
 	
+	
+	
+	
+	export class TTYSize {
+	    cols: number;
+	    rows: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TTYSize(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.cols = source["cols"];
+	        this.rows = source["rows"];
+	    }
+	}
+
+}
+
+export namespace logger {
+	
 	export class LogEntry {
 	    // Go type: time
 	    timestamp: any;
@@ -536,23 +558,6 @@ export namespace backend {
 		    }
 		    return a;
 		}
-	}
-	
-	
-	
-	export class TTYSize {
-	    cols: number;
-	    rows: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new TTYSize(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.cols = source["cols"];
-	        this.rows = source["rows"];
-	    }
 	}
 
 }

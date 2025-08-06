@@ -10,6 +10,7 @@ import {
 import { backend } from '../../../wailsjs/go/models';
 import { Logger } from '../../utils/logger';
 import { useFileManagerStatesCleanup } from './use-file-manager-state';
+import { SearchAddon } from '@xterm/addon-search';
 
 // Map color schemes to xterm themes
 export function getXTermTheme(colorScheme: string) {
@@ -107,6 +108,7 @@ function getTerminalState(repoPath: string) {
 		element.className = 'w-full h-full';
 
 		newTerminal.loadAddon(fitAddon);
+		newTerminal.loadAddon(new SearchAddon())
 
 		// Dispose existing terminal if it exists (prevents memory leaks)
 		const existingTerminal = xTermRefMap.get(repoPath);

@@ -1,11 +1,12 @@
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
-import { backend } from '../../../wailsjs/go/models';
+import { backend, logger } from '../../../wailsjs/go/models';
 import { getXTermTheme } from './use-repo-state';
 import { EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
 import { atom, useAtom } from 'jotai';
 import { ClearApplicationLogHistory, GetApplicationLogHistory } from '../../../wailsjs/go/backend/App';
 import { Logger } from '../../utils/logger';
+import { SearchAddon } from '@xterm/addon-search';
 
 // Map for persistent log terminals - similar to xTermRefMap pattern
 const logTerminalMap = new Map<
@@ -44,7 +45,7 @@ const LOG_LEVEL_COLORS = {
 	RESET: '\x1b[0m', // Reset color
 };
 
-function formatLogEntry(entry: backend.LogEntry): string {
+function formatLogEntry(entry: logger.LogEntry): string {
 	const timestamp = new Date(entry.timestamp).toLocaleTimeString();
 	const color =
 		LOG_LEVEL_COLORS[entry.level.toString() as keyof typeof LOG_LEVEL_COLORS] || LOG_LEVEL_COLORS.PRINT;
@@ -56,7 +57,7 @@ function formatLogEntry(entry: backend.LogEntry): string {
 const filterLevelAtom = atom<LogLevel>(LogLevel.ALL);
 const isLoadingAtom = atom<boolean>(false);
 
-function shouldIncludeLogEntry(entry: backend.LogEntry, currentFilterLevel: LogLevel): boolean {
+function shouldIncludeLogEntry(entry: logger.LogEntry, currentFilterLevel: LogLevel): boolean {
 	return LogLevel[entry.level as keyof typeof LogLevel] >= currentFilterLevel;
 }
 
@@ -94,6 +95,7 @@ export const useAppLogState = () => {
 
 		const newTerminal = new Terminal(terminalOptions);
 		newTerminal.loadAddon(fitAddon);
+		newTerminal.loadAddon(new SearchAddon())
 
 		// Create container element
 		const element = document.createElement('div');
@@ -147,7 +149,7 @@ export const useAppLogState = () => {
 		return terminalData;
 	};
 
-	const appendLogEntry = (entry: backend.LogEntry) => {
+	const appendLogEntry = (entry: logger.LogEntry) => {
 		const terminalData = getLogTerminalState();
 		if (!terminalData) {
 			Logger.warning('No log terminal available to append entry', 'use-log-state');
@@ -167,7 +169,7 @@ export const useAppLogState = () => {
 		setIsLoading(true);
 		try {
 			const entries = await GetApplicationLogHistory();
-			entries.forEach((entry: backend.LogEntry) => {
+			entries.forEach((entry: logger.LogEntry) => {
 				appendLogEntry(entry);
 			});
 		} catch (error) {
@@ -208,7 +210,7 @@ export const useAppLogState = () => {
 		// Reload logs with new filter
 		terminalData.terminal.clear();
 		const entries = await GetApplicationLogHistory();
-		entries.forEach((entry: backend.LogEntry) => {
+		entries.forEach((entry: logger.LogEntry) => {
 			appendLogEntry(entry);
 		});
 	};

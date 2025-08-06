@@ -10,8 +10,8 @@ import (
 func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
 	// Log the command being executed with full details
 	logger.Log.Debug("Executing git command: %s", strings.Join(command.Args, " "))
-	logger.Log.Debug("\t- Command working directory: %s", command.Dir)
-	logger.Log.Debug("\t- Command environment variables: %v", command.Env)
+	logger.Log.Trace("\t- Command working directory: %s", command.Dir)
+	logger.Log.Trace("\t- Command environment variables: %v", command.Env)
 
 	// Record start time
 	startTime := time.Now()
@@ -21,7 +21,7 @@ func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
 
 	// Log execution time
 	duration := time.Since(startTime)
-	logger.Log.Debug("\t- Command execution time: %v", duration)
+	logger.Log.Trace("\t- Command execution time: %v", duration)
 
 	if err != nil {
 		// Get more detailed error information
@@ -36,7 +36,7 @@ func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
 		logger.Log.Debug("\t- Git command completed successfully: %s", strings.Join(command.Args, " "))
 		logger.Log.Debug("\t- Command output length: %d bytes", len(result))
 		if len(result) > 0 && len(result) < 1000 {
-			logger.Log.Debug("\t- Command output: %s", strings.TrimSpace(string(result)))
+			logger.Log.Trace("\t- Command output: %s", strings.TrimSpace(string(result)))
 		}
 	}
 

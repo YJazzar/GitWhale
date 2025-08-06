@@ -7,10 +7,11 @@ import (
 	"os"
 
 	"gitwhale/backend"
+	"gitwhale/backend/logger"
 
 	"github.com/leaanthony/u"
 	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/logger"
+	WailsLogger "github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
@@ -23,7 +24,7 @@ func main() {
 	// Create an instance of the app structure
 	app := backend.NewApp()
 
-	backend.Log.Debug("Parsed OS Args: '%v'", os.Args)
+	logger.Log.Debug("Parsed OS Args: '%v'", os.Args)
 
 	pid := os.Getpid()
 
@@ -55,8 +56,8 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
-		LogLevel:           logger.DEBUG,
-		LogLevelProduction: logger.DEBUG,
+		LogLevel:           WailsLogger.DEBUG,
+		LogLevelProduction: WailsLogger.DEBUG,
 		// LogLevel: logger.INFO,
 		Mac: &mac.Options{
 			Preferences: &mac.Preferences{
