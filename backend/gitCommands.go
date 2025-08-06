@@ -180,7 +180,7 @@ func readGitLogWithOptions(repoPath string, options GitLogOptions) []GitLogCommi
 
 	outputLines := strings.Split(cmdOutput, "\n")
 	parsedLogs := parseGitLogOutput(outputLines)
-	logger.Log.Info("Parsed logs: %v", PrettyPrint(parsedLogs))
+	// logger.Log.Info("Parsed logs: %v", PrettyPrint(parsedLogs))
 	return parsedLogs
 }
 

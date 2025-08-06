@@ -41,7 +41,7 @@ function formatLogEntry(entry: logger.LogEntry): string {
 		LOG_LEVEL_COLORS[entry.level.toString() as keyof typeof LOG_LEVEL_COLORS] || LOG_LEVEL_COLORS.PRINT;
 	const resetColor = LOG_LEVEL_COLORS.RESET;
 
-	return `${color}[${timestamp}] ${entry.level.toString().padEnd(7)}${resetColor} ${entry.message}`;
+	return `${color}[${timestamp}] ${entry.level.toString().padEnd(7)} ${entry.message}${resetColor}`;
 }
 
 const filterLevelAtom = atom<LogLevel>('ALL');
