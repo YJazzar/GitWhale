@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"gitwhale/backend/command_utils"
 	"gitwhale/backend/logger"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -48,7 +48,7 @@ func validateDiffInputs(options DiffOptions) error {
 	// Check if it's a git repository
 	cmd := exec.Command("git", "rev-parse", "--git-dir")
 	cmd.Dir = options.RepoPath
-	if _, err := cmd.Output(); err != nil {
+	if _, err := command_utils.RunCommandAndLogErr(cmd); err != nil {
 		return fmt.Errorf("not a valid git repository: %s", options.RepoPath)
 	}
 
@@ -77,7 +77,7 @@ func validateDiffInputs(options DiffOptions) error {
 func validateGitRef(repoPath, ref string) error {
 	cmd := exec.Command("git", "rev-parse", "--verify", ref+"^{commit}")
 	cmd.Dir = repoPath
-	output, err := cmd.CombinedOutput()
+	output, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil {
 		gitError := strings.TrimSpace(string(output))
 		if gitError != "" {
@@ -109,12 +109,12 @@ func createDiffDestinations(sessionId string) (leftPath, rightPath string, err e
 	return leftPath, rightPath, nil
 }
 
-// Executes the diff script using persistent script and environment variables
+// Executes the diff script using helper script and environment variables
 func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) error {
 	logger.Log.Info("Starting diff operation for repo: %s, from: %s, to: %s", repoPath, fromRef, toRef)
 	logger.Log.Debug("Diff destinations - Left: %s, Right: %s", leftDest, rightDest)
 
-	// Ensure git difftool is configured with persistent script
+	// Ensure git difftool is configured with helper script
 	logger.Log.Debug("Ensuring git difftool configuration...")
 	if err := ensureGitDiffToolConfig(repoPath); err != nil {
 		logger.Log.Error("Failed to configure git difftool: %v", err)
@@ -126,7 +126,7 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 	defer cancel()
 
 	// Build git difftool command
-	toolName := "gitwhale-persistent"
+	toolName := "gitwhale-diff-helper"
 	var cmdArgs []string
 	if toRef == "" {
 		cmdArgs = []string{"difftool", "-d", "--tool=" + toolName, "--no-prompt", fromRef}
@@ -154,7 +154,7 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 	logger.Log.Debug("Command timeout: 60 seconds")
 
 	startTime := time.Now()
-	output, err := cmd.CombinedOutput()
+	output, err := command_utils.RunCommandAndLogErr(cmd)
 	duration := time.Since(startTime)
 	outputStr := strings.TrimSpace(string(output))
 
@@ -248,26 +248,9 @@ func parseAndRelogScriptOutput(output string) {
 	}
 }
 
-// Gets or creates the GitWhale app home directory
-func getAppHomeDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current user: %v", err)
-	}
-
-	appHomeDir := filepath.Join(usr.HomeDir, ".gitwhale")
-
-	// Create directory if it doesn't exist
-	if err := os.MkdirAll(appHomeDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create app home directory: %v", err)
-	}
-
-	return appHomeDir, nil
-}
-
-// Ensures the persistent diff script exists and returns its path
-func ensurePersistentDiffScript() (string, error) {
-	appHomeDir, err := getAppHomeDir()
+// Ensures the helper diff script exists and returns its path
+func ensureHelperDiffScript() (string, error) {
+	appFolderPath, err := getAppFolderPath()
 	if err != nil {
 		return "", err
 	}
@@ -445,39 +428,40 @@ echo "SUCCESS: Directories copied successfully"
 exit 0`
 	}
 
-	scriptPath := filepath.Join(appHomeDir, scriptName)
+	scriptPath := filepath.Join(appFolderPath, scriptName)
 
+	// TODO: We should run this config step once in the application's life cycle, maybe on startup?
 	// Check if script already exists and is up to date
-	if _, err := os.Stat(scriptPath); err == nil {
-		logger.Log.Debug("Persistent diff script already exists: %s", scriptPath)
-		return scriptPath, nil
-	}
+	// if _, err := os.Stat(scriptPath); err == nil {
+	// 	logger.Log.Debug("Helper diff script already exists: %s", scriptPath)
+	// 	return scriptPath, nil
+	// }
 
 	// Create the script
 	err = os.WriteFile(scriptPath, []byte(scriptContent), 0755)
 	if err != nil {
-		return "", fmt.Errorf("failed to write persistent script: %v", err)
+		return "", fmt.Errorf("failed to write helper script: %v", err)
 	}
 
-	logger.Log.Info("Created persistent diff script: %s", scriptPath)
+	logger.Log.Info("Created helper diff script: %s", scriptPath)
 	return scriptPath, nil
 }
 
-// Ensures git difftool is configured to use our persistent script
+// Ensures git difftool is configured to use our helper script
 func ensureGitDiffToolConfig(repoPath string) error {
-	scriptPath, err := ensurePersistentDiffScript()
+	scriptPath, err := ensureHelperDiffScript()
 	if err != nil {
-		return fmt.Errorf("failed to ensure persistent script: %v", err)
+		return fmt.Errorf("failed to ensure helper script: %v", err)
 	}
 
-	toolName := "gitwhale-persistent"
+	toolName := "gitwhale-diff-helper"
 	configKey := "difftool." + toolName + ".cmd"
 	configValue := scriptPath + " \"$LOCAL\" \"$REMOTE\""
 
 	// Check if already configured correctly
-	checkCmd := exec.Command("git", "config", "--local", configKey)
+	checkCmd := exec.Command("git", "config", "--global", configKey)
 	checkCmd.Dir = repoPath
-	if output, err := checkCmd.Output(); err == nil {
+	if output, err := command_utils.RunCommandAndLogErr(checkCmd); err == nil {
 		currentValue := strings.TrimSpace(string(output))
 		if currentValue == configValue {
 			logger.Log.Debug("Git difftool already configured correctly")
@@ -486,13 +470,13 @@ func ensureGitDiffToolConfig(repoPath string) error {
 	}
 
 	// Set the configuration
-	configCmd := exec.Command("git", "config", "--local", configKey, configValue)
+	configCmd := exec.Command("git", "config", "--global", configKey, configValue)
 	configCmd.Dir = repoPath
-	if err := configCmd.Run(); err != nil {
+	if _, err := command_utils.RunCommandAndLogErr(configCmd); err != nil {
 		return fmt.Errorf("failed to configure git difftool: %v", err)
 	}
 
-	logger.Log.Info("Configured git difftool to use persistent script: %s", scriptPath)
+	logger.Log.Info("Configured git difftool to use helper script: %s", scriptPath)
 	return nil
 }
 
