@@ -142,13 +142,30 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				const targetY = graphLayout.indexOf(d.target) * ROW_HEIGHT + MARGIN_TOP + NODE_RADIUS;
 
 				if (d.type === 'direct' && d.source.column === d.target.column) {
-					// Straight line for same column
+					// Straight vertical line for same column
 					return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
 				} else {
-					// Curved path for different columns
-					const midY = (sourceY + targetY) / 2;
-					return `M ${sourceX} ${sourceY} 
-					        C ${sourceX} ${midY} ${targetX} ${midY} ${targetX} ${targetY}`;
+					// Angular path with rounded corners for different columns
+					const cornerRadius = 8;
+					const midY = sourceY + (targetY - sourceY) * 0.6; // Bend point closer to source
+					
+					if (sourceX < targetX) {
+						// Moving right - start vertical, then horizontal, then vertical
+						return `M ${sourceX} ${sourceY} 
+						        L ${sourceX} ${midY - cornerRadius}
+						        Q ${sourceX} ${midY} ${sourceX + cornerRadius} ${midY}
+						        L ${targetX - cornerRadius} ${midY}
+						        Q ${targetX} ${midY} ${targetX} ${midY + cornerRadius}
+						        L ${targetX} ${targetY}`;
+					} else {
+						// Moving left - start vertical, then horizontal, then vertical  
+						return `M ${sourceX} ${sourceY}
+						        L ${sourceX} ${midY - cornerRadius}
+						        Q ${sourceX} ${midY} ${sourceX - cornerRadius} ${midY}
+						        L ${targetX + cornerRadius} ${midY}
+						        Q ${targetX} ${midY} ${targetX} ${midY + cornerRadius}
+						        L ${targetX} ${targetY}`;
+					}
 				}
 			})
 			.attr('stroke', (d: Connection) => d.color)
