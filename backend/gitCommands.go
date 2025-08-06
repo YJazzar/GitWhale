@@ -87,7 +87,7 @@ func parseGitLogOutput(outputLines []string) []GitLogCommitInfo {
 	return parsedLogs
 }
 
-func readGitLog(repoPath string, commitsToLoad int, fromRef string, includeMerges bool, searchQuery string) []GitLogCommitInfo {
+func readGitLog(repoPath string, commitsToLoad int, fromRef string, searchQuery string) []GitLogCommitInfo {
 	logger.Log.Info("Running git log on repo: %v", repoPath)
 
 	// Build git log command arguments safely
@@ -102,11 +102,7 @@ func readGitLog(repoPath string, commitsToLoad int, fromRef string, includeMerge
 	}
 
 	// Add merge handling
-	if includeMerges {
-		args = append(args, "--diff-merges=first-parent")
-	} else {
-		args = append(args, "--no-merges")
-	}
+	args = append(args, "--diff-merges=first-parent")
 
 	// Add search query if provided (safely escaped)
 	if searchQuery != "" {

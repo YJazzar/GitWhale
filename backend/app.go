@@ -142,12 +142,12 @@ func (app *App) CleanupTerminalSession(repoPath string) {
 
 func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {
 	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
-	return readGitLog(gitRepoPath, commitsToLoad, "", false, "")
+	return readGitLog(gitRepoPath, commitsToLoad, "", "")
 }
 
 func (app *App) RunGitLogFromRef(gitRepoPath, ref string) []GitLogCommitInfo {
 	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
-	return readGitLog(gitRepoPath, commitsToLoad, ref, false, "")
+	return readGitLog(gitRepoPath, commitsToLoad, ref, "")
 }
 
 func (app *App) RunGitLogWithOptions(gitRepoPath string, options GitLogOptions) []GitLogCommitInfo {
@@ -168,7 +168,7 @@ func (app *App) GitFetch(gitRepoPath, remote, ref string) error {
 
 func (app *App) SearchCommits(gitRepoPath, query string) []GitLogCommitInfo {
 	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
-	return readGitLog(gitRepoPath, commitsToLoad, "", false, query)
+	return readGitLog(gitRepoPath, commitsToLoad, "", query)
 }
 
 func (app *App) ToggleStarRepo(gitRepoPath string) bool {
