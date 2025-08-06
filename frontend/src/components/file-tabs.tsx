@@ -131,9 +131,9 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 	}, [state, operations]);
 
 	return (
-		<div className="h-full w-full flex flex-col">
+		<div className="h-full w-full flex flex-col overflow-hidden">
 			{/* The tabs */}
-			<div className="h-fit flex flex-row bg-muted/30 border-b border-border overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+			<div className="flex-none flex flex-row bg-muted/30 border-b border-border overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
 				{state.openTabs.get().map((file, index) => {
 					return (
 						<FileTabHeader
@@ -149,27 +149,31 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 			</div>
 
 			{/* The tab contents - direct component rendering */}
-			<div className="grow h-full max-h-full max-w-full w-full relative overflow-hidden">
+			<div className="flex-1 overflow-hidden relative">
 				{state.openTabs.get().map((tab) => {
 					const isActive = tab.tabKey === state.activeTabKey.get();
 
 					return (
 						<div
 							key={tab.tabKey}
-							className={clsx('absolute inset-0 h-full w-full overflow-auto', {
-								hidden: !isActive,
-								block: isActive,
+							className={clsx('absolute inset-0', {
+								'opacity-100 z-10': isActive,
+								'opacity-0 z-0 pointer-events-none': !isActive,
 							})}
-							style={{ display: isActive ? 'block' : 'none' }}
+							style={{ 
+								visibility: isActive ? 'visible' : 'hidden',
+							}}
 						>
-							{tab.component}
+							<div className="w-full h-full overflow-auto">
+								{tab.component}
+							</div>
 						</div>
 					);
 				})}
 
 				{/* Show empty state if no tabs */}
 				{state.openTabs.get().length === 0 && (
-					<div className="h-full w-full flex items-center justify-center text-muted-foreground">
+					<div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
 						No tabs open
 					</div>
 				)}
