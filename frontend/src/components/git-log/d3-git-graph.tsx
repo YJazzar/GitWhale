@@ -75,21 +75,18 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 					});
 				} else {
 					// Parent is not visible (missing from loaded commits) - create extension line
-					// Skip if this is the last commit (no need to extend further)
-					if (sourceRowIndex !== lastRowIndex) {
-						const virtualTarget: ConnectionCommit = {
-							...item,
-							rowIndex: lastRowIndex + 1, // Extend beyond the last visible commit
-							column: item.column, // Use the same column for the extension
-						};
-						
-						links.push({
-							source: { ...item, rowIndex: sourceRowIndex },
-							target: virtualTarget,
-							type: 'extension',
-							color: item.color
-						});
-					}
+					const virtualTarget: ConnectionCommit = {
+						...item,
+						rowIndex: lastRowIndex + 2, // Always extend beyond the last visible commit
+						column: item.column, // Use the same column for the extension
+					};
+					
+					links.push({
+						source: { ...item, rowIndex: sourceRowIndex },
+						target: virtualTarget,
+						type: 'extension',
+						color: item.color
+					});
 				}
 			});
 		});
