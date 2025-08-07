@@ -300,6 +300,26 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 					style={{ minWidth: graphDimensions.width }}
 				/>
 				
+				{/* Full-width hover rows */}
+				<div className="absolute top-0 left-0 w-full pointer-events-none">
+					{graphLayout.map((item, index) => {
+						const nodeY = index * ROW_HEIGHT + MARGIN_TOP;
+						
+						return (
+							<div
+								key={`hover-${item.commit.commitHash}`}
+								className="absolute w-full pointer-events-auto group hover:bg-accent/30 transition-all duration-200 cursor-pointer"
+								style={{ 
+									left: '0px',
+									top: `${nodeY - ROW_HEIGHT/2 + 6}px`,
+									height: `${ROW_HEIGHT}px`,
+								}}
+								onClick={() => onCommitClick?.(item.commit.commitHash)}
+							/>
+						);
+					})}
+				</div>
+
 				{/* Commit details positioned relative to nodes */}
 				<div className="absolute top-0 left-0 w-full pointer-events-none">
 					{graphLayout.map((item, index) => {
@@ -318,20 +338,42 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 						const nodeX = item.column * COLUMN_WIDTH + MARGIN_LEFT + NODE_RADIUS;
 						const nodeY = index * ROW_HEIGHT + MARGIN_TOP;
 						
+						// Calculate the rightmost branch position for this row
+						// Only check connections that actually cross through this row (not starting/ending here)
+						let rightmostBranchX = nodeX;
+						
+						connections.forEach(connection => {
+							const sourceRowIndex = connection.source.rowIndex;
+							const targetRowIndex = connection.target.rowIndex;
+							const minRow = Math.min(sourceRowIndex, targetRowIndex);
+							const maxRow = Math.max(sourceRowIndex, targetRowIndex);
+							
+							// Only consider connections that pass through this row without starting or ending here
+							// This excludes connections that merge into the current commit's node
+							if (index > minRow && index < maxRow) {
+								// Calculate the x positions involved in this connection
+								const sourceX = connection.source.column * COLUMN_WIDTH + MARGIN_LEFT + NODE_RADIUS;
+								const targetX = connection.target.column * COLUMN_WIDTH + MARGIN_LEFT + NODE_RADIUS;
+								const connectionRightmostX = Math.max(sourceX, targetX);
+								rightmostBranchX = Math.max(rightmostBranchX, connectionRightmostX);
+							}
+						});
+						
+						// Add padding and ensure we're at least past the node
+						const textStartX = Math.max(rightmostBranchX, nodeX) + 16;
+						
 						return (
 							<div
 								key={commit.commitHash}
-								className="absolute pointer-events-auto"
+								className="absolute pointer-events-none flex items-center"
 								style={{ 
-									left: `${nodeX + 16}px`, // Start 16px to the right of the node
-									top: `${nodeY - 4}px`, // Slightly above center of node
-									maxWidth: `calc(100% - ${nodeX + 32}px)`, // Don't overflow container
+									left: `${textStartX}px`, // Start after rightmost branch + padding
+									top: `${nodeY - ROW_HEIGHT/2 + 6}px`, // Match hover row positioning
+									height: `${ROW_HEIGHT}px`, // Match hover row height
+									maxWidth: `calc(100% - ${textStartX + 16}px)`, // Don't overflow container
 								}}
 							>
-								<div 
-									className="px-2 py-1 hover:bg-accent/50 hover:shadow-sm transition-all duration-200 cursor-pointer group rounded-sm border border-transparent hover:border-primary/20"
-									onClick={() => onCommitClick?.(commit.commitHash)}
-								>
+								<div className="px-2 py-1">
 									{/* Commit message and refs */}
 									<div className="flex items-start gap-2 mb-0.5">
 										<span className="text-sm text-foreground font-medium truncate">
