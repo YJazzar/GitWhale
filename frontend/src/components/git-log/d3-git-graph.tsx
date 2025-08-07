@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { backend } from 'wailsjs/go/models';
 import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git/use-git-graph';
 import { GitRefs } from '@/components/git-refs';
+import { useUnixTime } from '@/hooks/use-unix-time';
 
 interface D3GitGraphProps {
 	commits: backend.GitLogCommitInfo[];
@@ -393,7 +394,7 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 										</span>
 										<span>{commit.username}</span>
 										<span>
-											{new Date(commit.commitTimeStamp).toLocaleDateString()}
+											{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}
 										</span>
 										{commit.shortStat && (
 											<span className="text-xs bg-muted px-1.5 py-0.5 rounded">
