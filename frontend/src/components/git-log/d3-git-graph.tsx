@@ -11,10 +11,10 @@ interface D3GitGraphProps {
 }
 
 // Layout constants
-const COLUMN_WIDTH = 32;
-const ROW_HEIGHT = 48;
-const MARGIN_LEFT = 20;
-const MARGIN_TOP = 24;
+const COLUMN_WIDTH = 20;
+const ROW_HEIGHT = 56;
+const MARGIN_LEFT = 16;
+const MARGIN_TOP = 20;
 const NODE_RADIUS = 6;
 const MERGE_NODE_RADIUS = 8;
 
@@ -25,7 +25,7 @@ interface ConnectionCommit extends GitGraphCommit {
 interface Connection {
 	source: ConnectionCommit;
 	target: ConnectionCommit;
-	type: 'direct' | 'merge';
+	type: 'direct' | 'merge' | 'extension';
 	color: string;
 }
 
@@ -56,13 +56,16 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 		});
 
 		const links: Connection[] = [];
+		const lastRowIndex = graphLayout.length - 1;
 
+		// Process each commit and its parents
 		graphLayout.forEach((item, sourceRowIndex) => {
 			item.parentHashes.forEach((parentHash, index) => {
 				const parent = commitMap.get(parentHash);
 				const targetRowIndex = commitToRowIndex.get(parentHash);
 				
 				if (parent && targetRowIndex !== undefined) {
+					// Parent is visible - create normal connection
 					const isDirectParent = index === 0;
 					links.push({
 						source: { ...item, rowIndex: sourceRowIndex },
@@ -70,6 +73,23 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 						type: isDirectParent ? 'direct' : 'merge',
 						color: isDirectParent ? item.color : parent.color
 					});
+				} else {
+					// Parent is not visible (missing from loaded commits) - create extension line
+					// Skip if this is the last commit (no need to extend further)
+					if (sourceRowIndex !== lastRowIndex) {
+						const virtualTarget: ConnectionCommit = {
+							...item,
+							rowIndex: lastRowIndex + 1, // Extend beyond the last visible commit
+							column: item.column, // Use the same column for the extension
+						};
+						
+						links.push({
+							source: { ...item, rowIndex: sourceRowIndex },
+							target: virtualTarget,
+							type: 'extension',
+							color: item.color
+						});
+					}
 				}
 			});
 		});
@@ -160,7 +180,11 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				const targetX = d.target.column * COLUMN_WIDTH + MARGIN_LEFT + NODE_RADIUS;
 				const targetY = d.target.rowIndex * ROW_HEIGHT + MARGIN_TOP + NODE_RADIUS;
 
-				if (d.type === 'direct' && d.source.column === d.target.column) {
+				if (d.type === 'extension') {
+					// Extension lines go straight down to the bottom of the SVG
+					const bottomY = height - MARGIN_TOP;
+					return `M ${sourceX} ${sourceY} L ${sourceX} ${bottomY}`;
+				} else if (d.type === 'direct' && d.source.column === d.target.column) {
 					// Straight vertical line for same column
 					return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
 				} else {
@@ -188,9 +212,16 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				}
 			})
 			.attr('stroke', (d: Connection) => d.color)
-			.attr('stroke-width', (d: Connection) => d.type === 'merge' ? 2 : 2)
+			.attr('stroke-width', (d: Connection) => {
+				if (d.type === 'extension') return 1;
+				return d.type === 'merge' ? 2 : 2;
+			})
 			.attr('fill', 'none')
-			.attr('opacity', (d: Connection) => d.type === 'merge' ? 0.7 : 0.8)
+			.attr('opacity', (d: Connection) => {
+				if (d.type === 'extension') return 0.4;
+				return d.type === 'merge' ? 0.7 : 0.8;
+			})
+			.attr('stroke-dasharray', (d: Connection) => d.type === 'extension' ? '4,4' : 'none')
 			.style('filter', 'none'); // Remove glow effect entirely for cleaner look
 
 		// Draw commit nodes
@@ -264,18 +295,16 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 
 	return (
 		<div className={className}>
-			<div className="flex bg-background">
+			<div className="relative bg-background">
 				{/* Graph SVG */}
-				<div className="flex-shrink-0">
-					<svg 
-						ref={svgRef} 
-						className="block" 
-						style={{ minWidth: graphDimensions.width }}
-					/>
-				</div>
+				<svg 
+					ref={svgRef} 
+					className="block" 
+					style={{ minWidth: graphDimensions.width }}
+				/>
 				
-				{/* Commit details */}
-				<div className="flex-1 min-w-0 bg-background">
+				{/* Commit details positioned relative to nodes */}
+				<div className="absolute top-0 left-0 w-full pointer-events-none">
 					{graphLayout.map((item, index) => {
 						const { commit } = item;
 						const commitMessage = Array.isArray(commit.commitMessage)
@@ -283,34 +312,43 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 							: commit.commitMessage;
 						
 						const firstLine = commitMessage.split('\n')[0];
-						const displayMessage = firstLine.length > 75 
-							? firstLine.slice(0, 75) + '...' 
+						const displayMessage = firstLine.length > 60 
+							? firstLine.slice(0, 60) + '...' 
 							: firstLine;
 						const shortHash = commit.commitHash.slice(0, 7);
+						
+						// Calculate position relative to the node
+						const nodeX = item.column * COLUMN_WIDTH + MARGIN_LEFT + NODE_RADIUS;
+						const nodeY = index * ROW_HEIGHT + MARGIN_TOP;
 						
 						return (
 							<div
 								key={commit.commitHash}
-								className="flex items-center px-3 py-1.5 hover:bg-accent/50 hover:shadow-sm transition-all duration-200 cursor-pointer group border-l-2 hover:border-primary/20"
+								className="absolute pointer-events-auto"
 								style={{ 
-									height: `${ROW_HEIGHT}px`,
-									borderLeftColor: item.color,
+									left: `${nodeX + 16}px`, // Start 16px to the right of the node
+									top: `${nodeY - 4}px`, // Slightly above center of node
+									maxWidth: `calc(100% - ${nodeX + 32}px)`, // Don't overflow container
 								}}
-								onClick={() => onCommitClick?.(commit.commitHash)}
 							>
-								<div className="flex-1 min-w-0">
+								<div 
+									className="px-2 py-1 hover:bg-accent/50 hover:shadow-sm transition-all duration-200 cursor-pointer group rounded-sm border border-transparent hover:border-primary/20"
+									onClick={() => onCommitClick?.(commit.commitHash)}
+								>
 									{/* Commit message and refs */}
-									<div className="flex items-start gap-2 mb-1">
-										<span className="text-sm text-foreground font-medium truncate flex-1">
+									<div className="flex items-start gap-2 mb-0.5">
+										<span className="text-sm text-foreground font-medium truncate">
 											{displayMessage}
 										</span>
 										{commit.refs && (
-											<GitRefs refs={commit.refs} />
+											<div className="flex-shrink-0">
+												<GitRefs refs={commit.refs} />
+											</div>
 										)}
 									</div>
 									
 									{/* Commit metadata */}
-									<div className="flex items-center gap-3 text-xs text-muted-foreground">
+									<div className="flex items-center gap-2 text-xs text-muted-foreground">
 										<span className="font-mono font-medium text-primary">
 											{shortHash}
 										</span>
