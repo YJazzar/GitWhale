@@ -78,7 +78,7 @@ export function GitRefs({ refs, showHead = true, size = 'sm' }: GitRefsProps) {
 			{showHead && parsedRefs.head && (
 				<Badge
 					variant="default"
-					className={`${badgeSize} shrink-0 bg-orange-500 hover:bg-orange-600 text-white border-orange-500`}
+					className={`${badgeSize} shrink-0 bg-orange-500 hover:bg-orange-600 text-white border-orange-500 px-1.5 py-0`}
 				>
 					HEAD
 				</Badge>
@@ -89,9 +89,9 @@ export function GitRefs({ refs, showHead = true, size = 'sm' }: GitRefsProps) {
 				<Badge
 					key={`local-${index}`}
 					variant="secondary"
-					className={`${badgeSize} shrink-0 bg-green-100 text-green-800 border-green-200 hover:bg-green-200`}
+					className={`${badgeSize} shrink-0 bg-green-100 text-green-800 border-green-200 hover:bg-green-200 px-1.5 py-0`}
 				>
-					<GitBranch className={`${iconSize} mr-1`} />
+					<GitBranch className={`${iconSize} mr-0.5`} />
 					{branch}
 				</Badge>
 			))}
@@ -101,9 +101,9 @@ export function GitRefs({ refs, showHead = true, size = 'sm' }: GitRefsProps) {
 				<Badge
 					key={`remote-${index}`}
 					variant="outline"
-					className={`${badgeSize} shrink-0 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100`}
+					className={`${badgeSize} shrink-0 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 px-1.5 py-0`}
 				>
-					<GitBranch className={`${iconSize} mr-1`} />
+					<GitBranch className={`${iconSize} mr-0.5`} />
 					{branch}
 				</Badge>
 			))}
@@ -113,9 +113,9 @@ export function GitRefs({ refs, showHead = true, size = 'sm' }: GitRefsProps) {
 				<Badge
 					key={`tag-${index}`}
 					variant="outline"
-					className={`${badgeSize} shrink-0 bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100`}
+					className={`${badgeSize} shrink-0 bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100 px-1.5 py-0`}
 				>
-					<Tag className={`${iconSize} mr-1`} />
+					<Tag className={`${iconSize} mr-0.5`} />
 					{tag}
 				</Badge>
 			))}
