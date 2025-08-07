@@ -23,7 +23,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const refreshLogs = async () => {
 		setLoading(true);
 		try {
-			const newLogs = await RunGitLog(repoPath);
+			const newLogs = await RunGitLog(repoPath, {});
 			logState.setLogs(newLogs);
 		} catch (error) {
 			Logger.error(`Failed to load git log: ${error}`, 'RepoLogView');

@@ -140,18 +140,17 @@ func (app *App) CleanupTerminalSession(repoPath string) {
 	DisposeXTermSession(app, repoPath)
 }
 
-func (app *App) RunGitLog(gitRepoPath string) []GitLogCommitInfo {
-	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
-	return readGitLog(gitRepoPath, commitsToLoad, "", "")
-}
+func (app *App) RunGitLog(gitRepoPath string, options *GitLogOptions) []GitLogCommitInfo {
 
-func (app *App) RunGitLogFromRef(gitRepoPath, ref string) []GitLogCommitInfo {
-	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
-	return readGitLog(gitRepoPath, commitsToLoad, ref, "")
-}
+	if options == nil {
+		options = &GitLogOptions{}
+	}
 
-func (app *App) RunGitLogWithOptions(gitRepoPath string, options GitLogOptions) []GitLogCommitInfo {
-	return readGitLogWithOptions(gitRepoPath, options)
+	if options.CommitsToLoad == nil || *options.CommitsToLoad == 0 {
+		options.CommitsToLoad = &app.AppConfig.Settings.Git.CommitsToLoad
+	}
+
+	return readGitLog(gitRepoPath, *options)
 }
 
 func (app *App) GetBranches(gitRepoPath string) []GitRef {
@@ -164,11 +163,6 @@ func (app *App) GetTags(gitRepoPath string) []GitRef {
 
 func (app *App) GitFetch(gitRepoPath, remote, ref string) error {
 	return gitFetch(gitRepoPath, remote, ref)
-}
-
-func (app *App) SearchCommits(gitRepoPath, query string) []GitLogCommitInfo {
-	commitsToLoad := app.AppConfig.Settings.Git.CommitsToLoad
-	return readGitLog(gitRepoPath, commitsToLoad, "", query)
 }
 
 func (app *App) ToggleStarRepo(gitRepoPath string) bool {

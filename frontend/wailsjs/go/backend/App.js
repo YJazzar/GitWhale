@@ -74,20 +74,8 @@ export function ReadFile(arg1) {
   return window['go']['backend']['App']['ReadFile'](arg1);
 }
 
-export function RunGitLog(arg1) {
-  return window['go']['backend']['App']['RunGitLog'](arg1);
-}
-
-export function RunGitLogFromRef(arg1, arg2) {
-  return window['go']['backend']['App']['RunGitLogFromRef'](arg1, arg2);
-}
-
-export function RunGitLogWithOptions(arg1, arg2) {
-  return window['go']['backend']['App']['RunGitLogWithOptions'](arg1, arg2);
-}
-
-export function SearchCommits(arg1, arg2) {
-  return window['go']['backend']['App']['SearchCommits'](arg1, arg2);
+export function RunGitLog(arg1, arg2) {
+  return window['go']['backend']['App']['RunGitLog'](arg1, arg2);
 }
 
 export function StartDiffSession(arg1) {

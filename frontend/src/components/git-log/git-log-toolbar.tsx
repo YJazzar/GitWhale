@@ -1,9 +1,4 @@
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Logger } from '@/utils/logger';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,27 +10,29 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { useRepoState } from '@/hooks/state/use-repo-state';
+import { Logger } from '@/utils/logger';
 import {
-	RefreshCw,
-	GitBranch,
-	Tag,
+	ChevronDown,
 	Download,
+	Filter,
+	GitBranch,
+	RefreshCw,
 	Search,
 	Settings,
-	ChevronDown,
-	Filter,
-	GitCompare,
+	Tag
 } from 'lucide-react';
+import { useEffect } from 'react';
 import { backend } from 'wailsjs/go/models';
 import {
 	GetBranches,
 	GetTags,
 	GitFetch,
-	RunGitLogWithOptions,
-	RunGitLogFromRef,
-	SearchCommits,
+	RunGitLog,
 } from '../../../wailsjs/go/backend/App';
-import { useRepoState } from '@/hooks/state/use-repo-state';
 
 interface GitLogToolbarProps {
 	repoPath: string;
@@ -50,7 +47,6 @@ interface GitLogOptions {
 	commitsToLoad: number;
 	fromRef: string;
 	toRef: string;
-	includeMerges: boolean;
 	searchQuery: string;
 	author: string;
 }
@@ -430,7 +426,15 @@ export function GitLogToolbar({
 		onRefChange(newRef);
 		onLoadingChange(true);
 		try {
-			const commits = await RunGitLogFromRef(repoPath, newRef);
+			const options: GitLogOptions = {
+				commitsToLoad: toolbarOptions.commitCount,
+				fromRef: newRef,
+				toRef: toolbarOptions.toRef,
+				searchQuery: toolbarOptions.searchQuery,
+				author: '',
+			};
+			const commits = await RunGitLog(repoPath, options);
+
 			onCommitsUpdate(commits);
 		} catch (error) {
 			Logger.error(`Failed to load commits from ref: ${error}`, 'git-log-toolbar');
@@ -446,12 +450,11 @@ export function GitLogToolbar({
 				commitsToLoad: toolbarOptions.commitCount,
 				fromRef: toolbarOptions.fromRef || currentRef,
 				toRef: toolbarOptions.toRef,
-				includeMerges: toolbarOptions.includeMerges,
 				searchQuery: toolbarOptions.searchQuery,
 				author: '',
 			};
 
-			const commits = await RunGitLogWithOptions(repoPath, options);
+			const commits = await RunGitLog(repoPath, options);
 			onCommitsUpdate(commits);
 		} catch (error) {
 			Logger.error(`Failed to load commits with options: ${error}`, 'git-log-toolbar');
@@ -468,7 +471,15 @@ export function GitLogToolbar({
 
 		onLoadingChange(true);
 		try {
-			const commits = await SearchCommits(repoPath, toolbarOptions.searchQuery);
+			const options: GitLogOptions = {
+				commitsToLoad: toolbarOptions.commitCount,
+				fromRef: toolbarOptions.fromRef || currentRef,
+				toRef: toolbarOptions.toRef,
+				searchQuery: toolbarOptions.searchQuery,
+				author: '',
+			};
+
+			const commits = await RunGitLog(repoPath, options);
 			onCommitsUpdate(commits);
 		} catch (error) {
 			Logger.error(`Failed to search commits: ${error}`, 'git-log-toolbar');

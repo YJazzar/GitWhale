@@ -462,12 +462,11 @@ export namespace backend {
 	    }
 	}
 	export class GitLogOptions {
-	    commitsToLoad: number;
-	    fromRef: string;
-	    toRef: string;
-	    includeMerges: boolean;
-	    searchQuery: string;
-	    author: string;
+	    commitsToLoad?: number;
+	    fromRef?: string;
+	    toRef?: string;
+	    searchQuery?: string;
+	    author?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new GitLogOptions(source);
@@ -478,7 +477,6 @@ export namespace backend {
 	        this.commitsToLoad = source["commitsToLoad"];
 	        this.fromRef = source["fromRef"];
 	        this.toRef = source["toRef"];
-	        this.includeMerges = source["includeMerges"];
 	        this.searchQuery = source["searchQuery"];
 	        this.author = source["author"];
 	    }

@@ -75,14 +75,14 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 
 			try {
 				// Fetch data in parallel for better performance
-				const [commitsData, branchesData, tagsData] = await Promise.all([
-					RunGitLog(repoPath),
+				const [ branchesData, tagsData] = await Promise.all([
+					// RunGitLog(repoPath),
 					GetBranches(repoPath),
 					GetTags(repoPath),
 				]);
 
 				// Limit to recent commits for home view
-				setRecentCommits(commitsData.slice(0, 20));
+				// setRecentCommits(commitsData.slice(0, 20));
 				setBranches(branchesData);
 				setTags(tagsData);
 			} catch (err) {

@@ -40,13 +40,7 @@ export function OpenNewRepo():Promise<string>;
 
 export function ReadFile(arg1:string):Promise<string>;
 
-export function RunGitLog(arg1:string):Promise<Array<backend.GitLogCommitInfo>>;
-
-export function RunGitLogFromRef(arg1:string,arg2:string):Promise<Array<backend.GitLogCommitInfo>>;
-
-export function RunGitLogWithOptions(arg1:string,arg2:backend.GitLogOptions):Promise<Array<backend.GitLogCommitInfo>>;
-
-export function SearchCommits(arg1:string,arg2:string):Promise<Array<backend.GitLogCommitInfo>>;
+export function RunGitLog(arg1:string,arg2:backend.GitLogOptions):Promise<Array<backend.GitLogCommitInfo>>;
 
 export function StartDiffSession(arg1:backend.DiffOptions):Promise<backend.DiffSession>;
 
