@@ -5,7 +5,6 @@ on:
     tags:
     # Match any new tag
       - '*'
-    branches: ['main']
 
 env:
   # Necessary for most environments as build failure can occur due to OOM issues
