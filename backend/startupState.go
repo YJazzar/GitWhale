@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
 
@@ -51,19 +52,19 @@ func GetStartupState() *StartupState {
 
 	logger.Log.Debug("Returning a valid startup state from getStartupState() ")
 
-	isLeftDir, err := IsDir(args[2])
+	isLeftDir, err := lib.IsDir(args[2])
 	if err != nil {
 		logger.Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[2], err)
 		return &StartupState{}
 	}
 
-	isRightDir, err := IsDir(args[3])
+	isRightDir, err := lib.IsDir(args[3])
 	if err != nil {
 		logger.Log.Error("Ran into the following error while testing if '%v' is a directory: %v", args[3], err)
 		return &StartupState{}
 	}
 
-	shouldSendNotification, err := isFileDiffNotificationLockFileExists()
+	shouldSendNotification, err := lib.IsFileDiffNotificationLockFileExists()
 	if err != nil {
 		logger.Log.Error("Error while checking file diff lock file: %v", err)
 		return &StartupState{}

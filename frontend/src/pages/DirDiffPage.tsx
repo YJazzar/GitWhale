@@ -1,16 +1,14 @@
 import { FileTree } from '@/components/dir-diff-viewer';
 import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { UseAppState } from '@/hooks/state/use-app-state';
-import { TabProps } from '@/hooks/state/use-file-manager-state';
 import { atom, useAtom } from 'jotai';
-import { GitCompare, Loader2 } from 'lucide-react';
+import { GitCompare } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { GetStartupDirDiffDirectory } from '../../wailsjs/go/backend/App';
-import { backend } from '../../wailsjs/go/models';
+import { git_operations } from '../../wailsjs/go/models';
 
-const directoryDataAtom = atom<backend.Directory>();
+const directoryDataAtom = atom<git_operations.Directory>();
 
 export default function DirDiffPage() {
 	const [directoryData, setDirectoryData] = useAtom(directoryDataAtom);

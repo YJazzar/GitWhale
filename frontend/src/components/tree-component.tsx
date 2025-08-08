@@ -1,12 +1,12 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { KeyboardEventHandler, useState } from 'react';
-import { backend } from '../../wailsjs/go/models';
+import { backend, git_operations } from '../../wailsjs/go/models';
 import { Button } from './ui/button';
 import clsx from 'clsx';
 
 interface TreeNodeProps {
-	directory: backend.Directory;
-	onFileClick: (file: backend.FileInfo, keepFileOpen: boolean) => void;
+	directory: git_operations.Directory;
+	onFileClick: (file: git_operations.FileInfo, keepFileOpen: boolean) => void;
 }
 
 const leftPadding = 'pl-4';
@@ -84,9 +84,9 @@ export function TreeNode(props: TreeNodeProps) {
 }
 
 export function FileNode(props: {
-	file: backend.FileInfo;
+	file: git_operations.FileInfo;
 	onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
-	onFileClick: (file: backend.FileInfo, keepFileOpen: boolean) => void;
+	onFileClick: (file: git_operations.FileInfo, keepFileOpen: boolean) => void;
 }) {
 	const { file, onFileClick } = props;
 

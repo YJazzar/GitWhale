@@ -1,4 +1,4 @@
-package backend
+package git_operations
 
 import (
 	"fmt"
@@ -24,7 +24,20 @@ type GitLogOptions struct {
 	Author        *string `json:"author"`
 }
 
-func getCurrentBranchName(repoPath string) string {
+// Represents a line in `git log`'s output
+type GitLogCommitInfo struct {
+	CommitHash         string   `json:"commitHash"`
+	Username           string   `json:"username"`
+	UserEmail          string   `json:"userEmail"`
+	CommitTimeStamp    string   `json:"commitTimeStamp"`
+	AuthoredTimeStamp  string   `json:"authoredTimeStamp"`
+	ParentCommitHashes []string `json:"parentCommitHashes"`
+	Refs               string   `json:"refs"`
+	CommitMessage      []string `json:"commitMessage"`
+	ShortStat          string   `json:"shortStat"`
+}
+
+func GetCurrentBranchName(repoPath string) string {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	cmd.Dir = repoPath
 	branchName, err := command_utils.RunCommandAndLogErr(cmd)
@@ -86,7 +99,7 @@ func parseGitLogOutput(outputLines []string) []GitLogCommitInfo {
 	return parsedLogs
 }
 
-func readGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
+func ReadGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
 	logger.Log.Info("Running git log with options on repo: %v", repoPath)
 
 	// Build git log command arguments safely
@@ -135,11 +148,11 @@ func readGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
 	return parsedLogs
 }
 
-func getBranches(repoPath string) []GitRef {
+func GetBranches(repoPath string) []GitRef {
 	logger.Log.Info("Getting branches for repo: %v", repoPath)
 
 	branches := []GitRef{}
-	currentBranch := getCurrentBranchName(repoPath)
+	currentBranch := GetCurrentBranchName(repoPath)
 
 	// Get local branches
 	cmd := exec.Command("git", "show-ref")
@@ -235,7 +248,7 @@ func getBranches(repoPath string) []GitRef {
 	return branches
 }
 
-func getTags(repoPath string) []GitRef {
+func GetTags(repoPath string) []GitRef {
 	logger.Log.Info("Getting tags for repo: %v", repoPath)
 
 	tags := []GitRef{}
@@ -276,7 +289,7 @@ func getTags(repoPath string) []GitRef {
 	return tags
 }
 
-func gitFetch(repoPath, remote, ref string) error {
+func GitFetch(repoPath, remote, ref string) error {
 	logger.Log.Info("Fetching %s/%s for repo: %v", remote, ref, repoPath)
 
 	var cmd *exec.Cmd
@@ -342,7 +355,7 @@ type DetailedCommitInfo struct {
 }
 
 // GetDetailedCommitInfo fetches comprehensive information about a specific commit
-func (a *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitInfo, error) {
+func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitInfo, error) {
 	logger.Log.Info("Fetching detailed commit info for %s in %s", commitHash, repoPath)
 
 	// Get comprehensive commit info using git show with proper formatting

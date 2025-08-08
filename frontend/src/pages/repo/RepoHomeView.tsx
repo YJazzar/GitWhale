@@ -1,30 +1,30 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { CommitHash } from '@/components/commit-hash';
+import { GitRefs } from '@/components/git-refs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-	GitBranch,
-	GitCommit,
-	Tag,
-	Users,
-	FileText,
-	Clock,
-	TrendingUp,
-	Copy,
-	ExternalLink,
-	Terminal,
-	GitPullRequest,
-	Star,
-	Folder,
-} from 'lucide-react';
-import { backend } from 'wailsjs/go/models';
-import { RunGitLog, GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
-import { GitRefs } from '@/components/git-refs';
-import { CommitHash } from '@/components/commit-hash';
 import { useRepoState } from '@/hooks/state/use-repo-state';
 import { Logger } from '@/utils/logger';
+import {
+	Clock,
+	Copy,
+	ExternalLink,
+	FileText,
+	Folder,
+	GitBranch,
+	GitCommit,
+	GitPullRequest,
+	Star,
+	Tag,
+	Terminal,
+	TrendingUp,
+	Users,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { git_operations } from 'wailsjs/go/models';
+import { GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
 
 interface RepoStats {
 	commitCount: number;
@@ -40,9 +40,9 @@ interface RepoHomeViewProps {
 
 export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 	const repoState = useRepoState(repoPath);
-	const [recentCommits, setRecentCommits] = useState<backend.GitLogCommitInfo[]>([]);
-	const [branches, setBranches] = useState<backend.GitRef[]>([]);
-	const [tags, setTags] = useState<backend.GitRef[]>([]);
+	const [recentCommits, setRecentCommits] = useState<git_operations.GitLogCommitInfo[]>([]);
+	const [branches, setBranches] = useState<git_operations.GitRef[]>([]);
+	const [tags, setTags] = useState<git_operations.GitRef[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 

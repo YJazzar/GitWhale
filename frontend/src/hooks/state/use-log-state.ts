@@ -1,6 +1,6 @@
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
-import { backend, logger } from '../../../wailsjs/go/models';
+import { backend, command_utils, logger } from '../../../wailsjs/go/models';
 import { getXTermTheme } from './use-repo-state';
 import { EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
 import { atom, useAtom } from 'jotai';
@@ -70,7 +70,7 @@ export const useAppLogState = () => {
 	const [filterLevel, setFilterLevel] = useAtom(filterLevelAtom);
 	const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
 
-	const createLogTerminal = (terminalSettings?: backend.TerminalSettings) => {
+	const createLogTerminal = (terminalSettings?: command_utils.TerminalSettings) => {
 		const terminalKey = 'application-logs';
 		const existingTerminal = logTerminalMap.get(terminalKey);
 

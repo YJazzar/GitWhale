@@ -1,7 +1,7 @@
-import { backend } from "wailsjs/go/models";
+import { backend, git_operations } from "wailsjs/go/models";
 
 interface GitGraphCommit {
-	commit: backend.GitLogCommitInfo;
+	commit: git_operations.GitLogCommitInfo;
 	column: number;
 	color: string;
 	parentHashes: string[];
@@ -21,7 +21,7 @@ const BRANCH_COLORS = [
 	'#6366f1'  // indigo
 ];
 
-function calculateGitGraphLayout(commits: backend.GitLogCommitInfo[]): GitGraphCommit[] {
+function calculateGitGraphLayout(commits: git_operations.GitLogCommitInfo[]): GitGraphCommit[] {
 	if (!commits || commits.length === 0) {
 		return [];
 	}
@@ -39,9 +39,9 @@ function calculateGitGraphLayout(commits: backend.GitLogCommitInfo[]): GitGraphC
 }
 
 // Temporal topological sort as described in the article
-function temporalTopologicalSort(commits: backend.GitLogCommitInfo[]): backend.GitLogCommitInfo[] {
+function temporalTopologicalSort(commits: git_operations.GitLogCommitInfo[]): git_operations.GitLogCommitInfo[] {
 	// Build commit map for quick lookups
-	const commitMap = new Map<string, backend.GitLogCommitInfo>();
+	const commitMap = new Map<string, git_operations.GitLogCommitInfo>();
 	commits.forEach(commit => commitMap.set(commit.commitHash, commit));
 
 	// Build children relationships
@@ -66,7 +66,7 @@ function temporalTopologicalSort(commits: backend.GitLogCommitInfo[]): backend.G
 
 	// Temporal topological sort using DFS
 	const explored = new Set<string>();
-	const result: backend.GitLogCommitInfo[] = [];
+	const result: git_operations.GitLogCommitInfo[] = [];
 
 	function dfs(commitHash: string) {
 		if (explored.has(commitHash)) {
@@ -97,7 +97,7 @@ function temporalTopologicalSort(commits: backend.GitLogCommitInfo[]): backend.G
 
 // Enhanced commit structure for graph processing
 interface GraphCommit {
-	commit: backend.GitLogCommitInfo;
+	commit: git_operations.GitLogCommitInfo;
 	row: number;
 	branchChildren: string[];
 	mergeChildren: string[];
@@ -105,8 +105,8 @@ interface GraphCommit {
 }
 
 // Create commit graph with enhanced relationships
-function createCommitGraph(sortedCommits: backend.GitLogCommitInfo[]): GraphCommit[] {
-	const commitMap = new Map<string, backend.GitLogCommitInfo>();
+function createCommitGraph(sortedCommits: git_operations.GitLogCommitInfo[]): GraphCommit[] {
+	const commitMap = new Map<string, git_operations.GitLogCommitInfo>();
 	const children = new Map<string, Set<string>>();
 
 	// Build maps
@@ -240,7 +240,7 @@ function assignColumns(graphCommits: GraphCommit[]): GitGraphCommit[] {
 
 // Compute forbidden columns for a commit (simplified version)
 function computeForbiddenColumns(
-	commit: backend.GitLogCommitInfo,
+	commit: git_operations.GitLogCommitInfo,
 	mergeChildren: string[],
 	commitToColumn: Map<string, number>,
 	activeBranches: (string | null)[],

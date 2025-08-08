@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"fmt"
+	"gitwhale/backend/git_operations"
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
 	"path/filepath"
@@ -15,7 +17,7 @@ import (
 const NotificationFilePrefix = "FileDiff_"
 
 func SendFileDiffNotification(leftFilePath string, rightFilePath string) error {
-	lockFolderPath, err := getFileDiffNotificationsFolderPath()
+	lockFolderPath, err := lib.GetFileDiffNotificationsFolderPath()
 	if err != nil {
 		return fmt.Errorf("could not get the folder path to the notification folder: %w", err)
 	}
@@ -33,10 +35,10 @@ func SendFileDiffNotification(leftFilePath string, rightFilePath string) error {
 	}
 
 	fileContent := fmt.Sprintf("%v\n%v", leftFilePath, rightFilePath)
-	fileName := fmt.Sprintf("%v%v.tmp", NotificationFilePrefix, HashString(fileContent))
+	fileName := fmt.Sprintf("%v%v.tmp", NotificationFilePrefix, lib.HashString(fileContent))
 	filePath := filepath.Join(lockFolderPath, fileName)
 
-	err = WriteToFileAndReplaceOld(filePath, fileContent)
+	err = lib.WriteToFileAndReplaceOld(filePath, fileContent)
 	if err != nil {
 		return fmt.Errorf("could not write to the file %v: %w", filePath, err)
 	}
@@ -46,7 +48,7 @@ func SendFileDiffNotification(leftFilePath string, rightFilePath string) error {
 
 // Starts a watcher to the temporary file where we can get notifications for what new files to diff
 func StartFileDiffWatcher(ctx context.Context) (*fsnotify.Watcher, error) {
-	lockFolderPath, err := getFileDiffNotificationsFolderPath()
+	lockFolderPath, err := lib.GetFileDiffNotificationsFolderPath()
 	if err != nil {
 		return nil, fmt.Errorf("could not get notification folder path: %w", err)
 	}
@@ -121,7 +123,7 @@ func onReceivedFileDiffNotification(ctx context.Context, notificationFilePath st
 		return
 	}
 
-	fileContent, err := ReadFileAsString(notificationFilePath)
+	fileContent, err := lib.ReadFileAsString(notificationFilePath)
 	if err != nil {
 		logger.Log.Error("Error while getting file diff notification data: %v", err)
 		return
@@ -148,34 +150,34 @@ func onReceivedFileDiffNotification(ctx context.Context, notificationFilePath st
 		return
 	}
 
-	newFileNode := FileInfo{
+	newFileNode := git_operations.FileInfo{
 		Path:            "",
 		Name:            filepath.Base(leftPath),
-		Extension:       removeLeadingPeriod(filepath.Ext(leftPath)),
+		Extension:       lib.RemoveLeadingPeriod(filepath.Ext(leftPath)),
 		LeftDirAbsPath:  leftDirAbsPath,
 		RightDirAbsPath: rightDirAbsPath,
 	}
 
-	logger.Log.Info("Opening new diff: %v", PrettyPrint(newFileNode))
+	logger.Log.Info("Opening new diff: %v", lib.PrettyPrint(newFileNode))
 	runtime.EventsEmit(ctx, "onOpenNewFileDiff", newFileNode)
 }
 
 func createFileDiffWatcherLockFile() error {
-	lockFilePath, err := getFileDiffNotificationLockFilePath()
+	lockFilePath, err := lib.GetFileDiffNotificationLockFilePath()
 	if err != nil {
 		logger.Log.Error("Could not get the file lock (at '%v') path due to err: %v", lockFilePath, err)
 		return nil
 	}
 
-	return WriteToFileAndReplaceOld(lockFilePath, fmt.Sprintf("%v", os.Getpid()))
+	return lib.WriteToFileAndReplaceOld(lockFilePath, fmt.Sprintf("%v", os.Getpid()))
 }
 
 func deleteFileDiffWatcherLockFile() error {
-	lockFilePath, err := getFileDiffNotificationLockFilePath()
+	lockFilePath, err := lib.GetFileDiffNotificationLockFilePath()
 	if err != nil {
 		logger.Log.Error("Could not get the file lock (at '%v') path due to err: %v", lockFilePath, err)
 		return err
 	}
 
-	return DeleteFile(lockFilePath)
+	return lib.DeleteFile(lockFilePath)
 }

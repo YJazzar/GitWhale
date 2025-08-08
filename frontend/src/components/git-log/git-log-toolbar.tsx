@@ -26,7 +26,7 @@ import {
 	Tag
 } from 'lucide-react';
 import { useEffect } from 'react';
-import { backend } from 'wailsjs/go/models';
+import { git_operations } from 'wailsjs/go/models';
 import {
 	GetBranches,
 	GetTags,
@@ -36,7 +36,7 @@ import {
 
 interface GitLogToolbarProps {
 	repoPath: string;
-	onCommitsUpdate: (commits: backend.GitLogCommitInfo[]) => void;
+	onCommitsUpdate: (commits: git_operations.GitLogCommitInfo[]) => void;
 	loading: boolean;
 	onLoadingChange: (loading: boolean) => void;
 	currentRef: string;
@@ -119,8 +119,8 @@ function RefSelectorDropdown({
 }: {
 	loading: boolean;
 	currentRef: string;
-	branches: backend.GitRef[];
-	tags: backend.GitRef[];
+	branches: git_operations.GitRef[];
+	tags: git_operations.GitRef[];
 	onRefChange: (ref: string) => void;
 }) {
 	const getCurrentRefDisplay = () => {

@@ -1,6 +1,8 @@
 package backend
 
 import (
+	"gitwhale/backend/command_utils"
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"path/filepath"
 )
@@ -24,29 +26,22 @@ type AppConfig struct {
 }
 
 type AppSettings struct {
-	Git      GitSettings      `json:"git"`
-	Terminal TerminalSettings `json:"terminal"`
+	Git      GitSettings                    `json:"git"`
+	Terminal command_utils.TerminalSettings `json:"terminal"`
 }
 
 type GitSettings struct {
 	CommitsToLoad int `json:"commitsToLoad"`
 }
 
-type TerminalSettings struct {
-	DefaultCommand string `json:"defaultCommand"`
-	FontSize       int    `json:"fontSize"`
-	ColorScheme    string `json:"colorScheme"`
-	CursorStyle    string `json:"cursorStyle"`
-}
-
 func LoadAppConfig() (*AppConfig, error) {
-	appConfigFile, err := getAppConfigFilePath()
+	appConfigFile, err := lib.GetAppConfigFilePath()
 	if err != nil {
 		logger.Log.Error("Could not get config file path because: %v", err)
 		return nil, err
 	}
 
-	config, err := LoadJSON[*AppConfig](appConfigFile)
+	config, err := lib.LoadJSON[*AppConfig](appConfigFile)
 	if err != nil || config == nil {
 		config = &AppConfig{
 			FilePath: appConfigFile,
@@ -54,7 +49,7 @@ func LoadAppConfig() (*AppConfig, error) {
 				Git: GitSettings{
 					CommitsToLoad: 100,
 				},
-				Terminal: TerminalSettings{
+				Terminal: command_utils.TerminalSettings{
 					DefaultCommand: "",
 					FontSize:       14,
 					ColorScheme:    "default",
@@ -85,7 +80,7 @@ func LoadAppConfig() (*AppConfig, error) {
 }
 
 func (config *AppConfig) SaveAppConfig() error {
-	return SaveAsJSON(config.FilePath, config)
+	return lib.SaveAsJSON(config.FilePath, config)
 }
 
 // Returns the absolute path that should be used to key into the repo
@@ -110,8 +105,8 @@ func (config *AppConfig) openNewRepo(gitRepoPath string) string {
 
 func (config *AppConfig) addRepoToRecentList(gitRepoPath string) {
 	// Swaps out the repo to the top of the list. That way more recent ones are surfaced
-	prevIndex := FindIndex(config.RecentGitRepos, gitRepoPath)
-	config.RecentGitRepos = RemoveFromArray(config.RecentGitRepos, prevIndex)
+	prevIndex := lib.FindIndex(config.RecentGitRepos, gitRepoPath)
+	config.RecentGitRepos = lib.RemoveFromArray(config.RecentGitRepos, prevIndex)
 	config.RecentGitRepos = append([]string{gitRepoPath}, config.RecentGitRepos...)
 }
 
@@ -120,8 +115,8 @@ func (config *AppConfig) closeRepo(gitRepoPath string) {
 	delete(config.GitReposMap, gitRepoPath)
 
 	// Remove from the ordered list
-	repoPositionIndex := FindIndex(config.OrderedOpenGitRepos, gitRepoPath)
-	config.OrderedOpenGitRepos = RemoveFromArray(config.OrderedOpenGitRepos, repoPositionIndex)
+	repoPositionIndex := lib.FindIndex(config.OrderedOpenGitRepos, gitRepoPath)
+	config.OrderedOpenGitRepos = lib.RemoveFromArray(config.OrderedOpenGitRepos, repoPositionIndex)
 }
 
 func (config *AppConfig) toggleStarRepo(gitRepoPath string) bool {
@@ -132,10 +127,10 @@ func (config *AppConfig) toggleStarRepo(gitRepoPath string) bool {
 		return false
 	}
 
-	starIndex := FindIndex(config.StarredGitRepos, gitRepoPath)
+	starIndex := lib.FindIndex(config.StarredGitRepos, gitRepoPath)
 	if starIndex >= 0 {
 		// Repo is starred, so unstar it
-		config.StarredGitRepos = RemoveFromArray(config.StarredGitRepos, starIndex)
+		config.StarredGitRepos = lib.RemoveFromArray(config.StarredGitRepos, starIndex)
 		return false
 	} else {
 		// Repo is not starred, so star it

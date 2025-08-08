@@ -1,21 +1,21 @@
+import { FileExtensionToLanguage } from '@/lib/monaco-utils';
 import * as monaco from 'monaco-editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
 import { ReadFile } from '../../wailsjs/go/backend/App';
-import { backend } from '../../wailsjs/go/models';
-import { FileExtensionToLanguage } from '@/lib/monaco-utils';
+import { git_operations } from '../../wailsjs/go/models';
 
 export type FileDiffViewProps = {
-	file: backend.FileInfo;
+	file: git_operations.FileInfo;
 };
 
 type MonacoDiffModels = {
-	file: backend.FileInfo;
+	file: git_operations.FileInfo;
 	originalModel: monaco.editor.ITextModel;
 	modifiedModel: monaco.editor.ITextModel;
 };
 
-function useMonacoDiffModel(file: backend.FileInfo) {
+function useMonacoDiffModel(file: git_operations.FileInfo) {
 	const [monacoModel, setMonacoModel] = useState<MonacoDiffModels | undefined>(undefined);
 
 	const directoryDiffDetails = useQuery({

@@ -24,7 +24,7 @@ import {
 	FileText,
 	ArrowRight,
 } from 'lucide-react';
-import { backend } from 'wailsjs/go/models';
+import { backend, git_operations } from 'wailsjs/go/models';
 import { StartDiffSession, EndDiffSession, GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
 import { useRepoState } from '@/hooks/state/use-repo-state';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ const useDiffSessions = (repoPath: string) => {
 	const [loading, setLoading] = useState(false);
 	const { toast } = useToast();
 
-	const createSession = async (options: backend.DiffOptions) => {
+	const createSession = async (options: git_operations.DiffOptions) => {
 		setLoading(true);
 		try {
 			const session = await StartDiffSession(options);
@@ -98,8 +98,8 @@ const useDiffSessions = (repoPath: string) => {
 };
 
 const useGitRefs = (repoPath: string) => {
-	const [branches, setBranches] = useState<backend.GitRef[]>([]);
-	const [tags, setTags] = useState<backend.GitRef[]>([]);
+	const [branches, setBranches] = useState<git_operations.GitRef[]>([]);
+	const [tags, setTags] = useState<git_operations.GitRef[]>([]);
 	const [loading, setLoading] = useState(false);
 
 	const loadRefs = useCallback(async () => {
@@ -163,7 +163,7 @@ const useDiffOptions = (repoPath: string) => {
 	);
 
 	const options = useMemo(
-		(): backend.DiffOptions => ({
+		(): git_operations.DiffOptions => ({
 			repoPath: '',
 			fromRef,
 			toRef,
@@ -406,7 +406,7 @@ const RefSelector = ({
 	label: string;
 	value: string;
 	onChange: (value: string) => void;
-	refs: backend.GitRef[];
+	refs: git_operations.GitRef[];
 	icon: React.ReactNode;
 	allowEmpty?: boolean;
 	emptyLabel?: string;
@@ -464,7 +464,7 @@ const SessionTabs = ({
 	onSelect,
 	onClose,
 }: {
-	sessions: backend.DiffSession[];
+	sessions: git_operations.DiffSession[];
 	selectedSessionId: string | null;
 	onSelect: (sessionId: string) => void;
 	onClose: (sessionId: string) => void;

@@ -3,33 +3,24 @@ package backend
 import (
 	"context"
 	"fmt"
+	"gitwhale/backend/command_utils"
+	"gitwhale/backend/git_operations"
 	"gitwhale/backend/logger"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/runletapp/go-console"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-var APP_NAME = "GitWhale"
-
 // App struct
 type App struct {
-	ctx                   context.Context
-	IsLoading             bool          `json:"isLoading"`
-	StartupState          *StartupState `json:"startupState"`
-	AppConfig             *AppConfig    `json:"appConfig"`
-	terminalSessions      map[string]*TerminalSession
-	terminalSessionsMutex sync.RWMutex
-	diffSessions          map[string]*DiffSession
-}
-
-type TerminalSession struct {
-	consoleSession *console.Console
-	waiter         sync.WaitGroup
-	cancel         context.CancelFunc
+	ctx             context.Context
+	IsLoading       bool          `json:"isLoading"`
+	StartupState    *StartupState `json:"startupState"`
+	AppConfig       *AppConfig    `json:"appConfig"`
+	terminalManager command_utils.XTermSessionManager
+	diffSessions    map[string]*git_operations.DiffSession
 }
 
 // NewApp creates a new App application struct
@@ -56,8 +47,12 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 
 	app.StartupState = startupState
 	app.AppConfig = appConfig
-	app.terminalSessions = make(map[string]*TerminalSession)
-	app.diffSessions = make(map[string]*DiffSession)
+	app.terminalManager = command_utils.XTermSessionManager{
+		Ctx:              ctx,
+		Settings:         &appConfig.Settings.Terminal,
+		TerminalSessions: map[string]*command_utils.TerminalSession{},
+	}
+	app.diffSessions = make(map[string]*git_operations.DiffSession)
 
 	if startupState.DirectoryDiffArgs != nil {
 		if startupState.DirectoryDiffArgs.ShouldStartFileWatcher {
@@ -123,46 +118,44 @@ func (app *App) CloseRepo(gitRepoPath string) *App {
 }
 
 func (app *App) InitNewTerminalSession(repoPath string) {
-	SetupXTermForNewRepo(app, repoPath)
+	app.terminalManager.SetupXTermForNewRepo(repoPath)
 }
 
-func (app *App) OnTerminalSessionWasResized(repoPath string, newSize TTYSize) {
-	session, exists := app.terminalSessions[repoPath]
-	if !exists {
-		logger.Log.Error("Tried to resize a non-existent session")
-		return
-	}
-
-	ResizeConsoleSession(session, newSize)
+func (app *App) OnTerminalSessionWasResized(repoPath string, newSize command_utils.TTYSize) {
+	app.terminalManager.ResizeConsoleSession(repoPath, newSize)
 }
 
 func (app *App) CleanupTerminalSession(repoPath string) {
-	DisposeXTermSession(app, repoPath)
+	app.terminalManager.DisposeXTermSession(repoPath)
 }
 
-func (app *App) RunGitLog(gitRepoPath string, options *GitLogOptions) []GitLogCommitInfo {
+func (app *App) RunGitLog(gitRepoPath string, options *git_operations.GitLogOptions) []git_operations.GitLogCommitInfo {
 
 	if options == nil {
-		options = &GitLogOptions{}
+		options = &git_operations.GitLogOptions{}
 	}
 
 	if options.CommitsToLoad == nil || *options.CommitsToLoad == 0 {
 		options.CommitsToLoad = &app.AppConfig.Settings.Git.CommitsToLoad
 	}
 
-	return readGitLog(gitRepoPath, *options)
+	return git_operations.ReadGitLog(gitRepoPath, *options)
 }
 
-func (app *App) GetBranches(gitRepoPath string) []GitRef {
-	return getBranches(gitRepoPath)
+func (app *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*git_operations.DetailedCommitInfo, error) {
+	return git_operations.GetDetailedCommitInfo(repoPath, commitHash)
 }
 
-func (app *App) GetTags(gitRepoPath string) []GitRef {
-	return getTags(gitRepoPath)
+func (app *App) GetBranches(gitRepoPath string) []git_operations.GitRef {
+	return git_operations.GetBranches(gitRepoPath)
+}
+
+func (app *App) GetTags(gitRepoPath string) []git_operations.GitRef {
+	return git_operations.GetTags(gitRepoPath)
 }
 
 func (app *App) GitFetch(gitRepoPath, remote, ref string) error {
-	return gitFetch(gitRepoPath, remote, ref)
+	return git_operations.GitFetch(gitRepoPath, remote, ref)
 }
 
 func (app *App) ToggleStarRepo(gitRepoPath string) bool {
@@ -170,27 +163,38 @@ func (app *App) ToggleStarRepo(gitRepoPath string) bool {
 }
 
 func (app *App) UpdateSettings(newSettings AppSettings) error {
-	return app.AppConfig.updateSettings(newSettings)
+	err := app.AppConfig.updateSettings(newSettings)
+	if err != nil {
+		app.terminalManager.Settings = &newSettings.Terminal
+	}
+
+	return err
 }
 
 func (app *App) GetDefaultShellCommand() string {
-	return strings.Join(getDefaultShellCommand(), " ")
+	return strings.Join(app.terminalManager.GetDefaultShellCommand(), " ")
 }
 
 // Diff session management methods
 
-func (app *App) GetStartupDirDiffDirectory() *Directory {
+func (app *App) GetStartupDirDiffDirectory() *git_operations.Directory {
 	if app == nil || app.StartupState == nil {
 		return nil
 	}
 
-	return GetStartupDirDiffDirectory(app.StartupState.DirectoryDiffArgs)
+	diffArgs := app.StartupState.DirectoryDiffArgs
+	if diffArgs == nil {
+		logger.Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided nil diffArgs")
+		return nil
+	}
+
+	return git_operations.ReadDiffs(diffArgs.LeftPath, diffArgs.RightPath)
 }
 
-func (app *App) StartDiffSession(options DiffOptions) (*DiffSession, error) {
+func (app *App) StartDiffSession(options git_operations.DiffOptions) (*git_operations.DiffSession, error) {
 	logger.Log.Info("Starting diff session for repo: %s", options.RepoPath)
 
-	session, err := CreateDiffSession(options)
+	session, err := git_operations.CreateDiffSession(options)
 	if err != nil {
 		return nil, err
 	}
@@ -199,12 +203,12 @@ func (app *App) StartDiffSession(options DiffOptions) (*DiffSession, error) {
 	app.diffSessions[session.SessionId] = session
 
 	// Cleanup old sessions periodically
-	go CleanupOldDiffSessions()
+	go git_operations.CleanupOldDiffSessions()
 
 	return session, nil
 }
 
-func (app *App) GetDiffSession(sessionId string) *DiffSession {
+func (app *App) GetDiffSession(sessionId string) *git_operations.DiffSession {
 	session, exists := app.diffSessions[sessionId]
 	if !exists {
 		return nil
@@ -222,7 +226,7 @@ func (app *App) EndDiffSession(sessionId string) error {
 	}
 
 	// Cleanup temp directories
-	err := CleanupDiffSession(sessionId)
+	err := git_operations.CleanupDiffSession(sessionId)
 	if err != nil {
 		logger.Log.Error("Failed to cleanup diff session %s: %v", sessionId, err)
 	}
@@ -234,8 +238,8 @@ func (app *App) EndDiffSession(sessionId string) error {
 	return nil
 }
 
-func (app *App) ListDiffSessions() []*DiffSession {
-	sessions := make([]*DiffSession, 0, len(app.diffSessions))
+func (app *App) ListDiffSessions() []*git_operations.DiffSession {
+	sessions := make([]*git_operations.DiffSession, 0, len(app.diffSessions))
 	for _, session := range app.diffSessions {
 		sessions = append(sessions, session)
 	}

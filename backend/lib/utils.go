@@ -1,4 +1,4 @@
-package backend
+package lib
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"gitwhale/backend/logger"
 	"hash/fnv"
 	"os"
+	"unicode/utf8"
 )
 
 func LoadJSON[T any](filename string) (T, error) {
@@ -138,4 +139,14 @@ func HashString(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return h.Sum32()
+}
+
+func RemoveLeadingPeriod(extension string) string {
+	if len(extension) < 1 || extension[:1] != "." {
+		return extension
+	}
+
+	_, i := utf8.DecodeRuneInString(extension)
+	return extension[i:]
+
 }

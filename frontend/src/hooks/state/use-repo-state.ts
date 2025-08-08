@@ -7,7 +7,7 @@ import {
 	InitNewTerminalSession,
 	OnTerminalSessionWasResized,
 } from '../../../wailsjs/go/backend/App';
-import { backend } from '../../../wailsjs/go/models';
+import { backend, command_utils, git_operations } from '../../../wailsjs/go/models';
 import { Logger } from '../../utils/logger';
 import { useFileManagerStatesCleanup } from './use-file-manager-state';
 import { SearchAddon } from '@xterm/addon-search';
@@ -83,7 +83,7 @@ const xTermRefMap = new Map<
 >();
 
 function getTerminalState(repoPath: string) {
-	const createTerminal = (terminalSettings?: backend.TerminalSettings) => {
+	const createTerminal = (terminalSettings?: command_utils.TerminalSettings) => {
 		const fitAddon = new FitAddon();
 
 		// Use provided terminal settings or defaults
@@ -220,13 +220,13 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 // MARK: Diff-related state management using Jotai atoms
 
 // Store diff sessions per repository path
-const diffSessionsAtom = atom<Map<string, backend.DiffSession[]>>(new Map());
+const diffSessionsAtom = atom<Map<string, git_operations.DiffSession[]>>(new Map());
 
 // Store selected session ID per repository path
 const selectedDiffSessionAtom = atom<Map<string, string | null>>(new Map());
 
 // Store file info mapping for directory diffs per repository path
-const fileInfoMapAtom = atom<Map<string, Map<string, backend.FileInfo>>>(new Map());
+const fileInfoMapAtom = atom<Map<string, Map<string, git_operations.FileInfo>>>(new Map());
 
 // Store diff options/configuration per repository path
 const diffOptionsAtom = atom<
@@ -262,7 +262,7 @@ function getDiffState(repoPath: string) {
 		sessions: diffSessions.get(repoPath) || [],
 
 		// Update sessions for this repo
-		setSessions: (sessions: backend.DiffSession[]) => {
+		setSessions: (sessions: git_operations.DiffSession[]) => {
 			const newMap = new Map(diffSessions);
 			newMap.set(repoPath, sessions);
 			setDiffSessions(newMap);
@@ -282,7 +282,7 @@ function getDiffState(repoPath: string) {
 		fileInfoMap: fileInfoMaps.get(repoPath),
 
 		// Set file info map for this repo
-		setFileInfoMap: (fileInfoMap: Map<string, backend.FileInfo>) => {
+		setFileInfoMap: (fileInfoMap: Map<string, git_operations.FileInfo>) => {
 			const newMap = new Map(fileInfoMaps);
 			newMap.set(repoPath, fileInfoMap);
 			setFileInfoMaps(newMap);
@@ -334,16 +334,16 @@ function getDiffState(repoPath: string) {
 // MARK: Git log-related state management using Jotai atoms
 
 // Store git log data per repository path
-const gitLogDataAtom = atom<Map<string, backend.GitLogCommitInfo[]>>(new Map());
+const gitLogDataAtom = atom<Map<string, git_operations.GitLogCommitInfo[]>>(new Map());
 
 // Store selected commit for details panel per repository path
-const selectedCommitAtom = atom<Map<string, backend.GitLogCommitInfo | null>>(new Map());
+const selectedCommitAtom = atom<Map<string, git_operations.GitLogCommitInfo | null>>(new Map());
 
 // Store current reference (HEAD, branch, tag) per repository path
 const currentRefAtom = atom<Map<string, string>>(new Map());
 
 // Store git refs (branches and tags) per repository path
-const gitRefsAtom = atom<Map<string, { branches: backend.GitRef[]; tags: backend.GitRef[] }>>(new Map());
+const gitRefsAtom = atom<Map<string, { branches: git_operations.GitRef[]; tags: git_operations.GitRef[] }>>(new Map());
 
 // Store git log options/filters per repository path
 const gitLogOptionsAtom = atom<
@@ -375,7 +375,7 @@ function getLogState(repoPath: string) {
 		logs: logData.get(repoPath) || [],
 
 		// Set git log data for this repo
-		setLogs: (logs: backend.GitLogCommitInfo[]) => {
+		setLogs: (logs: git_operations.GitLogCommitInfo[]) => {
 			const newMap = new Map(logData);
 			newMap.set(repoPath, logs);
 			setLogData(newMap);
@@ -385,7 +385,7 @@ function getLogState(repoPath: string) {
 		selectedCommit: selectedCommits.get(repoPath) || null,
 
 		// Set selected commit for this repo
-		setSelectedCommit: (commit: backend.GitLogCommitInfo | null) => {
+		setSelectedCommit: (commit: git_operations.GitLogCommitInfo | null) => {
 			const newMap = new Map(selectedCommits);
 			newMap.set(repoPath, commit);
 			setSelectedCommits(newMap);
@@ -405,7 +405,7 @@ function getLogState(repoPath: string) {
 		refs: gitRefs.get(repoPath) || { branches: [], tags: [] },
 
 		// Set git refs for this repo
-		setRefs: (refs: { branches: backend.GitRef[]; tags: backend.GitRef[] }) => {
+		setRefs: (refs: { branches: git_operations.GitRef[]; tags: git_operations.GitRef[] }) => {
 			const newMap = new Map(gitRefs);
 			newMap.set(repoPath, refs);
 			setGitRefs(newMap);

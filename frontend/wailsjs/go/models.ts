@@ -12,24 +12,6 @@ export namespace backend {
 	        this.currentBranchName = source["currentBranchName"];
 	    }
 	}
-	export class TerminalSettings {
-	    defaultCommand: string;
-	    fontSize: number;
-	    colorScheme: string;
-	    cursorStyle: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new TerminalSettings(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.defaultCommand = source["defaultCommand"];
-	        this.fontSize = source["fontSize"];
-	        this.colorScheme = source["colorScheme"];
-	        this.cursorStyle = source["cursorStyle"];
-	    }
-	}
 	export class GitSettings {
 	    commitsToLoad: number;
 	
@@ -44,7 +26,7 @@ export namespace backend {
 	}
 	export class AppSettings {
 	    git: GitSettings;
-	    terminal: TerminalSettings;
+	    terminal: command_utils.TerminalSettings;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -53,7 +35,7 @@ export namespace backend {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.git = this.convertValues(source["git"], GitSettings);
-	        this.terminal = this.convertValues(source["terminal"], TerminalSettings);
+	        this.terminal = this.convertValues(source["terminal"], command_utils.TerminalSettings);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -199,6 +181,51 @@ export namespace backend {
 		}
 	}
 	
+	
+	
+	
+	
+
+}
+
+export namespace command_utils {
+	
+	export class TTYSize {
+	    cols: number;
+	    rows: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TTYSize(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.cols = source["cols"];
+	        this.rows = source["rows"];
+	    }
+	}
+	export class TerminalSettings {
+	    defaultCommand: string;
+	    fontSize: number;
+	    colorScheme: string;
+	    cursorStyle: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TerminalSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.defaultCommand = source["defaultCommand"];
+	        this.fontSize = source["fontSize"];
+	        this.colorScheme = source["colorScheme"];
+	        this.cursorStyle = source["cursorStyle"];
+	    }
+	}
+
+}
+
+export namespace git_operations {
 	
 	export class CommitStats {
 	    filesChanged: number;
@@ -497,24 +524,6 @@ export namespace backend {
 	        this.type = source["type"];
 	        this.hash = source["hash"];
 	        this.isHead = source["isHead"];
-	    }
-	}
-	
-	
-	
-	
-	export class TTYSize {
-	    cols: number;
-	    rows: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new TTYSize(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.cols = source["cols"];
-	        this.rows = source["rows"];
 	    }
 	}
 

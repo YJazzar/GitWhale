@@ -1,11 +1,10 @@
-import React from 'react';
-import { backend } from 'wailsjs/go/models';
 import { D3GitGraph } from '@/components/git-log/d3-git-graph';
 import { cn } from '@/lib/utils';
 import { GitBranch } from 'lucide-react';
+import { git_operations } from 'wailsjs/go/models';
 
 interface GitLogGraphProps {
-	commits: backend.GitLogCommitInfo[];
+	commits: git_operations.GitLogCommitInfo[];
 	onCommitClick?: (commitHash: string) => void;
 	className?: string;
 	loading?: boolean;

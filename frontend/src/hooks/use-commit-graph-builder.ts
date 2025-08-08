@@ -1,12 +1,12 @@
-import { backend } from 'wailsjs/go/models';
+import { git_operations } from 'wailsjs/go/models';
 
 type LinkedCommitInfo = {
 	parentCommits: LinkedCommitInfo[]; // The "older" commits
 	childCommits: LinkedCommitInfo[];
-	commitInfo: backend.GitLogCommitInfo;
+	commitInfo: git_operations.GitLogCommitInfo;
 };
 
-export default function useCommitGraphBuilder(commits: backend.GitLogCommitInfo[] | undefined) {
+export default function useCommitGraphBuilder(commits: git_operations.GitLogCommitInfo[] | undefined) {
 	if (!commits || commits.length < 1) {
 		return undefined;
 	}

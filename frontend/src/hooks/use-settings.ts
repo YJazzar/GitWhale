@@ -1,8 +1,8 @@
 import { DEFAULT_SETTINGS } from '@/types/settings';
-import { UseAppState } from './state/use-app-state';
 import { UpdateSettings } from '../../wailsjs/go/backend/App';
-import { backend } from '../../wailsjs/go/models';
+import { backend, command_utils, git_operations } from '../../wailsjs/go/models';
 import { Logger } from '../utils/logger';
+import { UseAppState } from './state/use-app-state';
 
 export function useSettings() {
 	const { appState, refreshAppState } = UseAppState();
@@ -12,7 +12,7 @@ export function useSettings() {
 		appState?.appConfig?.settings ||
 		new backend.AppSettings({
 			git: new backend.GitSettings(DEFAULT_SETTINGS.git),
-			terminal: new backend.TerminalSettings(DEFAULT_SETTINGS.terminal),
+			terminal: new command_utils.TerminalSettings(DEFAULT_SETTINGS.terminal),
 		});
 	const isLoading = !appState;
 
@@ -22,7 +22,7 @@ export function useSettings() {
 				? new backend.GitSettings({ ...settings.git, ...newSettings.git })
 				: settings.git,
 			terminal: newSettings.terminal
-				? new backend.TerminalSettings({ ...settings.terminal, ...newSettings.terminal })
+				? new command_utils.TerminalSettings({ ...settings.terminal, ...newSettings.terminal })
 				: settings.terminal,
 		});
 
@@ -38,7 +38,7 @@ export function useSettings() {
 	const resetSettings = async () => {
 		const defaultSettings = new backend.AppSettings({
 			git: new backend.GitSettings(DEFAULT_SETTINGS.git),
-			terminal: new backend.TerminalSettings(DEFAULT_SETTINGS.terminal),
+			terminal: new command_utils.TerminalSettings(DEFAULT_SETTINGS.terminal),
 		});
 		try {
 			await UpdateSettings(defaultSettings);

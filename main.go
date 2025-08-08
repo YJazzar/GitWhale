@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"gitwhale/backend"
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 
 	"github.com/leaanthony/u"
@@ -42,7 +43,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  fmt.Sprint("[", pid, "] ", backend.APP_NAME),
+		Title:  fmt.Sprint("[", pid, "] ", lib.APP_NAME),
 		Width:  1300,
 		Height: 768,
 		AssetServer: &assetserver.Options{

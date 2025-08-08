@@ -1,12 +1,12 @@
-import { useEffect, useRef, useMemo, useLayoutEffect } from 'react';
-import * as d3 from 'd3';
-import { backend } from 'wailsjs/go/models';
-import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git/use-git-graph';
 import { GitRefs } from '@/components/git-refs';
+import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git/use-git-graph';
 import { useUnixTime } from '@/hooks/use-unix-time';
+import * as d3 from 'd3';
+import { useEffect, useMemo, useRef } from 'react';
+import { git_operations } from 'wailsjs/go/models';
 
 interface D3GitGraphProps {
-	commits: backend.GitLogCommitInfo[];
+	commits: git_operations.GitLogCommitInfo[];
 	onCommitClick?: (commitHash: string) => void;
 	className?: string;
 }

@@ -5,9 +5,9 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { TabProps } from '@/hooks/state/use-file-manager-state';
 import { useRepoState } from '@/hooks/state/use-repo-state';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { backend } from '../../wailsjs/go/models';
+import { backend, git_operations } from '../../wailsjs/go/models';
 
-const getFileKey = (file: backend.FileInfo) => {
+const getFileKey = (file: git_operations.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
 };
 
@@ -22,9 +22,9 @@ export function DirDiffViewer(props: { repoPath: string }) {
 	const sessionKey = diffState.selectedSessionId || 'none';
 
 	const fileInfoMap = useMemo(() => {
-		const map: Map<string, backend.FileInfo> = new Map();
+		const map: Map<string, git_operations.FileInfo> = new Map();
 
-		const recurseDir = (dir: backend.Directory) => {
+		const recurseDir = (dir: git_operations.Directory) => {
 			// Add the current files
 			dir.Files.forEach((file) => {
 				map.set(getFileKey(file), file);
@@ -90,11 +90,11 @@ export function DirDiffViewer(props: { repoPath: string }) {
 // TODO: generalize and move this to it's own file?
 export function FileTree(props: {
 	tabManagerHandler: React.RefObject<TabsManagerHandle>;
-	directoryData: backend.Directory;
+	directoryData: git_operations.Directory;
 }) {
 	const { directoryData, tabManagerHandler } = props;
 
-	const onOpenFile = (file: backend.FileInfo, keepFileOpen: boolean) => {
+	const onOpenFile = (file: git_operations.FileInfo, keepFileOpen: boolean) => {
 		const tabKey = getFileKey(file);
 
 		const fileDiffViewProps: FileDiffViewProps = {

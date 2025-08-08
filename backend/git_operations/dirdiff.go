@@ -1,11 +1,11 @@
-package backend
+package git_operations
 
 import (
 	"fmt"
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
 	"path/filepath"
-	"unicode/utf8"
 )
 
 // Directory represents a folder and its contents (both files and subdirectories).
@@ -27,14 +27,14 @@ type FileInfo struct {
 
 // Given a left side and a right side path (dir or filepath), the tag will figure out all the files
 // we need to show diffs for (only runs if the program was opened with the --diff-tool flag)
-func readDiffs(leftPath, rightPath string) *Directory {
+func ReadDiffs(leftPath, rightPath string) *Directory {
 
 	if leftPath == "" || rightPath == "" {
 		return nil
 	}
 
-	leftIsDir, leftErr := IsDir(leftPath)
-	rightIsDir, rightErr := IsDir(rightPath)
+	leftIsDir, leftErr := lib.IsDir(leftPath)
+	rightIsDir, rightErr := lib.IsDir(rightPath)
 	if leftErr != nil || rightErr != nil {
 		logger.Log.Error("Got errors checking if the passed paths were directories or files.")
 		logger.Log.Error("\tLeft path error: %v", leftErr)
@@ -80,7 +80,7 @@ func readFileDiff(leftPath, rightPath string) *Directory {
 	fileNode := &FileInfo{
 		Path:            "",
 		Name:            filepath.Base(leftPath),
-		Extension:       removeLeadingPeriod(filepath.Ext(leftPath)),
+		Extension:       lib.RemoveLeadingPeriod(filepath.Ext(leftPath)),
 		LeftDirAbsPath:  leftAbsPath,
 		RightDirAbsPath: rightAbsPath,
 	}
@@ -201,7 +201,7 @@ func traverseDir(
 		// It's a file here
 		directoryNode, exists := cachedDirMap[relativeParentDir]
 		if !exists {
-			logger.Log.Debug("current map state: %v", PrettyPrint(cachedDirMap))
+			logger.Log.Debug("current map state: %v", lib.PrettyPrint(cachedDirMap))
 			return fmt.Errorf("need to always have a dir tracked in dirMap before reading its contents: %v", relativeParentDir)
 		}
 
@@ -212,7 +212,7 @@ func traverseDir(
 			fileNode = &FileInfo{
 				Path:      relativeDir, // Corrected path for the file
 				Name:      filepath.Base(path),
-				Extension: removeLeadingPeriod(filepath.Ext(path)),
+				Extension: lib.RemoveLeadingPeriod(filepath.Ext(path)),
 			}
 
 			// Append file info
@@ -233,16 +233,6 @@ func traverseDir(
 	}
 
 	return err
-}
-
-func removeLeadingPeriod(extension string) string {
-	if len(extension) < 1 || extension[:1] != "." {
-		return extension
-	}
-
-	_, i := utf8.DecodeRuneInString(extension)
-	return extension[i:]
-
 }
 
 func findFile(files []*FileInfo, targetPath string) (*FileInfo, bool) {

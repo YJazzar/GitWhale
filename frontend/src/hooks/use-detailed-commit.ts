@@ -1,6 +1,6 @@
 import { useQuery } from 'react-query';
 import { GetDetailedCommitInfo } from '../../wailsjs/go/backend/App';
-import { backend } from '../../wailsjs/go/models';
+import { git_operations } from '../../wailsjs/go/models';
 import { Logger } from '../utils/logger';
 
 interface UseDetailedCommitOptions {
@@ -11,7 +11,7 @@ interface UseDetailedCommitOptions {
 }
 
 interface UseDetailedCommitResult {
-	data: backend.DetailedCommitInfo | undefined;
+	data: git_operations.DetailedCommitInfo | undefined;
 	isLoading: boolean;
 	isError: boolean;
 	error: Error | null;

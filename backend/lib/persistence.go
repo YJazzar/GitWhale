@@ -1,4 +1,4 @@
-package backend
+package lib
 
 import (
 	"fmt"
@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 )
 
-func getAppConfigFilePath() (string, error) {
-	appConfigFolder, err := getAppFolderPath()
+var APP_NAME = "GitWhale"
+
+func GetAppConfigFilePath() (string, error) {
+	appConfigFolder, err := GetAppFolderPath()
 	if err != nil {
 		return appConfigFolder, err
 	}
@@ -16,8 +18,8 @@ func getAppConfigFilePath() (string, error) {
 	return appConfigFile, nil
 }
 
-func getFileDiffNotificationsFolderPath() (string, error) {
-	notifFolderPath, err := getAppFolderPath()
+func GetFileDiffNotificationsFolderPath() (string, error) {
+	notifFolderPath, err := GetAppFolderPath()
 	if err != nil {
 		return notifFolderPath, err
 	}
@@ -27,8 +29,8 @@ func getFileDiffNotificationsFolderPath() (string, error) {
 	return notifFolderPath, nil
 }
 
-func getFileDiffNotificationLockFilePath() (string, error) {
-	fileDiffsFolder, err := getFileDiffNotificationsFolderPath()
+func GetFileDiffNotificationLockFilePath() (string, error) {
+	fileDiffsFolder, err := GetFileDiffNotificationsFolderPath()
 	if err != nil {
 		return fileDiffsFolder, err
 	}
@@ -37,8 +39,8 @@ func getFileDiffNotificationLockFilePath() (string, error) {
 	return lockFile, nil
 }
 
-func isFileDiffNotificationLockFileExists() (bool, error) {
-	lockFilePath, err := getFileDiffNotificationLockFilePath()
+func IsFileDiffNotificationLockFileExists() (bool, error) {
+	lockFilePath, err := GetFileDiffNotificationLockFilePath()
 	if err != nil {
 		return false, err
 	}
@@ -47,7 +49,7 @@ func isFileDiffNotificationLockFileExists() (bool, error) {
 }
 
 // Returns the ~/Documents/GitWhale/ directory path
-func getAppFolderPath() (string, error) {
+func GetAppFolderPath() (string, error) {
 	homePath, err := os.UserHomeDir()
 	if err != nil {
 		return "", err

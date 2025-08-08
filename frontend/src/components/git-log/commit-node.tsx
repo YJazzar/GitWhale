@@ -1,7 +1,7 @@
-import { backend } from 'wailsjs/go/models';
-import { GitCommit, GitMerge, User, Calendar, Hash } from 'lucide-react';
-import { useUnixTime } from '@/hooks/use-unix-time';
 import { GitRefs } from '@/components/git-refs';
+import { useUnixTime } from '@/hooks/use-unix-time';
+import { Calendar, GitCommit, GitMerge, Hash, User } from 'lucide-react';
+import { git_operations } from 'wailsjs/go/models';
 
 interface Connection {
 	fromColumn: number;
@@ -11,7 +11,7 @@ interface Connection {
 }
 
 interface CommitNodeProps {
-	commit: backend.GitLogCommitInfo;
+	commit: git_operations.GitLogCommitInfo;
 	branchColumn: number;
 	connections: Connection[];
 	incomingConnections: Connection[];

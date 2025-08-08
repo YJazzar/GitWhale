@@ -1,4 +1,4 @@
-package backend
+package command_utils
 
 import (
 	"bytes"
@@ -7,14 +7,34 @@ import (
 	"gitwhale/backend/logger"
 	"io"
 	goruntime "runtime"
+
 	"sync"
 
 	"github.com/runletapp/go-console"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// getDefaultShellArgs returns the default shell command args for the current OS
-func getDefaultShellCommand() []string {
+type XTermSessionManager struct {
+	Settings              *TerminalSettings
+	Ctx                   context.Context
+	TerminalSessions      map[string]*TerminalSession
+	TerminalSessionsMutex sync.RWMutex
+}
+
+type TerminalSession struct {
+	consoleSession *console.Console
+	waiter         sync.WaitGroup
+	cancel         context.CancelFunc
+}
+
+type TerminalSettings struct {
+	DefaultCommand string `json:"defaultCommand"`
+	FontSize       int    `json:"fontSize"`
+	ColorScheme    string `json:"colorScheme"`
+	CursorStyle    string `json:"cursorStyle"`
+}
+
+func (sessionManager *XTermSessionManager) GetDefaultShellCommand() []string {
 	if goruntime.GOOS == "windows" {
 		return []string{"C:\\Program Files\\Git\\bin\\bash.exe", "--login", "-i"}
 	} else {
@@ -22,10 +42,18 @@ func getDefaultShellCommand() []string {
 	}
 }
 
-func SetupXTermForNewRepo(app *App, repoPath string) {
-	app.terminalSessionsMutex.RLock()
-	_, exists := app.terminalSessions[repoPath]
-	app.terminalSessionsMutex.RUnlock()
+func (sessionManager *XTermSessionManager) ResolveConfiguredShellCommand() []string {
+	if sessionManager.Settings != nil && sessionManager.Settings.DefaultCommand != "" {
+		return []string{sessionManager.Settings.DefaultCommand}
+	}
+
+	return sessionManager.GetDefaultShellCommand()
+}
+
+func (sessionManager *XTermSessionManager) SetupXTermForNewRepo(repoPath string) {
+	sessionManager.TerminalSessionsMutex.RLock()
+	_, exists := sessionManager.TerminalSessions[repoPath]
+	sessionManager.TerminalSessionsMutex.RUnlock()
 
 	if exists {
 		return
@@ -34,24 +62,24 @@ func SetupXTermForNewRepo(app *App, repoPath string) {
 	logger.Log.Info("Setting up a new terminal session for the repo: %v", repoPath)
 
 	go func() {
-		CreateXTermSession(app, repoPath)
+		sessionManager.createXTermSession(repoPath)
 	}()
 }
 
-func DisposeXTermSession(app *App, repoPath string) {
+func (sessionManager *XTermSessionManager) DisposeXTermSession(repoPath string) {
 	logger.Log.Info("Disposing terminal session for repo: %v", repoPath)
 
-	app.terminalSessionsMutex.Lock()
-	session, exists := app.terminalSessions[repoPath]
+	sessionManager.TerminalSessionsMutex.Lock()
+	session, exists := sessionManager.TerminalSessions[repoPath]
 	if !exists {
-		app.terminalSessionsMutex.Unlock()
+		sessionManager.TerminalSessionsMutex.Unlock()
 		logger.Log.Warning("No terminal session found for repo: %v", repoPath)
 		return
 	}
 
 	// Remove the session from the map first
-	delete(app.terminalSessions, repoPath)
-	app.terminalSessionsMutex.Unlock()
+	delete(sessionManager.TerminalSessions, repoPath)
+	sessionManager.TerminalSessionsMutex.Unlock()
 
 	// Cancel the context to signal goroutines to stop
 	if session.cancel != nil {
@@ -62,7 +90,7 @@ func DisposeXTermSession(app *App, repoPath string) {
 	session.waiter.Done()
 
 	// Remove the event listener for terminal data
-	runtime.EventsOff(app.ctx, fmt.Sprintf("onTerminalData://%v", repoPath))
+	runtime.EventsOff(sessionManager.Ctx, fmt.Sprintf("onTerminalData://%v", repoPath))
 
 	logger.Log.Info("Terminal session for repo %v disposed successfully", repoPath)
 }
@@ -74,9 +102,9 @@ type TTYSize struct {
 	Rows int `json:"rows"`
 }
 
-func CreateXTermSession(app *App, repoPath string) {
+func (sessionManager *XTermSessionManager) createXTermSession(repoPath string) {
 	// Create context for this session
-	ctx, cancel := context.WithCancel(app.ctx)
+	ctx, cancel := context.WithCancel(sessionManager.Ctx)
 	defer cancel()
 
 	// Create console with default size
@@ -87,24 +115,13 @@ func CreateXTermSession(app *App, repoPath string) {
 	}
 	defer proc.Close()
 
-	// Get terminal settings
-	defaultCommand := app.AppConfig.Settings.Terminal.DefaultCommand
-
-	// Choose terminal based on settings or OS default
-	var args []string
-	if defaultCommand != "" {
-		// Use the custom command from settings
-		args = []string{defaultCommand}
-	} else {
-		// Use the system default shell
-		args = getDefaultShellCommand()
-	}
+	shellStartupCommand := sessionManager.ResolveConfiguredShellCommand()
 
 	// Set working directory
 	proc.SetCWD(repoPath)
 
 	// Start the terminal process
-	if err := proc.Start(args); err != nil {
+	if err := proc.Start(shellStartupCommand); err != nil {
 		logger.Log.Error("Failed to start terminal: %s", err)
 		return
 	}
@@ -117,9 +134,9 @@ func CreateXTermSession(app *App, repoPath string) {
 	session.waiter.Add(1)
 
 	// Thread-safe session storage
-	app.terminalSessionsMutex.Lock()
-	app.terminalSessions[repoPath] = session
-	app.terminalSessionsMutex.Unlock()
+	sessionManager.TerminalSessionsMutex.Lock()
+	sessionManager.TerminalSessions[repoPath] = session
+	sessionManager.TerminalSessionsMutex.Unlock()
 
 	maxBufferSizeBytes := 512
 
@@ -147,13 +164,13 @@ func CreateXTermSession(app *App, repoPath string) {
 					return
 				}
 				// logger.Log.Trace("Sending data to client: %v", buffer[:readLength])
-				runtime.EventsEmit(app.ctx, fmt.Sprintf("onTerminalDataReturned://%v", repoPath), buffer[:readLength])
+				runtime.EventsEmit(sessionManager.Ctx, fmt.Sprintf("onTerminalDataReturned://%v", repoPath), buffer[:readLength])
 			}
 		}
 	}()
 
 	// console << xterm.js (receive from frontend and write to terminal)
-	runtime.EventsOn(app.ctx, fmt.Sprintf("onTerminalData://%v", repoPath), func(optionalData ...interface{}) {
+	runtime.EventsOn(sessionManager.Ctx, fmt.Sprintf("onTerminalData://%v", repoPath), func(optionalData ...interface{}) {
 		// Check if context is cancelled before processing
 		select {
 		case <-ctx.Done():
@@ -191,14 +208,12 @@ func CreateXTermSession(app *App, repoPath string) {
 	session.waiter.Wait()
 }
 
-// getTerminalSession safely retrieves a terminal session
-func getTerminalSession(app *App, repoPath string) (*TerminalSession, bool) {
-	app.terminalSessionsMutex.RLock()
-	defer app.terminalSessionsMutex.RUnlock()
-	session, exists := app.terminalSessions[repoPath]
-	return session, exists
-}
+func (sessionManager *XTermSessionManager) ResizeConsoleSession(repoPath string, newSize TTYSize) {
+	session, exists := sessionManager.TerminalSessions[repoPath]
+	if !exists {
+		logger.Log.Error("Tried to resize a non-existent session")
+		return
+	}
 
-func ResizeConsoleSession(session *TerminalSession, newSize TTYSize) {
 	(*session.consoleSession).SetSize(newSize.Cols, newSize.Rows)
 }

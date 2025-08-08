@@ -1,10 +1,11 @@
-package backend
+package git_operations
 
 import (
 	"context"
 	"crypto/md5"
 	"fmt"
 	"gitwhale/backend/command_utils"
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
 	"os/exec"
@@ -250,7 +251,7 @@ func parseAndRelogScriptOutput(output string) {
 
 // Ensures the helper diff script exists and returns its path
 func ensureHelperDiffScript() (string, error) {
-	appFolderPath, err := getAppFolderPath()
+	appFolderPath, err := lib.GetAppFolderPath()
 	if err != nil {
 		return "", err
 	}
@@ -566,16 +567,7 @@ func GetDiffSessionDirectory(session *DiffSession) *Directory {
 	logger.Log.Info("Getting directory structure for diff session: %s", session.SessionId)
 	session.LastAccessed = time.Now()
 
-	return readDiffs(session.LeftPath, session.RightPath)
-}
-
-func GetStartupDirDiffDirectory(diffArgs *StartupDirectoryDiffArgs) *Directory {
-	if diffArgs == nil {
-		logger.Log.Warning("Attempted to run a GetDiffSessionDirectory(), but was provided nil diffArgs")
-		return nil
-	}
-
-	return readDiffs(diffArgs.LeftPath, diffArgs.RightPath)
+	return ReadDiffs(session.LeftPath, session.RightPath)
 }
 
 func CleanupOldDiffSessions() error {
