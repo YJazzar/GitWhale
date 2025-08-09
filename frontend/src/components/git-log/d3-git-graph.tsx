@@ -233,7 +233,14 @@ function drawCommitNodes(
 				.attr('r', targetRadius);
 		})
 		.on('click', function(_, d: GitGraphCommit) {
-			onCommitClick?.(d.commit.commitHash);
+			const clickedHash = d.commit.commitHash;
+			if (selectedCommitHash === clickedHash) {
+				// If clicking the already selected commit, unselect it by passing empty string
+				onCommitClick('');
+			} else {
+				// Otherwise select the clicked commit
+				onCommitClick(clickedHash);
+			}
 		});
 
 	// Add icons to nodes
@@ -474,7 +481,16 @@ export function D3GitGraph({ commits, onCommitClick, selectedCommitHash, classNa
 									top: `${nodeY - ROW_HEIGHT/2 + 6}px`,
 									height: `${ROW_HEIGHT}px`,
 								}}
-								onClick={() => onCommitClick?.(item.commit.commitHash)}
+								onClick={() => {
+						const clickedHash = item.commit.commitHash;
+						if (selectedCommitHash === clickedHash) {
+							// If clicking the already selected commit, unselect it by passing null
+							onCommitClick('');
+						} else {
+							// Otherwise select the clicked commit
+							onCommitClick(clickedHash);
+						}
+					}}
 							/>
 						);
 					})}
