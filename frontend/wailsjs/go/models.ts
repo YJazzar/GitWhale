@@ -491,7 +491,6 @@ export namespace git_operations {
 	export class GitLogOptions {
 	    commitsToLoad?: number;
 	    fromRef?: string;
-	    toRef?: string;
 	    searchQuery?: string;
 	    author?: string;
 	
@@ -503,7 +502,6 @@ export namespace git_operations {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.commitsToLoad = source["commitsToLoad"];
 	        this.fromRef = source["fromRef"];
-	        this.toRef = source["toRef"];
 	        this.searchQuery = source["searchQuery"];
 	        this.author = source["author"];
 	    }
@@ -512,7 +510,6 @@ export namespace git_operations {
 	    name: string;
 	    type: string;
 	    hash: string;
-	    isHead: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new GitRef(source);
@@ -523,7 +520,6 @@ export namespace git_operations {
 	        this.name = source["name"];
 	        this.type = source["type"];
 	        this.hash = source["hash"];
-	        this.isHead = source["isHead"];
 	    }
 	}
 

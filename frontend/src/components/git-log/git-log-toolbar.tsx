@@ -14,127 +14,89 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useRepoState } from '@/hooks/state/use-repo-state';
-import { Logger } from '@/utils/logger';
-import {
-	ChevronDown,
-	Download,
-	Filter,
-	GitBranch,
-	RefreshCw,
-	Search,
-	Settings,
-	Tag
-} from 'lucide-react';
-import { useEffect } from 'react';
-import { git_operations } from 'wailsjs/go/models';
-import {
-	GetBranches,
-	GetTags,
-	GitFetch,
-	RunGitLog,
-} from '../../../wailsjs/go/backend/App';
+import { ChevronDown, Download, Filter, GitBranch, RefreshCw, Search, Settings, Tag } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface GitLogToolbarProps {
 	repoPath: string;
-	onCommitsUpdate: (commits: git_operations.GitLogCommitInfo[]) => void;
-	loading: boolean;
-	onLoadingChange: (loading: boolean) => void;
-	currentRef: string;
-	onRefChange: (ref: string) => void;
 }
 
-interface GitLogOptions {
-	commitsToLoad: number;
-	fromRef: string;
-	toRef: string;
-	searchQuery: string;
-	author: string;
-}
+export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
+	const { logState } = useRepoState(repoPath);
+	const toolbarOptions = logState.options.get();
 
-// Fetch Dropdown Component
-function FetchDropdown({
-	loading,
-	onFetch,
-	fetchRemote,
-	setFetchRemote,
-	fetchRef,
-	setFetchRef,
-}: {
-	loading: boolean;
-	onFetch: () => void;
-	fetchRemote: string;
-	setFetchRemote: (value: string) => void;
-	fetchRef: string;
-	setFetchRef: (value: string) => void;
-}) {
+	const searchQuery = toolbarOptions.searchQuery ?? '';
+	const setSearchQuery = (newQuery: string) => {
+		logState.options.set({ ...toolbarOptions, searchQuery: newQuery });
+	};
+
+	const handleSearch = async () => {
+		logState.refreshLogAndRefs();
+	};
+
+	const onRefresh = async () => {
+		logState.refreshLogAndRefs();
+	};
+
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="sm" disabled={loading}>
-					<Download className="w-4 h-4 mr-2" />
-					Fetch
-					<ChevronDown className="w-4 h-4 ml-2" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent>
-				<DropdownMenuLabel>Fetch from Remote</DropdownMenuLabel>
-				<DropdownMenuSeparator />
-				<div className="p-2 space-y-2">
-					<div>
-						<Label htmlFor="remote">Remote</Label>
-						<Input
-							id="remote"
-							value={fetchRemote}
-							onChange={(e) => setFetchRemote(e.target.value)}
-							placeholder="origin"
-							className="h-8"
-						/>
-					</div>
-					<div>
-						<Label htmlFor="ref">Ref (optional)</Label>
-						<Input
-							id="ref"
-							value={fetchRef}
-							onChange={(e) => setFetchRef(e.target.value)}
-							placeholder="main, feature/*, etc."
-							className="h-8"
-						/>
-					</div>
-					<Button onClick={onFetch} size="sm" className="w-full">
-						Fetch
-					</Button>
-				</div>
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<div className="flex items-center gap-2 p-3 border-b bg-muted/30">
+			{/* Refresh Button */}
+			<Button variant="outline" size="sm" onClick={onRefresh} disabled={logState.isLoading}>
+				<RefreshCw className={`w-4 h-4 mr-2 ${logState.isLoading ? 'animate-spin' : ''}`} />
+				Refresh
+			</Button>
+
+			<RefSelectorDropdown repoPath={repoPath} />
+
+			<Separator orientation="vertical" className="h-6" />
+
+			<FetchDropdown repoPath={repoPath} />
+
+			<Separator orientation="vertical" className="h-6" />
+
+			<SearchSection
+				searchQuery={searchQuery}
+				setSearchQuery={setSearchQuery}
+				onSearch={handleSearch}
+				loading={logState.isLoading}
+			/>
+
+			<Separator orientation="vertical" className="h-6" />
+
+			<ViewOptionsDropdown repoPath={repoPath} />
+		</div>
 	);
 }
 
 // Ref Selector Dropdown Component
-function RefSelectorDropdown({
-	loading,
-	currentRef,
-	branches,
-	tags,
-	onRefChange,
-}: {
-	loading: boolean;
-	currentRef: string;
-	branches: git_operations.GitRef[];
-	tags: git_operations.GitRef[];
-	onRefChange: (ref: string) => void;
-}) {
+function RefSelectorDropdown({ repoPath }: { repoPath: string }) {
+	const { logState } = useRepoState(repoPath);
+	const isLoadingLogs = logState.isLoading;
+
+	const toolbarOptions = logState.options.get();
 	const getCurrentRefDisplay = () => {
-		if (!currentRef) return 'HEAD';
-		return currentRef.length > 20 ? `${currentRef.substring(0, 20)}...` : currentRef;
+		if (!toolbarOptions.fromRef) {
+			return 'HEAD';
+		}
+		return toolbarOptions.fromRef.length > 20
+			? `${toolbarOptions.fromRef.substring(0, 20)}...`
+			: toolbarOptions.fromRef;
 	};
 
-	const localBranches = branches.filter((b) => b.type === 'local');
-	const remoteBranches = branches.filter((b) => b.type === 'remote');
+	const allRepoRefs = logState.refs ?? [];
+	const localBranches = allRepoRefs.filter((b) => b.type === 'localBranch');
+	const remoteBranches = allRepoRefs.filter((b) => b.type === 'remoteBranch');
+	const tags = allRepoRefs.filter((b) => b.type === 'tag');
+
+	const onUpdateSelectedRefForLog = (newFromRef: string) => {
+		logState.options.set({ ...toolbarOptions, fromRef: newFromRef });
+		logState.refreshLogAndRefs();
+	};
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="sm" disabled={loading}>
+				<Button variant="outline" size="sm" disabled={isLoadingLogs}>
 					<GitBranch className="w-4 h-4 mr-2" />
 					{getCurrentRefDisplay()}
 					<ChevronDown className="w-4 h-4 ml-2" />
@@ -155,17 +117,9 @@ function RefSelectorDropdown({
 								{localBranches.map((branch) => (
 									<DropdownMenuItem
 										key={branch.name}
-										onClick={() => onRefChange(branch.name)}
-										className={branch.isHead ? 'bg-accent' : ''}
+										onClick={() => onUpdateSelectedRefForLog(branch.name)}
 									>
-										<span className={branch.isHead ? 'font-bold' : ''}>
-											{branch.name}
-										</span>
-										{branch.isHead && (
-											<span className="ml-2 text-xs text-muted-foreground">
-												(current)
-											</span>
-										)}
+										<span>{branch.name}</span>
 									</DropdownMenuItem>
 								))}
 							</DropdownMenuSubContent>
@@ -185,7 +139,7 @@ function RefSelectorDropdown({
 								{remoteBranches.map((branch) => (
 									<DropdownMenuItem
 										key={branch.name}
-										onClick={() => onRefChange(branch.name)}
+										onClick={() => onUpdateSelectedRefForLog(branch.name)}
 									>
 										{branch.name}
 									</DropdownMenuItem>
@@ -204,7 +158,10 @@ function RefSelectorDropdown({
 						</DropdownMenuSubTrigger>
 						<DropdownMenuSubContent>
 							{tags.slice(0, 20).map((tag) => (
-								<DropdownMenuItem key={tag.name} onClick={() => onRefChange(tag.name)}>
+								<DropdownMenuItem
+									key={tag.name}
+									onClick={() => onUpdateSelectedRefForLog(tag.name)}
+								>
 									{tag.name}
 								</DropdownMenuItem>
 							))}
@@ -216,6 +173,23 @@ function RefSelectorDropdown({
 				)}
 			</DropdownMenuContent>
 		</DropdownMenu>
+	);
+}
+
+// Fetch Dropdown Component
+function FetchDropdown({ repoPath }: { repoPath: string }) {
+	const { logState } = useRepoState(repoPath);
+
+	const onFetch = () => {
+		logState.refetchRepo();
+	};
+
+	return (
+		<Button variant="outline" size="sm" disabled={logState.isLoading}>
+			<Download className="w-4 h-4 mr-2" />
+			Fetch
+			<ChevronDown className="w-4 h-4 ml-2" />
+		</Button>
 	);
 }
 
@@ -249,33 +223,23 @@ function SearchSection({
 }
 
 // View Options Dropdown Component
-function ViewOptionsDropdown({
-	loading,
-	commitCount,
-	setCommitCount,
-	includeMerges,
-	setIncludeMerges,
-	fromRef,
-	setFromRef,
-	toRef,
-	setToRef,
-	onApplyFilters,
-}: {
-	loading: boolean;
-	commitCount: number;
-	setCommitCount: (value: number) => void;
-	includeMerges: boolean;
-	setIncludeMerges: (value: boolean) => void;
-	fromRef: string;
-	setFromRef: (value: string) => void;
-	toRef: string;
-	setToRef: (value: string) => void;
-	onApplyFilters: () => void;
-}) {
+function ViewOptionsDropdown({ repoPath }: { repoPath: string }) {
+	const { logState } = useRepoState(repoPath);
+
+	const toolbarOptions = logState.options.get();
+
+	const onSetCommitCountToLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
+		logState.options.set({ ...toolbarOptions, commitsToLoad: toolbarOptions.commitsToLoad });
+	};
+
+	const onApplyFilters = () => {
+		logState.refreshLogAndRefs();
+	};
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="sm" disabled={loading}>
+				<Button variant="outline" size="sm" disabled={logState.isLoading}>
 					<Settings className="w-4 h-4 mr-2" />
 					Options
 					<ChevronDown className="w-4 h-4 ml-2" />
@@ -291,46 +255,11 @@ function ViewOptionsDropdown({
 						<Input
 							id="commitCount"
 							type="number"
-							value={commitCount}
-							onChange={(e) => setCommitCount(parseInt(e.target.value) || 100)}
+							value={toolbarOptions.commitsToLoad}
+							onChange={onSetCommitCountToLoad}
 							className="h-8"
 							min="1"
 							max="1000"
-						/>
-					</div>
-
-					<div className="flex items-center space-x-2">
-						<input
-							type="checkbox"
-							id="includeMerges"
-							checked={includeMerges}
-							onChange={(e) => setIncludeMerges(e.target.checked)}
-							className="rounded"
-						/>
-						<Label htmlFor="includeMerges" className="text-sm">
-							Include merge commits
-						</Label>
-					</div>
-
-					<div>
-						<Label htmlFor="fromRef">From Ref</Label>
-						<Input
-							id="fromRef"
-							value={fromRef}
-							onChange={(e) => setFromRef(e.target.value)}
-							placeholder="Optional: branch/tag/hash"
-							className="h-8"
-						/>
-					</div>
-
-					<div>
-						<Label htmlFor="toRef">To Ref</Label>
-						<Input
-							id="toRef"
-							value={toRef}
-							onChange={(e) => setToRef(e.target.value)}
-							placeholder="Optional: branch/tag/hash"
-							className="h-8"
 						/>
 					</div>
 
@@ -341,218 +270,5 @@ function ViewOptionsDropdown({
 				</div>
 			</DropdownMenuContent>
 		</DropdownMenu>
-	);
-}
-
-export function GitLogToolbar({
-	repoPath,
-	onCommitsUpdate,
-	loading,
-	onLoadingChange,
-	currentRef,
-	onRefChange,
-}: GitLogToolbarProps) {
-	const { logState } = useRepoState(repoPath);
-	
-	// Use atom-based state for all toolbar options
-	const toolbarOptions = logState.options;
-	
-	// Use atom-based state for refs
-	const branches = logState.refs.branches;
-	const tags = logState.refs.tags;
-	
-	// Helper functions to update specific options
-	const setSearchQuery = (value: string) => {
-		logState.setOptions({ ...toolbarOptions, searchQuery: value });
-	};
-	
-	const setCommitCount = (value: number) => {
-		logState.setOptions({ ...toolbarOptions, commitCount: value });
-	};
-	
-	const setIncludeMerges = (value: boolean) => {
-		logState.setOptions({ ...toolbarOptions, includeMerges: value });
-	};
-	
-	const setFromRef = (value: string) => {
-		logState.setOptions({ ...toolbarOptions, fromRef: value });
-	};
-	
-	const setToRef = (value: string) => {
-		logState.setOptions({ ...toolbarOptions, toRef: value });
-	};
-	
-	const setFetchRemote = (value: string) => {
-		logState.setOptions({ ...toolbarOptions, fetchRemote: value });
-	};
-	
-	const setFetchRef = (value: string) => {
-		logState.setOptions({ ...toolbarOptions, fetchRef: value });
-	};
-
-	// Load branches and tags when component mounts
-	useEffect(() => {
-		// Only load refs if we don't already have them
-		if (branches.length === 0 && tags.length === 0) {
-			loadRefsData();
-		}
-	}, [repoPath]);
-
-	const loadRefsData = async () => {
-		try {
-			const [branchesData, tagsData] = await Promise.all([GetBranches(repoPath), GetTags(repoPath)]);
-			logState.setRefs({
-				branches: branchesData || [],
-				tags: tagsData || []
-			});
-		} catch (error) {
-			Logger.error(`Failed to load refs: ${error}`, 'git-log-toolbar');
-		}
-	};
-
-	const handleRefresh = async () => {
-		onLoadingChange(true);
-		try {
-			await loadRefsData();
-			await loadCommitsWithCurrentOptions();
-		} catch (error) {
-			Logger.error(`Failed to refresh: ${error}`, 'git-log-toolbar');
-		} finally {
-			onLoadingChange(false);
-		}
-	};
-
-	const handleRefChange = async (newRef: string) => {
-		onRefChange(newRef);
-		onLoadingChange(true);
-		try {
-			const options: GitLogOptions = {
-				commitsToLoad: toolbarOptions.commitCount,
-				fromRef: newRef,
-				toRef: toolbarOptions.toRef,
-				searchQuery: toolbarOptions.searchQuery,
-				author: '',
-			};
-			const commits = await RunGitLog(repoPath, options);
-
-			onCommitsUpdate(commits);
-		} catch (error) {
-			Logger.error(`Failed to load commits from ref: ${error}`, 'git-log-toolbar');
-		} finally {
-			onLoadingChange(false);
-		}
-	};
-
-	const loadCommitsWithCurrentOptions = async () => {
-		onLoadingChange(true);
-		try {
-			const options: GitLogOptions = {
-				commitsToLoad: toolbarOptions.commitCount,
-				fromRef: toolbarOptions.fromRef || currentRef,
-				toRef: toolbarOptions.toRef,
-				searchQuery: toolbarOptions.searchQuery,
-				author: '',
-			};
-
-			const commits = await RunGitLog(repoPath, options);
-			onCommitsUpdate(commits);
-		} catch (error) {
-			Logger.error(`Failed to load commits with options: ${error}`, 'git-log-toolbar');
-		} finally {
-			onLoadingChange(false);
-		}
-	};
-
-	const handleSearch = async () => {
-		if (!toolbarOptions.searchQuery.trim()) {
-			await loadCommitsWithCurrentOptions();
-			return;
-		}
-
-		onLoadingChange(true);
-		try {
-			const options: GitLogOptions = {
-				commitsToLoad: toolbarOptions.commitCount,
-				fromRef: toolbarOptions.fromRef || currentRef,
-				toRef: toolbarOptions.toRef,
-				searchQuery: toolbarOptions.searchQuery,
-				author: '',
-			};
-
-			const commits = await RunGitLog(repoPath, options);
-			onCommitsUpdate(commits);
-		} catch (error) {
-			Logger.error(`Failed to search commits: ${error}`, 'git-log-toolbar');
-		} finally {
-			onLoadingChange(false);
-		}
-	};
-
-	const handleFetch = async () => {
-		if (!toolbarOptions.fetchRemote) return;
-
-		onLoadingChange(true);
-		try {
-			await GitFetch(repoPath, toolbarOptions.fetchRemote, toolbarOptions.fetchRef);
-			await loadRefsData(); // Refresh branches/tags after fetch
-			// Show success message or notification here
-		} catch (error) {
-			Logger.error(`Failed to fetch: ${error}`, 'git-log-toolbar');
-			// Show error message or notification here
-		} finally {
-			onLoadingChange(false);
-		}
-	};
-
-	return (
-		<div className="flex items-center gap-2 p-3 border-b bg-muted/30">
-			{/* Refresh Button */}
-			<Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
-				<RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-				Refresh
-			</Button>
-
-			<RefSelectorDropdown
-				loading={loading}
-				currentRef={currentRef}
-				branches={branches}
-				tags={tags}
-				onRefChange={handleRefChange}
-			/>
-
-			<Separator orientation="vertical" className="h-6" />
-
-			<FetchDropdown
-				loading={loading}
-				onFetch={handleFetch}
-				fetchRemote={toolbarOptions.fetchRemote}
-				setFetchRemote={setFetchRemote}
-				fetchRef={toolbarOptions.fetchRef}
-				setFetchRef={setFetchRef}
-			/>
-			<Separator orientation="vertical" className="h-6" />
-
-			<SearchSection
-				searchQuery={toolbarOptions.searchQuery}
-				setSearchQuery={setSearchQuery}
-				onSearch={handleSearch}
-				loading={loading}
-			/>
-
-			<Separator orientation="vertical" className="h-6" />
-
-			<ViewOptionsDropdown
-				loading={loading}
-				commitCount={toolbarOptions.commitCount}
-				setCommitCount={setCommitCount}
-				includeMerges={toolbarOptions.includeMerges}
-				setIncludeMerges={setIncludeMerges}
-				fromRef={toolbarOptions.fromRef}
-				setFromRef={setFromRef}
-				toRef={toolbarOptions.toRef}
-				setToRef={setToRef}
-				onApplyFilters={loadCommitsWithCurrentOptions}
-			/>
-		</div>
 	);
 }

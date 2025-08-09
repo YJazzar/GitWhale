@@ -153,16 +153,12 @@ func (app *App) GetDetailedCommitInfo(repoPath string, commitHash string) (*git_
 	return git_operations.GetDetailedCommitInfo(repoPath, commitHash)
 }
 
-func (app *App) GetBranches(gitRepoPath string) []git_operations.GitRef {
-	return git_operations.GetBranches(gitRepoPath)
+func (app *App) GetAllRefs(gitRepoPath string) []git_operations.GitRef {
+	return git_operations.GetAllRefs(gitRepoPath)
 }
 
-func (app *App) GetTags(gitRepoPath string) []git_operations.GitRef {
-	return git_operations.GetTags(gitRepoPath)
-}
-
-func (app *App) GitFetch(gitRepoPath, remote, ref string) error {
-	return git_operations.GitFetch(gitRepoPath, remote, ref)
+func (app *App) GitFetch(gitRepoPath string) error {
+	return git_operations.GitFetch(gitRepoPath)
 }
 
 func (app *App) ToggleStarRepo(gitRepoPath string) bool {

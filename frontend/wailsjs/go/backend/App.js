@@ -18,16 +18,16 @@ export function EndDiffSession(arg1) {
   return window['go']['backend']['App']['EndDiffSession'](arg1);
 }
 
+export function GetAllRefs(arg1) {
+  return window['go']['backend']['App']['GetAllRefs'](arg1);
+}
+
 export function GetAppState() {
   return window['go']['backend']['App']['GetAppState']();
 }
 
 export function GetApplicationLogHistory() {
   return window['go']['backend']['App']['GetApplicationLogHistory']();
-}
-
-export function GetBranches(arg1) {
-  return window['go']['backend']['App']['GetBranches'](arg1);
 }
 
 export function GetDefaultShellCommand() {
@@ -46,12 +46,8 @@ export function GetStartupDirDiffDirectory() {
   return window['go']['backend']['App']['GetStartupDirDiffDirectory']();
 }
 
-export function GetTags(arg1) {
-  return window['go']['backend']['App']['GetTags'](arg1);
-}
-
-export function GitFetch(arg1, arg2, arg3) {
-  return window['go']['backend']['App']['GitFetch'](arg1, arg2, arg3);
+export function GitFetch(arg1) {
+  return window['go']['backend']['App']['GitFetch'](arg1);
 }
 
 export function InitNewTerminalSession(arg1) {

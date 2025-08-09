@@ -4,13 +4,20 @@ import { Terminal } from '@xterm/xterm';
 import { atom, useAtom } from 'jotai';
 import {
 	CleanupTerminalSession,
+	EndDiffSession,
+	GetAllRefs,
+	GitFetch,
 	InitNewTerminalSession,
 	OnTerminalSessionWasResized,
+	RunGitLog,
+	StartDiffSession,
 } from '../../../wailsjs/go/backend/App';
 import { backend, command_utils, git_operations } from '../../../wailsjs/go/models';
 import { Logger } from '../../utils/logger';
 import { useFileManagerStatesCleanup } from './use-file-manager-state';
 import { SearchAddon } from '@xterm/addon-search';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useToast } from '../use-toast';
 
 // Map color schemes to xterm themes
 export function getXTermTheme(colorScheme: string) {
@@ -108,7 +115,7 @@ function getTerminalState(repoPath: string) {
 		element.className = 'w-full h-full';
 
 		newTerminal.loadAddon(fitAddon);
-		newTerminal.loadAddon(new SearchAddon())
+		newTerminal.loadAddon(new SearchAddon());
 
 		// Dispose existing terminal if it exists (prevents memory leaks)
 		const existingTerminal = xTermRefMap.get(repoPath);
@@ -241,41 +248,100 @@ const diffOptionsAtom = atom<
 	>
 >(new Map());
 
+const isLoadingDiffAtom = atom<Map<string, boolean>>(new Map());
+
 // MARK: Diff state management functions
 
 function getDiffState(repoPath: string) {
-	const [diffSessions, setDiffSessions] = useAtom(diffSessionsAtom);
-	const [selectedSessions, setSelectedSessions] = useAtom(selectedDiffSessionAtom);
+	const [diffSessionsMap, setDiffSessionsMap] = useAtom(diffSessionsAtom);
+	const [selectedSessionIDMap, setSelectedSessionIDMap] = useAtom(selectedDiffSessionAtom);
 	const [fileInfoMaps, setFileInfoMaps] = useAtom(fileInfoMapAtom);
 	const [diffOptions, setDiffOptionsMap] = useAtom(diffOptionsAtom);
+	const [isLoadingMap, setIsLoadingMap] = useAtom(isLoadingGitDataAtom);
 
 	// Get selected session ID for this repo
-	const repoDiffSessions = diffSessions.get(repoPath)
-	const selectedSessionId = selectedSessions.get(repoPath) || null;
+	const repoDiffSessions = diffSessionsMap.get(repoPath) ?? [];
+	const selectedSessionId = selectedSessionIDMap.get(repoPath) || null;
 	const selectedSession = repoDiffSessions?.find((s) => s.sessionId === selectedSessionId);
 
-	const repoDiffSessionIds = repoDiffSessions?.map(session => session.sessionId) ?? []
+	const repoDiffSessionIds = repoDiffSessions?.map((session) => session.sessionId) ?? [];
 	const { cleanupFileManagerStates } = useFileManagerStatesCleanup(repoDiffSessionIds);
+	const { toast } = useToast();
+
+	const __setIsLoadingDiffData = (newValue: boolean) => {
+		const newMap = new Map(isLoadingMap);
+		newMap.set(repoPath, newValue);
+		setIsLoadingMap(newMap);
+	};
+
+	// Update sessions for this repo
+	const __setSessions = (sessions: git_operations.DiffSession[]) => {
+		const newMap = new Map(diffSessionsMap);
+		newMap.set(repoPath, sessions);
+		setDiffSessionsMap(newMap);
+	};
+
+	// Set selected session ID for this repo
+	const __setSelectedSessionId = (sessionId: string | null) => {
+		const newMap = new Map(selectedSessionIDMap);
+		newMap.set(repoPath, sessionId);
+		setSelectedSessionIDMap(newMap);
+	};
+
+	const createSession = async (options: git_operations.DiffOptions) => {
+		try {
+			__setIsLoadingDiffData(true);
+
+			const session = await StartDiffSession(options);
+			const newSessions = [...repoDiffSessions, session];
+			Logger.debug(`Received session: ${session.sessionId}`, 'RepoDiffView');
+
+			__setSessions(newSessions);
+			__setSelectedSessionId(session.sessionId);
+			return session;
+		} catch (error) {
+			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+			toast({
+				variant: 'destructive',
+				title: 'Failed to create diff session',
+				description: errorMessage,
+			});
+
+			return undefined;
+		} finally {
+			__setIsLoadingDiffData(false);
+		}
+	};
+
+	const closeSession = async (sessionId: string) => {
+		try {
+			await EndDiffSession(sessionId);
+			const newSessions = repoDiffSessions.filter((s) => s.sessionId !== sessionId);
+			__setSessions(newSessions);
+
+			if (selectedSessionId === sessionId) {
+				__setSelectedSessionId(newSessions.length > 0 ? newSessions[0].sessionId : null);
+			}
+		} catch (error) {
+			Logger.error(`Failed to close diff session: ${error}`, 'RepoDiffView');
+			throw error;
+		}
+	};
 
 	return {
+		isLoading: isLoadingMap.get(repoPath) || false,
+
+		createSession,
+		closeSession,
+
 		// Get current sessions for this repo
-		sessions: diffSessions.get(repoPath) || [],
-
-		// Update sessions for this repo
-		setSessions: (sessions: git_operations.DiffSession[]) => {
-			const newMap = new Map(diffSessions);
-			newMap.set(repoPath, sessions);
-			setDiffSessions(newMap);
-		},
-
-		selectedSessionId,
-		selectedSession,
-
-		// Set selected session ID for this repo
-		setSelectedSessionId: (sessionId: string | null) => {
-			const newMap = new Map(selectedSessions);
-			newMap.set(repoPath, sessionId);
-			setSelectedSessions(newMap);
+		sessionData: repoDiffSessions,
+		selectedSession: {
+			setById: (id: string) => __setSelectedSessionId(id),
+			getId: () => selectedSessionId,
+			getData: () => selectedSession,
 		},
 
 		// Get file info map for this repo
@@ -310,13 +376,13 @@ function getDiffState(repoPath: string) {
 
 		// Clear all diff state for this repo
 		disposeSessions: () => {
-			const newSessionsMap = new Map(diffSessions);
+			const newSessionsMap = new Map(diffSessionsMap);
 			newSessionsMap.delete(repoPath);
-			setDiffSessions(newSessionsMap);
+			setDiffSessionsMap(newSessionsMap);
 
-			const newSelectedMap = new Map(selectedSessions);
+			const newSelectedMap = new Map(selectedSessionIDMap);
 			newSelectedMap.delete(repoPath);
-			setSelectedSessions(newSelectedMap);
+			setSelectedSessionIDMap(newSelectedMap);
 
 			const newFileInfoMap = new Map(fileInfoMaps);
 			newFileInfoMap.delete(repoPath);
@@ -326,7 +392,7 @@ function getDiffState(repoPath: string) {
 			newOptionsMap.delete(repoPath);
 			setDiffOptionsMap(newOptionsMap);
 
-			cleanupFileManagerStates()
+			cleanupFileManagerStates();
 		},
 	};
 }
@@ -336,105 +402,138 @@ function getDiffState(repoPath: string) {
 // Store git log data per repository path
 const gitLogDataAtom = atom<Map<string, git_operations.GitLogCommitInfo[]>>(new Map());
 
-// Store selected commit for details panel per repository path
-const selectedCommitAtom = atom<Map<string, git_operations.GitLogCommitInfo | null>>(new Map());
+const isLoadingGitDataAtom = atom<Map<string, boolean>>(new Map());
 
-// Store current reference (HEAD, branch, tag) per repository path
-const currentRefAtom = atom<Map<string, string>>(new Map());
-
-// Store git refs (branches and tags) per repository path
-const gitRefsAtom = atom<Map<string, { branches: git_operations.GitRef[]; tags: git_operations.GitRef[] }>>(new Map());
+// Store selected commit for details panel per repository path. Key is repoPath, value is commitHash
+const selectedCommitAtom = atom<Map<string, string | null>>(new Map());
 
 // Store git log options/filters per repository path
-const gitLogOptionsAtom = atom<
-	Map<
-		string,
-		{
-			searchQuery: string;
-			commitCount: number;
-			includeMerges: boolean;
-			fromRef: string;
-			toRef: string;
-			fetchRemote: string;
-			fetchRef: string;
-		}
-	>
->(new Map());
+const gitLogOptionsAtom = atom<Map<string, git_operations.GitLogOptions>>(new Map());
+
+// Store git refs (branches and tags) per repository path
+const gitRefsAtom = atom<Map<string, git_operations.GitRef[]>>(new Map());
 
 // MARK: Git log state management functions
 
 function getLogState(repoPath: string) {
 	const [logData, setLogData] = useAtom(gitLogDataAtom);
+	const [isLoadingMap, setIsLoadingMap] = useAtom(isLoadingGitDataAtom);
 	const [selectedCommits, setSelectedCommits] = useAtom(selectedCommitAtom);
-	const [currentRefs, setCurrentRefs] = useAtom(currentRefAtom);
 	const [gitRefs, setGitRefs] = useAtom(gitRefsAtom);
-	const [logOptions, setLogOptionsMap] = useAtom(gitLogOptionsAtom);
+	const [logOptionsMap, setLogOptionsMap] = useAtom(gitLogOptionsAtom);
+
+	const [needsToReload, setNeedsToReload] = useState(false)
+
+	const isLoading = isLoadingMap.get(repoPath) || false
+	const setIsLoadingGitData = (newValue: boolean) => {
+		const newMap = new Map(isLoadingMap);
+		newMap.set(repoPath, newValue);
+		setIsLoadingMap(newMap);
+	};
+
+	// When a user clicks to open a commit (the quick view kind that's embedded in the git-log-view)
+	const setSelectedCommit = (commitHash: string | null) => {
+		const newMap = new Map(selectedCommits);
+		newMap.set(repoPath, commitHash);
+		setSelectedCommits(newMap);
+	};
+
+	const currentLogOptions = logOptionsMap.get(repoPath) || {
+		author: undefined,
+		commitsToLoad: undefined,
+		fromRef: undefined,
+		searchQuery: undefined,
+		toRef: undefined,
+	};
+
+	const setLogViewOptions = (options: git_operations.GitLogOptions) => {
+		const newMap = new Map(logOptionsMap);
+		newMap.set(repoPath, options);
+		setLogOptionsMap(newMap);
+	};
+
+	const refreshLogsInner = async (options: git_operations.GitLogOptions) => {
+		const newLogs = await RunGitLog(repoPath, options);
+
+		const newMap = new Map(logData);
+		newMap.set(repoPath, newLogs);
+		setLogData(newMap);
+	};
+
+	const loadAllRefsInner = async () => {
+		debugger;
+		const newRefs = await GetAllRefs(repoPath);
+
+		const newMap = new Map(gitRefs);
+		newMap.set(repoPath, newRefs);
+		setGitRefs(newMap);
+	};
+
+	const refreshLogAndRefs = async () => {
+		if (isLoading) { 
+			return
+		}
+
+		try {
+			setIsLoadingGitData(true);
+
+			await Promise.all([loadAllRefsInner(), refreshLogsInner(currentLogOptions)]);
+		} catch (error) {
+			Logger.error(`Failed to reload refs: ${error}`, 'RepoLogView');
+		} finally {
+			setIsLoadingGitData(false);
+			setNeedsToReload(false)
+		}
+	};
+
+	const refetchRepo = async () => {
+		try {
+			setIsLoadingGitData(true);
+			await GitFetch(repoPath);
+			await Promise.all([loadAllRefsInner(), refreshLogsInner(currentLogOptions)]);
+		} catch (error) {
+			Logger.error(`Failed to fetch: ${error}`, 'git-log-toolbar');
+		} finally {
+			setIsLoadingGitData(false);
+		}
+	};
+
+	// Get git log data for this repo
+	const logs = logData.get(repoPath);
+
+	// All the refs that git is tracking for this repo
+	const refs = gitRefs.get(repoPath);
+
+	useEffect(() => {
+		if (needsToReload) {
+			refreshLogAndRefs();
+		}
+	}, [needsToReload]);
 
 	return {
-		// Get git log data for this repo
-		logs: logData.get(repoPath) || [],
+		isLoading: isLoadingMap.get(repoPath) || false,
 
-		// Set git log data for this repo
-		setLogs: (logs: git_operations.GitLogCommitInfo[]) => {
-			const newMap = new Map(logData);
-			newMap.set(repoPath, logs);
-			setLogData(newMap);
+		// Get git log data for this repo
+		logs: logs || [],
+
+		// All the refs that git is tracking for this repo
+		refs,
+
+		refreshLogAndRefs: () => {
+			setNeedsToReload(true)
 		},
+		refetchRepo,
 
 		// Get selected commit for this repo
-		selectedCommit: selectedCommits.get(repoPath) || null,
-
-		// Set selected commit for this repo
-		setSelectedCommit: (commit: git_operations.GitLogCommitInfo | null) => {
-			const newMap = new Map(selectedCommits);
-			newMap.set(repoPath, commit);
-			setSelectedCommits(newMap);
-		},
-
-		// Get current ref for this repo
-		currentRef: currentRefs.get(repoPath) || 'HEAD',
-
-		// Set current ref for this repo
-		setCurrentRef: (ref: string) => {
-			const newMap = new Map(currentRefs);
-			newMap.set(repoPath, ref);
-			setCurrentRefs(newMap);
-		},
-
-		// Get git refs (branches/tags) for this repo
-		refs: gitRefs.get(repoPath) || { branches: [], tags: [] },
-
-		// Set git refs for this repo
-		setRefs: (refs: { branches: git_operations.GitRef[]; tags: git_operations.GitRef[] }) => {
-			const newMap = new Map(gitRefs);
-			newMap.set(repoPath, refs);
-			setGitRefs(newMap);
+		selectedCommit: {
+			get: () => selectedCommits.get(repoPath) || null,
+			set: setSelectedCommit,
 		},
 
 		// Get log options for this repo
-		options: logOptions.get(repoPath) || {
-			searchQuery: '',
-			commitCount: 100,
-			includeMerges: true,
-			fromRef: '',
-			toRef: '',
-			fetchRemote: 'origin',
-			fetchRef: '',
-		},
-
-		// Set log options for this repo
-		setOptions: (options: {
-			searchQuery: string;
-			commitCount: number;
-			includeMerges: boolean;
-			fromRef: string;
-			toRef: string;
-			fetchRemote: string;
-			fetchRef: string;
-		}) => {
-			const newMap = new Map(logOptions);
-			newMap.set(repoPath, options);
-			setLogOptionsMap(newMap);
+		options: {
+			get: () => currentLogOptions,
+			set: setLogViewOptions,
 		},
 
 		// Clear all log state for this repo
@@ -447,15 +546,11 @@ function getLogState(repoPath: string) {
 			newSelectedMap.delete(repoPath);
 			setSelectedCommits(newSelectedMap);
 
-			const newRefsMap = new Map(currentRefs);
-			newRefsMap.delete(repoPath);
-			setCurrentRefs(newRefsMap);
-
 			const newGitRefsMap = new Map(gitRefs);
 			newGitRefsMap.delete(repoPath);
 			setGitRefs(newGitRefsMap);
 
-			const newOptionsMap = new Map(logOptions);
+			const newOptionsMap = new Map(logOptionsMap);
 			newOptionsMap.delete(repoPath);
 			setLogOptionsMap(newOptionsMap);
 		},

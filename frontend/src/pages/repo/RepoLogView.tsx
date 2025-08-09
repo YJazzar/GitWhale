@@ -12,7 +12,6 @@ import { Logger } from '@/utils/logger';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
-	const [loading, setLoading] = useState(false);
 
 	const commitGraph = useCommitGraphBuilder(logState.logs);
 
@@ -21,63 +20,40 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	}
 
 	const refreshLogs = async () => {
-		setLoading(true);
-		try {
-			const newLogs = await RunGitLog(repoPath, {});
-			logState.setLogs(newLogs);
-		} catch (error) {
-			Logger.error(`Failed to load git log: ${error}`, 'RepoLogView');
-		} finally {
-			setLoading(false);
-		}
+		await logState.refreshLogAndRefs();
 	};
 
 	const onCommitSelect = (commitHash: string) => {
-		const commit = logState.logs.find(log => log.commitHash === commitHash);
-		if (commit) {
-			logState.setSelectedCommit(commit);
-		}
+		logState.selectedCommit.set(commitHash);
 	};
 
 	const handleCloseCommitDetails = () => {
-		logState.setSelectedCommit(null);
+		logState.selectedCommit.set(null);
 	};
-	
-	useEffect(() => {
-		// Only refresh if we don't already have logs for this repo
-		if (logState.logs.length === 0) {
-			refreshLogs();
-		}
-	}, [repoPath]);
+
+	const selectedCommitForDetails = logState.selectedCommit.get() 
 
 	return (
 		<div className="flex flex-col h-full">
-			<GitLogToolbar
-				repoPath={repoPath}
-				onCommitsUpdate={logState.setLogs}
-				loading={loading}
-				onLoadingChange={setLoading}
-				currentRef={logState.currentRef}
-				onRefChange={logState.setCurrentRef}
-			/>
-			
+			<GitLogToolbar repoPath={repoPath} />
+
 			<div className="flex-1 min-h-0 w-full">
 				<ResizablePanelGroup direction="vertical" className="h-full">
 					<ResizablePanel defaultSize={logState.selectedCommit ? 60 : 100} minSize={30}>
-						<GitLogGraph 
+						<GitLogGraph
 							commits={logState.logs}
 							onCommitClick={onCommitSelect}
-							loading={loading}
+							loading={logState.isLoading}
 							className="rounded-lg p-0 bg-background h-full"
 						/>
 					</ResizablePanel>
-					
-					{logState.selectedCommit && (
+
+					{selectedCommitForDetails && (
 						<>
 							<ResizableHandle />
 							<ResizablePanel defaultSize={40} minSize={20}>
-								<CommitDetails 
-									commitHash={logState.selectedCommit.commitHash}
+								<CommitDetails
+									commitHash={selectedCommitForDetails}
 									repoPath={repoPath}
 									onClose={handleCloseCommitDetails}
 									variant="compact"

@@ -16,10 +16,10 @@ export function DirDiffViewer(props: { repoPath: string }) {
 	const { diffState } = useRepoState(repoPath);
 	const fileTabRef = useRef<TabsManagerHandle>(null);
 
-	const directoryData = diffState.selectedSession?.directoryData || null;
+	const directoryData = diffState.selectedSession.getData()?.directoryData || null;
 
 	// Force FileTabs to remount when session changes by using session ID as key
-	const sessionKey = diffState.selectedSessionId || 'none';
+	const sessionKey = diffState.selectedSession.getId() || 'none';
 
 	const fileInfoMap = useMemo(() => {
 		const map: Map<string, git_operations.FileInfo> = new Map();

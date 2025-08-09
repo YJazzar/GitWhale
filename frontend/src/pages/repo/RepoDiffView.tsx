@@ -1,9 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { DirDiffViewer } from '@/components/dir-diff-viewer';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Logger } from '@/utils/logger';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -12,117 +8,21 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { DirDiffViewer } from '@/components/dir-diff-viewer';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useRepoState } from '@/hooks/state/use-repo-state';
 import {
+	ArrowRight,
+	ChevronDown,
+	FileText,
+	FolderTree,
 	GitBranch,
 	GitCompare,
-	ChevronDown,
 	Loader2,
 	X,
-	RefreshCw,
-	FolderTree,
-	FileText,
-	ArrowRight,
 } from 'lucide-react';
-import { backend, git_operations } from 'wailsjs/go/models';
-import { StartDiffSession, EndDiffSession, GetBranches, GetTags } from '../../../wailsjs/go/backend/App';
-import { useRepoState } from '@/hooks/state/use-repo-state';
-import { useToast } from '@/hooks/use-toast';
-
-interface DiffRouterState {
-	fromRef?: string;
-	toRef?: string;
-	autoStart?: boolean;
-}
-
-// Custom hooks for state management using atoms
-const useDiffSessions = (repoPath: string) => {
-	const { diffState } = useRepoState(repoPath);
-	const [loading, setLoading] = useState(false);
-	const { toast } = useToast();
-
-	const createSession = async (options: git_operations.DiffOptions) => {
-		setLoading(true);
-		try {
-			const session = await StartDiffSession(options);
-			const newSessions = [...diffState.sessions, session];
-			diffState.setSessions(newSessions);
-			diffState.setSelectedSessionId(session.sessionId);
-			Logger.debug(`Received session: ${session.sessionId}`, "RepoDiffView")
-			return session;
-		} catch (error) {
-			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-			
-			toast({
-				variant: "destructive",
-				title: "Failed to create diff session",
-				description: errorMessage,
-			});
-			
-			throw error;
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const closeSession = async (sessionId: string) => {
-		try {
-			await EndDiffSession(sessionId);
-			const newSessions = diffState.sessions.filter((s) => s.sessionId !== sessionId);
-			diffState.setSessions(newSessions);
-
-			if (diffState.selectedSessionId === sessionId) {
-				diffState.setSelectedSessionId(newSessions.length > 0 ? newSessions[0].sessionId : null);
-			}
-		} catch (error) {
-			Logger.error(`Failed to close diff session: ${error}`, 'RepoDiffView');
-			throw error;
-		}
-	};
-
-	const selectedSession = useMemo(
-		() => diffState.sessions.find((s) => s.sessionId === diffState.selectedSessionId) || null,
-		[diffState.sessions, diffState.selectedSessionId]
-	);
-
-	return {
-		loading,
-		sessions: diffState.sessions,
-		selectedSessionId: diffState.selectedSessionId,
-		selectedSession,
-		setSelectedSessionId: diffState.setSelectedSessionId,
-		createSession,
-		closeSession,
-	};
-};
-
-const useGitRefs = (repoPath: string) => {
-	const [branches, setBranches] = useState<git_operations.GitRef[]>([]);
-	const [tags, setTags] = useState<git_operations.GitRef[]>([]);
-	const [loading, setLoading] = useState(false);
-
-	const loadRefs = useCallback(async () => {
-		setLoading(true);
-		try {
-			const [branchesData, tagsData] = await Promise.all([GetBranches(repoPath), GetTags(repoPath)]);
-			setBranches(branchesData || []);
-			setTags(tagsData || []);
-		} catch (error) {
-			Logger.error(`Failed to load refs: ${error}`, 'RepoDiffView');
-		} finally {
-			setLoading(false);
-		}
-	}, [repoPath]);
-
-	useEffect(() => {
-		loadRefs();
-	}, [loadRefs]);
-
-	const allRefs = useMemo(() => [...branches, ...tags], [branches, tags]);
-
-	return { branches, tags, allRefs, loading, loadRefs };
-};
+import React, { useCallback, useMemo } from 'react';
+import { git_operations } from 'wailsjs/go/models';
 
 const useDiffOptions = (repoPath: string) => {
 	const { diffState } = useRepoState(repoPath);
@@ -223,16 +123,18 @@ const useDiffOptions = (repoPath: string) => {
 
 // Component modules
 const ViewToolbar = ({
+	repoPath,
 	diffOptions,
-	gitRefs,
-	onCreateDiff,
-	loading,
 }: {
+	repoPath: string;
 	diffOptions: ReturnType<typeof useDiffOptions>;
-	gitRefs: ReturnType<typeof useGitRefs>;
-	onCreateDiff: () => void;
-	loading: boolean;
 }) => {
+	const { diffState } = useRepoState(repoPath);
+
+	const handleCreateDiff = useCallback(async () => {
+		const options = { ...diffOptions.options, repoPath };
+		await diffState.createSession(options);
+	}, [diffOptions.options, repoPath, diffState]);
 
 	return (
 		<div className="border-b bg-muted/20 p-3">
@@ -242,21 +144,16 @@ const ViewToolbar = ({
 					<span className="font-medium">Repository Diff</span>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button
-						onClick={gitRefs.loadRefs}
-						variant="outline"
-						size="sm"
-						disabled={loading}
-						title="Refresh branches and tags"
-					>
-						<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-					</Button>
 					<QuickOptionsDropdown
 						options={diffOptions.quickOptions}
 						onSelect={diffOptions.setQuickOption}
 					/>
-					<Button onClick={onCreateDiff} disabled={loading || !diffOptions.fromRef} size="sm">
-						{loading ? (
+					<Button
+						onClick={handleCreateDiff}
+						disabled={diffState.isLoading || !diffOptions.fromRef}
+						size="sm"
+					>
+						{diffState.isLoading ? (
 							<Loader2 className="w-3 h-3 animate-spin" />
 						) : (
 							<GitCompare className="w-3 h-3" />
@@ -265,7 +162,7 @@ const ViewToolbar = ({
 					</Button>
 				</div>
 			</div>
-			<DiffOptionsForm diffOptions={diffOptions} gitRefs={gitRefs} />
+			<DiffOptionsForm repoPath={repoPath} diffOptions={diffOptions} />
 		</div>
 	);
 };
@@ -297,12 +194,14 @@ const QuickOptionsDropdown = ({
 );
 
 const DiffOptionsForm = ({
+	repoPath,
 	diffOptions,
-	gitRefs,
 }: {
+	repoPath: string;
 	diffOptions: ReturnType<typeof useDiffOptions>;
-	gitRefs: ReturnType<typeof useGitRefs>;
 }) => {
+	const { logState } = useRepoState(repoPath);
+
 	if (!diffOptions.showAdvanced) {
 		return (
 			<div className="flex items-center gap-4">
@@ -311,7 +210,7 @@ const DiffOptionsForm = ({
 						label="Compare From"
 						value={diffOptions.fromRef}
 						onChange={diffOptions.setFromRef}
-						refs={gitRefs.allRefs}
+						refs={logState.refs ?? []}
 						icon={<GitBranch className="w-4 h-4" />}
 						inline
 					/>
@@ -322,7 +221,7 @@ const DiffOptionsForm = ({
 						label="Compare To"
 						value={diffOptions.toRef}
 						onChange={diffOptions.setToRef}
-						refs={gitRefs.allRefs}
+						refs={logState.refs ?? []}
 						icon={<FolderTree className="w-4 h-4" />}
 						allowEmpty
 						emptyLabel="Current Changes"
@@ -458,18 +357,19 @@ const RefSelector = ({
 	</div>
 );
 
-const SessionTabs = ({
-	sessions,
-	selectedSessionId,
-	onSelect,
-	onClose,
-}: {
-	sessions: git_operations.DiffSession[];
-	selectedSessionId: string | null;
-	onSelect: (sessionId: string) => void;
-	onClose: (sessionId: string) => void;
-}) => {
-	if (sessions.length === 0) return null;
+const SessionTabs = ({ repoPath }: { repoPath: string }) => {
+	const { diffState } = useRepoState(repoPath);
+
+	const handleSessionSelect = (sessionId: string) => {
+		diffState.selectedSession.setById(sessionId);
+	};
+
+	const handleSessionClose = (sessionId: string) => {
+		diffState.closeSession(sessionId);
+	};
+
+	const sessions = diffState.sessionData;
+	const selectedSessionId = diffState.selectedSession.getId();
 
 	return (
 		<div className="border-b bg-gradient-to-r from-muted/5 to-muted/10 backdrop-blur-sm">
@@ -486,14 +386,14 @@ const SessionTabs = ({
 									: 'bg-background/80 border border-border/50 hover:bg-muted/50 hover:border-border text-muted-foreground hover:text-foreground'
 							}
 						`}
-						onClick={() => onSelect(session.sessionId)}
+						onClick={() => handleSessionSelect(session.sessionId)}
 					>
 						<span className="truncate text-sm font-medium">{session.title}</span>
 						<button
 							className="w-5 h-5 rounded-md flex items-center justify-center transition-colors duration-150 hover:bg-destructive/20 hover:text-destructive group-hover:opacity-100 opacity-60"
 							onClick={(e) => {
 								e.stopPropagation();
-								onClose(session.sessionId);
+								handleSessionClose(session.sessionId);
 							}}
 							title="Close diff session"
 						>
@@ -506,61 +406,25 @@ const SessionTabs = ({
 	);
 };
 
-const EmptyState = () => (
-	<div className="w-full h-full flex items-center justify-center">
-		<Card className="w-96">
-			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
-					<GitCompare className="w-5 h-5" />
-					Repository Diff
-				</CardTitle>
-				<CardDescription>Compare different versions of your repository</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<p className="text-sm text-muted-foreground">
-					Select your source and target references above, then click "Compare" to begin comparing.
-				</p>
-			</CardContent>
-		</Card>
-	</div>
-);
-
 export default function RepoDiffView({ repoPath }: { repoPath: string }) {
+	const { diffState } = useRepoState(repoPath);
+
 	if (!repoPath) {
 		return <div>Error: No repository path provided</div>;
 	}
 
-	const diffSessions = useDiffSessions(repoPath);
-	const gitRefs = useGitRefs(repoPath);
 	const diffOptions = useDiffOptions(repoPath);
-
-	const handleCreateDiff = useCallback(async () => {
-		const options = { ...diffOptions.options, repoPath };
-		await diffSessions.createSession(options);
-	}, [diffOptions.options, repoPath, diffSessions]);
-
-	const handleSessionSelect = useCallback((sessionId: string) => {
-		diffSessions.setSelectedSessionId(sessionId);
-	}, [diffSessions]);
 
 	return (
 		<div className="flex flex-col h-full">
-			<ViewToolbar
-				diffOptions={diffOptions}
-				gitRefs={gitRefs}
-				onCreateDiff={handleCreateDiff}
-				loading={diffSessions.loading}
-			/>
+			<ViewToolbar repoPath={repoPath} diffOptions={diffOptions} />
 
-			<SessionTabs
-				sessions={diffSessions.sessions}
-				selectedSessionId={diffSessions.selectedSessionId}
-				onSelect={handleSessionSelect}
-				onClose={diffSessions.closeSession}
-			/>
+			<SessionTabs repoPath={repoPath} />
 
 			<div className="flex-1 overflow-hidden min-h-0">
-				{!!diffSessions.selectedSession?.directoryData && <DirDiffViewer repoPath={repoPath} />}
+				{!!diffState.selectedSession.getData()?.directoryData && (
+					<DirDiffViewer repoPath={repoPath} />
+				)}
 			</div>
 		</div>
 	);
