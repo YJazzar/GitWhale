@@ -461,7 +461,6 @@ function getLogState(repoPath: string) {
 	};
 
 	const loadAllRefsInner = async () => {
-		debugger;
 		const newRefs = await GetAllRefs(repoPath);
 
 		const newMap = new Map(gitRefs);

@@ -242,7 +242,13 @@ function ViewOptionsDropdown({ repoPath }: { repoPath: string }) {
 	const toolbarOptions = logState.options.get();
 
 	const onSetCommitCountToLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
-		logState.options.set({ ...toolbarOptions, commitsToLoad: toolbarOptions.commitsToLoad });
+		const newCommitsToLoad = event.target.value
+		if (!newCommitsToLoad || !Number(newCommitsToLoad)) { 
+			logState.options.set({ ...toolbarOptions, commitsToLoad: undefined });
+			return
+		}
+
+		logState.options.set({ ...toolbarOptions, commitsToLoad: Number(newCommitsToLoad) });
 	};
 
 	const onApplyFilters = () => {
@@ -264,15 +270,15 @@ function ViewOptionsDropdown({ repoPath }: { repoPath: string }) {
 
 				<div className="p-2 space-y-3">
 					<div>
-						<Label htmlFor="commitCount">Commit Count</Label>
+						<Label htmlFor="commitCount">Commit Count: {toolbarOptions.commitsToLoad}</Label>
 						<Input
 							id="commitCount"
 							type="number"
 							value={toolbarOptions.commitsToLoad}
 							onChange={onSetCommitCountToLoad}
 							className="h-8"
-							min="1"
-							max="1000"
+							min={0}
+							maxLength={10000000}
 						/>
 					</div>
 
