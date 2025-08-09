@@ -100,6 +100,7 @@ func (config *AppConfig) openNewRepo(gitRepoPath string) string {
 	}
 
 	config.addRepoToRecentList(gitRepoPath)
+	config.SaveAppConfig()
 	return gitRepoPath
 }
 
