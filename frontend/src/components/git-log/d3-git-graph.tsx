@@ -9,6 +9,7 @@ interface D3GitGraphProps {
 	commits: git_operations.GitLogCommitInfo[];
 	onCommitClick: (commitHash: string, shouldAddToSelection: boolean) => void;
 	onCommitDoubleClick: (commitHash: string) => void;
+	onCommitRightClick: (event: React.MouseEvent, commitHash: string) => void;
 	selectedCommitHashes: string[];
 	className?: string;
 }
@@ -165,8 +166,6 @@ function drawCommitNodes(
 	svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
 	graphLayout: GitGraphCommit[],
 	selectedCommitHashSet: Set<string>,
-	handleSingleClick: (commitHash: string) => void,
-	handleDoubleClick: (commitHash: string) => void
 ) {
 	const rootStyles = getComputedStyle(document.documentElement);
 	const backgroundColor = rootStyles.getPropertyValue('--background').trim() || '0 0% 100%';
@@ -234,12 +233,6 @@ function drawCommitNodes(
 			const targetRadius = isSelected ? baseRadius + 2 : baseRadius;
 			circle.transition().duration(150).attr('r', targetRadius);
 		})
-		.on('click', function (_, d: GitGraphCommit) {
-			handleSingleClick(d.commit.commitHash);
-		})
-		.on('dblclick', function (_, d: GitGraphCommit) {
-			handleDoubleClick(d.commit.commitHash);
-		});
 
 	// Add icons to nodes
 	nodes
@@ -395,6 +388,7 @@ export function D3GitGraph({
 	commits,
 	onCommitClick,
 	onCommitDoubleClick,
+	onCommitRightClick,
 	selectedCommitHashes,
 	className,
 }: D3GitGraphProps) {
@@ -473,13 +467,15 @@ export function D3GitGraph({
 		setupSVGFilters(svg);
 		drawColumnLines(svg, graphLayout, height);
 		drawConnections(svg, connections, height);
-		drawCommitNodes(svg, graphLayout, selectedCommitHashSet, handleSingleClick, handleDoubleClick);
+		drawCommitNodes(
+			svg,
+			graphLayout,
+			selectedCommitHashSet,
+		);
 	}, [
 		graphLayout,
 		connections,
 		graphDimensions,
-		handleSingleClick,
-		handleDoubleClick,
 		selectedCommitHashSet,
 	]);
 
@@ -521,6 +517,10 @@ export function D3GitGraph({
 								}}
 								onClick={() => handleSingleClick(item.commit.commitHash)}
 								onDoubleClick={() => handleDoubleClick(item.commit.commitHash)}
+								onContextMenu={(event) => {
+									// Only handle right-click if commit is selected
+									onCommitRightClick(event, item.commit.commitHash);
+								}}
 							/>
 						);
 					})}
