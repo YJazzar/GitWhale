@@ -14,7 +14,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useRepoState } from '@/hooks/state/use-repo-state';
-import { ChevronDown, Download, Filter, GitBranch, RefreshCw, Search, Settings, Tag } from 'lucide-react';
+import {
+	ChevronDown,
+	Download,
+	Filter,
+	GitBranch,
+	GitCommitHorizontal,
+	RefreshCw,
+	Search,
+	Settings,
+	Tag,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface GitLogToolbarProps {
@@ -103,7 +113,11 @@ function RefSelectorDropdown({ repoPath }: { repoPath: string }) {
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-64">
-				<DropdownMenuLabel>Switch Reference</DropdownMenuLabel>
+				<DropdownMenuItem onClick={() => onUpdateSelectedRefForLog('HEAD')}>
+					<GitCommitHorizontal />
+					<span>HEAD</span>
+				</DropdownMenuItem>
+
 				<DropdownMenuSeparator />
 
 				{localBranches.length > 0 && (
@@ -185,10 +199,9 @@ function FetchDropdown({ repoPath }: { repoPath: string }) {
 	};
 
 	return (
-		<Button variant="outline" size="sm" disabled={logState.isLoading}>
+		<Button variant="outline" size="sm" disabled={logState.isLoading} onClick={onFetch}>
 			<Download className="w-4 h-4 mr-2" />
 			Fetch
-			<ChevronDown className="w-4 h-4 ml-2" />
 		</Button>
 	);
 }
