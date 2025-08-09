@@ -20,6 +20,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	};
 
 	const onCommitDoubleClick = (commitHash: string) => {
+		logState.selectedCommit.set(commitHash);
 		handleViewFullCommit(commitHash, false)
 	}
 
