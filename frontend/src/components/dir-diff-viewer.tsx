@@ -3,7 +3,7 @@ import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { TabProps } from '@/hooks/state/use-file-manager-state';
-import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { backend, git_operations } from '../../wailsjs/go/models';
 

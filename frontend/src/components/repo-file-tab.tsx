@@ -1,4 +1,4 @@
-import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { FolderGit2 } from 'lucide-react';
 import { useEffect } from 'react';
 

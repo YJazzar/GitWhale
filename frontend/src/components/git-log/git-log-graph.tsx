@@ -1,6 +1,6 @@
 import { D3GitGraph } from '@/components/git-log/d3-git-graph';
 import { ContextMenuProvider } from '@/components/ui/context-menu-provider';
-import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useContextMenu, type ContextMenuAction } from '@/hooks/use-context-menu';
 import { cn } from '@/lib/utils';
 import { Copy, Cherry, RotateCcw, Eye, GitCompare, GitBranch } from 'lucide-react';

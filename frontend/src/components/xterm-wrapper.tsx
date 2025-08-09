@@ -1,4 +1,4 @@
-import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { UseAppState } from '@/hooks/state/use-app-state';
 import '@xterm/xterm/css/xterm.css';

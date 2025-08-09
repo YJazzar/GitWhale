@@ -3,7 +3,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { CommitDetails } from '@/components/commit-details';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
-import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {

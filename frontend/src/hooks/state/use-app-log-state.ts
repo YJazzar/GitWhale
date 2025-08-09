@@ -1,12 +1,12 @@
 import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
 import { Terminal } from '@xterm/xterm';
-import { backend, command_utils, logger } from '../../../wailsjs/go/models';
-import { getXTermTheme } from './use-repo-state';
-import { EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
 import { atom, useAtom } from 'jotai';
 import { ClearApplicationLogHistory, GetApplicationLogHistory } from '../../../wailsjs/go/backend/App';
+import { command_utils, logger } from '../../../wailsjs/go/models';
+import { EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
 import { Logger } from '../../utils/logger';
-import { SearchAddon } from '@xterm/addon-search';
+import { getXTermTheme } from './repo/use-repo-terminal';
 
 // Map for persistent log terminals - similar to xTermRefMap pattern
 const logTerminalMap = new Map<
