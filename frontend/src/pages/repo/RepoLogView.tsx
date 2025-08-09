@@ -15,20 +15,26 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
 	}
 
-	const onCommitSelect = (commitHash: string) => {
-		logState.selectedCommit.set(commitHash);
+	const onCommitSelect = (commitHash: string, shouldAddToSelection: boolean) => {
+		if (shouldAddToSelection) {
+			logState.selectedCommits.addToSelectedCommitsList(commitHash);
+			return 
+		}
+
+		logState.selectedCommits.removeFromSelectedCommitsList(commitHash)
 	};
 
 	const onCommitDoubleClick = (commitHash: string) => {
-		logState.selectedCommit.set(commitHash);
+		logState.selectedCommits.addToSelectedCommitsList(commitHash);
 		handleViewFullCommit(commitHash, false)
 	}
 
 	const handleCloseCommitDetails = () => {
-		logState.selectedCommit.set(null);
+		onCommitSelect(selectedCommitForDetails, false)
 	};
 
-	const selectedCommitForDetails = logState.selectedCommit.get() 
+	const currentSelectedCommits = logState.selectedCommits.currentSelectedCommits
+	const selectedCommitForDetails = currentSelectedCommits[currentSelectedCommits.length-1]
 
 	return (
 		<div className="flex flex-col h-full">
@@ -36,7 +42,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 
 			<div className="flex-1 min-h-0 w-full">
 				<ResizablePanelGroup direction="vertical" className="h-full">
-					<ResizablePanel defaultSize={logState.selectedCommit ? 60 : 100} minSize={30}>
+					<ResizablePanel defaultSize={!!selectedCommitForDetails ? 60 : 100} minSize={30}>
 						<GitLogGraph
 							repoPath={repoPath}
 							onCommitClick={onCommitSelect}

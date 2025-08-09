@@ -6,7 +6,7 @@ import { git_operations } from 'wailsjs/go/models';
 
 interface GitLogGraphProps {
 	repoPath: string;
-	onCommitClick: (commitHash: string) => void;
+	onCommitClick: (commitHash: string, shouldAddToSelection: boolean) => void;
 	onCommitDoubleClick: (commitHash: string) => void;
 	className?: string;
 }
@@ -48,7 +48,7 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 				onCommitClick={onCommitClick}
 				onCommitDoubleClick={onCommitDoubleClick}
 				className="w-full"
-				selectedCommitHash={logState.selectedCommit.get()}
+				selectedCommitHashes={logState.selectedCommits.currentSelectedCommits}
 			/>
 		</div>
 	);

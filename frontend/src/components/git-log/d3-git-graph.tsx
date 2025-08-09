@@ -7,9 +7,9 @@ import { git_operations } from 'wailsjs/go/models';
 
 interface D3GitGraphProps {
 	commits: git_operations.GitLogCommitInfo[];
-	onCommitClick: (commitHash: string) => void;
+	onCommitClick: (commitHash: string, shouldAddToSelection: boolean) => void;
 	onCommitDoubleClick: (commitHash: string) => void;
-	selectedCommitHash: string | undefined | null;
+	selectedCommitHashes: string[];
 	className?: string;
 }
 
@@ -164,7 +164,7 @@ function drawConnections(
 function drawCommitNodes(
 	svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
 	graphLayout: GitGraphCommit[],
-	selectedCommitHash: string | null | undefined,
+	selectedCommitHashSet: Set<string>,
 	handleSingleClick: (commitHash: string) => void,
 	handleDoubleClick: (commitHash: string) => void
 ) {
@@ -191,7 +191,7 @@ function drawCommitNodes(
 		.append('circle')
 		.attr('r', (d: GitGraphCommit) => {
 			const isMerge = d.parentHashes.length > 1;
-			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const isSelected = selectedCommitHashSet.has(d.commit.commitHash);
 			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
 			return isSelected ? baseRadius + 2 : baseRadius;
 		})
@@ -200,7 +200,7 @@ function drawCommitNodes(
 			return isMerge ? '#fbbf24' : d.color;
 		})
 		.attr('stroke', (d: GitGraphCommit) => {
-			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const isSelected = selectedCommitHashSet.has(d.commit.commitHash);
 			if (isSelected) {
 				const rootStyles = getComputedStyle(document.documentElement);
 				const primaryColor = rootStyles.getPropertyValue('--primary').trim() || '210 40% 98%';
@@ -209,11 +209,11 @@ function drawCommitNodes(
 			return nodeStrokeColor;
 		})
 		.attr('stroke-width', (d: GitGraphCommit) => {
-			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const isSelected = selectedCommitHashSet.has(d.commit.commitHash);
 			return isSelected ? 4 : 2;
 		})
 		.style('filter', (d: GitGraphCommit) => {
-			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const isSelected = selectedCommitHashSet.has(d.commit.commitHash);
 			return isSelected
 				? 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))'
 				: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))';
@@ -221,7 +221,7 @@ function drawCommitNodes(
 		.on('mouseover', function (_, d: GitGraphCommit) {
 			const circle = d3.select(this);
 			const isMerge = d.parentHashes.length > 1;
-			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const isSelected = selectedCommitHashSet.has(d.commit.commitHash);
 			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
 			const targetRadius = isSelected ? baseRadius + 3 : baseRadius + 2;
 			circle.transition().duration(150).attr('r', targetRadius);
@@ -229,7 +229,7 @@ function drawCommitNodes(
 		.on('mouseout', function (_, d: GitGraphCommit) {
 			const circle = d3.select(this);
 			const isMerge = d.parentHashes.length > 1;
-			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const isSelected = selectedCommitHashSet.has(d.commit.commitHash);
 			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
 			const targetRadius = isSelected ? baseRadius + 2 : baseRadius;
 			circle.transition().duration(150).attr('r', targetRadius);
@@ -239,7 +239,7 @@ function drawCommitNodes(
 		})
 		.on('dblclick', function (_, d: GitGraphCommit) {
 			handleDoubleClick(d.commit.commitHash);
-		})
+		});
 
 	// Add icons to nodes
 	nodes
@@ -395,39 +395,41 @@ export function D3GitGraph({
 	commits,
 	onCommitClick,
 	onCommitDoubleClick,
-	selectedCommitHash,
+	selectedCommitHashes,
 	className,
 }: D3GitGraphProps) {
 	const svgRef = useRef<SVGSVGElement>(null);
 	const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+	const selectedCommitHashSet = new Set(selectedCommitHashes);
+
 	// Create click handlers that can detect single vs double clicks
-	const handleSingleClick = useCallback((commitHash: string) => {
+	const handleSingleClick = (commitHash: string) => {
 		// Delay single click to see if a double click follows
 		if (clickTimeoutRef.current) {
 			clearTimeout(clickTimeoutRef.current);
 		}
 		clickTimeoutRef.current = setTimeout(() => {
 			const clickedHash = commitHash;
-			if (selectedCommitHash === clickedHash) {
+			if (selectedCommitHashSet.has(clickedHash)) {
 				// If clicking the already selected commit, unselect it by passing empty string
-				onCommitClick('');
+				onCommitClick(commitHash, false);
 			} else {
 				// Otherwise select the clicked commit
-				onCommitClick(clickedHash);
+				onCommitClick(clickedHash, true);
 			}
 			clickTimeoutRef.current = null;
 		}, 50); // Wait 300ms to detect double click
-	}, [onCommitClick, selectedCommitHash]);
+	};
 
-	const handleDoubleClick = useCallback((commitHash: string) => {
+	const handleDoubleClick = (commitHash: string) => {
 		// Clear any pending single click
 		if (clickTimeoutRef.current) {
 			clearTimeout(clickTimeoutRef.current);
 			clickTimeoutRef.current = null;
 		}
 		onCommitDoubleClick(commitHash);
-	}, [onCommitDoubleClick]);
+	};
 
 	// Compute graph layout using the new hook
 	const graphLayout = useMemo(() => {
@@ -471,8 +473,15 @@ export function D3GitGraph({
 		setupSVGFilters(svg);
 		drawColumnLines(svg, graphLayout, height);
 		drawConnections(svg, connections, height);
-		drawCommitNodes(svg, graphLayout, selectedCommitHash, handleSingleClick, handleDoubleClick);
-	}, [graphLayout, connections, graphDimensions, handleSingleClick, handleDoubleClick, selectedCommitHash]);
+		drawCommitNodes(svg, graphLayout, selectedCommitHashSet, handleSingleClick, handleDoubleClick);
+	}, [
+		graphLayout,
+		connections,
+		graphDimensions,
+		handleSingleClick,
+		handleDoubleClick,
+		selectedCommitHashSet,
+	]);
 
 	// Render empty state
 	if (!commits || commits.length === 0) {
@@ -495,7 +504,7 @@ export function D3GitGraph({
 				<div className="absolute top-0 left-0 w-full pointer-events-none">
 					{graphLayout.map((item, index) => {
 						const nodeY = index * ROW_HEIGHT + MARGIN_TOP;
-						const isSelected = selectedCommitHash === item.commit.commitHash;
+						const isSelected = selectedCommitHashSet.has(item.commit.commitHash);
 
 						return (
 							<div
