@@ -7,10 +7,11 @@ import { git_operations } from 'wailsjs/go/models';
 interface GitLogGraphProps {
 	repoPath: string;
 	onCommitClick: (commitHash: string) => void;
+	onCommitDoubleClick: (commitHash: string) => void;
 	className?: string;
 }
 
-export function GitLogGraph({ repoPath, onCommitClick, className }: GitLogGraphProps) {
+export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, className }: GitLogGraphProps) {
 	const { logState } = useRepoState(repoPath);
 	const commits = logState.logs;
 	const isLoading = logState.isLoading;
@@ -45,6 +46,7 @@ export function GitLogGraph({ repoPath, onCommitClick, className }: GitLogGraphP
 			<D3GitGraph
 				commits={commits}
 				onCommitClick={onCommitClick}
+				onCommitDoubleClick={onCommitDoubleClick}
 				className="w-full"
 				selectedCommitHash={logState.selectedCommit.get()}
 			/>

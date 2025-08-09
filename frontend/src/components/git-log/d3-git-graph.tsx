@@ -2,12 +2,13 @@ import { GitRefs } from '@/components/git-refs';
 import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git/use-git-graph';
 import { useUnixTime } from '@/hooks/use-unix-time';
 import * as d3 from 'd3';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { git_operations } from 'wailsjs/go/models';
 
 interface D3GitGraphProps {
 	commits: git_operations.GitLogCommitInfo[];
 	onCommitClick: (commitHash: string) => void;
+	onCommitDoubleClick: (commitHash: string) => void;
 	selectedCommitHash: string | undefined | null;
 	className?: string;
 }
@@ -45,7 +46,7 @@ function calculateGraphDimensions(graphLayout: GitGraphCommit[]) {
 		return { width: 200, height: 100 };
 	}
 
-	const maxColumn = Math.max(...graphLayout.map(item => item.column), 0);
+	const maxColumn = Math.max(...graphLayout.map((item) => item.column), 0);
 	const width = (maxColumn + 1) * COLUMN_WIDTH + MARGIN_LEFT * 2;
 	const height = graphLayout.length * ROW_HEIGHT + MARGIN_TOP * 2;
 
@@ -71,7 +72,7 @@ function generateConnectionPath(connection: Connection, height: number): string 
 	// Angular path with rounded corners for different columns
 	const cornerRadius = 8;
 	const midY = sourceY + (targetY - sourceY) * 0.6;
-	
+
 	if (sourceX < targetX) {
 		return `M ${sourceX} ${sourceY} 
 		        L ${sourceX} ${midY - cornerRadius}
@@ -92,18 +93,17 @@ function generateConnectionPath(connection: Connection, height: number): string 
 // SVG rendering functions
 function setupSVGFilters(svg: d3.Selection<SVGSVGElement, unknown, null, undefined>) {
 	const defs = svg.append('defs');
-	
-	const filter = defs.append('filter')
+
+	const filter = defs
+		.append('filter')
 		.attr('id', 'subtle-glow')
 		.attr('x', '-20%')
 		.attr('y', '-20%')
 		.attr('width', '140%')
 		.attr('height', '140%');
-	
-	filter.append('feGaussianBlur')
-		.attr('stdDeviation', '0.8')
-		.attr('result', 'coloredBlur');
-	
+
+	filter.append('feGaussianBlur').attr('stdDeviation', '0.8').attr('result', 'coloredBlur');
+
 	const feMerge = filter.append('feMerge');
 	feMerge.append('feMergeNode').attr('in', 'coloredBlur');
 	feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
@@ -118,7 +118,7 @@ function drawColumnLines(
 	const borderColor = rootStyles.getPropertyValue('--border').trim() || '210 214 220';
 	const columnLineColor = `hsl(${borderColor})`;
 
-	const maxColumn = Math.max(...graphLayout.map(item => item.column), 0);
+	const maxColumn = Math.max(...graphLayout.map((item) => item.column), 0);
 	svg.selectAll('.column-line')
 		.data(Array.from({ length: maxColumn + 1 }, (_, i) => i))
 		.enter()
@@ -139,12 +139,13 @@ function drawConnections(
 	height: number
 ) {
 	const connectionGroup = svg.append('g').attr('class', 'connections');
-	
-	connectionGroup.selectAll('.connection')
+
+	connectionGroup
+		.selectAll('.connection')
 		.data(connections)
 		.enter()
 		.append('path')
-		.attr('class', d => `connection ${d.type}`)
+		.attr('class', (d) => `connection ${d.type}`)
 		.attr('d', (d: Connection) => generateConnectionPath(d, height))
 		.attr('stroke', (d: Connection) => d.color)
 		.attr('stroke-width', (d: Connection) => {
@@ -156,7 +157,7 @@ function drawConnections(
 			if (d.type === 'extension') return 0.4;
 			return d.type === 'merge' ? 0.7 : 0.8;
 		})
-		.attr('stroke-dasharray', (d: Connection) => d.type === 'extension' ? '4,4' : 'none')
+		.attr('stroke-dasharray', (d: Connection) => (d.type === 'extension' ? '4,4' : 'none'))
 		.style('filter', 'none');
 }
 
@@ -164,25 +165,29 @@ function drawCommitNodes(
 	svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
 	graphLayout: GitGraphCommit[],
 	selectedCommitHash: string | null | undefined,
-	onCommitClick: (commitHash: string) => void
+	handleCommitClick: (commitHash: string, isDoubleClick?: boolean) => void
 ) {
 	const rootStyles = getComputedStyle(document.documentElement);
 	const backgroundColor = rootStyles.getPropertyValue('--background').trim() || '0 0% 100%';
 	const nodeStrokeColor = `hsl(${backgroundColor})`;
 
 	const nodeGroup = svg.append('g').attr('class', 'nodes');
-	
-	const nodes = nodeGroup.selectAll('.commit-node')
+
+	const nodes = nodeGroup
+		.selectAll('.commit-node')
 		.data(graphLayout)
 		.enter()
 		.append('g')
 		.attr('class', 'commit-node')
-		.attr('transform', (d: GitGraphCommit, i: number) => 
-			`translate(${getNodeX(d.column)}, ${getNodeY(i)})`)
+		.attr(
+			'transform',
+			(d: GitGraphCommit, i: number) => `translate(${getNodeX(d.column)}, ${getNodeY(i)})`
+		)
 		.style('cursor', 'pointer');
 
 	// Add circles for commits
-	nodes.append('circle')
+	nodes
+		.append('circle')
 		.attr('r', (d: GitGraphCommit) => {
 			const isMerge = d.parentHashes.length > 1;
 			const isSelected = selectedCommitHash === d.commit.commitHash;
@@ -208,43 +213,36 @@ function drawCommitNodes(
 		})
 		.style('filter', (d: GitGraphCommit) => {
 			const isSelected = selectedCommitHash === d.commit.commitHash;
-			return isSelected 
-				? 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))' 
+			return isSelected
+				? 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))'
 				: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))';
 		})
-		.on('mouseover', function(_, d: GitGraphCommit) {
+		.on('mouseover', function (_, d: GitGraphCommit) {
 			const circle = d3.select(this);
 			const isMerge = d.parentHashes.length > 1;
 			const isSelected = selectedCommitHash === d.commit.commitHash;
 			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
 			const targetRadius = isSelected ? baseRadius + 3 : baseRadius + 2;
-			circle.transition()
-				.duration(150)
-				.attr('r', targetRadius);
+			circle.transition().duration(150).attr('r', targetRadius);
 		})
-		.on('mouseout', function(_, d: GitGraphCommit) {
+		.on('mouseout', function (_, d: GitGraphCommit) {
 			const circle = d3.select(this);
 			const isMerge = d.parentHashes.length > 1;
 			const isSelected = selectedCommitHash === d.commit.commitHash;
 			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
 			const targetRadius = isSelected ? baseRadius + 2 : baseRadius;
-			circle.transition()
-				.duration(150)
-				.attr('r', targetRadius);
+			circle.transition().duration(150).attr('r', targetRadius);
 		})
-		.on('click', function(_, d: GitGraphCommit) {
-			const clickedHash = d.commit.commitHash;
-			if (selectedCommitHash === clickedHash) {
-				// If clicking the already selected commit, unselect it by passing empty string
-				onCommitClick('');
-			} else {
-				// Otherwise select the clicked commit
-				onCommitClick(clickedHash);
-			}
+		.on('click', function (_, d: GitGraphCommit) {
+			handleCommitClick(d.commit.commitHash);
+		})
+		.on('dblclick', function (_, d: GitGraphCommit) {
+			handleCommitClick(d.commit.commitHash, true);
 		});
 
 	// Add icons to nodes
-	nodes.append('text')
+	nodes
+		.append('text')
 		.attr('text-anchor', 'middle')
 		.attr('dy', '0.35em')
 		.attr('font-size', '8px')
@@ -260,10 +258,10 @@ function drawCommitNodes(
 // Function to calculate connections between commits
 function calculateConnections(graphLayout: GitGraphCommit[]): Connection[] {
 	if (graphLayout.length === 0) return [];
-	
+
 	const commitMap = new Map<string, GitGraphCommit>();
 	const commitToRowIndex = new Map<string, number>();
-	
+
 	// Build maps with explicit row indices
 	graphLayout.forEach((item, index) => {
 		commitMap.set(item.commit.commitHash, item);
@@ -278,7 +276,7 @@ function calculateConnections(graphLayout: GitGraphCommit[]): Connection[] {
 		item.parentHashes.forEach((parentHash, index) => {
 			const parent = commitMap.get(parentHash);
 			const targetRowIndex = commitToRowIndex.get(parentHash);
-			
+
 			if (parent && targetRowIndex !== undefined) {
 				// Parent is visible - create normal connection
 				const isDirectParent = index === 0;
@@ -286,7 +284,7 @@ function calculateConnections(graphLayout: GitGraphCommit[]): Connection[] {
 					source: { ...item, rowIndex: sourceRowIndex },
 					target: { ...parent, rowIndex: targetRowIndex },
 					type: isDirectParent ? 'direct' : 'merge',
-					color: isDirectParent ? item.color : parent.color
+					color: isDirectParent ? item.color : parent.color,
 				});
 			} else {
 				// Parent is not visible (missing from loaded commits) - create extension line
@@ -295,12 +293,12 @@ function calculateConnections(graphLayout: GitGraphCommit[]): Connection[] {
 					rowIndex: lastRowIndex + 2, // Always extend beyond the last visible commit
 					column: item.column, // Use the same column for the extension
 				};
-				
+
 				links.push({
 					source: { ...item, rowIndex: sourceRowIndex },
 					target: virtualTarget,
 					type: 'extension',
-					color: item.color
+					color: item.color,
 				});
 			}
 		});
@@ -310,9 +308,9 @@ function calculateConnections(graphLayout: GitGraphCommit[]): Connection[] {
 }
 
 // Component for rendering commit details
-function CommitDetails({ 
-	graphLayout, 
-	connections, 
+function CommitDetails({
+	graphLayout,
+	connections,
 }: {
 	graphLayout: GitGraphCommit[];
 	connections: Connection[];
@@ -324,25 +322,23 @@ function CommitDetails({
 				const commitMessage = Array.isArray(commit.commitMessage)
 					? commit.commitMessage.join('\n')
 					: commit.commitMessage;
-				
+
 				const firstLine = commitMessage.split('\n')[0];
-				const displayMessage = firstLine.length > 60 
-					? firstLine.slice(0, 60) + '...' 
-					: firstLine;
+				const displayMessage = firstLine.length > 60 ? firstLine.slice(0, 60) + '...' : firstLine;
 				const shortHash = commit.commitHash.slice(0, 7);
-				
+
 				const nodeX = getNodeX(item.column);
-				const nodeY = getNodeY(index) - ROW_HEIGHT/2 + 6;
-				
+				const nodeY = getNodeY(index) - ROW_HEIGHT / 2 + 6;
+
 				// Calculate the rightmost branch position for this row
 				let rightmostBranchX = nodeX;
-				
-				connections.forEach(connection => {
+
+				connections.forEach((connection) => {
 					const sourceRowIndex = connection.source.rowIndex;
 					const targetRowIndex = connection.target.rowIndex;
 					const minRow = Math.min(sourceRowIndex, targetRowIndex);
 					const maxRow = Math.max(sourceRowIndex, targetRowIndex);
-					
+
 					if (index > minRow && index < maxRow) {
 						const sourceX = getNodeX(connection.source.column);
 						const targetX = getNodeX(connection.target.column);
@@ -350,14 +346,14 @@ function CommitDetails({
 						rightmostBranchX = Math.max(rightmostBranchX, connectionRightmostX);
 					}
 				});
-				
+
 				const textStartX = Math.max(rightmostBranchX, nodeX) + 16;
-				
+
 				return (
 					<div
 						key={commit.commitHash}
 						className="absolute pointer-events-none flex items-center"
-						style={{ 
+						style={{
 							left: `${textStartX}px`,
 							top: `${nodeY}px`,
 							height: `${ROW_HEIGHT}px`,
@@ -375,15 +371,11 @@ function CommitDetails({
 									</div>
 								)}
 							</div>
-							
+
 							<div className="flex items-center gap-2 text-xs text-muted-foreground">
-								<span className="font-mono font-medium text-primary">
-									{shortHash}
-								</span>
+								<span className="font-mono font-medium text-primary">{shortHash}</span>
 								<span>{commit.username}</span>
-								<span>
-									{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}
-								</span>
+								<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
 								{commit.shortStat && (
 									<span className="text-xs bg-muted px-1.5 py-0.5 rounded">
 										{commit.shortStat}
@@ -398,8 +390,31 @@ function CommitDetails({
 	);
 }
 
-export function D3GitGraph({ commits, onCommitClick, selectedCommitHash, className }: D3GitGraphProps) {
+export function D3GitGraph({
+	commits,
+	onCommitClick,
+	onCommitDoubleClick,
+	selectedCommitHash,
+	className,
+}: D3GitGraphProps) {
 	const svgRef = useRef<SVGSVGElement>(null);
+	const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Create a click handler that can detect double clicks
+	const handleCommitClick = (commitHash: string, isDoubleClick = false) => {
+		if (isDoubleClick) {
+			onCommitDoubleClick(commitHash);
+		} else {
+			const clickedHash = commitHash;
+			if (selectedCommitHash === clickedHash) {
+				// If clicking the already selected commit, unselect it by passing empty string
+				onCommitClick('');
+			} else {
+				// Otherwise select the clicked commit
+				onCommitClick(clickedHash);
+			}
+		}
+	};
 
 	// Compute graph layout using the new hook
 	const graphLayout = useMemo(() => {
@@ -421,7 +436,14 @@ export function D3GitGraph({ commits, onCommitClick, selectedCommitHash, classNa
 
 	// D3.js rendering effect
 	useEffect(() => {
-		if (!svgRef.current || !commits || commits.length === 0 || graphLayout.length === 0 || connections.length === 0) return;
+		if (
+			!svgRef.current ||
+			!commits ||
+			commits.length === 0 ||
+			graphLayout.length === 0 ||
+			connections.length === 0
+		)
+			return;
 
 		// Clear previous render
 		d3.select(svgRef.current).selectAll('*').remove();
@@ -430,16 +452,14 @@ export function D3GitGraph({ commits, onCommitClick, selectedCommitHash, classNa
 		const { width, height } = graphDimensions;
 
 		// Set SVG dimensions
-		svg.attr('width', width)
-		   .attr('height', height)
-		   .attr('viewBox', `0 0 ${width} ${height}`);
+		svg.attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
 
 		// Setup filters and draw components
 		setupSVGFilters(svg);
 		drawColumnLines(svg, graphLayout, height);
 		drawConnections(svg, connections, height);
-		drawCommitNodes(svg, graphLayout, selectedCommitHash, onCommitClick);
-	}, [graphLayout, connections, graphDimensions, onCommitClick, selectedCommitHash]);
+		drawCommitNodes(svg, graphLayout, selectedCommitHash, handleCommitClick);
+	}, [graphLayout, connections, graphDimensions, handleCommitClick, selectedCommitHash]);
 
 	// Render empty state
 	if (!commits || commits.length === 0) {
@@ -456,51 +476,36 @@ export function D3GitGraph({ commits, onCommitClick, selectedCommitHash, classNa
 		<div className={className}>
 			<div className="relative bg-background">
 				{/* Graph SVG */}
-				<svg 
-					ref={svgRef} 
-					className="block" 
-					style={{ minWidth: graphDimensions.width }}
-				/>
-				
+				<svg ref={svgRef} className="block" style={{ minWidth: graphDimensions.width }} />
+
 				{/* Full-width hover rows */}
 				<div className="absolute top-0 left-0 w-full pointer-events-none">
 					{graphLayout.map((item, index) => {
 						const nodeY = index * ROW_HEIGHT + MARGIN_TOP;
 						const isSelected = selectedCommitHash === item.commit.commitHash;
-						
+
 						return (
 							<div
 								key={`hover-${item.commit.commitHash}`}
 								className={`absolute w-full pointer-events-auto group transition-all duration-200 cursor-pointer ${
-									isSelected 
-										? 'bg-primary/20 hover:bg-primary/25 border-l-4 border-l-primary shadow-sm' 
+									isSelected
+										? 'bg-primary/20 hover:bg-primary/25 border-l-4 border-l-primary shadow-sm'
 										: 'hover:bg-accent/30'
 								}`}
-								style={{ 
+								style={{
 									left: '0px',
-									top: `${nodeY - ROW_HEIGHT/2 + 6}px`,
+									top: `${nodeY - ROW_HEIGHT / 2 + 6}px`,
 									height: `${ROW_HEIGHT}px`,
 								}}
-								onClick={() => {
-						const clickedHash = item.commit.commitHash;
-						if (selectedCommitHash === clickedHash) {
-							// If clicking the already selected commit, unselect it by passing null
-							onCommitClick('');
-						} else {
-							// Otherwise select the clicked commit
-							onCommitClick(clickedHash);
-						}
-					}}
+								onClick={() => handleCommitClick(item.commit.commitHash)}
+								onDoubleClick={() => handleCommitClick(item.commit.commitHash, true)}
 							/>
 						);
 					})}
 				</div>
 
 				{/* Commit details positioned relative to nodes */}
-				<CommitDetails 
-					graphLayout={graphLayout} 
-					connections={connections} 
-				/>
+				<CommitDetails graphLayout={graphLayout} connections={connections} />
 			</div>
 		</div>
 	);

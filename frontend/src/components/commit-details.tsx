@@ -80,8 +80,8 @@ export function CommitDetails({
 		: commit?.commitMessage;
 
 	const isMergeCommit = (commit?.parentCommitHashes?.length || 0) > 1;
-	const handleViewFullCommit = useNavigateToCommit(commitHash, repoPath, isMergeCommit);
-
+	const handleViewFullCommitHook = useNavigateToCommit(repoPath);
+	const handleViewFullCommit = () => handleViewFullCommitHook(commitHash, isMergeCommit)
 	// Loading state
 	if (isLoading) {
 		return (

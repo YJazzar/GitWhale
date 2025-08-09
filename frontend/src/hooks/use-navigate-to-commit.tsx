@@ -5,14 +5,14 @@ import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
 import { Logger } from '../utils/logger';
 
-export function useNavigateToCommit(commitHash: string, repoPath: string, isMergeCommit?: boolean): () => void {
+export function useNavigateToCommit(repoPath: string) {
 	const sidebar = useSidebarContext();
 
-	const handleViewFullCommit = () => {
+	const handleViewFullCommit = (commitHash: string, isMergeCommit?: boolean) => {
 		// Check if this commit is already open in the sidebar
 		const existingItems = sidebar.getAllItems();
-		const existingCommit = existingItems.find(item => item.id === `commit-${commitHash}`);
-		
+		const existingCommit = existingItems.find((item) => item.id === `commit-${commitHash}`);
+
 		if (existingCommit) {
 			// If it already exists, just switch to it
 			sidebar.setActiveItem(`commit-${commitHash}`);
@@ -24,7 +24,9 @@ export function useNavigateToCommit(commitHash: string, repoPath: string, isMerg
 			id: `commit-${commitHash}`,
 			title: commitHash.slice(0, 7),
 			icon: isMergeCommit ? <GitMerge className="h-4 w-4" /> : <GitCommit className="h-4 w-4" />,
-			component: <CommitDetails commitHash={commitHash} repoPath={repoPath} hideViewFullButton={true} />,
+			component: (
+				<CommitDetails commitHash={commitHash} repoPath={repoPath} hideViewFullButton={true} />
+			),
 			isDynamic: true,
 			onClose: () => {
 				Logger.debug(`Closing commit view for ${commitHash}`, 'use-navigate-to-commit');

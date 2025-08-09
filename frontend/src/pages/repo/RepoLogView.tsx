@@ -4,21 +4,24 @@ import { CommitDetails } from '@/components/commit-details';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { useRepoState } from '@/hooks/state/use-repo-state';
+import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
 
+	const handleViewFullCommit = useNavigateToCommit(repoPath);
+	
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
 	}
 
-	const refreshLogs = async () => {
-		await logState.refreshLogAndRefs();
-	};
-
 	const onCommitSelect = (commitHash: string) => {
 		logState.selectedCommit.set(commitHash);
 	};
+
+	const onCommitDoubleClick = (commitHash: string) => {
+		handleViewFullCommit(commitHash, false)
+	}
 
 	const handleCloseCommitDetails = () => {
 		logState.selectedCommit.set(null);
@@ -36,6 +39,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 						<GitLogGraph
 							repoPath={repoPath}
 							onCommitClick={onCommitSelect}
+							onCommitDoubleClick={onCommitDoubleClick}
 							className="rounded-lg p-0 bg-background h-full"
 						/>
 					</ResizablePanel>
