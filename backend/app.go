@@ -63,6 +63,13 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 				startupState.fileDiffWatcher = watcher
 			}
 		}
+	} else {
+		// Ensure git difftool is configured with helper script
+		logger.Log.Debug("Ensuring git difftool configuration...")
+		if err := git_operations.SetupGitDirDiffHelperScript(); err != nil {
+			logger.Log.Error("Failed to configure git difftool: %v", err)
+		}
+		logger.Log.Debug("Git difftool configuration completed successfully")
 	}
 
 	// Set up frontend log event listener
