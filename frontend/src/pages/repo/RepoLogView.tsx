@@ -1,19 +1,12 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import useCommitGraphBuilder from '@/hooks/use-commit-graph-builder';
-import { useEffect, useState } from 'react';
-import { backend } from 'wailsjs/go/models';
-import { RunGitLog } from '../../../wailsjs/go/backend/App';
 
+import { CommitDetails } from '@/components/commit-details';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
-import { CommitDetails } from '@/components/commit-details';
 import { useRepoState } from '@/hooks/state/use-repo-state';
-import { Logger } from '@/utils/logger';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
-
-	const commitGraph = useCommitGraphBuilder(logState.logs);
 
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
@@ -41,9 +34,8 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 				<ResizablePanelGroup direction="vertical" className="h-full">
 					<ResizablePanel defaultSize={logState.selectedCommit ? 60 : 100} minSize={30}>
 						<GitLogGraph
-							commits={logState.logs}
+							repoPath={repoPath}
 							onCommitClick={onCommitSelect}
-							loading={logState.isLoading}
 							className="rounded-lg p-0 bg-background h-full"
 						/>
 					</ResizablePanel>

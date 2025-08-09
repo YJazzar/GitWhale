@@ -7,7 +7,8 @@ import { git_operations } from 'wailsjs/go/models';
 
 interface D3GitGraphProps {
 	commits: git_operations.GitLogCommitInfo[];
-	onCommitClick?: (commitHash: string) => void;
+	onCommitClick: (commitHash: string) => void;
+	selectedCommitHash: string | undefined | null;
 	className?: string;
 }
 
@@ -162,7 +163,8 @@ function drawConnections(
 function drawCommitNodes(
 	svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
 	graphLayout: GitGraphCommit[],
-	onCommitClick?: (commitHash: string) => void
+	selectedCommitHash: string | null | undefined,
+	onCommitClick: (commitHash: string) => void
 ) {
 	const rootStyles = getComputedStyle(document.documentElement);
 	const backgroundColor = rootStyles.getPropertyValue('--background').trim() || '0 0% 100%';
@@ -183,30 +185,54 @@ function drawCommitNodes(
 	nodes.append('circle')
 		.attr('r', (d: GitGraphCommit) => {
 			const isMerge = d.parentHashes.length > 1;
-			return isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
+			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
+			return isSelected ? baseRadius + 2 : baseRadius;
 		})
 		.attr('fill', (d: GitGraphCommit) => {
 			const isMerge = d.parentHashes.length > 1;
 			return isMerge ? '#fbbf24' : d.color;
 		})
-		.attr('stroke', nodeStrokeColor)
-		.attr('stroke-width', 2)
-		.style('filter', 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))')
-		.on('mouseover', function(event, d: GitGraphCommit) {
+		.attr('stroke', (d: GitGraphCommit) => {
+			const isSelected = selectedCommitHash === d.commit.commitHash;
+			if (isSelected) {
+				const rootStyles = getComputedStyle(document.documentElement);
+				const primaryColor = rootStyles.getPropertyValue('--primary').trim() || '210 40% 98%';
+				return `hsl(${primaryColor})`;
+			}
+			return nodeStrokeColor;
+		})
+		.attr('stroke-width', (d: GitGraphCommit) => {
+			const isSelected = selectedCommitHash === d.commit.commitHash;
+			return isSelected ? 4 : 2;
+		})
+		.style('filter', (d: GitGraphCommit) => {
+			const isSelected = selectedCommitHash === d.commit.commitHash;
+			return isSelected 
+				? 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))' 
+				: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))';
+		})
+		.on('mouseover', function(_, d: GitGraphCommit) {
 			const circle = d3.select(this);
 			const isMerge = d.parentHashes.length > 1;
+			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
+			const targetRadius = isSelected ? baseRadius + 3 : baseRadius + 2;
 			circle.transition()
 				.duration(150)
-				.attr('r', isMerge ? MERGE_NODE_RADIUS + 2 : NODE_RADIUS + 2);
+				.attr('r', targetRadius);
 		})
-		.on('mouseout', function(event, d: GitGraphCommit) {
+		.on('mouseout', function(_, d: GitGraphCommit) {
 			const circle = d3.select(this);
 			const isMerge = d.parentHashes.length > 1;
+			const isSelected = selectedCommitHash === d.commit.commitHash;
+			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
+			const targetRadius = isSelected ? baseRadius + 2 : baseRadius;
 			circle.transition()
 				.duration(150)
-				.attr('r', isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS);
+				.attr('r', targetRadius);
 		})
-		.on('click', function(event, d: GitGraphCommit) {
+		.on('click', function(_, d: GitGraphCommit) {
 			onCommitClick?.(d.commit.commitHash);
 		});
 
@@ -283,7 +309,6 @@ function CommitDetails({
 }: {
 	graphLayout: GitGraphCommit[];
 	connections: Connection[];
-	onCommitClick?: (commitHash: string) => void;
 }) {
 	return (
 		<div className="absolute top-0 left-0 w-full pointer-events-none">
@@ -366,7 +391,7 @@ function CommitDetails({
 	);
 }
 
-export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProps) {
+export function D3GitGraph({ commits, onCommitClick, selectedCommitHash, className }: D3GitGraphProps) {
 	const svgRef = useRef<SVGSVGElement>(null);
 
 	// Compute graph layout using the new hook
@@ -406,8 +431,8 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 		setupSVGFilters(svg);
 		drawColumnLines(svg, graphLayout, height);
 		drawConnections(svg, connections, height);
-		drawCommitNodes(svg, graphLayout, onCommitClick);
-	}, [graphLayout, connections, graphDimensions, onCommitClick]);
+		drawCommitNodes(svg, graphLayout, selectedCommitHash, onCommitClick);
+	}, [graphLayout, connections, graphDimensions, onCommitClick, selectedCommitHash]);
 
 	// Render empty state
 	if (!commits || commits.length === 0) {
@@ -434,11 +459,16 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				<div className="absolute top-0 left-0 w-full pointer-events-none">
 					{graphLayout.map((item, index) => {
 						const nodeY = index * ROW_HEIGHT + MARGIN_TOP;
+						const isSelected = selectedCommitHash === item.commit.commitHash;
 						
 						return (
 							<div
 								key={`hover-${item.commit.commitHash}`}
-								className="absolute w-full pointer-events-auto group hover:bg-accent/30 transition-all duration-200 cursor-pointer"
+								className={`absolute w-full pointer-events-auto group transition-all duration-200 cursor-pointer ${
+									isSelected 
+										? 'bg-primary/20 hover:bg-primary/25 border-l-4 border-l-primary shadow-sm' 
+										: 'hover:bg-accent/30'
+								}`}
 								style={{ 
 									left: '0px',
 									top: `${nodeY - ROW_HEIGHT/2 + 6}px`,
@@ -454,7 +484,6 @@ export function D3GitGraph({ commits, onCommitClick, className }: D3GitGraphProp
 				<CommitDetails 
 					graphLayout={graphLayout} 
 					connections={connections} 
-					onCommitClick={onCommitClick} 
 				/>
 			</div>
 		</div>
