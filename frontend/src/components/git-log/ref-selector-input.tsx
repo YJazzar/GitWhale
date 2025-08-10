@@ -1,6 +1,7 @@
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
 	Command,
 	CommandEmpty,
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GitBranch, GitCommitHorizontal, Tag, Check, ChevronsUpDown } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface LabeledRefSelectorInputProps {
@@ -19,6 +20,7 @@ interface LabeledRefSelectorInputProps {
 	label: string;
 	currentGitRef: string;
 	onUpdateGitRef: (newRefName: string) => void;
+	className?: string
 }
 
 export function LabeledRefSelectorInput({
@@ -26,6 +28,7 @@ export function LabeledRefSelectorInput({
 	label,
 	currentGitRef,
 	onUpdateGitRef,
+	className
 }: LabeledRefSelectorInputProps) {
 	return (
 		<div className="space-y-2">
@@ -34,6 +37,7 @@ export function LabeledRefSelectorInput({
 				repoPath={repoPath}
 				currentGitRef={currentGitRef}
 				onUpdateGitRef={onUpdateGitRef}
+				className={className}
 			/>
 		</div>
 	);
@@ -43,11 +47,19 @@ interface RefSelectorInputProps {
 	repoPath: string;
 	currentGitRef: string;
 	onUpdateGitRef: (newRefName: string) => void;
+	className?: string;
 }
 
-export function RefSelectorInput({ repoPath, currentGitRef, onUpdateGitRef }: RefSelectorInputProps) {
+export function RefSelectorInput({
+	repoPath,
+	currentGitRef,
+	onUpdateGitRef,
+	className,
+}: RefSelectorInputProps) {
 	const { logState } = useRepoState(repoPath);
 	const [open, setOpen] = useState(false);
+	const [isEnteringCommitHashManually, setIsEnteringCommitHashManually] = useState(false);
+	const inputRef = useRef<HTMLInputElement>(null);
 
 	const allRepoRefs = logState.refs ?? [];
 
@@ -69,6 +81,8 @@ export function RefSelectorInput({ repoPath, currentGitRef, onUpdateGitRef }: Re
 				return <GitCommitHorizontal className="w-4 h-4 mr-2" />;
 			case 'tag':
 				return <Tag className="w-4 h-4 mr-2" />;
+			case 'commit':
+				return <GitCommitHorizontal className="w-4 h-4 mr-2" />;
 			default:
 				return <GitBranch className="w-4 h-4 mr-2" />;
 		}
@@ -96,8 +110,52 @@ export function RefSelectorInput({ repoPath, currentGitRef, onUpdateGitRef }: Re
 
 	const getCurrentRefIcon = () => {
 		const currentRef = allRefs.find((ref) => ref.value === currentGitRef);
-		return getRefIcon(currentRef?.type || 'localBranch');
+		// If it's not a known ref, assume it's a commit hash
+		return getRefIcon(currentRef?.type || 'commit');
 	};
+
+	const handleCommitHashInputValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		onUpdateGitRef(e.target.value);
+	};
+
+	const handleCommitHashInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			e.stopPropagation();
+			setIsEnteringCommitHashManually(false);
+		}
+	};
+
+	const handleButtonDoubleClick = () => {
+		setIsEnteringCommitHashManually(true);
+		setTimeout(() => {
+			inputRef.current?.focus();
+			inputRef.current?.select();
+		}, 0);
+	};
+
+	// Update input value when currentGitRef changes externally
+	useEffect(() => {
+		if (isEnteringCommitHashManually) {
+			onUpdateGitRef(currentGitRef);
+		}
+	}, [currentGitRef, isEnteringCommitHashManually]);
+
+	if (isEnteringCommitHashManually) {
+		return (
+			<Input
+				ref={inputRef}
+				value={currentGitRef}
+				onChange={handleCommitHashInputValueChange}
+				onKeyDown={handleCommitHashInputKeyDown}
+				placeholder="Enter ref name or commit hash..."
+				className={cn('w-full max-w-48', className)}
+				disabled={logState.isLoading}
+			/>
+		);
+	}
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -106,8 +164,9 @@ export function RefSelectorInput({ repoPath, currentGitRef, onUpdateGitRef }: Re
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
-					className="w-full min-w-[200px] max-w-[300px] justify-between font-normal"
+					className={cn('w-full max-w-48 justify-between font-normal', className)}
 					disabled={logState.isLoading}
+					onDoubleClick={handleButtonDoubleClick}
 				>
 					<div className="flex items-center gap-2 min-w-0">
 						{getCurrentRefIcon()}

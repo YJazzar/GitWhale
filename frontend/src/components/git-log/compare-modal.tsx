@@ -88,7 +88,12 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden" onEscapeKeyDown={(e) =>{}}>
+			<DialogContent
+				className="sm:max-w-[700px] max-h-[80vh] overflow-hidden"
+				onEscapeKeyDown={(e) => {
+					e.preventDefault();
+				}}
+			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<GitCompare className="w-5 h-5" />
@@ -199,6 +204,7 @@ const SimpleForm = ({
 					label="Compare From"
 					currentGitRef={fromRef}
 					onUpdateGitRef={setFromRef}
+					className='min-w-48 max-w-full'
 				/>
 			</div>
 			<ArrowRight className="w-4 h-4 text-muted-foreground  flex-shrink-0" />
@@ -208,6 +214,7 @@ const SimpleForm = ({
 					label="Compare To"
 					currentGitRef={toRef}
 					onUpdateGitRef={setToRef}
+					className='min-w-48 max-w-full'
 				/>
 			</div>
 		</div>
