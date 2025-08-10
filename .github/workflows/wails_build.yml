@@ -20,7 +20,7 @@ jobs:
           - name: 'gitwhale'
             platform:  'linux/amd64'
             os: 'ubuntu-latest'
-          - name: 'gitwhale'
+          - name: 'gitwhale.exe'
             platform:  'windows/amd64'
             os: 'windows-latest'
           - name: 'gitwhale'

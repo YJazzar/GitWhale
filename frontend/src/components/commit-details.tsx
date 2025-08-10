@@ -2,26 +2,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUnixTime } from '@/hooks/use-unix-time';
 import { useDetailedCommit } from '@/hooks/use-detailed-commit';
+import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
+import { useUnixTime } from '@/hooks/use-unix-time';
 import { Logger } from '@/utils/logger';
 import {
-	Calendar,
-	ExternalLink,
-	Hash,
-	User,
-	FileText,
-	GitBranch,
 	AlertCircle,
 	Copy,
 	Database,
+	ExternalLink,
+	FileText,
+	GitBranch,
+	Hash,
 	Shield,
+	User
 } from 'lucide-react';
-import { backend } from 'wailsjs/go/models';
+import { useEffect, useState } from 'react';
 import { CommitHash } from './commit-hash';
-import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 import { GitRefs } from './git-refs';
-import { useState, useEffect } from 'react';
 
 interface CommitDetailsProps {
 	commitHash: string;
@@ -622,7 +620,7 @@ export function CommitDetails({
 								</Button>
 							</div>
 							{showFullDiff && (
-								<div className="font-mono text-xs bg-muted p-4 rounded max-h-96 overflow-y-auto">
+								<div className="font-mono text-xs bg-muted p-4 rounded max-h-96 overflow-y-auto whitespace-pre-wrap">
 									{renderDiffContent(commit.fullDiff)}
 								</div>
 							)}

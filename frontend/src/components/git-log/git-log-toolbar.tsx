@@ -33,16 +33,6 @@ interface GitLogToolbarProps {
 
 export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 	const { logState } = useRepoState(repoPath);
-	const toolbarOptions = logState.options.get();
-
-	const searchQuery = toolbarOptions.searchQuery ?? '';
-	const setSearchQuery = (newQuery: string) => {
-		logState.options.set({ ...toolbarOptions, searchQuery: newQuery });
-	};
-
-	const handleSearch = async () => {
-		logState.refreshLogAndRefs();
-	};
 
 	const onRefresh = async () => {
 		logState.refreshLogAndRefs();
@@ -52,28 +42,20 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 		<div className="flex items-center gap-2 p-3 border-b bg-muted/30">
 			{/* Refresh Button */}
 			<Button variant="outline" size="sm" onClick={onRefresh} disabled={logState.isLoading}>
-				<RefreshCw className={`w-4 h-4 mr-2 ${logState.isLoading ? 'animate-spin' : ''}`} />
-				Refresh
+				<RefreshCw className={`w-4 h-4 ${logState.isLoading ? 'animate-spin' : ''}`} />
 			</Button>
+
+			<ViewOptionsDropdown repoPath={repoPath} />
 
 			<RefSelectorDropdown repoPath={repoPath} />
 
 			<Separator orientation="vertical" className="h-6" />
 
+			<SearchSection repoPath={repoPath} />
+
+			<Separator orientation="vertical" className="h-6" />
+
 			<FetchDropdown repoPath={repoPath} />
-
-			<Separator orientation="vertical" className="h-6" />
-
-			<SearchSection
-				searchQuery={searchQuery}
-				setSearchQuery={setSearchQuery}
-				onSearch={handleSearch}
-				loading={logState.isLoading}
-			/>
-
-			<Separator orientation="vertical" className="h-6" />
-
-			<ViewOptionsDropdown repoPath={repoPath} />
 		</div>
 	);
 }
@@ -207,17 +189,20 @@ function FetchDropdown({ repoPath }: { repoPath: string }) {
 }
 
 // Search Section Component
-function SearchSection({
-	searchQuery,
-	setSearchQuery,
-	onSearch,
-	loading,
-}: {
-	searchQuery: string;
-	setSearchQuery: (value: string) => void;
-	onSearch: () => void;
-	loading: boolean;
-}) {
+function SearchSection({ repoPath }: { repoPath: string }) {
+	const { logState } = useRepoState(repoPath);
+	const toolbarOptions = logState.options.get();
+	const isLoading = logState.isLoading;
+
+	const searchQuery = toolbarOptions.searchQuery ?? '';
+	const setSearchQuery = (newQuery: string) => {
+		logState.options.set({ ...toolbarOptions, searchQuery: newQuery });
+	};
+
+	const onSearch = async () => {
+		logState.refreshLogAndRefs();
+	};
+
 	return (
 		<div className="flex items-center gap-2">
 			<Search className="w-4 h-4 text-muted-foreground" />
@@ -228,7 +213,7 @@ function SearchSection({
 				onKeyDown={(e) => e.key === 'Enter' && onSearch()}
 				className="h-8 w-48"
 			/>
-			<Button size="sm" onClick={onSearch} disabled={loading}>
+			<Button size="sm" onClick={onSearch} disabled={isLoading}>
 				Search
 			</Button>
 		</div>
@@ -242,10 +227,10 @@ function ViewOptionsDropdown({ repoPath }: { repoPath: string }) {
 	const toolbarOptions = logState.options.get();
 
 	const onSetCommitCountToLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const newCommitsToLoad = event.target.value
-		if (!newCommitsToLoad || !Number(newCommitsToLoad)) { 
+		const newCommitsToLoad = event.target.value;
+		if (!newCommitsToLoad || !Number(newCommitsToLoad)) {
 			logState.options.set({ ...toolbarOptions, commitsToLoad: undefined });
-			return
+			return;
 		}
 
 		logState.options.set({ ...toolbarOptions, commitsToLoad: Number(newCommitsToLoad) });
@@ -259,9 +244,7 @@ function ViewOptionsDropdown({ repoPath }: { repoPath: string }) {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline" size="sm" disabled={logState.isLoading}>
-					<Settings className="w-4 h-4 mr-2" />
-					Options
-					<ChevronDown className="w-4 h-4 ml-2" />
+					<Settings className="w-4 h-4" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
