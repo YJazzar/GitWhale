@@ -1,6 +1,6 @@
 import { GitCommit, GitMerge } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
-import { CommitDetails } from '@/components/commit-details';
+import { CommitPreview } from '@/components/commit-preview';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
 import { Logger } from '../../utils/logger';
@@ -25,7 +25,7 @@ export function useNavigateToCommit(repoPath: string) {
 			title: commitHash.slice(0, 7),
 			icon: isMergeCommit ? <GitMerge className="h-4 w-4" /> : <GitCommit className="h-4 w-4" />,
 			component: (
-				<CommitDetails commitHash={commitHash} repoPath={repoPath} hideViewFullButton={true} />
+				<CommitPreview commitHash={commitHash} repoPath={repoPath} />
 			),
 			isDynamic: true,
 			onClose: () => {

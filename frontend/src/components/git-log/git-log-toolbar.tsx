@@ -74,6 +74,7 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 				currentGitRef={getCurrentRefDisplay()}
 				// currentGitRef={toolbarOptions.fromRef ?? 'HEAD'}
 				onUpdateGitRef={onUpdateSelectedRefForLog}
+				allowCurrentChangesAsRef={false}
 			/>
 
 			<Separator orientation="vertical" className="h-6" />

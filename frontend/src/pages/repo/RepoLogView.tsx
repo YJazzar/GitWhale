@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
-import { CommitDetails } from '@/components/commit-details';
+import { CommitPreview } from '@/components/commit-preview';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
@@ -108,11 +108,10 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 						<>
 							<ResizableHandle />
 							<ResizablePanel defaultSize={40} minSize={20}>
-								<CommitDetails
+								<CommitPreview
 									commitHash={selectedCommitForDetails}
 									repoPath={repoPath}
 									onClose={handleCloseCommitDetails}
-									variant="compact"
 								/>
 							</ResizablePanel>
 						</>
