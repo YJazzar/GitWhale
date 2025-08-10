@@ -1,13 +1,14 @@
 import { GitRefs } from '@/components/git-refs';
 import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git/use-git-graph';
 import { useUnixTime } from '@/hooks/use-unix-time';
+import { CommitSelectType } from '@/pages/repo/RepoLogView';
 import * as d3 from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { git_operations } from 'wailsjs/go/models';
 
 interface D3GitGraphProps {
 	commits: git_operations.GitLogCommitInfo[];
-	onCommitClick: (commitHash: string, shouldAddToSelection: boolean) => void;
+	onCommitClick: (commitHash: string, selectionType: CommitSelectType) => void;
 	onCommitDoubleClick: (commitHash: string) => void;
 	onCommitRightClick: (event: React.MouseEvent, commitHash: string) => void;
 	selectedCommitHashes: string[];
@@ -165,7 +166,7 @@ function drawConnections(
 function drawCommitNodes(
 	svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
 	graphLayout: GitGraphCommit[],
-	selectedCommitHashSet: Set<string>,
+	selectedCommitHashSet: Set<string>
 ) {
 	const rootStyles = getComputedStyle(document.documentElement);
 	const backgroundColor = rootStyles.getPropertyValue('--background').trim() || '0 0% 100%';
@@ -232,7 +233,7 @@ function drawCommitNodes(
 			const baseRadius = isMerge ? MERGE_NODE_RADIUS : NODE_RADIUS;
 			const targetRadius = isSelected ? baseRadius + 2 : baseRadius;
 			circle.transition().duration(150).attr('r', targetRadius);
-		})
+		});
 
 	// Add icons to nodes
 	nodes
@@ -398,22 +399,28 @@ export function D3GitGraph({
 	const selectedCommitHashSet = new Set(selectedCommitHashes);
 
 	// Create click handlers that can detect single vs double clicks
-	const handleSingleClick = (commitHash: string) => {
-		// Delay single click to see if a double click follows
+	const handleSingleClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, commitHash: string) => {
 		if (clickTimeoutRef.current) {
 			clearTimeout(clickTimeoutRef.current);
 		}
+
+		const isCtrlPressedDown = event.ctrlKey || event.metaKey
+
+		// Delay single click to see if a double click follows
 		clickTimeoutRef.current = setTimeout(() => {
 			const clickedHash = commitHash;
 			if (selectedCommitHashSet.has(clickedHash)) {
 				// If clicking the already selected commit, unselect it by passing empty string
-				onCommitClick(commitHash, false);
+				onCommitClick(commitHash, 'unselect');
 			} else {
 				// Otherwise select the clicked commit
-				onCommitClick(clickedHash, true);
+				const selectionType: CommitSelectType = isCtrlPressedDown
+					? 'secondarySelect'
+					: 'primarySelect';
+				onCommitClick(clickedHash, selectionType);
 			}
 			clickTimeoutRef.current = null;
-		}, 50); // Wait 300ms to detect double click
+		}, 50); // Wait 50ms to detect double click
 	};
 
 	const handleDoubleClick = (commitHash: string) => {
@@ -467,17 +474,8 @@ export function D3GitGraph({
 		setupSVGFilters(svg);
 		drawColumnLines(svg, graphLayout, height);
 		drawConnections(svg, connections, height);
-		drawCommitNodes(
-			svg,
-			graphLayout,
-			selectedCommitHashSet,
-		);
-	}, [
-		graphLayout,
-		connections,
-		graphDimensions,
-		selectedCommitHashSet,
-	]);
+		drawCommitNodes(svg, graphLayout, selectedCommitHashSet);
+	}, [graphLayout, connections, graphDimensions, selectedCommitHashSet]);
 
 	// Render empty state
 	if (!commits || commits.length === 0) {
@@ -515,7 +513,7 @@ export function D3GitGraph({
 									top: `${nodeY - ROW_HEIGHT / 2 + 6}px`,
 									height: `${ROW_HEIGHT}px`,
 								}}
-								onClick={() => handleSingleClick(item.commit.commitHash)}
+								onClick={(e) => handleSingleClick(e, item.commit.commitHash)}
 								onDoubleClick={() => handleDoubleClick(item.commit.commitHash)}
 								onContextMenu={(event) => {
 									// Only handle right-click if commit is selected

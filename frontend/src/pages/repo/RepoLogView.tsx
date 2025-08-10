@@ -9,39 +9,42 @@ import { UseAppState } from '@/hooks/state/use-app-state';
 import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
 import { ChevronUp } from 'lucide-react';
 
+export type CommitSelectType = "primarySelect" | "secondarySelect" | "unselect"
+
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
 	const { appState } = UseAppState();
 
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
-	
+
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
 	}
 
-	const onCommitSelect = (commitHash: string, shouldAddToSelection: boolean) => {
-		if (shouldAddToSelection) {
-			logState.selectedCommits.addToSelectedCommitsList(commitHash, false);
-			
-			// Auto-show commit details pane if:
-			// 1. App setting allows it AND
-			// 2. User hasn't manually dismissed the pane
-			const autoShowSetting = appState?.appConfig?.settings?.ui?.autoShowCommitDetails ?? true;
-			const userWantsPaneShown = logState.commitDetailsPane.shouldShow;
-			
-			if (autoShowSetting && userWantsPaneShown) {
-				handleShowCommitDetails()
-			}
-			return 
+	const onCommitSelect = (commitHash: string, selectionType: CommitSelectType) => {
+		if (selectionType === "unselect") { 
+			logState.selectedCommits.removeFromSelectedCommitsList(commitHash);
+			return
 		}
 
-		logState.selectedCommits.removeFromSelectedCommitsList(commitHash)
-	};
+		const isSecondarySelect = selectionType === "secondarySelect"
+		logState.selectedCommits.addToSelectedCommitsList(commitHash, isSecondarySelect);
 
+		// Auto-show commit details pane if:
+		// 1. App setting allows it AND
+		// 2. User hasn't manually dismissed the pane
+		const autoShowSetting = appState?.appConfig?.settings?.ui?.autoShowCommitDetails ?? true;
+		const userWantsPaneShown = logState.commitDetailsPane.shouldShow;
+
+		if (autoShowSetting && userWantsPaneShown) {
+			handleShowCommitDetails();
+		}
+	};
+	
 	const onCommitDoubleClick = (commitHash: string) => {
 		logState.selectedCommits.addToSelectedCommitsList(commitHash, false);
-		handleViewFullCommit(commitHash, false)
-	}
+		handleViewFullCommit(commitHash, false);
+	};
 
 	const handleCloseCommitDetails = () => {
 		// Mark that user has manually dismissed the pane
@@ -53,15 +56,15 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 		logState.commitDetailsPane.show();
 	};
 
-	const currentSelectedCommits = logState.selectedCommits.currentSelectedCommits
-	const selectedCommitForDetails  = currentSelectedCommits[currentSelectedCommits.length-1]
-	
+	const currentSelectedCommits = logState.selectedCommits.currentSelectedCommits;
+	const selectedCommitForDetails = currentSelectedCommits[currentSelectedCommits.length - 1];
+
 	// Determine if we should show the commit details pane
 	const shouldShowPane = selectedCommitForDetails && logState.commitDetailsPane.shouldShow;
-	
+
 	// Determine if we should show the bottom indicator to re-open the pane
 	const shouldShowBottomIndicator = selectedCommitForDetails && !logState.commitDetailsPane.shouldShow;
-	const selectedCommitShortHash =  selectedCommitForDetails?.slice(0, 7)
+	const selectedCommitShortHash = selectedCommitForDetails?.slice(0, 7);
 	return (
 		<div className="flex flex-col h-full">
 			<GitLogToolbar repoPath={repoPath} />

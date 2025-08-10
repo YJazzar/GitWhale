@@ -12,7 +12,7 @@ const isLoadingGitDataAtom = atom<Map<string, boolean>>(new Map());
 const selectedCommitAtom = atom<Map<string, string[]>>(new Map());
 const gitLogOptionsAtom = atom<Map<string, git_operations.GitLogOptions>>(new Map());
 const gitRefsAtom = atom<Map<string, git_operations.GitRef[]>>(new Map());
-const commitDetailsPaneStateAtom = atom<Map<string, boolean>>(new Map()); 
+const commitDetailsPaneStateAtom = atom<Map<string, boolean>>(new Map());
 
 // MARK: Git log state management functions
 
@@ -38,26 +38,23 @@ export function getLogState(repoPath: string) {
 	const [needsToReload, setNeedsToReload] = useState(false);
 
 	const currentSelectedCommits = _selectedCommitsPrim.value ?? [];
-	const addToSelectedCommitsList = (commitHash: string, isSecondarySelect: boolean) => {
-		if (!isSecondarySelect) { 
+	const addToSelectedCommitsList = (commitHashToSelect: string, isSecondarySelect: boolean) => {
+		if (!isSecondarySelect) {
 			// we're in single-select mode right now, so we can clear out all other things selected
-			_selectedCommitsPrim.set([commitHash]);
-		}
-
-		const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash);
-
-		// Add the commit
-		if (previousIndex === -1) {
-			_selectedCommitsPrim.set([...currentSelectedCommits, commitHash]);
+			_selectedCommitsPrim.set([commitHashToSelect]);
 			return;
 		}
 
-		// If it's already in the list of selected commits, move it around to be the last commit
-		// (this matters for the commit details pane)
-		let filteredSelectedCommits = [...currentSelectedCommits];
-		filteredSelectedCommits.splice(previousIndex, 1);
-		filteredSelectedCommits.push(commitHash);
-		_selectedCommitsPrim.set(filteredSelectedCommits);
+		// Otherwise, if we have either one, or no commit selected, we can add it to the list of selected commits
+		const numOfSelectedCommits = _selectedCommitsPrim.value?.length ?? 0;
+		if (numOfSelectedCommits <= 1) {
+			_selectedCommitsPrim.set([...(_selectedCommitsPrim.value ?? []), commitHashToSelect]);
+			return;
+		}
+
+		// Last case: enforce rule that only 2 commits can be selected at a time
+		const lastSelectedCommit = (_selectedCommitsPrim.value ?? [])[numOfSelectedCommits - 1];
+		_selectedCommitsPrim.set([lastSelectedCommit, commitHashToSelect])
 	};
 
 	const removeFromSelectedCommitsList = (commitHash: string) => {
@@ -72,7 +69,8 @@ export function getLogState(repoPath: string) {
 	};
 
 	// Commit details pane state management
-	const shouldShowCommitDetailsPane = _commitDetailsPaneStatePrim.value ?? appState?.appConfig?.settings?.ui?.autoShowCommitDetails
+	const shouldShowCommitDetailsPane =
+		_commitDetailsPaneStatePrim.value ?? appState?.appConfig?.settings?.ui?.autoShowCommitDetails;
 
 	const dismissCommitDetailsPane = () => {
 		_commitDetailsPaneStatePrim.set(false);
@@ -172,12 +170,12 @@ export function getLogState(repoPath: string) {
 
 		// Clear all log state for this repo
 		disposeLogState: () => {
-			_isLoadingPrim.kill()
-			_gitLogDataPrim.kill()
-			_selectedCommitsPrim.kill()
-			_gitRefsPrim.kill()
-			_gitLogOptionsPrim.kill()
-			_commitDetailsPaneStatePrim.kill()
+			_isLoadingPrim.kill();
+			_gitLogDataPrim.kill();
+			_selectedCommitsPrim.kill();
+			_gitRefsPrim.kill();
+			_gitLogOptionsPrim.kill();
+			_commitDetailsPaneStatePrim.kill();
 		},
 	};
 }

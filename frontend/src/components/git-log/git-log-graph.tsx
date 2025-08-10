@@ -3,12 +3,12 @@ import { ContextMenuProvider } from '@/components/ui/context-menu-provider';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useContextMenu, type ContextMenuAction } from '@/hooks/use-context-menu';
 import { cn } from '@/lib/utils';
-import { Copy, Cherry, RotateCcw, Eye, GitCompare, GitBranch } from 'lucide-react';
-import { git_operations } from 'wailsjs/go/models';
+import { CommitSelectType } from '@/pages/repo/RepoLogView';
+import { Cherry, Copy, Eye, GitBranch, RotateCcw } from 'lucide-react';
 
 interface GitLogGraphProps {
 	repoPath: string;
-	onCommitClick: (commitHash: string, shouldAddToSelection: boolean) => void;
+	onCommitClick: (commitHash: string, selectionType: CommitSelectType) => void;
 	onCommitDoubleClick: (commitHash: string) => void;
 	className?: string;
 }
@@ -97,8 +97,6 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 	}
 
 	const handleRightClick = (event: React.MouseEvent, commitHash: string) => {
-		console.log("showing context menu")
-		debugger;
 		showContextMenu(event, commitHash);
 	};
 
