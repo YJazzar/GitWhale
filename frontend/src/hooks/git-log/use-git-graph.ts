@@ -21,9 +21,46 @@ const BRANCH_COLORS = [
 	'#6366f1'  // indigo
 ];
 
-function calculateGitGraphLayout(commits: git_operations.GitLogCommitInfo[]): GitGraphCommit[] {
+// Simplified layout for search results - all commits in column 0, disconnected unless parent-child relationship exists
+function createSimplifiedSearchLayout(commits: git_operations.GitLogCommitInfo[]): GitGraphCommit[] {
+	// Sort commits by commit timestamp (newest first)
+	const sortedCommits = [...commits].sort((a, b) => {
+		const dateA = new Date(a.commitTimeStamp).getTime();
+		const dateB = new Date(b.commitTimeStamp).getTime();
+		return dateB - dateA;
+	});
+
+	// Build a map to check for parent-child relationships within loaded commits
+	const commitHashSet = new Set(sortedCommits.map(c => c.commitHash));
+	
+	const result: GitGraphCommit[] = [];
+	const usedColor = BRANCH_COLORS[0]; // Use single color for search results
+
+	sortedCommits.forEach((commit) => {
+		// Only include parent hashes that exist in our loaded commits
+		const availableParentHashes = commit.parentCommitHashes.filter(hash => 
+			hash.trim() && commitHashSet.has(hash)
+		);
+
+		result.push({
+			commit,
+			column: 0, // All search results in column 0
+			color: usedColor,
+			parentHashes: availableParentHashes
+		});
+	});
+
+	return result;
+}
+
+function calculateGitGraphLayout(commits: git_operations.GitLogCommitInfo[], isSearchMode: boolean = false): GitGraphCommit[] {
 	if (!commits || commits.length === 0) {
 		return [];
+	}
+
+	// If we're in search mode, use simplified layout for disconnected commits
+	if (isSearchMode) {
+		return createSimplifiedSearchLayout(commits);
 	}
 
 	// Step 1: Temporal topological sort (sort by committer date, newest first)

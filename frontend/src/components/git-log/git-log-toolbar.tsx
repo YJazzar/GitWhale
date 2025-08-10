@@ -196,7 +196,7 @@ function SearchSection({ repoPath }: { repoPath: string }) {
 				value={searchQuery}
 				onChange={(e) => setSearchQuery(e.target.value)}
 				onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-				className="h-8 w-64 pl-10 pr-20 focus-visible:ring-2 focus-visible:ring-primary"
+				className="h-8 w-64 pl-10 pr-20 focus-visible:ring-1 focus-visible:ring-primary"
 			/>
 
 			{/* Right side buttons container */}
@@ -261,7 +261,7 @@ function ViewOptionsDropdown({ repoPath }: { repoPath: string }) {
 
 				<div className="p-2 space-y-3">
 					<div>
-						<Label htmlFor="commitCount">Commit Count: {toolbarOptions.commitsToLoad}</Label>
+						<Label htmlFor="commitCount">Commit Count:</Label>
 						<Input
 							id="commitCount"
 							type="number"

@@ -507,7 +507,6 @@ export namespace git_operations {
 	    commitsToLoad?: number;
 	    fromRef?: string;
 	    searchQuery?: string;
-	    author?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new GitLogOptions(source);
@@ -518,7 +517,6 @@ export namespace git_operations {
 	        this.commitsToLoad = source["commitsToLoad"];
 	        this.fromRef = source["fromRef"];
 	        this.searchQuery = source["searchQuery"];
-	        this.author = source["author"];
 	    }
 	}
 	export class GitRef {

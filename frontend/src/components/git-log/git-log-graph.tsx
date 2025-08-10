@@ -18,6 +18,10 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 	const commits = logState.logs;
 	const isLoading = logState.isLoading;
 	const selectedCommitHashes = logState.selectedCommits.currentSelectedCommits;
+	
+	// Check if we're in search mode by looking at the current log options
+	const currentLogOptions = logState.options.get();
+	const isSearchMode = !!(currentLogOptions.searchQuery && currentLogOptions.searchQuery.trim());
 
 	// Define commit-specific context menu actions
 	const commitActions: ContextMenuAction<string>[] = [
@@ -109,6 +113,7 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 				onCommitRightClick={handleRightClick}
 				className="w-full"
 				selectedCommitHashes={selectedCommitHashes}
+				isSearchMode={isSearchMode}
 			/>
 			
 			{contextMenuState && (

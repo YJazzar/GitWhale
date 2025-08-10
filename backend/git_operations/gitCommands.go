@@ -19,7 +19,6 @@ type GitLogOptions struct {
 	CommitsToLoad *int    `json:"commitsToLoad"`
 	FromRef       *string `json:"fromRef"`
 	SearchQuery   *string `json:"searchQuery"`
-	Author        *string `json:"author"`
 }
 
 // Represents a line in `git log`'s output
@@ -112,14 +111,9 @@ func ReadGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
 		fmt.Sprintf("-n%d", *options.CommitsToLoad),
 	}
 
-	// Add search query if provided (safely escaped)
+	// Add search query if provided
 	if options.SearchQuery != nil && *options.SearchQuery != "" {
-		args = append(args, "--grep="+(*options.SearchQuery), "--all-match")
-	}
-
-	// Add author filter if provided (safely escaped)
-	if options.Author != nil && *options.Author != "" {
-		args = append(args, "--author="+(*options.Author))
+		args = append(args, "--grep="+(*options.SearchQuery), "--all-match", "--regexp-ignore-case")
 	}
 
 	if options.FromRef == nil || *options.FromRef == "" {

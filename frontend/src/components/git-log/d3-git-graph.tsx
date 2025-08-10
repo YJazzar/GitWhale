@@ -13,6 +13,7 @@ interface D3GitGraphProps {
 	onCommitRightClick: (event: React.MouseEvent, commitHash: string) => void;
 	selectedCommitHashes: string[];
 	className?: string;
+	isSearchMode: boolean;
 }
 
 // Layout constants
@@ -392,6 +393,7 @@ export function D3GitGraph({
 	onCommitRightClick,
 	selectedCommitHashes,
 	className,
+	isSearchMode,
 }: D3GitGraphProps) {
 	const svgRef = useRef<SVGSVGElement>(null);
 	const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -437,8 +439,8 @@ export function D3GitGraph({
 		if (!commits || commits.length === 0) {
 			return [];
 		}
-		return calculateGitGraphLayout(commits);
-	}, [commits]);
+		return calculateGitGraphLayout(commits, isSearchMode);
+	}, [commits]); // Note: isSearchMode is purposefully left out
 
 	// Compute connections between commits with row indices
 	const connections = useMemo((): Connection[] => {
