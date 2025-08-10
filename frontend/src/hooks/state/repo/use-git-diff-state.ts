@@ -28,13 +28,22 @@ export function getDiffState(repoPath: string) {
 			_isLoadingPrim.set(true);
 
 			const session = await StartDiffSession(options);
-			const newSessions = [...(_diffSessionsPrim.value ?? []), session];
 			Logger.debug(`Received session: ${session.sessionId}`, 'RepoDiffView');
 
+			if (!session.hasDiffData) { 
+				toast({
+					variant: "default", 
+					title: "No changes found"
+				})
+				return
+			}
+
+			const newSessions = [...(_diffSessionsPrim.value ?? []), session];
 			_diffSessionsPrim.set(newSessions);
 			return session;
 		} catch (error) {
 			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
+			Logger.error(`${JSON.stringify(error, null, 3)}`)
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
 			toast({

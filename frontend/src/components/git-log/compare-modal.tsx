@@ -37,11 +37,14 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 
 	const quickOptions = useMemo(
 		() => [
+			{ label: 'Current Changes', fromRef: 'HEAD', toRef: '' },
 			{ label: 'Previous Commit vs HEAD', fromRef: 'HEAD~1', toRef: 'HEAD' },
 			{ label: '2 Commits Back vs HEAD', fromRef: 'HEAD~2', toRef: 'HEAD' },
 		],
 		[]
 	);
+
+	const allowCurrentChangeSelectionInToRef = fromRef === "HEAD"
 
 	const setQuickOption = useCallback((option: (typeof quickOptions)[0]) => {
 		setFromRef(option.fromRef);
@@ -95,6 +98,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 									label="Compare From"
 									currentGitRef={fromRef}
 									onUpdateGitRef={setFromRef}
+									allowCurrentChangesAsRef={false}
 									className="min-w-48 max-w-full"
 								/>
 							</div>
@@ -107,6 +111,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 									label="Compare To"
 									currentGitRef={toRef}
 									onUpdateGitRef={setToRef}
+									allowCurrentChangesAsRef={allowCurrentChangeSelectionInToRef}
 									className="min-w-48 max-w-full"
 								/>
 							</div>

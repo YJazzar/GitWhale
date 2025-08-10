@@ -202,6 +202,10 @@ func (app *App) StartDiffSession(options git_operations.DiffOptions) (*git_opera
 		return nil, err
 	}
 
+	if !session.HasDiffData {
+		return session, nil
+	}
+
 	// Store session in app
 	app.diffSessions[session.SessionId] = session
 

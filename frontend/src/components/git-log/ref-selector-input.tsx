@@ -15,29 +15,20 @@ import { GitBranch, GitCommitHorizontal, Tag, Check, ChevronsUpDown } from 'luci
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
-interface LabeledRefSelectorInputProps {
-	repoPath: string;
+interface LabeledRefSelectorInputProps extends RefSelectorInputProps {
 	label: string;
-	currentGitRef: string;
-	onUpdateGitRef: (newRefName: string) => void;
-	className?: string;
 }
 
-export function LabeledRefSelectorInput({
-	repoPath,
-	label,
-	currentGitRef,
-	onUpdateGitRef,
-	className,
-}: LabeledRefSelectorInputProps) {
+export function LabeledRefSelectorInput(props: LabeledRefSelectorInputProps) {
 	return (
 		<div className="space-y-2">
-			<Label className="text-sm font-medium">{label}</Label>
+			<Label className="text-sm font-medium">{props.label}</Label>
 			<RefSelectorInput
-				repoPath={repoPath}
-				currentGitRef={currentGitRef}
-				onUpdateGitRef={onUpdateGitRef}
-				className={className}
+				repoPath={props.repoPath}
+				currentGitRef={props.currentGitRef}
+				onUpdateGitRef={props.onUpdateGitRef}
+				allowCurrentChangesAsRef={props.allowCurrentChangesAsRef}
+				className={props.className}
 			/>
 		</div>
 	);
@@ -47,15 +38,13 @@ interface RefSelectorInputProps {
 	repoPath: string;
 	currentGitRef: string;
 	onUpdateGitRef: (newRefName: string) => void;
+	allowCurrentChangesAsRef: boolean;
 	className?: string;
 }
 
-export function RefSelectorInput({
-	repoPath,
-	currentGitRef,
-	onUpdateGitRef,
-	className,
-}: RefSelectorInputProps) {
+export function RefSelectorInput(props: RefSelectorInputProps) {
+	const { repoPath, currentGitRef, onUpdateGitRef, className, allowCurrentChangesAsRef } = props;
+
 	const { logState } = useRepoState(repoPath);
 	const [open, setOpen] = useState(false);
 	const [commandSearchInput, setCommandSearchInput] = useState<string>();
@@ -65,6 +54,11 @@ export function RefSelectorInput({
 	// Add HEAD to the refs list and create a flat structure
 	const allRefs = useMemo(() => {
 		const refs = [{ value: 'HEAD', label: 'HEAD', type: 'commit' }];
+
+		if (allowCurrentChangesAsRef) { 
+			refs.push({label: "Current Changes", value: "", type: 'commit'})
+		}
+
 		return refs.concat(
 			allRepoRefs.map((ref) => ({
 				value: ref.name,
@@ -72,7 +66,7 @@ export function RefSelectorInput({
 				type: ref.type,
 			}))
 		);
-	}, [allRepoRefs]);
+	}, [allRepoRefs, allowCurrentChangesAsRef]);
 
 	const getRefIcon = (type: string) => {
 		switch (type) {

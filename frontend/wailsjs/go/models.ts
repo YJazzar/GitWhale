@@ -435,6 +435,7 @@ export namespace git_operations {
 	    lastAccessed: any;
 	    title: string;
 	    directoryData?: Directory;
+	    hasDiffData: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new DiffSession(source);
@@ -452,6 +453,7 @@ export namespace git_operations {
 	        this.lastAccessed = this.convertValues(source["lastAccessed"], null);
 	        this.title = source["title"];
 	        this.directoryData = this.convertValues(source["directoryData"], Directory);
+	        this.hasDiffData = source["hasDiffData"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

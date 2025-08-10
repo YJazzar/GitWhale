@@ -26,6 +26,7 @@ type DiffSession struct {
 	LastAccessed  time.Time  `json:"lastAccessed"`
 	Title         string     `json:"title"`
 	DirectoryData *Directory `json:"directoryData"`
+	HasDiffData   bool       `json:"hasDiffData"`
 }
 
 type DiffOptions struct {
@@ -38,6 +39,7 @@ type DiffOptions struct {
 // Parses script output and re-logs [DIFF-SCRIPT] messages through backend Logger
 func parseAndRelogScriptOutput(output string) {
 	if output == "" {
+		logger.Log.Debug("DIFF-SCRIPT had no output to re-log")
 		return
 	}
 
@@ -147,7 +149,7 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 	}
 
 	// Step 3: Execute enhanced script (does all the copying)
-	err = executeDiffScript(options.RepoPath, options.FromRef, options.ToRef, leftPath, rightPath)
+	changesFound, err := executeDiffScript(options.RepoPath, options.FromRef, options.ToRef, leftPath, rightPath)
 	if err != nil {
 		CleanupDiffSession(sessionId) // Cleanup on failure
 		return nil, err
@@ -165,6 +167,11 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 		LastAccessed:  time.Now(),
 		Title:         generateDiffTitle(options),
 		DirectoryData: nil,
+		HasDiffData:   changesFound,
+	}
+
+	if !changesFound {
+		return session, nil
 	}
 
 	// Step 5: Load directory structure
@@ -254,7 +261,8 @@ func createDiffDestinations(sessionId string) (leftPath, rightPath string, err e
 }
 
 // Executes the diff script using helper script and environment variables
-func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) error {
+// Boolean is for whether there were any changes found
+func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) (bool, error) {
 	logger.Log.Info("Starting diff operation for repo: %s,  %s -> %s", repoPath, fromRef, toRef)
 	logger.Log.Debug("Diff destinations - Left: %s, Right: %s", leftDest, rightDest)
 
@@ -288,19 +296,21 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 	logger.Log.Debug("Command timeout: 60 seconds")
 
 	startTime := time.Now()
-	output, err := command_utils.RunCommandAndLogErr(cmd)
+	outputStr, err := command_utils.RunCommandAndLogErr(cmd)
 	duration := time.Since(startTime)
-	outputStr := strings.TrimSpace(string(output))
 
 	logger.Log.Debug("Git difftool execution completed in %v", duration)
-	logger.Log.Debug("Git difftool output length: %d bytes", len(output))
+	logger.Log.Debug("Git difftool output length: %d bytes", len(outputStr))
 	if len(outputStr) > 0 {
 		logger.Log.Debug("Git difftool output: %s", outputStr)
 	}
 
 	// Parse and re-log [DIFF-SCRIPT] messages through backend Logger (for both success and error cases)
-	if len(outputStr) > 0 {
-		parseAndRelogScriptOutput(outputStr)
+	parseAndRelogScriptOutput(outputStr)
+
+	if len(outputStr) == 0 {
+		logger.Log.Debug("Git difftool found changes")
+		return false, nil
 	}
 
 	if err != nil {
@@ -315,11 +325,11 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 		// Check if it's a git error
 		if strings.Contains(outputStr, "fatal:") || strings.Contains(outputStr, "error:") {
 			logger.Log.Error("Git reported error in difftool operation: %s", outputStr)
-			return fmt.Errorf("git difftool failed: %s", outputStr)
+			return false, fmt.Errorf("git difftool failed: %s", outputStr)
 		}
 
 		logger.Log.Error("Diff operation failed with non-git error: %v", err)
-		return fmt.Errorf("diff operation failed: %v", err)
+		return false, fmt.Errorf("diff operation failed: %v", err)
 	}
 
 	logger.Log.Debug("Git difftool command completed successfully")
@@ -334,22 +344,21 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) err
 			if strings.HasPrefix(line, "ERROR:") {
 				errorMsg := strings.TrimPrefix(line, "ERROR:")
 				logger.Log.Error("Extracted error message: %s", errorMsg)
-				return fmt.Errorf("diff script failed: %s", errorMsg)
+				return false, fmt.Errorf("diff script failed: %s", errorMsg)
 			}
 		}
 		logger.Log.Error("Error indicator found but no specific error message extracted")
-		return fmt.Errorf("diff script failed with unknown error")
+		return false, fmt.Errorf("diff script failed with unknown error")
 	}
 
 	if !strings.Contains(outputStr, "SUCCESS") {
 		logger.Log.Warning("No SUCCESS indicator found in diff script output: %s", outputStr)
-		return fmt.Errorf("diff script did not report success: %s", outputStr)
+		return false, fmt.Errorf("diff script did not report success: %s", outputStr)
 	}
 
 	logger.Log.Debug("Diff script reported success: found SUCCESS indicator")
-
 	logger.Log.Info("Diff operation completed successfully")
-	return nil
+	return true, nil
 }
 
 func generateSessionId(options DiffOptions) string {
