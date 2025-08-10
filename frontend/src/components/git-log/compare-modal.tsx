@@ -23,6 +23,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '../ui/dialog';
+import { LabeledRefSelectorInput, RefSelectorInput } from './ref-selector-input';
 
 interface CompareModalProps {
 	repoPath: string;
@@ -108,6 +109,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 					{/* Simple vs Advanced Form */}
 					{!showAdvanced ? (
 						<SimpleForm
+							repoPath={repoPath}
 							fromRef={fromRef}
 							toRef={toRef}
 							setFromRef={setFromRef}
@@ -173,6 +175,7 @@ const QuickOptionsDropdown = ({
 );
 
 const SimpleForm = ({
+	repoPath,
 	fromRef,
 	toRef,
 	setFromRef,
@@ -180,6 +183,7 @@ const SimpleForm = ({
 	refs,
 	onToggleAdvanced,
 }: {
+	repoPath: string;
 	fromRef: string;
 	toRef: string;
 	setFromRef: (value: string) => void;
@@ -190,26 +194,20 @@ const SimpleForm = ({
 	<div className="space-y-3">
 		<div className="flex items-center gap-4">
 			<div className="flex-1 min-w-0">
-				<RefSelector
+				<LabeledRefSelectorInput
+					repoPath={repoPath}
 					label="Compare From"
-					value={fromRef}
-					onChange={setFromRef}
-					refs={refs}
-					icon={<GitBranch className="w-4 h-4" />}
-					inline
+					currentGitRef={fromRef}
+					onUpdateGitRef={setFromRef}
 				/>
 			</div>
 			<ArrowRight className="w-4 h-4 text-muted-foreground  flex-shrink-0" />
 			<div className="flex-1 min-w-0">
-				<RefSelector
+				<LabeledRefSelectorInput
+					repoPath={repoPath}
 					label="Compare To"
-					value={toRef}
-					onChange={setToRef}
-					refs={refs}
-					icon={<FolderTree className="w-4 h-4" />}
-					allowEmpty
-					emptyLabel="Current Changes"
-					inline
+					currentGitRef={toRef}
+					onUpdateGitRef={setToRef}
 				/>
 			</div>
 		</div>
@@ -281,70 +279,5 @@ const AdvancedForm = ({
 				className="text-xs h-8"
 			/>
 		</div>
-	</div>
-);
-
-const RefSelector = ({
-	label,
-	value,
-	onChange,
-	refs,
-	icon,
-	allowEmpty = false,
-	emptyLabel,
-	inline = false,
-}: {
-	label: string;
-	value: string;
-	onChange: (value: string) => void;
-	refs: git_operations.GitRef[];
-	icon: React.ReactNode;
-	allowEmpty?: boolean;
-	emptyLabel?: string;
-	inline?: boolean;
-}) => (
-	<div className={inline ? 'flex items-center gap-3' : 'space-y-2'}>
-		<Label className={inline ? 'text-sm font-medium whitespace-nowrap' : ''}>{label}</Label>
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="outline"
-					className={inline ? 'justify-between flex-1' : 'w-full justify-between'}
-				>
-					<span className="flex items-center gap-2">
-						{icon}
-						{value || (allowEmpty ? emptyLabel : 'Select ref...')}
-					</span>
-					<ChevronDown className="w-4 h-4" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent className="w-64 max-h-60 overflow-y-auto" align="start" sideOffset={4}>
-				<DropdownMenuLabel>Select Reference</DropdownMenuLabel>
-				<DropdownMenuSeparator />
-				{allowEmpty && (
-					<>
-						<DropdownMenuItem onClick={() => onChange('')}>
-							<span className="flex items-center gap-2">
-								<FolderTree className="w-4 h-4" />
-								{emptyLabel}
-							</span>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-					</>
-				)}
-				{refs.slice(0, 20).map((ref) => (
-					<DropdownMenuItem key={ref.name} onClick={() => onChange(ref.name)}>
-						<span className="flex items-center gap-2">
-							{ref.type === 'tag' ? (
-								<FileText className="w-4 h-4" />
-							) : (
-								<GitBranch className="w-4 h-4" />
-							)}
-							{ref.name}
-						</span>
-					</DropdownMenuItem>
-				))}
-			</DropdownMenuContent>
-		</DropdownMenu>
 	</div>
 );

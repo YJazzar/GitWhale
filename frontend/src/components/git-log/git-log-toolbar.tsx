@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { CompareModal } from './compare-modal';
 import { useState } from 'react';
+import { RefSelectorInput } from './ref-selector-input';
 
 interface GitLogToolbarProps {
 	repoPath: string;
@@ -44,6 +45,21 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 		logState.refreshLogAndRefs();
 	};
 
+	const toolbarOptions = logState.options.get();
+	const onUpdateSelectedRefForLog = (newFromRef: string) => {
+		logState.options.set({ ...toolbarOptions, fromRef: newFromRef });
+		logState.refreshLogAndRefs();
+	};
+
+	const getCurrentRefDisplay = () => {
+		if (!toolbarOptions.fromRef) {
+			return 'HEAD';
+		}
+		return toolbarOptions.fromRef.length > 20
+			? `${toolbarOptions.fromRef.substring(0, 20)}...`
+			: toolbarOptions.fromRef;
+	};
+
 	return (
 		<div className="flex items-center gap-2 p-3 border-b bg-muted/30">
 			{/* Refresh Button */}
@@ -53,7 +69,12 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 
 			<ViewOptionsDropdown repoPath={repoPath} />
 
-			<RefSelectorDropdown repoPath={repoPath} />
+			<RefSelectorInput
+				repoPath={repoPath}
+				currentGitRef={getCurrentRefDisplay()}
+				// currentGitRef={toolbarOptions.fromRef ?? 'HEAD'}
+				onUpdateGitRef={onUpdateSelectedRefForLog}
+			/>
 
 			<Separator orientation="vertical" className="h-6" />
 
@@ -67,118 +88,6 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 
 			<CompareButton repoPath={repoPath} />
 		</div>
-	);
-}
-
-// Ref Selector Dropdown Component
-function RefSelectorDropdown({ repoPath }: { repoPath: string }) {
-	const { logState } = useRepoState(repoPath);
-	const isLoadingLogs = logState.isLoading;
-
-	const toolbarOptions = logState.options.get();
-	const getCurrentRefDisplay = () => {
-		if (!toolbarOptions.fromRef) {
-			return 'HEAD';
-		}
-		return toolbarOptions.fromRef.length > 20
-			? `${toolbarOptions.fromRef.substring(0, 20)}...`
-			: toolbarOptions.fromRef;
-	};
-
-	const allRepoRefs = logState.refs ?? [];
-	const localBranches = allRepoRefs.filter((b) => b.type === 'localBranch');
-	const remoteBranches = allRepoRefs.filter((b) => b.type === 'remoteBranch');
-	const tags = allRepoRefs.filter((b) => b.type === 'tag');
-
-	const onUpdateSelectedRefForLog = (newFromRef: string) => {
-		logState.options.set({ ...toolbarOptions, fromRef: newFromRef });
-		logState.refreshLogAndRefs();
-	};
-
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="sm" disabled={isLoadingLogs}>
-					<GitBranch className="w-4 h-4 mr-2" />
-					{getCurrentRefDisplay()}
-					<ChevronDown className="w-4 h-4 ml-2" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent className="w-64">
-				<DropdownMenuItem onClick={() => onUpdateSelectedRefForLog('HEAD')}>
-					<GitCommitHorizontal />
-					<span>HEAD</span>
-				</DropdownMenuItem>
-
-				<DropdownMenuSeparator />
-
-				{localBranches.length > 0 && (
-					<>
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
-								<GitBranch className="w-4 h-4 mr-2" />
-								Local Branches
-							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
-								{localBranches.map((branch) => (
-									<DropdownMenuItem
-										key={branch.name}
-										onClick={() => onUpdateSelectedRefForLog(branch.name)}
-									>
-										<span>{branch.name}</span>
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
-						<DropdownMenuSeparator />
-					</>
-				)}
-
-				{remoteBranches.length > 0 && (
-					<>
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
-								<GitBranch className="w-4 h-4 mr-2" />
-								Remote Branches
-							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
-								{remoteBranches.map((branch) => (
-									<DropdownMenuItem
-										key={branch.name}
-										onClick={() => onUpdateSelectedRefForLog(branch.name)}
-									>
-										{branch.name}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
-						<DropdownMenuSeparator />
-					</>
-				)}
-
-				{tags.length > 0 && (
-					<DropdownMenuSub>
-						<DropdownMenuSubTrigger>
-							<Tag className="w-4 h-4 mr-2" />
-							Tags
-						</DropdownMenuSubTrigger>
-						<DropdownMenuSubContent>
-							{tags.slice(0, 20).map((tag) => (
-								<DropdownMenuItem
-									key={tag.name}
-									onClick={() => onUpdateSelectedRefForLog(tag.name)}
-								>
-									{tag.name}
-								</DropdownMenuItem>
-							))}
-							{tags.length > 20 && (
-								<DropdownMenuItem disabled>... and {tags.length - 20} more</DropdownMenuItem>
-							)}
-						</DropdownMenuSubContent>
-					</DropdownMenuSub>
-				)}
-			</DropdownMenuContent>
-		</DropdownMenu>
 	);
 }
 
