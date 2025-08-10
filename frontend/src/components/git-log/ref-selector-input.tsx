@@ -20,7 +20,7 @@ interface LabeledRefSelectorInputProps {
 	label: string;
 	currentGitRef: string;
 	onUpdateGitRef: (newRefName: string) => void;
-	className?: string
+	className?: string;
 }
 
 export function LabeledRefSelectorInput({
@@ -28,7 +28,7 @@ export function LabeledRefSelectorInput({
 	label,
 	currentGitRef,
 	onUpdateGitRef,
-	className
+	className,
 }: LabeledRefSelectorInputProps) {
 	return (
 		<div className="space-y-2">
@@ -58,8 +58,7 @@ export function RefSelectorInput({
 }: RefSelectorInputProps) {
 	const { logState } = useRepoState(repoPath);
 	const [open, setOpen] = useState(false);
-	const [isEnteringCommitHashManually, setIsEnteringCommitHashManually] = useState(false);
-	const inputRef = useRef<HTMLInputElement>(null);
+	const [commandSearchInput, setCommandSearchInput] = useState<string>();
 
 	const allRepoRefs = logState.refs ?? [];
 
@@ -114,49 +113,6 @@ export function RefSelectorInput({
 		return getRefIcon(currentRef?.type || 'commit');
 	};
 
-	const handleCommitHashInputValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		onUpdateGitRef(e.target.value);
-	};
-
-	const handleCommitHashInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === 'Enter') {
-			e.preventDefault();
-		} else if (e.key === 'Escape') {
-			e.preventDefault();
-			e.stopPropagation();
-			setIsEnteringCommitHashManually(false);
-		}
-	};
-
-	const handleButtonDoubleClick = () => {
-		setIsEnteringCommitHashManually(true);
-		setTimeout(() => {
-			inputRef.current?.focus();
-			inputRef.current?.select();
-		}, 0);
-	};
-
-	// Update input value when currentGitRef changes externally
-	useEffect(() => {
-		if (isEnteringCommitHashManually) {
-			onUpdateGitRef(currentGitRef);
-		}
-	}, [currentGitRef, isEnteringCommitHashManually]);
-
-	if (isEnteringCommitHashManually) {
-		return (
-			<Input
-				ref={inputRef}
-				value={currentGitRef}
-				onChange={handleCommitHashInputValueChange}
-				onKeyDown={handleCommitHashInputKeyDown}
-				placeholder="Enter ref name or commit hash..."
-				className={cn('w-full max-w-48', className)}
-				disabled={logState.isLoading}
-			/>
-		);
-	}
-
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
@@ -166,7 +122,6 @@ export function RefSelectorInput({
 					aria-expanded={open}
 					className={cn('w-full max-w-48 justify-between font-normal', className)}
 					disabled={logState.isLoading}
-					onDoubleClick={handleButtonDoubleClick}
 				>
 					<div className="flex items-center gap-2 min-w-0">
 						{getCurrentRefIcon()}
@@ -177,7 +132,12 @@ export function RefSelectorInput({
 			</PopoverTrigger>
 			<PopoverContent className="w-[300px] p-0" align="start">
 				<Command>
-					<CommandInput placeholder="Search references..." className="h-9" />
+					<CommandInput
+						placeholder="Search references..."
+						className="h-9"
+						value={commandSearchInput}
+						onValueChange={setCommandSearchInput}
+					/>
 					<CommandList>
 						<CommandEmpty>No references found.</CommandEmpty>
 						{/* Group by type */}
@@ -212,6 +172,27 @@ export function RefSelectorInput({
 								</CommandGroup>
 							);
 						})}
+						<CommandGroup heading={getRefTypeLabel('')}>
+							<CommandItem
+								value={commandSearchInput}
+								onSelect={(currentValue) => {
+									onUpdateGitRef(currentValue);
+									setOpen(false);
+								}}
+								className="flex items-center justify-between"
+							>
+								<div className="flex items-center gap-2">
+									{getRefIcon('commit')}
+									<span>{commandSearchInput}</span>
+								</div>
+								<Check
+									className={cn(
+										'w-4 h-4',
+										currentGitRef === commandSearchInput ? 'opacity-100' : 'opacity-0'
+									)}
+								/>
+							</CommandItem>
+						</CommandGroup>
 					</CommandList>
 				</Command>
 			</PopoverContent>
