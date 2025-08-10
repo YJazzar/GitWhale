@@ -215,10 +215,11 @@ type FileChange struct {
 }
 
 type CommitStats struct {
-	FilesChanged int `json:"filesChanged"`
-	LinesAdded   int `json:"linesAdded"`
-	LinesDeleted int `json:"linesDeleted"`
-	TotalLines   int `json:"totalLines"`
+	FilesChanged  int `json:"filesChanged"`
+	LinesAdded    int `json:"linesAdded"`
+	LinesDeleted  int `json:"linesDeleted"`
+	LinesModified int `json:"linesModified"`
+	TotalLines    int `json:"totalLines"`
 }
 
 type DetailedCommitInfo struct {
@@ -250,157 +251,260 @@ type DetailedCommitInfo struct {
 func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitInfo, error) {
 	logger.Log.Info("Fetching detailed commit info for %s in %s", commitHash, repoPath)
 
-	// Get comprehensive commit info using git show with proper formatting
-	cmd := exec.Command("git", "show", "--pretty=format:%H%n%an%n%ae%n%cn%n%ce%n%ct%n%at%n%P%n%D%n%T%n%B", "--stat", "--numstat", "--name-status", commitHash)
+	commit := &DetailedCommitInfo{}
+
+	// Step 1: Get basic commit information
+	if err := getBasicCommitInfo(repoPath, commitHash, commit); err != nil {
+		return nil, err
+	}
+
+	// Step 2: Get file changes using git diff-tree
+	if err := getCommitFileChanges(repoPath, commitHash, commit); err != nil {
+		return nil, err
+	}
+
+	// Step 3: Get additional commit metadata
+	getAdditionalCommitMetadata(repoPath, commitHash, commit)
+
+	logger.Log.Info("Successfully fetched detailed info for commit %s", commitHash)
+	return commit, nil
+}
+
+// getBasicCommitInfo fetches the core commit information using git show
+func getBasicCommitInfo(repoPath, commitHash string, commit *DetailedCommitInfo) error {
+	// Use git show with precise format to get basic commit info
+	cmd := exec.Command("git", "show", "--no-patch", "--format=%H%n%an%n%ae%n%cn%n%ce%n%ct%n%at%n%P%n%D%n%T%n%s%n%b", commitHash)
 	cmd.Dir = repoPath
 	output, err := command_utils.RunCommandAndLogErr(cmd)
-
-	if output == "" || err != nil {
-		return nil, fmt.Errorf("commit %s not found", commitHash)
+	if err != nil || output == "" {
+		return fmt.Errorf("failed to get commit info for %s: %v", commitHash, err)
 	}
 
 	lines := strings.Split(output, "\n")
 	if len(lines) < 10 {
-		return nil, fmt.Errorf("invalid git show output for commit %s", commitHash)
+		return fmt.Errorf("invalid commit format for %s", commitHash)
 	}
 
-	// Parse the basic header info
-	commit := &DetailedCommitInfo{
-		CommitHash:         lines[0],                 // %H
-		Username:           lines[1],                 // %an
-		UserEmail:          lines[2],                 // %ae
-		CommitterName:      lines[3],                 // %cn
-		CommitterEmail:     lines[4],                 // %ce
-		CommitTimeStamp:    lines[5],                 // %ct
-		AuthoredTimeStamp:  lines[6],                 // %at
-		ParentCommitHashes: strings.Fields(lines[7]), // %P
-		Refs:               lines[8],                 // %D
-		TreeHash:           lines[9],                 // %T
-		AuthorDate:         lines[6],                 // same as authored timestamp
-	}
+	// Parse fixed-position fields
+	commit.CommitHash = strings.TrimSpace(lines[0])        // %H
+	commit.Username = strings.TrimSpace(lines[1])          // %an
+	commit.UserEmail = strings.TrimSpace(lines[2])         // %ae
+	commit.CommitterName = strings.TrimSpace(lines[3])     // %cn
+	commit.CommitterEmail = strings.TrimSpace(lines[4])    // %ce
+	commit.CommitTimeStamp = strings.TrimSpace(lines[5])   // %ct
+	commit.AuthoredTimeStamp = strings.TrimSpace(lines[6]) // %at
+	commit.ParentCommitHashes = strings.Fields(lines[7])   // %P
+	commit.Refs = strings.TrimSpace(lines[8])              // %D
+	commit.TreeHash = strings.TrimSpace(lines[9])          // %T
+	commit.AuthorDate = commit.AuthoredTimeStamp           // same as authored timestamp
 
-	// Parse commit message (everything after line 10 until we hit stats)
+	// Parse commit message (subject + body)
 	messageLines := []string{}
-	messageStartIndex := 10
-	statsStartIndex := -1
-
-	// Find where the message ends and stats begin
-	for i := messageStartIndex; i < len(lines); i++ {
-		line := lines[i]
-
-		// Check if we've hit the stat section
-		if strings.Contains(line, "file") && (strings.Contains(line, "changed") || strings.Contains(line, "insertion") || strings.Contains(line, "deletion")) {
-			statsStartIndex = i
-			break
-		}
-		// Check if we've hit the numstat section (tab-separated)
-		if strings.Contains(line, "\t") && len(strings.Split(line, "\t")) >= 3 {
-			statsStartIndex = i
-			break
-		}
-		// Check if we've hit the name-status section (single letter followed by tab)
-		if len(line) > 1 && strings.Contains(line[1:2], "\t") {
-			statsStartIndex = i
-			break
+	if len(lines) > 10 {
+		// Remaining lines are the body (%b), including empty lines
+		for i := 10; i < len(lines); i++ {
+			messageLines = append(messageLines, lines[i])
 		}
 
-		// This is part of the commit message
-		messageLines = append(messageLines, line)
-	}
-
-	// Clean up the message - remove empty lines from the end
-	for len(messageLines) > 0 && strings.TrimSpace(messageLines[len(messageLines)-1]) == "" {
-		messageLines = messageLines[:len(messageLines)-1]
+		// Remove trailing empty lines only
+		for len(messageLines) > 0 && strings.TrimSpace(messageLines[len(messageLines)-1]) == "" {
+			messageLines = messageLines[:len(messageLines)-1]
+		}
 	}
 	commit.CommitMessage = messageLines
 
-	// Parse file changes and statistics
-	changedFiles := []FileChange{}
-	fileStatusMap := make(map[string]string) // filename -> status
-	stats := CommitStats{}
+	return nil
+}
 
-	if statsStartIndex >= 0 {
-		for i := statsStartIndex; i < len(lines); i++ {
-			line := strings.TrimSpace(lines[i])
-			if line == "" {
-				continue
+// getCommitFileChanges uses git diff-tree to get accurate file change information
+func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInfo) error {
+	// For root commit, compare against empty tree
+	parentRef := ""
+	if len(commit.ParentCommitHashes) == 0 {
+		// Root commit - compare against empty tree
+		parentRef = "4b825dc642cb6eb9a060e54bf8d69288fbee4904" // SHA of empty tree
+	} else {
+		// Use first parent for merge commits
+		parentRef = commit.ParentCommitHashes[0]
+	}
+
+	// Get file status changes using diff-tree with proper options
+	cmd := exec.Command("git", "diff-tree", "-r", "--name-status", "-z", "--diff-filter=ADMR", "--find-renames=50%", parentRef, commitHash)
+	cmd.Dir = repoPath
+	output, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to get file changes for %s: %v", commitHash, err)
+	}
+
+	// Parse null-separated output
+	fileChanges, err := parseFileChanges(output)
+	if err != nil {
+		return fmt.Errorf("failed to parse file changes: %v", err)
+	}
+
+	// Get line count statistics and enrich file changes in one pass
+	stats, err := getNumstatData(repoPath, parentRef, commitHash, fileChanges)
+	if err != nil {
+		logger.Log.Error("Failed to get numstat data for %s: %v", commitHash, err)
+		// Continue with empty stats rather than failing
+		stats = &CommitStats{}
+	}
+
+	commit.ChangedFiles = fileChanges
+	commit.CommitStats = *stats
+
+	// Get short stat summary
+	shortStatCmd := exec.Command("git", "diff", "--shortstat", parentRef, commitHash)
+	shortStatCmd.Dir = repoPath
+	shortStatOutput, err := command_utils.RunCommandAndLogErr(shortStatCmd)
+	if err == nil {
+		commit.ShortStat = strings.TrimSpace(shortStatOutput)
+	}
+
+	return nil
+}
+
+// parseFileChanges parses the null-separated output from git diff-tree --name-status -z
+func parseFileChanges(output string) ([]FileChange, error) {
+	if output == "" {
+		return []FileChange{}, nil
+	}
+
+	// Split by null character, removing empty last element
+	parts := strings.Split(strings.TrimSuffix(output, "\x00"), "\x00")
+	fileChanges := []FileChange{}
+
+	for i := 0; i < len(parts); i += 2 {
+		if i+1 >= len(parts) {
+			break
+		}
+
+		status := parts[i]
+		paths := parts[i+1]
+
+		fileChange := FileChange{
+			Status: string(status[0]), // Get base status (R, C, M, A, D)
+		}
+
+		// Handle renames and copies which have "old\tnew" format
+		if strings.Contains(paths, "\t") {
+			pathParts := strings.Split(paths, "\t")
+			if len(pathParts) == 2 {
+				fileChange.OldPath = pathParts[0]
+				fileChange.Path = pathParts[1]
+			} else {
+				fileChange.Path = paths
 			}
+		} else {
+			fileChange.Path = paths
+		}
 
-			// Parse name-status format: "M\tfilename" or "R100\told\tnew"
-			if len(line) > 1 && strings.Contains(line, "\t") {
-				parts := strings.Split(line, "\t")
-				if len(parts) >= 2 {
-					status := parts[0]
-					filename := parts[1]
+		fileChanges = append(fileChanges, fileChange)
+	}
 
-					// Handle renames/copies
-					if len(parts) > 2 && (strings.HasPrefix(status, "R") || strings.HasPrefix(status, "C")) {
-						filename = parts[2] // new filename for renames/copies
-					}
+	return fileChanges, nil
+}
 
-					fileStatusMap[filename] = string(status[0]) // Get first character of status
-				}
+// getNumstatData runs git diff --numstat once and returns both aggregate stats and enriches file changes
+func getNumstatData(repoPath, parentRef, commitHash string, fileChanges []FileChange) (*CommitStats, error) {
+	cmd := exec.Command("git", "diff", "--numstat", parentRef, commitHash)
+	cmd.Dir = repoPath
+	output, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := &CommitStats{}
+
+	// Create a map for quick lookups by file path
+	fileStatsMap := make(map[string]struct {
+		linesAdded   int
+		linesDeleted int
+		isBinary     bool
+	})
+
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Fields(line)
+		if len(parts) < 3 {
+			continue
+		}
+
+		additionsStr := parts[0]
+		deletionsStr := parts[1]
+		filepath := parts[2]
+
+		var linesAdded, linesDeleted int
+		var isBinary bool
+
+		// Binary files are marked with "-" for both additions and deletions
+		if additionsStr == "-" && deletionsStr == "-" {
+			isBinary = true
+		} else {
+			if val, parseErr := strconv.Atoi(additionsStr); parseErr == nil {
+				linesAdded = val
+				stats.LinesAdded += linesAdded
 			}
-
-			// Parse numstat format: "additions\tdeletions\tfilename"
-			if strings.Count(line, "\t") >= 2 {
-				parts := strings.Split(line, "\t")
-				if len(parts) >= 3 {
-					additionsStr := parts[0]
-					deletionsStr := parts[1]
-					filename := parts[2]
-
-					var linesAdded, linesDeleted int
-					var isBinary bool
-
-					if additionsStr == "-" && deletionsStr == "-" {
-						// Binary file
-						isBinary = true
-					} else {
-						if val, err := strconv.Atoi(additionsStr); err == nil {
-							linesAdded = val
-						}
-						if val, err := strconv.Atoi(deletionsStr); err == nil {
-							linesDeleted = val
-						}
-					}
-
-					// Get status from the map, default to Modified
-					status := "M"
-					if s, exists := fileStatusMap[filename]; exists {
-						status = s
-					}
-
-					changedFiles = append(changedFiles, FileChange{
-						Path:         filename,
-						Status:       status,
-						LinesAdded:   linesAdded,
-						LinesDeleted: linesDeleted,
-						BinaryFile:   isBinary,
-					})
-
-					stats.LinesAdded += linesAdded
-					stats.LinesDeleted += linesDeleted
-					stats.FilesChanged++
-				}
+			if val, parseErr := strconv.Atoi(deletionsStr); parseErr == nil {
+				linesDeleted = val
+				stats.LinesDeleted += linesDeleted
 			}
+		}
 
-			// Parse shortstat format for summary
-			if strings.Contains(line, "changed") || strings.Contains(line, "insertion") || strings.Contains(line, "deletion") {
-				commit.ShortStat = line
+		stats.FilesChanged++
+		fileStatsMap[filepath] = struct {
+			linesAdded   int
+			linesDeleted int
+			isBinary     bool
+		}{linesAdded, linesDeleted, isBinary}
+	}
+
+	// Calculate aggregate totals
+	stats.TotalLines = stats.LinesAdded + stats.LinesDeleted
+	stats.LinesModified = stats.LinesAdded + stats.LinesDeleted
+
+	// Enrich file changes with per-file statistics
+	for i := range fileChanges {
+		file := &fileChanges[i]
+
+		// Try to find stats using the current path
+		if statsData, found := fileStatsMap[file.Path]; found {
+			file.LinesAdded = statsData.linesAdded
+			file.LinesDeleted = statsData.linesDeleted
+			file.BinaryFile = statsData.isBinary
+		} else if file.OldPath != "" {
+			// For renames, try the old path
+			if statsData, found := fileStatsMap[file.OldPath]; found {
+				file.LinesAdded = statsData.linesAdded
+				file.LinesDeleted = statsData.linesDeleted
+				file.BinaryFile = statsData.isBinary
+			} else {
+				// Default values if no match found
+				file.LinesAdded = 0
+				file.LinesDeleted = 0
+				file.BinaryFile = false
 			}
+		} else {
+			// Default values if no match found
+			file.LinesAdded = 0
+			file.LinesDeleted = 0
+			file.BinaryFile = false
 		}
 	}
 
-	commit.ChangedFiles = changedFiles
-	commit.CommitStats = stats
-	commit.CommitStats.TotalLines = stats.LinesAdded + stats.LinesDeleted
+	return stats, nil
+}
 
+// getAdditionalCommitMetadata fetches GPG signatures, encoding, size, and full diff
+func getAdditionalCommitMetadata(repoPath, commitHash string, commit *DetailedCommitInfo) {
 	// Get full diff
 	diffCmd := exec.Command("git", "show", commitHash)
 	diffCmd.Dir = repoPath
-	diffOutput, err := command_utils.RunCommandAndLogErr(diffCmd)
-	if err == nil {
+	if diffOutput, err := command_utils.RunCommandAndLogErr(diffCmd); err == nil {
 		commit.FullDiff = diffOutput
 	} else {
 		commit.FullDiff = "Error getting diff"
@@ -409,9 +513,8 @@ func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitI
 	// Get GPG signature verification
 	gpgCmd := exec.Command("git", "verify-commit", commitHash)
 	gpgCmd.Dir = repoPath
-	gpgOutput, err := command_utils.RunCommandAndLogErr(gpgCmd)
-	if err == nil {
-		commit.GPGSignature = string(gpgOutput)
+	if gpgOutput, err := command_utils.RunCommandAndLogErr(gpgCmd); err == nil {
+		commit.GPGSignature = gpgOutput
 	} else {
 		commit.GPGSignature = "Not signed or verification failed"
 	}
@@ -419,30 +522,24 @@ func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitI
 	// Get commit object size
 	sizeCmd := exec.Command("git", "cat-file", "-s", commitHash)
 	sizeCmd.Dir = repoPath
-	sizeOutput, err := command_utils.RunCommandAndLogErr(sizeCmd)
-	if sizeOutput != "" && err == nil {
-		fmt.Sscanf(strings.TrimSpace(sizeOutput), "%d", &commit.CommitSize)
+	if sizeOutput, err := command_utils.RunCommandAndLogErr(sizeCmd); err == nil && sizeOutput != "" {
+		if size, parseErr := strconv.Atoi(strings.TrimSpace(sizeOutput)); parseErr == nil {
+			commit.CommitSize = size
+		}
 	}
 
-	// Get encoding info from commit object
+	// Get encoding info
 	catCmd := exec.Command("git", "cat-file", "commit", commitHash)
 	catCmd.Dir = repoPath
-	catOutput, err := command_utils.RunCommandAndLogErr(catCmd)
-	if strings.Contains(catOutput, "encoding ") && err == nil {
+	if catOutput, err := command_utils.RunCommandAndLogErr(catCmd); err == nil {
+		commit.Encoding = "UTF-8" // Default
 		for _, line := range strings.Split(catOutput, "\n") {
 			if strings.HasPrefix(line, "encoding ") {
-				commit.Encoding = strings.TrimPrefix(line, "encoding ")
+				commit.Encoding = strings.TrimSpace(strings.TrimPrefix(line, "encoding "))
 				break
 			}
 		}
-	}
-	if commit.Encoding == "" && err == nil {
-		commit.Encoding = "UTF-8" // Default encoding
-	}
-	if err != nil {
+	} else {
 		commit.Encoding = "ERROR"
 	}
-
-	logger.Log.Info("Successfully fetched detailed info for commit %s", commitHash)
-	return commit, nil
 }

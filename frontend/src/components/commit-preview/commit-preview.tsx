@@ -10,7 +10,6 @@ import { CommitHash } from '../commit-hash';
 import { CommitAuthorInfo } from './commit-author-info';
 import { CommitMessage } from './commit-message';
 import { CommitRefs } from './commit-refs';
-import { CommitChangesSummary } from './commit-changes-summary';
 import { CommitFileList } from './commit-file-list';
 import { CommitParents } from './commit-parents';
 
@@ -20,11 +19,7 @@ interface CommitPreviewProps {
 	onClose?: () => void;
 }
 
-export function CommitPreview({
-	commitHash,
-	repoPath,
-	onClose,
-}: CommitPreviewProps) {
+export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewProps) {
 	const { data: commit, isLoading, isError, error } = useDetailedCommit(repoPath, commitHash);
 	const { navigateToCommitDiff } = useNavigateToCommitDiffs(repoPath);
 
@@ -134,9 +129,6 @@ export function CommitPreview({
 
 					{/* Refs (branches and tags) */}
 					<CommitRefs commit={commit} />
-
-					{/* Changes Summary */}
-					<CommitChangesSummary commit={commit} />
 
 					{/* File List */}
 					<CommitFileList commit={commit} />
