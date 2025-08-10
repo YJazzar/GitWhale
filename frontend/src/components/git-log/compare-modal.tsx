@@ -88,7 +88,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden">
+			<DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden" onEscapeKeyDown={(e) =>{}}>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<GitCompare className="w-5 h-5" />

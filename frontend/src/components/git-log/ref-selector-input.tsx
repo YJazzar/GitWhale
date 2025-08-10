@@ -1,16 +1,18 @@
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import {
 	Command,
 	CommandEmpty,
 	CommandGroup,
+	CommandInput,
 	CommandItem,
 	CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { GitBranch, GitCommitHorizontal, Tag, Check } from 'lucide-react';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { GitBranch, GitCommitHorizontal, Tag, Check, ChevronsUpDown } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 interface LabeledRefSelectorInputProps {
 	repoPath: string;
@@ -46,33 +48,29 @@ interface RefSelectorInputProps {
 export function RefSelectorInput({ repoPath, currentGitRef, onUpdateGitRef }: RefSelectorInputProps) {
 	const { logState } = useRepoState(repoPath);
 	const [open, setOpen] = useState(false);
-	const [inputValue, setInputValue] = useState(currentGitRef);
-	const inputRef = useRef<HTMLInputElement>(null);
 
 	const allRepoRefs = logState.refs ?? [];
 
-	// Add HEAD to the refs list
+	// Add HEAD to the refs list and create a flat structure
 	const allRefs = useMemo(() => {
-		const refs = [{ name: 'HEAD', type: 'head' }];
-		return refs.concat(allRepoRefs);
+		const refs = [{ value: 'HEAD', label: 'HEAD', type: 'head' }];
+		return refs.concat(
+			allRepoRefs.map((ref) => ({
+				value: ref.name,
+				label: ref.name,
+				type: ref.type,
+			}))
+		);
 	}, [allRepoRefs]);
-
-	// Filter refs based on input value
-	const filteredRefs = useMemo(() => {
-		if (!inputValue.trim()) return allRefs;
-
-		const query = inputValue.toLowerCase();
-		return allRefs.filter((ref) => ref.name.toLowerCase().includes(query));
-	}, [allRefs, inputValue]);
 
 	const getRefIcon = (type: string) => {
 		switch (type) {
 			case 'head':
-				return <GitCommitHorizontal className="w-4 h-4" />;
+				return <GitCommitHorizontal className="w-4 h-4 mr-2" />;
 			case 'tag':
-				return <Tag className="w-4 h-4" />;
+				return <Tag className="w-4 h-4 mr-2" />;
 			default:
-				return <GitBranch className="w-4 h-4" />;
+				return <GitBranch className="w-4 h-4 mr-2" />;
 		}
 	};
 
@@ -81,130 +79,83 @@ export function RefSelectorInput({ repoPath, currentGitRef, onUpdateGitRef }: Re
 			case 'head':
 				return 'HEAD';
 			case 'localBranch':
-				return 'Local Branch';
+				return 'Local Branches';
 			case 'remoteBranch':
-				return 'Remote Branch';
+				return 'Remote Branches';
 			case 'tag':
-				return 'Tag';
+				return 'Tags';
 			default:
-				return 'Reference';
+				return 'References';
 		}
 	};
 
-	const handleSelect = (refName: string) => {
-		setInputValue(refName);
-		onUpdateGitRef(refName);
-		setOpen(false);
-		// Return focus to input after selection
-		setTimeout(() => {
-			inputRef.current?.focus();
-		}, 0);
+	const getCurrentRefDisplay = () => {
+		const currentRef = allRefs.find((ref) => ref.value === currentGitRef);
+		return currentRef ? currentRef.label : currentGitRef;
 	};
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setInputValue(value);
-		if (!open && value.length > 0) {
-			setOpen(true);
-		}
+	const getCurrentRefIcon = () => {
+		const currentRef = allRefs.find((ref) => ref.value === currentGitRef);
+		return getRefIcon(currentRef?.type || 'localBranch');
 	};
-
-	const handleInputFocus = () => {
-		if (filteredRefs.length > 0) {
-			setOpen(true);
-		}
-	};
-
-	const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-		// Don't close immediately - give time for popover clicks
-		setTimeout(() => {
-			// Only update if the input value has changed and is different from current ref
-			if (inputValue !== currentGitRef && inputValue.trim()) {
-				onUpdateGitRef(inputValue.trim());
-			} else if (!inputValue.trim()) {
-				// Reset to current ref if input is empty
-				setInputValue(currentGitRef);
-			}
-		}, 150);
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === 'Escape') {
-			setOpen(false);
-			setInputValue(currentGitRef);
-		} else if (e.key === 'Enter' && inputValue.trim()) {
-			onUpdateGitRef(inputValue.trim());
-			setOpen(false);
-		}
-	};
-
-	// Update input value when currentGitRef changes externally
-	useEffect(() => {
-		setInputValue(currentGitRef);
-	}, [currentGitRef]);
 
 	return (
-		<div className="relative">
-			<Popover open={open} onOpenChange={setOpen}>
-				<PopoverTrigger asChild>
-					<div className="relative">
-						<Input
-							ref={inputRef}
-							value={inputValue}
-							onChange={handleInputChange}
-							onFocus={handleInputFocus}
-							onBlur={handleInputBlur}
-							onKeyDown={handleKeyDown}
-							placeholder="Enter ref name..."
-							className="w-full min-w-[200px] max-w-[300px] pr-8"
-							disabled={logState.isLoading}
-						/>
-						<div className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-							{getRefIcon(
-								allRefs.find((ref) => ref.name === currentGitRef)?.type || 'localBranch'
-							)}
-						</div>
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					role="combobox"
+					aria-expanded={open}
+					className="w-full min-w-[200px] max-w-[300px] justify-between font-normal"
+					disabled={logState.isLoading}
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						{getCurrentRefIcon()}
+						<span className="truncate">{getCurrentRefDisplay()}</span>
 					</div>
-				</PopoverTrigger>
-				<PopoverContent className="w-[300px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
-					<Command shouldFilter={false}>
-						<CommandList>
-							{filteredRefs.length === 0 ? (
-								<CommandEmpty>No references found.</CommandEmpty>
-							) : (
-								<>
-									{/* Group by type */}
-									{['head', 'localBranch', 'remoteBranch', 'tag'].map((type) => {
-										const refsOfType = filteredRefs.filter((ref) => ref.type === type);
-										if (refsOfType.length === 0) return null;
+					<ChevronsUpDown className="w-4 h-4 shrink-0 opacity-50" />
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent className="w-[300px] p-0" align="start">
+				<Command>
+					<CommandInput placeholder="Search references..." className="h-9" />
+					<CommandList>
+						<CommandEmpty>No references found.</CommandEmpty>
+						{/* Group by type */}
+						{['head', 'localBranch', 'remoteBranch', 'tag'].map((type) => {
+							const refsOfType = allRefs.filter((ref) => ref.type === type);
+							if (refsOfType.length === 0) return null;
 
-										return (
-											<CommandGroup key={type} heading={getRefTypeLabel(type)}>
-												{refsOfType.map((ref) => (
-													<CommandItem
-														key={ref.name}
-														value={ref.name}
-														onSelect={() => handleSelect(ref.name)}
-														className="flex items-center justify-between"
-													>
-														<div className="flex items-center gap-2">
-															{getRefIcon(ref.type)}
-															<span>{ref.name}</span>
-														</div>
-														{ref.name === currentGitRef && (
-															<Check className="w-4 h-4" />
-														)}
-													</CommandItem>
-												))}
-											</CommandGroup>
-										);
-									})}
-								</>
-							)}
-						</CommandList>
-					</Command>
-				</PopoverContent>
-			</Popover>
-		</div>
+							return (
+								<CommandGroup key={type} heading={getRefTypeLabel(type)}>
+									{refsOfType.map((ref) => (
+										<CommandItem
+											key={ref.value}
+											value={ref.value}
+											onSelect={(currentValue) => {
+												onUpdateGitRef(currentValue);
+												setOpen(false);
+											}}
+											className="flex items-center justify-between"
+										>
+											<div className="flex items-center gap-2">
+												{getRefIcon(ref.type)}
+												<span>{ref.label}</span>
+											</div>
+											<Check
+												className={cn(
+													'w-4 h-4',
+													currentGitRef === ref.value ? 'opacity-100' : 'opacity-0'
+												)}
+											/>
+										</CommandItem>
+									))}
+								</CommandGroup>
+							);
+						})}
+					</CommandList>
+				</Command>
+			</PopoverContent>
+		</Popover>
 	);
 }
