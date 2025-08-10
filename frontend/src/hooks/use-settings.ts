@@ -13,6 +13,7 @@ export function useSettings() {
 		new backend.AppSettings({
 			git: new backend.GitSettings(DEFAULT_SETTINGS.git),
 			terminal: new command_utils.TerminalSettings(DEFAULT_SETTINGS.terminal),
+			ui: new backend.UISettings(DEFAULT_SETTINGS.ui),
 		});
 	const isLoading = !appState;
 
@@ -24,6 +25,9 @@ export function useSettings() {
 			terminal: newSettings.terminal
 				? new command_utils.TerminalSettings({ ...settings.terminal, ...newSettings.terminal })
 				: settings.terminal,
+			ui: newSettings.ui
+				? new backend.UISettings({ ...settings.ui, ...newSettings.ui })
+				: settings.ui,
 		});
 
 		// Save to backend and refresh app state
@@ -39,6 +43,7 @@ export function useSettings() {
 		const defaultSettings = new backend.AppSettings({
 			git: new backend.GitSettings(DEFAULT_SETTINGS.git),
 			terminal: new command_utils.TerminalSettings(DEFAULT_SETTINGS.terminal),
+			ui: new backend.UISettings(DEFAULT_SETTINGS.ui),
 		});
 		try {
 			await UpdateSettings(defaultSettings);

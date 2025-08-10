@@ -12,6 +12,18 @@ export namespace backend {
 	        this.currentBranchName = source["currentBranchName"];
 	    }
 	}
+	export class UISettings {
+	    autoShowCommitDetails: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new UISettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.autoShowCommitDetails = source["autoShowCommitDetails"];
+	    }
+	}
 	export class GitSettings {
 	    commitsToLoad: number;
 	
@@ -27,6 +39,7 @@ export namespace backend {
 	export class AppSettings {
 	    git: GitSettings;
 	    terminal: command_utils.TerminalSettings;
+	    ui: UISettings;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -36,6 +49,7 @@ export namespace backend {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.git = this.convertValues(source["git"], GitSettings);
 	        this.terminal = this.convertValues(source["terminal"], command_utils.TerminalSettings);
+	        this.ui = this.convertValues(source["ui"], UISettings);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -180,6 +194,7 @@ export namespace backend {
 		    return a;
 		}
 	}
+	
 	
 	
 	

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { RunGitLog, GetAllRefs, GitFetch } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { useMapPrimitive } from '../use-map-primitive';
+import { UseAppState } from '../use-app-state';
 
 // Map because each repo path needs to have the same data
 const gitLogDataAtom = atom<Map<string, git_operations.GitLogCommitInfo[]>>(new Map());
@@ -11,10 +12,12 @@ const isLoadingGitDataAtom = atom<Map<string, boolean>>(new Map());
 const selectedCommitAtom = atom<Map<string, string[]>>(new Map());
 const gitLogOptionsAtom = atom<Map<string, git_operations.GitLogOptions>>(new Map());
 const gitRefsAtom = atom<Map<string, git_operations.GitRef[]>>(new Map());
+const commitDetailsPaneStateAtom = atom<Map<string, boolean>>(new Map()); 
 
 // MARK: Git log state management functions
 
 export function getLogState(repoPath: string) {
+	const { appState } = UseAppState();
 	const _isLoadingPrim = useMapPrimitive(isLoadingGitDataAtom, repoPath);
 
 	// Store git log data
@@ -29,10 +32,18 @@ export function getLogState(repoPath: string) {
 	// Store git refs (branches and tags) per repository path
 	const _gitRefsPrim = useMapPrimitive(gitRefsAtom, repoPath);
 
+	// Track whether user wants commit details pane to show (per repo) true = show pane, false = user dismissed
+	const _commitDetailsPaneStatePrim = useMapPrimitive(commitDetailsPaneStateAtom, repoPath);
+
 	const [needsToReload, setNeedsToReload] = useState(false);
 
 	const currentSelectedCommits = _selectedCommitsPrim.value ?? [];
-	const addToSelectedCommitsList = (commitHash: string) => {
+	const addToSelectedCommitsList = (commitHash: string, isSecondarySelect: boolean) => {
+		if (!isSecondarySelect) { 
+			// we're in single-select mode right now, so we can clear out all other things selected
+			_selectedCommitsPrim.set([commitHash]);
+		}
+
 		const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash);
 
 		// Add the commit
@@ -60,9 +71,20 @@ export function getLogState(repoPath: string) {
 		_selectedCommitsPrim.set(filteredSelectedCommits);
 	};
 
+	// Commit details pane state management
+	const shouldShowCommitDetailsPane = _commitDetailsPaneStatePrim.value ?? appState?.appConfig?.settings?.ui?.autoShowCommitDetails
+
+	const dismissCommitDetailsPane = () => {
+		_commitDetailsPaneStatePrim.set(false);
+	};
+
+	const showCommitDetailsPane = () => {
+		_commitDetailsPaneStatePrim.set(true);
+	};
+
 	const currentLogOptions = _gitLogOptionsPrim.value || {
 		author: undefined,
-		commitsToLoad: undefined,
+		commitsToLoad: appState?.appConfig?.settings?.git?.commitsToLoad,
 		fromRef: undefined,
 		searchQuery: undefined,
 		toRef: undefined,
@@ -135,6 +157,13 @@ export function getLogState(repoPath: string) {
 			removeFromSelectedCommitsList,
 		},
 
+		// Commit details pane state
+		commitDetailsPane: {
+			shouldShow: shouldShowCommitDetailsPane,
+			show: showCommitDetailsPane,
+			dismiss: dismissCommitDetailsPane,
+		},
+
 		// Get log options for this repo
 		options: {
 			get: () => currentLogOptions,
@@ -148,6 +177,7 @@ export function getLogState(repoPath: string) {
 			_selectedCommitsPrim.kill()
 			_gitRefsPrim.kill()
 			_gitLogOptionsPrim.kill()
+			_commitDetailsPaneStatePrim.kill()
 		},
 	};
 }

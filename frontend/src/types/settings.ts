@@ -9,9 +9,14 @@ export interface TerminalSettings {
   cursorStyle: 'block' | 'underline' | 'bar';
 }
 
+export interface UISettings {
+  autoShowCommitDetails: boolean;
+}
+
 export interface AppSettings {
   git: GitSettings;
   terminal: TerminalSettings;
+  ui: UISettings;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -23,6 +28,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
     fontSize: 14,
     colorScheme: 'default',
     cursorStyle: 'block',
+  },
+  ui: {
+    autoShowCommitDetails: true,
   },
 };
 

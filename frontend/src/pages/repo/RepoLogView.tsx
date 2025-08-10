@@ -1,13 +1,17 @@
+import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
 import { CommitDetails } from '@/components/commit-details';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { UseAppState } from '@/hooks/state/use-app-state';
 import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
+import { ChevronUp } from 'lucide-react';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
+	const { appState } = UseAppState();
 
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
 	
@@ -17,7 +21,17 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 
 	const onCommitSelect = (commitHash: string, shouldAddToSelection: boolean) => {
 		if (shouldAddToSelection) {
-			logState.selectedCommits.addToSelectedCommitsList(commitHash);
+			logState.selectedCommits.addToSelectedCommitsList(commitHash, false);
+			
+			// Auto-show commit details pane if:
+			// 1. App setting allows it AND
+			// 2. User hasn't manually dismissed the pane
+			const autoShowSetting = appState?.appConfig?.settings?.ui?.autoShowCommitDetails ?? true;
+			const userWantsPaneShown = logState.commitDetailsPane.shouldShow;
+			
+			if (autoShowSetting && userWantsPaneShown) {
+				handleShowCommitDetails()
+			}
 			return 
 		}
 
@@ -25,24 +39,36 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	};
 
 	const onCommitDoubleClick = (commitHash: string) => {
-		logState.selectedCommits.addToSelectedCommitsList(commitHash);
+		logState.selectedCommits.addToSelectedCommitsList(commitHash, false);
 		handleViewFullCommit(commitHash, false)
 	}
 
 	const handleCloseCommitDetails = () => {
-		onCommitSelect(selectedCommitForDetails, false)
+		// Mark that user has manually dismissed the pane
+		logState.commitDetailsPane.dismiss();
+	};
+
+	const handleShowCommitDetails = () => {
+		// Show the commit details pane
+		logState.commitDetailsPane.show();
 	};
 
 	const currentSelectedCommits = logState.selectedCommits.currentSelectedCommits
-	const selectedCommitForDetails = currentSelectedCommits[currentSelectedCommits.length-1]
-
+	const selectedCommitForDetails  = currentSelectedCommits[currentSelectedCommits.length-1]
+	
+	// Determine if we should show the commit details pane
+	const shouldShowPane = selectedCommitForDetails && logState.commitDetailsPane.shouldShow;
+	
+	// Determine if we should show the bottom indicator to re-open the pane
+	const shouldShowBottomIndicator = selectedCommitForDetails && !logState.commitDetailsPane.shouldShow;
+	const selectedCommitShortHash =  selectedCommitForDetails?.slice(0, 7)
 	return (
 		<div className="flex flex-col h-full">
 			<GitLogToolbar repoPath={repoPath} />
 
-			<div className="flex-1 min-h-0 w-full">
+			<div className="flex-1 min-h-0 w-full relative">
 				<ResizablePanelGroup direction="vertical" className="h-full">
-					<ResizablePanel defaultSize={!!selectedCommitForDetails ? 60 : 100} minSize={30}>
+					<ResizablePanel defaultSize={shouldShowPane ? 60 : 100} minSize={30}>
 						<GitLogGraph
 							repoPath={repoPath}
 							onCommitClick={onCommitSelect}
@@ -51,7 +77,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 						/>
 					</ResizablePanel>
 
-					{selectedCommitForDetails && (
+					{shouldShowPane && (
 						<>
 							<ResizableHandle />
 							<ResizablePanel defaultSize={40} minSize={20}>
@@ -65,6 +91,21 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 						</>
 					)}
 				</ResizablePanelGroup>
+
+				{/* Bottom indicator to show commit details */}
+				{shouldShowBottomIndicator && (
+					<div className="absolute bottom-0 left-0 right-0 z-10">
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={handleShowCommitDetails}
+							className="w-full rounded-none border-t border-l-0 border-r-0 border-b-0 bg-muted/80 backdrop-blur-sm hover:bg-muted flex items-center justify-center gap-2 h-8 text-xs font-medium shadow-lg"
+						>
+							<span> #{selectedCommitShortHash} - Click to view details</span>
+							<ChevronUp className="w-3 h-3" />
+						</Button>
+					</div>
+				)}
 			</div>
 		</div>
 	);

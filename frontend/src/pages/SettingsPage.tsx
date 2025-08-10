@@ -1,27 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Logger } from '@/utils/logger';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Terminal, GitBranch, Save, RotateCcw, Check, ChevronDown, Palette } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { UseAppState } from '@/hooks/state/use-app-state';
 import { useSettings } from '@/hooks/use-settings';
-import { useTheme } from '@/components/theme-provider';
 import {
-	TERMINAL_COLOR_SCHEMES,
-	TERMINAL_CURSOR_STYLES,
 	COMMITS_LOAD_OPTIONS,
 	FONT_SIZE_OPTIONS,
+	TERMINAL_COLOR_SCHEMES,
+	TERMINAL_CURSOR_STYLES,
 } from '@/types/settings';
-import { UseAppState } from '@/hooks/state/use-app-state';
+import { Logger } from '@/utils/logger';
+import { Check, ChevronDown, GitBranch, Palette, RotateCcw, Settings2, Terminal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { GetDefaultShellCommand } from '../../wailsjs/go/backend/App';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function SettingsPage() {
 	const { appState } = UseAppState();
@@ -60,6 +60,16 @@ export default function SettingsPage() {
 		updateSettings({
 			terminal: {
 				...settings.terminal,
+				[key]: value,
+			},
+		});
+		setHasUnsavedChanges(false); // Changes are auto-saved
+	};
+
+	const handleUISettingsChange = (key: string, value: any) => {
+		updateSettings({
+			ui: {
+				...settings.ui,
 				[key]: value,
 			},
 		});
@@ -116,6 +126,32 @@ export default function SettingsPage() {
 									))}
 								</DropdownMenuContent>
 							</DropdownMenu>
+						</div>
+					</CardContent>
+				</Card>
+
+				{/* UI Settings */}
+				<Card>
+					<CardHeader className="pb-3">
+						<CardTitle className="flex items-center gap-2 text-lg">
+							<Settings2 className="w-4 h-4" />
+							General
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="flex items-center justify-between">
+							<div className="space-y-0.5">
+								<Label className="text-sm font-medium">Auto-show Commit Details</Label>
+								<p className="text-xs text-muted-foreground">
+									Automatically open the commit details pane when selecting commits
+								</p>
+							</div>
+							<Checkbox
+								checked={settings.ui.autoShowCommitDetails}
+								onCheckedChange={(checked) =>
+									handleUISettingsChange('autoShowCommitDetails', checked)
+								}
+							/>
 						</div>
 					</CardContent>
 				</Card>

@@ -28,6 +28,11 @@ type AppConfig struct {
 type AppSettings struct {
 	Git      GitSettings                    `json:"git"`
 	Terminal command_utils.TerminalSettings `json:"terminal"`
+	UI       UISettings                     `json:"ui"`
+}
+
+type UISettings struct {
+	AutoShowCommitDetails bool `json:"autoShowCommitDetails"`
 }
 
 type GitSettings struct {
@@ -54,6 +59,9 @@ func LoadAppConfig() (*AppConfig, error) {
 					FontSize:       14,
 					ColorScheme:    "default",
 					CursorStyle:    "block",
+				},
+				UI: UISettings{
+					AutoShowCommitDetails: true, // Default to true for existing behavior
 				},
 			},
 			GitReposMap:     make(map[string]RepoContext),
