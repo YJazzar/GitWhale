@@ -11,12 +11,11 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 	const { diffState } = useRepoState(repoPath);
 
 	const navigateToCommitDiff = async (firstCommitHash: string, secondCommitHash: string | undefined) => {
-		const resolvedSecondRef = !secondCommitHash ? `${firstCommitHash}^` : secondCommitHash;
 		navigateToCommitDiffWithOptions({
 			repoPath: repoPath,
 			fromRef: firstCommitHash,
-			toRef: resolvedSecondRef,
-			filePathFilters: [],
+			toRef: secondCommitHash ?? "",
+			isSingleCommitDiff: secondCommitHash === "" || secondCommitHash === undefined
 		});
 	};
 

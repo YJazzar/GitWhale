@@ -60,7 +60,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 				repoPath: repoPath,
 				fromRef: fromRef,
 				toRef: toRef,
-				filePathFilters: [],
+				isSingleCommitDiff: false
 			};
 			navigateToCommitDiffWithOptions(diffOptions);
 

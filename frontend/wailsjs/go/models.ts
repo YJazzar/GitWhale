@@ -354,7 +354,7 @@ export namespace git_operations {
 	    repoPath: string;
 	    fromRef: string;
 	    toRef: string;
-	    filePathFilters: string[];
+	    isSingleCommitDiff: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new DiffOptions(source);
@@ -365,7 +365,7 @@ export namespace git_operations {
 	        this.repoPath = source["repoPath"];
 	        this.fromRef = source["fromRef"];
 	        this.toRef = source["toRef"];
-	        this.filePathFilters = source["filePathFilters"];
+	        this.isSingleCommitDiff = source["isSingleCommitDiff"];
 	    }
 	}
 	export class FileInfo {
@@ -438,6 +438,7 @@ export namespace git_operations {
 	    title: string;
 	    directoryData?: Directory;
 	    hasDiffData: boolean;
+	    commitInformation?: DetailedCommitInfo;
 	
 	    static createFrom(source: any = {}) {
 	        return new DiffSession(source);
@@ -456,6 +457,7 @@ export namespace git_operations {
 	        this.title = source["title"];
 	        this.directoryData = this.convertValues(source["directoryData"], Directory);
 	        this.hasDiffData = source["hasDiffData"];
+	        this.commitInformation = this.convertValues(source["commitInformation"], DetailedCommitInfo);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

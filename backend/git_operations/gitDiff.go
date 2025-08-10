@@ -16,24 +16,31 @@ import (
 )
 
 type DiffSession struct {
-	SessionId     string     `json:"sessionId"`
-	RepoPath      string     `json:"repoPath"`
-	FromRef       string     `json:"fromRef"`
-	ToRef         string     `json:"toRef"`
-	LeftPath      string     `json:"leftPath"`
-	RightPath     string     `json:"rightPath"`
-	CreatedAt     time.Time  `json:"createdAt"`
-	LastAccessed  time.Time  `json:"lastAccessed"`
-	Title         string     `json:"title"`
-	DirectoryData *Directory `json:"directoryData"`
-	HasDiffData   bool       `json:"hasDiffData"`
+	SessionId         string              `json:"sessionId"`
+	RepoPath          string              `json:"repoPath"`
+	FromRef           string              `json:"fromRef"`
+	ToRef             string              `json:"toRef"`
+	LeftPath          string              `json:"leftPath"`
+	RightPath         string              `json:"rightPath"`
+	CreatedAt         time.Time           `json:"createdAt"`
+	LastAccessed      time.Time           `json:"lastAccessed"`
+	Title             string              `json:"title"`
+	DirectoryData     *Directory          `json:"directoryData"`
+	HasDiffData       bool                `json:"hasDiffData"`
+	CommitInformation *DetailedCommitInfo `json:"commitInformation"`
 }
 
 type DiffOptions struct {
-	RepoPath        string   `json:"repoPath"`
-	FromRef         string   `json:"fromRef"`         // Source ref (commit, branch, tag)
-	ToRef           string   `json:"toRef"`           // Target ref (commit, branch, tag, or empty for working tree)
-	FilePathFilters []string `json:"filePathFilters"` // Optional: specific files/dirs to diff
+	RepoPath string `json:"repoPath"`
+
+	// Source ref (commit, branch, tag)
+	FromRef string `json:"fromRef"`
+
+	// Target ref (commit, branch, tag, or empty for working tree)
+	ToRef string `json:"toRef"`
+
+	// Whether the "toRef" property is trying to reference the user's working directory changes, or if the user is diffing a single commit with it's parent
+	IsSingleCommitDiff bool `json:"isSingleCommitDiff"`
 }
 
 // Parses script output and re-logs [DIFF-SCRIPT] messages through backend Logger
@@ -134,6 +141,10 @@ func saveNewHelperDiffScript() (string, error) {
 func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 	logger.Log.Info("Creating diff session for repo: %s, from: %s, to: %s", options.RepoPath, options.FromRef, options.ToRef)
 
+	if options.IsSingleCommitDiff {
+		options.ToRef = fmt.Sprintf("%s^", options.FromRef)
+	}
+
 	// Step 1: Validate all inputs
 	if err := validateDiffInputs(options); err != nil {
 		return nil, err
@@ -157,21 +168,31 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 
 	// Step 4: Create session object
 	session := &DiffSession{
-		SessionId:     sessionId,
-		RepoPath:      options.RepoPath,
-		FromRef:       options.FromRef,
-		ToRef:         options.ToRef,
-		LeftPath:      leftPath,
-		RightPath:     rightPath,
-		CreatedAt:     time.Now(),
-		LastAccessed:  time.Now(),
-		Title:         generateDiffTitle(options),
-		DirectoryData: nil,
-		HasDiffData:   changesFound,
+		SessionId:         sessionId,
+		RepoPath:          options.RepoPath,
+		FromRef:           options.FromRef,
+		ToRef:             options.ToRef,
+		LeftPath:          leftPath,
+		RightPath:         rightPath,
+		CreatedAt:         time.Now(),
+		LastAccessed:      time.Now(),
+		Title:             generateDiffTitle(options),
+		DirectoryData:     nil,
+		HasDiffData:       changesFound,
+		CommitInformation: nil,
 	}
 
 	if !changesFound {
+		CleanupDiffSession(sessionId)
 		return session, nil
+	}
+
+	if options.IsSingleCommitDiff {
+		session.CommitInformation, err = GetDetailedCommitInfo(options.RepoPath, options.FromRef)
+		if err != nil {
+			CleanupDiffSession(sessionId)
+			return nil, fmt.Errorf("failed to load detailed information about the commit %s", options.FromRef)
+		}
 	}
 
 	// Step 5: Load directory structure
