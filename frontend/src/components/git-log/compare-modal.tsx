@@ -32,7 +32,6 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 	// Form state
 	const [fromRef, setFromRef] = useState('HEAD');
 	const [toRef, setToRef] = useState('');
-	const [showAdvanced, setShowAdvanced] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const { navigateToCommitDiffWithOptions } = useNavigateToCommitDiffs(repoPath);
 
@@ -69,11 +68,6 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 			setIsLoading(false);
 		}
 	};
-
-	const onToggleAdvanced = () => {
-		setShowAdvanced(!showAdvanced);
-	};
-
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
@@ -159,7 +153,11 @@ const QuickOptionsDropdown = ({
 			<DropdownMenuLabel>Quick Diff Options</DropdownMenuLabel>
 			<DropdownMenuSeparator />
 			{options.map((option, index) => (
-				<DropdownMenuItem key={index} onClick={() => onSelect(option)}>
+				<DropdownMenuItem 
+					key={index} 
+					onClick={() => onSelect(option)}
+					className="cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+				>
 					{option.label}
 				</DropdownMenuItem>
 			))}

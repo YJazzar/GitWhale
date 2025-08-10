@@ -64,9 +64,7 @@ export function RefSelectorInput({
 
 	// Add HEAD to the refs list and create a flat structure
 	const allRefs = useMemo(() => {
-		const refs = [
-			{ value: 'HEAD', label: 'HEAD', type: 'commit' },
-		];
+		const refs = [{ value: 'HEAD', label: 'HEAD', type: 'commit' }];
 		return refs.concat(
 			allRepoRefs.map((ref) => ({
 				value: ref.name,
@@ -114,7 +112,7 @@ export function RefSelectorInput({
 	};
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={open} onOpenChange={setOpen} modal={true}>
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
@@ -172,7 +170,7 @@ export function RefSelectorInput({
 								</CommandGroup>
 							);
 						})}
-						<CommandGroup heading={getRefTypeLabel('')}>
+						<CommandGroup heading={''}>
 							<CommandItem
 								value={commandSearchInput}
 								onSelect={(currentValue) => {
