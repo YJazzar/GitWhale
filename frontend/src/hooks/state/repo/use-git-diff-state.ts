@@ -1,8 +1,8 @@
 import { useToast } from "@/hooks/use-toast";
 import Logger from "@/utils/logger";
 import { atom, useAtom } from "jotai";
-import { StartDiffSession, EndDiffSession } from "wailsjs/go/backend/App";
-import { git_operations } from "wailsjs/go/models";
+import { StartDiffSession, EndDiffSession } from "../../../../wailsjs/go/backend/App";
+import { git_operations } from "../../../../wailsjs/go/models";
 import { useFileManagerStatesCleanup } from "../use-file-manager-state";
 
 // Store diff sessions per repository path

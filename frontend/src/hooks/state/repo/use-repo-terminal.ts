@@ -2,9 +2,9 @@ import Logger from "@/utils/logger";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { Terminal } from "@xterm/xterm";
-import { CleanupTerminalSession, OnTerminalSessionWasResized, InitNewTerminalSession } from "wailsjs/go/backend/App";
-import { command_utils } from "wailsjs/go/models";
-import { EventsOff, EventsOn, EventsEmit } from "wailsjs/runtime/runtime";
+import { CleanupTerminalSession, OnTerminalSessionWasResized, InitNewTerminalSession } from "../../../../wailsjs/go/backend/App";
+import { command_utils } from "../../../../wailsjs/go/models";
+import { EventsOff, EventsOn, EventsEmit } from "../../../../wailsjs/runtime/runtime";
 
 
 // Map color schemes to xterm themes

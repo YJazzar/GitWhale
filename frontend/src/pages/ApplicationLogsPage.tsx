@@ -8,8 +8,8 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { LOG_LEVELS, useAppLogState } from '@/hooks/state/use-app-log-state';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { LOG_LEVELS, LogLevel, useAppLogState } from '@/hooks/state/use-log-state';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { ChevronDown, Filter, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';

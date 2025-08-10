@@ -1,78 +1,66 @@
-import Logger from "@/utils/logger";
-import { atom, useAtom } from "jotai";
-import { useState, useEffect } from "react";
-import { RunGitLog, GetAllRefs, GitFetch } from "wailsjs/go/backend/App";
-import { git_operations } from "wailsjs/go/models";
+import Logger from '@/utils/logger';
+import { atom, useAtom } from 'jotai';
+import { useState, useEffect } from 'react';
+import { RunGitLog, GetAllRefs, GitFetch } from '../../../../wailsjs/go/backend/App';
+import { git_operations } from '../../../../wailsjs/go/models';
+import { useMapPrimitive } from '../use-map-primitive';
 
-// Store git log data per repository path
+// Map because each repo path needs to have the same data
 const gitLogDataAtom = atom<Map<string, git_operations.GitLogCommitInfo[]>>(new Map());
-
 const isLoadingGitDataAtom = atom<Map<string, boolean>>(new Map());
-
-// Store selected commits for details panel per repository path. Key is repoPath, value is commitHash
 const selectedCommitAtom = atom<Map<string, string[]>>(new Map());
-
-// Store git log options/filters per repository path
 const gitLogOptionsAtom = atom<Map<string, git_operations.GitLogOptions>>(new Map());
-
-// Store git refs (branches and tags) per repository path
 const gitRefsAtom = atom<Map<string, git_operations.GitRef[]>>(new Map());
 
 // MARK: Git log state management functions
 
 export function getLogState(repoPath: string) {
-	const [logData, setLogData] = useAtom(gitLogDataAtom);
-	const [isLoadingMap, setIsLoadingMap] = useAtom(isLoadingGitDataAtom);
-	const [selectedCommits, setSelectedCommits] = useAtom(selectedCommitAtom);
-	const [gitRefs, setGitRefs] = useAtom(gitRefsAtom);
-	const [logOptionsMap, setLogOptionsMap] = useAtom(gitLogOptionsAtom);
+	const _isLoadingPrim = useMapPrimitive(isLoadingGitDataAtom, repoPath);
+
+	// Store git log data
+	const _gitLogDataPrim = useMapPrimitive(gitLogDataAtom, repoPath);
+
+	// Store git log options/filters per repository path
+	const _gitLogOptionsPrim = useMapPrimitive(gitLogOptionsAtom, repoPath);
+
+	// When a user clicks to open a commit (the quick view kind that's embedded in the git-log-view)
+	const _selectedCommitsPrim = useMapPrimitive(selectedCommitAtom, repoPath);
+
+	// Store git refs (branches and tags) per repository path
+	const _gitRefsPrim = useMapPrimitive(gitRefsAtom, repoPath);
 
 	const [needsToReload, setNeedsToReload] = useState(false);
 
-	const isLoading = isLoadingMap.get(repoPath) || false;
-	const setIsLoadingGitData = (newValue: boolean) => {
-		const newMap = new Map(isLoadingMap);
-		newMap.set(repoPath, newValue);
-		setIsLoadingMap(newMap);
-	};
-
-	// When a user clicks to open a commit (the quick view kind that's embedded in the git-log-view)
-	const __setSelectedCommit = (commitHash: string[]) => {
-		const newMap = new Map(selectedCommits);
-		newMap.set(repoPath, commitHash);
-		setSelectedCommits(newMap);
-	};
-
-	const currentSelectedCommits = selectedCommits.get(repoPath) ?? [];
+	const currentSelectedCommits = _selectedCommitsPrim.value ?? [];
 	const addToSelectedCommitsList = (commitHash: string) => {
-		const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash)
+		const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash);
 
-		// Add the commit 
+		// Add the commit
 		if (previousIndex === -1) {
-			__setSelectedCommit([...currentSelectedCommits, commitHash]);
+			_selectedCommitsPrim.set([...currentSelectedCommits, commitHash]);
 			return;
 		}
 
 		// If it's already in the list of selected commits, move it around to be the last commit
 		// (this matters for the commit details pane)
-		let filteredSelectedCommits = [...currentSelectedCommits]
-		filteredSelectedCommits.splice(previousIndex, 1)
-		filteredSelectedCommits.push(commitHash)
-		__setSelectedCommit(filteredSelectedCommits)
+		let filteredSelectedCommits = [...currentSelectedCommits];
+		filteredSelectedCommits.splice(previousIndex, 1);
+		filteredSelectedCommits.push(commitHash);
+		_selectedCommitsPrim.set(filteredSelectedCommits);
 	};
 
-	const removeFromSelectedCommitsList = (commitHash: string) => { 
-		const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash)
+	const removeFromSelectedCommitsList = (commitHash: string) => {
+		const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash);
 		if (previousIndex === -1) {
 			return;
 		}
 
-		let filteredSelectedCommits = [...currentSelectedCommits]
-		filteredSelectedCommits.splice(previousIndex, 1)
-		__setSelectedCommit(filteredSelectedCommits)
-	}
+		let filteredSelectedCommits = [...currentSelectedCommits];
+		filteredSelectedCommits.splice(previousIndex, 1);
+		_selectedCommitsPrim.set(filteredSelectedCommits);
+	};
 
-	const currentLogOptions = logOptionsMap.get(repoPath) || {
+	const currentLogOptions = _gitLogOptionsPrim.value || {
 		author: undefined,
 		commitsToLoad: undefined,
 		fromRef: undefined,
@@ -80,62 +68,44 @@ export function getLogState(repoPath: string) {
 		toRef: undefined,
 	};
 
-	const setLogViewOptions = (options: git_operations.GitLogOptions) => {
-		const newMap = new Map(logOptionsMap);
-		newMap.set(repoPath, options);
-		setLogOptionsMap(newMap);
-	};
-
 	const refreshLogsInner = async (options: git_operations.GitLogOptions) => {
 		const newLogs = await RunGitLog(repoPath, options);
-
-		const newMap = new Map(logData);
-		newMap.set(repoPath, newLogs);
-		setLogData(newMap);
+		_gitLogDataPrim.set(newLogs);
 	};
 
 	const loadAllRefsInner = async () => {
 		const newRefs = await GetAllRefs(repoPath);
-
-		const newMap = new Map(gitRefs);
-		newMap.set(repoPath, newRefs);
-		setGitRefs(newMap);
+		_gitRefsPrim.set(newRefs);
 	};
 
 	const refreshLogAndRefs = async () => {
-		if (isLoading) {
+		if (_isLoadingPrim.value) {
 			return;
 		}
 
 		try {
-			setIsLoadingGitData(true);
+			_isLoadingPrim.set(true);
 
 			await Promise.all([loadAllRefsInner(), refreshLogsInner(currentLogOptions)]);
 		} catch (error) {
 			Logger.error(`Failed to reload refs: ${error}`, 'RepoLogView');
 		} finally {
-			setIsLoadingGitData(false);
+			_isLoadingPrim.set(false);
 			setNeedsToReload(false);
 		}
 	};
 
 	const refetchRepo = async () => {
 		try {
-			setIsLoadingGitData(true);
+			_isLoadingPrim.set(true);
 			await GitFetch(repoPath);
 			await Promise.all([loadAllRefsInner(), refreshLogsInner(currentLogOptions)]);
 		} catch (error) {
 			Logger.error(`Failed to fetch: ${error}`, 'git-log-toolbar');
 		} finally {
-			setIsLoadingGitData(false);
+			_isLoadingPrim.set(false);
 		}
 	};
-
-	// Get git log data for this repo
-	const logs = logData.get(repoPath);
-
-	// All the refs that git is tracking for this repo
-	const refs = gitRefs.get(repoPath);
 
 	useEffect(() => {
 		if (needsToReload) {
@@ -144,49 +114,40 @@ export function getLogState(repoPath: string) {
 	}, [needsToReload]);
 
 	return {
-		isLoading: isLoadingMap.get(repoPath) || false,
+		isLoading: _isLoadingPrim.value || false,
 
 		// Get git log data for this repo
-		logs: logs || [],
+		logs: _gitLogDataPrim.value,
 
 		// All the refs that git is tracking for this repo
-		refs,
+		refs: _gitRefsPrim.value,
 
 		refreshLogAndRefs: () => {
 			setNeedsToReload(true);
 		},
+
 		refetchRepo,
 
 		// Get selected commit for this repo
 		selectedCommits: {
-			currentSelectedCommits, 
-			addToSelectedCommitsList, 
-			removeFromSelectedCommitsList
+			currentSelectedCommits,
+			addToSelectedCommitsList,
+			removeFromSelectedCommitsList,
 		},
 
 		// Get log options for this repo
 		options: {
 			get: () => currentLogOptions,
-			set: setLogViewOptions,
+			set: _gitLogOptionsPrim.set,
 		},
 
 		// Clear all log state for this repo
 		disposeLogState: () => {
-			const newLogDataMap = new Map(logData);
-			newLogDataMap.delete(repoPath);
-			setLogData(newLogDataMap);
-
-			const newSelectedMap = new Map(selectedCommits);
-			newSelectedMap.delete(repoPath);
-			setSelectedCommits(newSelectedMap);
-
-			const newGitRefsMap = new Map(gitRefs);
-			newGitRefsMap.delete(repoPath);
-			setGitRefs(newGitRefsMap);
-
-			const newOptionsMap = new Map(logOptionsMap);
-			newOptionsMap.delete(repoPath);
-			setLogOptionsMap(newOptionsMap);
+			_isLoadingPrim.kill()
+			_gitLogDataPrim.kill()
+			_selectedCommitsPrim.kill()
+			_gitRefsPrim.kill()
+			_gitLogOptionsPrim.kill()
 		},
 	};
 }
