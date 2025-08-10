@@ -153,9 +153,9 @@ function CompareButton({ repoPath }: { repoPath: string }) {
 					size="sm"
 					disabled={logState.isLoading}
 					onClick={() => setShowCompareModal(true)}
-					className="rounded-l-none border-l-0 pl-1 pr-1 min-w-0"
+					className="rounded-l-none border-l-0 pl-1 pr-1 min-w-0 "
 				>
-					<ChevronDown className="h-4 w-4 opacity-50" />
+					<ChevronDown className="h-4 w-4" />
 				</Button>
 			</div>
 

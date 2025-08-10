@@ -64,7 +64,9 @@ export function RefSelectorInput({
 
 	// Add HEAD to the refs list and create a flat structure
 	const allRefs = useMemo(() => {
-		const refs = [{ value: 'HEAD', label: 'HEAD', type: 'head' }];
+		const refs = [
+			{ value: 'HEAD', label: 'HEAD', type: 'commit' },
+		];
 		return refs.concat(
 			allRepoRefs.map((ref) => ({
 				value: ref.name,
@@ -76,8 +78,6 @@ export function RefSelectorInput({
 
 	const getRefIcon = (type: string) => {
 		switch (type) {
-			case 'head':
-				return <GitCommitHorizontal className="w-4 h-4 mr-2" />;
 			case 'tag':
 				return <Tag className="w-4 h-4 mr-2" />;
 			case 'commit':
@@ -89,8 +89,8 @@ export function RefSelectorInput({
 
 	const getRefTypeLabel = (type: string) => {
 		switch (type) {
-			case 'head':
-				return 'HEAD';
+			case 'commit':
+				return '';
 			case 'localBranch':
 				return 'Local Branches';
 			case 'remoteBranch':
@@ -141,7 +141,7 @@ export function RefSelectorInput({
 					<CommandList>
 						<CommandEmpty>No references found.</CommandEmpty>
 						{/* Group by type */}
-						{['head', 'localBranch', 'remoteBranch', 'tag'].map((type) => {
+						{['commit', 'localBranch', 'remoteBranch', 'tag'].map((type) => {
 							const refsOfType = allRefs.filter((ref) => ref.type === type);
 							if (refsOfType.length === 0) return null;
 

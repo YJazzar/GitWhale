@@ -8,11 +8,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { ArrowRight, ChevronDown, FileText, FolderTree, GitBranch, GitCompare, Loader2 } from 'lucide-react';
+import { ArrowRight, ChevronDown, GitCompare, Loader2 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { git_operations } from 'wailsjs/go/models';
 import {
@@ -23,7 +20,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '../ui/dialog';
-import { LabeledRefSelectorInput, RefSelectorInput } from './ref-selector-input';
+import { LabeledRefSelectorInput } from './ref-selector-input';
 
 interface CompareModalProps {
 	repoPath: string;
@@ -32,22 +29,17 @@ interface CompareModalProps {
 }
 
 export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps) {
-	const { logState } = useRepoState(repoPath);
-
 	// Form state
 	const [fromRef, setFromRef] = useState('HEAD');
 	const [toRef, setToRef] = useState('');
-	const [filePathFilters, setFilePathFilters] = useState('');
 	const [showAdvanced, setShowAdvanced] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const { navigateToCommitDiffWithOptions } = useNavigateToCommitDiffs(repoPath);
 
 	const quickOptions = useMemo(
 		() => [
-			{ label: 'Current Changes vs HEAD', fromRef: 'HEAD', toRef: '' },
-			{ label: 'Current Changes vs Staged', fromRef: '', toRef: 'HEAD' },
-			{ label: 'HEAD vs Previous Commit', fromRef: 'HEAD~1', toRef: 'HEAD' },
-			{ label: 'HEAD vs 2 Commits Back', fromRef: 'HEAD~2', toRef: 'HEAD' },
+			{ label: 'Previous Commit vs HEAD', fromRef: 'HEAD~1', toRef: 'HEAD' },
+			{ label: '2 Commits Back vs HEAD', fromRef: 'HEAD~2', toRef: 'HEAD' },
 		],
 		[]
 	);
@@ -62,19 +54,11 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 
 		setIsLoading(true);
 		try {
-			// Create the diff session using the same logic as RepoDiffView
-			const filePathFiltersArray = filePathFilters
-				? filePathFilters
-						.split(',')
-						.map((p) => p.trim())
-						.filter(Boolean)
-				: [];
-
 			const diffOptions: git_operations.DiffOptions = {
 				repoPath: repoPath,
 				fromRef: fromRef,
 				toRef: toRef,
-				filePathFilters: filePathFiltersArray,
+				filePathFilters: [],
 			};
 			navigateToCommitDiffWithOptions(diffOptions);
 
@@ -84,6 +68,10 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	const onToggleAdvanced = () => {
+		setShowAdvanced(!showAdvanced);
 	};
 
 	return (
@@ -100,39 +88,39 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 						Compare References
 					</DialogTitle>
 					<DialogDescription>
-						Configure and launch a diff comparison between different Git references.
+						Launch a diff comparison between different Git references
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="space-y-4 overflow-y-auto max-h-[60vh] px-1">
-					{/* Quick Options */}
-					<div className="flex items-center justify-between">
-						<Label className="text-sm font-medium">Quick Options</Label>
-						<QuickOptionsDropdown options={quickOptions} onSelect={setQuickOption} />
-					</div>
+					<div className="space-y-3">
+						<div className="flex items-end gap-4">
+							<div className="flex-1 min-w-0">
+								<LabeledRefSelectorInput
+									repoPath={repoPath}
+									label="Compare From"
+									currentGitRef={fromRef}
+									onUpdateGitRef={setFromRef}
+									className="min-w-48 max-w-full"
+								/>
+							</div>
 
-					{/* Simple vs Advanced Form */}
-					{!showAdvanced ? (
-						<SimpleForm
-							repoPath={repoPath}
-							fromRef={fromRef}
-							toRef={toRef}
-							setFromRef={setFromRef}
-							setToRef={setToRef}
-							refs={logState.refs ?? []}
-							onToggleAdvanced={() => setShowAdvanced(true)}
-						/>
-					) : (
-						<AdvancedForm
-							fromRef={fromRef}
-							toRef={toRef}
-							filePathFilters={filePathFilters}
-							setFromRef={setFromRef}
-							setToRef={setToRef}
-							setFilePathFilters={setFilePathFilters}
-							onToggleSimple={() => setShowAdvanced(false)}
-						/>
-					)}
+							<ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mb-2" />
+
+							<div className="flex-1 min-w-0">
+								<LabeledRefSelectorInput
+									repoPath={repoPath}
+									label="Compare To"
+									currentGitRef={toRef}
+									onUpdateGitRef={setToRef}
+									className="min-w-48 max-w-full"
+								/>
+							</div>
+						</div>
+						<div className="flex justify-end">
+							<QuickOptionsDropdown options={quickOptions} onSelect={setQuickOption} />
+						</div>
+					</div>
 				</div>
 
 				<DialogFooter className="pt-4 border-t">
@@ -177,114 +165,4 @@ const QuickOptionsDropdown = ({
 			))}
 		</DropdownMenuContent>
 	</DropdownMenu>
-);
-
-const SimpleForm = ({
-	repoPath,
-	fromRef,
-	toRef,
-	setFromRef,
-	setToRef,
-	refs,
-	onToggleAdvanced,
-}: {
-	repoPath: string;
-	fromRef: string;
-	toRef: string;
-	setFromRef: (value: string) => void;
-	setToRef: (value: string) => void;
-	refs: git_operations.GitRef[];
-	onToggleAdvanced: () => void;
-}) => (
-	<div className="space-y-3">
-		<div className="flex items-center gap-4">
-			<div className="flex-1 min-w-0">
-				<LabeledRefSelectorInput
-					repoPath={repoPath}
-					label="Compare From"
-					currentGitRef={fromRef}
-					onUpdateGitRef={setFromRef}
-					className='min-w-48 max-w-full'
-				/>
-			</div>
-			<ArrowRight className="w-4 h-4 text-muted-foreground  flex-shrink-0" />
-			<div className="flex-1 min-w-0">
-				<LabeledRefSelectorInput
-					repoPath={repoPath}
-					label="Compare To"
-					currentGitRef={toRef}
-					onUpdateGitRef={setToRef}
-					className='min-w-48 max-w-full'
-				/>
-			</div>
-		</div>
-		<div className="flex justify-end">
-			<Button onClick={onToggleAdvanced} variant="ghost" size="sm">
-				Advanced
-			</Button>
-		</div>
-	</div>
-);
-
-const AdvancedForm = ({
-	fromRef,
-	toRef,
-	filePathFilters,
-	setFromRef,
-	setToRef,
-	setFilePathFilters,
-	onToggleSimple,
-}: {
-	fromRef: string;
-	toRef: string;
-	filePathFilters: string;
-	setFromRef: (value: string) => void;
-	setToRef: (value: string) => void;
-	setFilePathFilters: (value: string) => void;
-	onToggleSimple: () => void;
-}) => (
-	<div className="space-y-3 text-sm">
-		<div className="flex items-center gap-4">
-			<div className="flex items-center gap-3 flex-1">
-				<Label htmlFor="fromRefInput" className="text-xs font-medium whitespace-nowrap">
-					Compare From
-				</Label>
-				<Input
-					id="fromRefInput"
-					value={fromRef}
-					onChange={(e) => setFromRef(e.target.value)}
-					placeholder="HEAD, branch, tag, commit hash..."
-					className="text-xs h-8 flex-1"
-				/>
-			</div>
-			<ArrowRight className="w-4 h-4 text-muted-foreground" />
-			<div className="flex items-center gap-3 flex-1">
-				<Label htmlFor="toRefInput" className="text-xs font-medium whitespace-nowrap">
-					Compare To
-				</Label>
-				<Input
-					id="toRefInput"
-					value={toRef}
-					onChange={(e) => setToRef(e.target.value)}
-					placeholder="Leave empty for current changes"
-					className="text-xs h-8 flex-1"
-				/>
-			</div>
-			<Button onClick={onToggleSimple} variant="ghost" size="sm">
-				Simple
-			</Button>
-		</div>
-		<div className="space-y-1">
-			<Label htmlFor="filePaths" className="text-xs">
-				File Paths (optional)
-			</Label>
-			<Input
-				id="filePaths"
-				value={filePathFilters}
-				onChange={(e) => setFilePathFilters(e.target.value)}
-				placeholder="src/, README.md, *.js (comma-separated)"
-				className="text-xs h-8"
-			/>
-		</div>
-	</div>
 );
