@@ -1,12 +1,12 @@
 import { ChevronDown, ChevronRight, File, Folder, FolderOpen } from 'lucide-react';
 import { KeyboardEventHandler, useState } from 'react';
-import { git_operations } from '../../wailsjs/go/models';
-import { Button } from './ui/button';
+import { git_operations } from '../../../wailsjs/go/models';
+import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TabsManagerHandle } from './file-tabs';
+import { TabsManagerHandle } from '../file-tabs';
 import { TabProps } from '@/hooks/state/use-file-manager-state';
-import FileDiffView from './file-diff-view';
+import FileDiffView from '../file-diff-view';
 
 interface FileTreeProps {
 	directoryData: git_operations.Directory;
@@ -32,7 +32,7 @@ export function FileTree({ directoryData, tabManagerHandler, className }: FileTr
 	};
 
 	return (
-		<TooltipProvider delayDuration={500}>
+		<TooltipProvider delayDuration={250}>
 			<div className={cn('w-full h-full overflow-auto bg-background', className)}>
 				<div className="p-2">
 					<TreeNode directory={directoryData} onFileClick={onOpenFile} depth={0} />

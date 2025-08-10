@@ -15,12 +15,10 @@ export function CommitMessage({ commit }: CommitMessageProps) {
 
 	return (
 		<>
-			<Separator />
 			<div className="space-y-2">
-				<h4 className="text-sm font-medium text-muted-foreground">Commit Message</h4>
 				<Card>
-					<CardContent className="p-4">
-						<pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
+					<CardContent className="p-2">
+						<pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">
 							{commitMessage}
 						</pre>
 					</CardContent>

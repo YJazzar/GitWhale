@@ -102,7 +102,12 @@ export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewPr
 				<div className="flex items-start justify-between">
 					<div className="flex-1 min-w-0">
 						<CardTitle className="text-lg flex items-center gap-2">
-							<CommitHash repoPath={repoPath} commitHash={commitHash} isMerge={isMergeCommit} enableCopyHash/>
+							<CommitHash
+								repoPath={repoPath}
+								commitHash={commitHash}
+								isMerge={isMergeCommit}
+								enableCopyHash
+							/>
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2">
@@ -121,11 +126,11 @@ export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewPr
 
 			<ScrollArea className="flex-1">
 				<CardContent className="space-y-6">
-					{/* Author Information */}
-					<CommitAuthorInfo commit={commit} />
-
 					{/* Commit Message */}
 					<CommitMessage commit={commit} />
+
+					{/* Author Information */}
+					<CommitAuthorInfo commit={commit} />
 
 					{/* Refs (branches and tags) */}
 					<CommitRefs commit={commit} />

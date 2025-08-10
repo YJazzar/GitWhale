@@ -14,8 +14,8 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 		navigateToCommitDiffWithOptions({
 			repoPath: repoPath,
 			fromRef: firstCommitHash,
-			toRef: secondCommitHash ?? "",
-			isSingleCommitDiff: secondCommitHash === "" || secondCommitHash === undefined
+			toRef: secondCommitHash ?? '',
+			isSingleCommitDiff: secondCommitHash === '' || secondCommitHash === undefined,
 		});
 	};
 
@@ -69,5 +69,5 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 		sidebar.addDynamicItem(commitItem);
 	};
 
-	return {navigateToCommitDiffWithOptions, navigateToCommitDiff};
+	return { navigateToCommitDiffWithOptions, navigateToCommitDiff };
 }

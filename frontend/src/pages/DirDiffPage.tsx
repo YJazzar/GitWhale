@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { GetStartupDirDiffDirectory } from '../../wailsjs/go/backend/App';
 import { git_operations } from '../../wailsjs/go/models';
 import { EmptyState } from '@/components/empty-state';
-import { FileTree } from '@/components/file-tree';
+import { FileTree } from '@/components/git-diff/file-tree';
 
 const directoryDataAtom = atom<git_operations.Directory>();
 

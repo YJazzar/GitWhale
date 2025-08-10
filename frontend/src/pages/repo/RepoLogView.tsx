@@ -117,8 +117,8 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 
 					{shouldShowPane && (
 						<>
-							<ResizableHandle />
-							<ResizablePanel defaultSize={panelSizes[1]} minSize={20}>
+							<ResizableHandle withHandle/>
+							<ResizablePanel defaultSize={panelSizes[1]} minSize={10}>
 								<CommitPreview
 									commitHash={selectedCommitForDetails}
 									repoPath={repoPath}
