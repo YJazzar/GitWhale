@@ -8,6 +8,7 @@ import { UseAppState } from '@/hooks/state/use-app-state';
 import { ChevronUp } from 'lucide-react';
 import { useEffect } from 'react';
 import { CommitPreview } from '@/components/commit-preview/commit-preview';
+import { usePersistentPanelSizes } from '@/hooks/use-persistent-panel-sizes';
 
 export type CommitSelectType = 'primarySelect' | 'secondarySelect' | 'unselect';
 
@@ -16,6 +17,9 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { appState } = UseAppState();
 
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
+
+	// Persistent panel sizes
+	const [panelSizes, setPanelSizes] = usePersistentPanelSizes('gitwhale-repo-log-panel-sizes', [60, 40]);
 
 	if (!repoPath) {
 		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
@@ -88,13 +92,21 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	// Determine if we should show the bottom indicator to re-open the pane
 	const shouldShowBottomIndicator = selectedCommitForDetails && !logState.commitDetailsPane.shouldShow;
 	const selectedCommitShortHash = selectedCommitForDetails?.slice(0, 7);
+
+	// Handle panel layout changes to persist sizes
+	const handleLayoutChange = (sizes: number[]) => {
+		if (shouldShowPane && sizes.length === 2) {
+			setPanelSizes(sizes);
+		}
+	};
+
 	return (
 		<div className="flex flex-col h-full">
 			<GitLogToolbar repoPath={repoPath} />
 
 			<div className="flex-1 min-h-0 w-full relative">
-				<ResizablePanelGroup direction="vertical" className="h-full">
-					<ResizablePanel defaultSize={shouldShowPane ? 60 : 100} minSize={30}>
+				<ResizablePanelGroup direction="vertical" className="h-full" onLayout={handleLayoutChange}>
+					<ResizablePanel defaultSize={shouldShowPane ? panelSizes[0] : 100} minSize={30}>
 						<GitLogGraph
 							repoPath={repoPath}
 							onCommitClick={onCommitSelect}
@@ -106,7 +118,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 					{shouldShowPane && (
 						<>
 							<ResizableHandle />
-							<ResizablePanel defaultSize={40} minSize={20}>
+							<ResizablePanel defaultSize={panelSizes[1]} minSize={20}>
 								<CommitPreview
 									commitHash={selectedCommitForDetails}
 									repoPath={repoPath}

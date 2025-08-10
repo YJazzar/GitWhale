@@ -6,6 +6,7 @@ import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { GitCompare } from 'lucide-react';
 import { useRef } from 'react';
 import { EmptyState } from './empty-state';
+import { usePersistentPanelSizes } from '@/hooks/use-persistent-panel-sizes';
 
 export interface DirDiffViewerProps {
 	repoPath: string;
@@ -16,6 +17,12 @@ export function DirDiffViewer(props: DirDiffViewerProps) {
 	const { repoPath, diffSessionID } = props;
 	const { diffState } = useRepoState(repoPath);
 	const fileTabRef = useRef<TabsManagerHandle>(null);
+
+	// Persistent panel sizes for file tree (left) and diff content (right)
+	const [panelSizes, setPanelSizes] = usePersistentPanelSizes(
+		'gitwhale-dir-diff-panel-sizes',
+		[25, 75] // file-tree: 25%, diff-content: 75%
+	);
 
 	const diffSession = diffState.sessionsData.find((s) => s.sessionId === diffSessionID);
 	if (!diffSession || !diffSession.directoryData) {
@@ -44,11 +51,18 @@ export function DirDiffViewer(props: DirDiffViewerProps) {
 		);
 	}
 
+	// Handle panel layout changes to persist sizes
+	const handleLayoutChange = (sizes: number[]) => {
+		if (sizes.length === 2) {
+			setPanelSizes(sizes);
+		}
+	};
+
 	return (
 		<div className="w-full h-full flex flex-row min-h-0">
-			<ResizablePanelGroup direction="horizontal">
+			<ResizablePanelGroup direction="horizontal" onLayout={handleLayoutChange}>
 				{/* Left pane that contains the file structure */}
-				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
+				<ResizablePanel id="file-tree-panel" defaultSize={panelSizes[0]} minSize={15}>
 					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
 						<FileTree directoryData={diffSession.directoryData} tabManagerHandler={fileTabRef} />
 					</div>
@@ -57,7 +71,7 @@ export function DirDiffViewer(props: DirDiffViewerProps) {
 				<ResizableHandle withHandle />
 
 				{/* Right pane containing the actual diffs */}
-				<ResizablePanel id="diff-content-panel">
+				<ResizablePanel id="diff-content-panel" defaultSize={panelSizes[1]}>
 					<div className="grow h-full flex flex-col min-h-0">
 						<FileTabs
 							key={diffSessionID}
