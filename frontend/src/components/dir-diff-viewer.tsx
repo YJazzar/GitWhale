@@ -17,7 +17,7 @@ export function DirDiffViewer(props: DirDiffViewerProps) {
 	const { diffState } = useRepoState(repoPath);
 	const fileTabRef = useRef<TabsManagerHandle>(null);
 
-	const diffSession = diffState.sessionData.find((s) => s.sessionId === diffSessionID);
+	const diffSession = diffState.sessionsData.find((s) => s.sessionId === diffSessionID);
 	if (!diffSession || !diffSession.directoryData) {
 		return (
 			<EmptyState

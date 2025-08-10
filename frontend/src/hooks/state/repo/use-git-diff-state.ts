@@ -9,38 +9,17 @@ import { useMapPrimitive } from '../use-map-primitive';
 // Store diff sessions per repository path
 const diffSessionsAtom = atom<Map<string, git_operations.DiffSession[]>>(new Map());
 
-// Store selected session ID per repository path
-const selectedDiffSessionAtom = atom<Map<string, string | null>>(new Map());
-
-// Store diff options/configuration per repository path
-const diffOptionsAtom = atom<
-	Map<
-		string,
-		{
-			fromRef: string;
-			toRef: string;
-			showAdvanced: boolean;
-			filePathFilters: string;
-		}
-	>
->(new Map());
-
 const isLoadingDiffAtom = atom<Map<string, boolean>>(new Map());
 
 // MARK: Diff state management functions
 
 export function getDiffState(repoPath: string) {
 	const _diffSessionsPrim = useMapPrimitive(diffSessionsAtom, repoPath);
-	const _selectedSessionIDPrim = useMapPrimitive(selectedDiffSessionAtom, repoPath);
-	const _diffOptionsPrim = useMapPrimitive(diffOptionsAtom, repoPath);
 	const _isLoadingPrim = useMapPrimitive(isLoadingDiffAtom, repoPath);
 
 	// Get selected session ID for this repo
-	const selectedSession = _diffSessionsPrim.value?.find(
-		(s) => s.sessionId === _selectedSessionIDPrim.value
-	);
 	const allSessionIDs = _diffSessionsPrim.value?.map((session) => session.sessionId) ?? [];
-	const allFileTabManagerSessionIDs = allSessionIDs.map(GetDiffSessionKeyForFileTabManagerSession)
+	const allFileTabManagerSessionIDs = allSessionIDs.map(GetDiffSessionKeyForFileTabManagerSession);
 	const { cleanupFileManagerStates } = useFileManagerStatesCleanup(allFileTabManagerSessionIDs);
 	const { toast } = useToast();
 
@@ -53,7 +32,6 @@ export function getDiffState(repoPath: string) {
 			Logger.debug(`Received session: ${session.sessionId}`, 'RepoDiffView');
 
 			_diffSessionsPrim.set(newSessions);
-			_selectedSessionIDPrim.set(session.sessionId);
 			return session;
 		} catch (error) {
 			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
@@ -76,10 +54,6 @@ export function getDiffState(repoPath: string) {
 			await EndDiffSession(sessionId);
 			const newSessions = _diffSessionsPrim.value?.filter((s) => s.sessionId !== sessionId) ?? [];
 			_diffSessionsPrim.set(newSessions);
-
-			if (_selectedSessionIDPrim.value === sessionId) {
-				_selectedSessionIDPrim.set(newSessions.length > 0 ? newSessions[0].sessionId : null);
-			}
 		} catch (error) {
 			Logger.error(`Failed to close diff session: ${error}`, 'RepoDiffView');
 			throw error;
@@ -93,37 +67,18 @@ export function getDiffState(repoPath: string) {
 		closeSession,
 
 		// Get current sessions for this repo
-		sessionData: _diffSessionsPrim.value ?? [],
-		selectedSession: {
-			setById: _selectedSessionIDPrim.set,
-			getId: () => _selectedSessionIDPrim.value,
-			getData: () => selectedSession,
-		},
-
-		// Get diff options for this repo
-		options: _diffOptionsPrim.value || {
-			fromRef: 'HEAD',
-			toRef: '',
-			showAdvanced: false,
-			filePathFilters: '',
-		},
-
-		// Set diff options for this repo
-		setOptions: _diffOptionsPrim.set,
+		sessionsData: _diffSessionsPrim.value ?? [],
 
 		// Clear all diff state for this repo
 		disposeSessions: () => {
 			_diffSessionsPrim.kill();
-			_selectedSessionIDPrim.kill();
-			_diffOptionsPrim.kill();
 			_isLoadingPrim.kill();
-			
+
 			cleanupFileManagerStates();
 		},
 	};
 }
 
-
-export function GetDiffSessionKeyForFileTabManagerSession(diffSessionID: string) { 
-	return `diff-session-${diffSessionID}`
+export function GetDiffSessionKeyForFileTabManagerSession(diffSessionID: string) {
+	return `diff-session-${diffSessionID}`;
 }

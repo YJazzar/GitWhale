@@ -4,7 +4,6 @@ import { ReactNode, useRef } from 'react';
 import RepoHomeView from '@/pages/repo/RepoHomeView';
 import RepoLogView from '@/pages/repo/RepoLogView';
 import RepoTerminalView from '@/pages/repo/RepoTerminalView';
-import RepoDiffView from '@/pages/repo/RepoDiffView';
 import { Sidebar, SidebarHandle } from '@/components/sidebar';
 import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
 import { SidebarContextProvider } from '@/hooks/state/use-sidebar-context';
@@ -18,9 +17,7 @@ interface RepoViewTabsProps {
 }
 
 export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
-	const { appState } = UseAppState();
 	const sidebarRef = useRef<SidebarHandle>(null);
-	const branchName = appState?.appConfig?.openGitRepos[repoPath]?.currentBranchName || 'main';
 
 	// Static sidebar items that are always available
 	const staticItems: SidebarItemProps[] = [
@@ -36,13 +33,6 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 			title: 'Log',
 			icon: <GitGraph className="h-4 w-4" />,
 			component: <RepoLogView repoPath={repoPath} />,
-			preventClose: true,
-		},
-		{
-			id: 'diff',
-			title: 'Diff',
-			icon: <GitCompare className="h-4 w-4" />,
-			component: <RepoDiffView repoPath={repoPath} />,
 			preventClose: true,
 		},
 		{
