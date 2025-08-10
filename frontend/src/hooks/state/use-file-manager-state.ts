@@ -7,7 +7,7 @@ import {
 } from '../../../wailsjs/go/backend/App';
 import { EventsEmit, EventsOff, EventsOn } from '@/../wailsjs/runtime/runtime';
 import { backend } from '../../../wailsjs/go/models';
-import { atom, useAtom } from 'jotai';
+import { atom, useAtom, useSetAtom } from 'jotai';
 import { useEffect, useCallback } from 'react';
 
 type FileTabManagerSessionKey = string;
@@ -48,8 +48,8 @@ const activeTabKeyAtom = atom<Map<FileTabManagerSessionKey, TabKey>>(new Map());
 const openTabsAtom = atom<Map<FileTabManagerSessionKey, TabProps[]>>(new Map());
 
 export function useFileManagerStatesCleanup(fileTabManageSessionKeys: FileTabManagerSessionKey[]) {
-	const [activeTabMap, setActiveTabMap] = useAtom(activeTabKeyAtom);
-	const [openTabsMap, setOpenTabsMap] = useAtom(openTabsAtom);
+	const setActiveTabMap = useSetAtom(activeTabKeyAtom);
+	const setOpenTabsMap = useSetAtom(openTabsAtom);
 
 	const removeActiveTabKey = useCallback(() => {
 		setActiveTabMap((prevMap) => {
