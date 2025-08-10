@@ -1,14 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-
-import { CommitPreview } from '@/components/commit-preview';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
+import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
 import { ChevronUp } from 'lucide-react';
 import { useEffect } from 'react';
+import { CommitPreview } from '@/components/commit-preview/commit-preview';
 
 export type CommitSelectType = 'primarySelect' | 'secondarySelect' | 'unselect';
 

@@ -246,6 +246,7 @@ export namespace git_operations {
 	    filesChanged: number;
 	    linesAdded: number;
 	    linesDeleted: number;
+	    linesModified: number;
 	    totalLines: number;
 	
 	    static createFrom(source: any = {}) {
@@ -257,6 +258,7 @@ export namespace git_operations {
 	        this.filesChanged = source["filesChanged"];
 	        this.linesAdded = source["linesAdded"];
 	        this.linesDeleted = source["linesDeleted"];
+	        this.linesModified = source["linesModified"];
 	        this.totalLines = source["totalLines"];
 	    }
 	}
