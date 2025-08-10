@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDetailedCommit } from '@/hooks/use-detailed-commit';
-import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
+import { useDetailedCommit } from '@/hooks/git-log/use-detailed-commit';
+import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
 import { useUnixTime } from '@/hooks/use-unix-time';
 import { Logger } from '@/utils/logger';
 import {

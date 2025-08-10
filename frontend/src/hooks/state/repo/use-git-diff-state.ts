@@ -12,9 +12,6 @@ const diffSessionsAtom = atom<Map<string, git_operations.DiffSession[]>>(new Map
 // Store selected session ID per repository path
 const selectedDiffSessionAtom = atom<Map<string, string | null>>(new Map());
 
-// Store file info mapping for directory diffs per repository path
-const fileInfoMapAtom = atom<Map<string, Map<string, git_operations.FileInfo>>>(new Map());
-
 // Store diff options/configuration per repository path
 const diffOptionsAtom = atom<
 	Map<
@@ -35,7 +32,6 @@ const isLoadingDiffAtom = atom<Map<string, boolean>>(new Map());
 export function getDiffState(repoPath: string) {
 	const _diffSessionsPrim = useMapPrimitive(diffSessionsAtom, repoPath);
 	const _selectedSessionIDPrim = useMapPrimitive(selectedDiffSessionAtom, repoPath);
-	const _fileInfoMapPrim = useMapPrimitive(fileInfoMapAtom, repoPath);
 	const _diffOptionsPrim = useMapPrimitive(diffOptionsAtom, repoPath);
 	const _isLoadingPrim = useMapPrimitive(isLoadingDiffAtom, repoPath);
 
@@ -44,7 +40,8 @@ export function getDiffState(repoPath: string) {
 		(s) => s.sessionId === _selectedSessionIDPrim.value
 	);
 	const allSessionIDs = _diffSessionsPrim.value?.map((session) => session.sessionId) ?? [];
-	const { cleanupFileManagerStates } = useFileManagerStatesCleanup(allSessionIDs);
+	const allFileTabManagerSessionIDs = allSessionIDs.map(GetDiffSessionKeyForFileTabManagerSession)
+	const { cleanupFileManagerStates } = useFileManagerStatesCleanup(allFileTabManagerSessionIDs);
 	const { toast } = useToast();
 
 	const createSession = async (options: git_operations.DiffOptions) => {
@@ -103,12 +100,6 @@ export function getDiffState(repoPath: string) {
 			getData: () => selectedSession,
 		},
 
-		// Get file info map for this repo
-		fileInfoMap: _fileInfoMapPrim.value,
-
-		// Set file info map for this repo
-		setFileInfoMap: _fileInfoMapPrim.set,
-
 		// Get diff options for this repo
 		options: _diffOptionsPrim.value || {
 			fromRef: 'HEAD',
@@ -124,11 +115,15 @@ export function getDiffState(repoPath: string) {
 		disposeSessions: () => {
 			_diffSessionsPrim.kill();
 			_selectedSessionIDPrim.kill();
-			_fileInfoMapPrim.kill();
 			_diffOptionsPrim.kill();
 			_isLoadingPrim.kill();
 			
 			cleanupFileManagerStates();
 		},
 	};
+}
+
+
+export function GetDiffSessionKeyForFileTabManagerSession(diffSessionID: string) { 
+	return `diff-session-${diffSessionID}`
 }

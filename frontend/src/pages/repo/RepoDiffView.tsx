@@ -415,6 +415,8 @@ export default function RepoDiffView({ repoPath }: { repoPath: string }) {
 
 	const diffOptions = useDiffOptions(repoPath);
 
+	const selectedSessionID = diffState.selectedSession.getId();
+
 	return (
 		<div className="flex flex-col h-full">
 			<ViewToolbar repoPath={repoPath} diffOptions={diffOptions} />
@@ -422,8 +424,8 @@ export default function RepoDiffView({ repoPath }: { repoPath: string }) {
 			<SessionTabs repoPath={repoPath} />
 
 			<div className="flex-1 overflow-hidden min-h-0">
-				{!!diffState.selectedSession.getData()?.directoryData && (
-					<DirDiffViewer repoPath={repoPath} />
+				{!!selectedSessionID && (
+					<DirDiffViewer repoPath={repoPath} diffSessionID={selectedSessionID} />
 				)}
 			</div>
 		</div>

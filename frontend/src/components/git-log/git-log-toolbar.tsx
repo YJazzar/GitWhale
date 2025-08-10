@@ -13,8 +13,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import Logger from '@/utils/logger';
 import {
+	Check,
 	ChevronDown,
 	Download,
 	Filter,
@@ -194,27 +197,53 @@ function FetchButton({ repoPath }: { repoPath: string }) {
 
 function CompareButton({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
+	const navigateToDiff = useNavigateToCommitDiffs(repoPath);
 
-	const numSelectedCommits = logState.selectedCommits.currentSelectedCommits.length ?? 0;
+	const selectedCommits = logState.selectedCommits.currentSelectedCommits;
+	const numSelectedCommits = selectedCommits.length ?? 0;
+
 	const hasCommitSelected = numSelectedCommits > 0;
 	const isButtonDisabled = logState.isLoading || !hasCommitSelected;
 
 	const onCompare = () => {
-		logState.refetchRepo();
+		if (numSelectedCommits === 1) {
+			navigateToDiff(selectedCommits[0], undefined);
+			return;
+		}
+
+		if (numSelectedCommits === 2) {
+			navigateToDiff(selectedCommits[0], selectedCommits[1]);
+			return;
+		}
+
+		Logger.error("User somehow attempted to diff more than two commits")
 	};
 
-	if (numSelectedCommits <= 1) {
-		return <Button variant="outline" size="sm" disabled={isButtonDisabled} onClick={onCompare}>
-			<GitCompareArrows className="w-4 h-4" />
-			Compare
-		</Button>;
-	}
+	const compareString = numSelectedCommits <= 1 ? 'Diff' : 'Diff range';
 
 	return (
-		<Button variant="outline" size="sm" disabled={isButtonDisabled} onClick={onCompare}>
-			<GitCompareArrows className="w-4 h-4" />
-			Compare range
-		</Button>
+		<div className="flex items-center">
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={isButtonDisabled}
+				onClick={onCompare}
+				className="rounded-r-none border-r-0 pr-2"
+			>
+				<GitCompareArrows className="w-4 h-4 mr-1" />
+				{compareString}
+			</Button>
+
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={isButtonDisabled}
+				onClick={onCompare}
+				className="rounded-l-none border-l-0 pl-1 pr-1 min-w-0"
+			>
+				<ChevronDown className="h-4 w-4 opacity-50" />
+			</Button>
+		</div>
 	);
 }
 

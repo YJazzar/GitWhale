@@ -3,7 +3,7 @@ import { backend } from 'wailsjs/go/models';
 import { CommitDetails } from '@/components/commit-details';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
-import { Logger } from '../utils/logger';
+import { Logger } from '../../utils/logger';
 
 export function useNavigateToCommit(repoPath: string) {
 	const sidebar = useSidebarContext();

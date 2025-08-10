@@ -7,6 +7,7 @@ import { GitCompare } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { GetStartupDirDiffDirectory } from '../../wailsjs/go/backend/App';
 import { git_operations } from '../../wailsjs/go/models';
+import { EmptyState } from '@/components/empty-state';
 
 const directoryDataAtom = atom<git_operations.Directory>();
 
@@ -25,7 +26,19 @@ export default function DirDiffPage() {
 	}, []);
 
 	if (!directoryData) {
-		return <EmptyState />;
+		return (
+			<EmptyState
+				title={() => {
+					return (
+						<>
+							<GitCompare className="w-5 h-5" />
+							No Directory Diff Data
+						</>
+					);
+				}}
+				message="No directory diff data is available for display."
+			/>
+		);
 	}
 
 	return (
@@ -51,23 +64,6 @@ export default function DirDiffPage() {
 					</div>
 				</ResizablePanel>
 			</ResizablePanelGroup>
-		</div>
-	);
-}
-
-// Empty state component (fallback)
-function EmptyState() {
-	return (
-		<div className="w-full h-full flex items-center justify-center">
-			<Card className="w-96">
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<GitCompare className="w-5 h-5" />
-						No Directory Diff Data
-					</CardTitle>
-					<CardDescription>No directory diff data is available for display.</CardDescription>
-				</CardHeader>
-			</Card>
 		</div>
 	);
 }

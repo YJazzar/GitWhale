@@ -2,54 +2,46 @@ import FileDiffView, { FileDiffViewProps } from '@/components/file-diff-view';
 import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
 import { TreeNode } from '@/components/tree-component';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { TabProps } from '@/hooks/state/use-file-manager-state';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { TabProps } from '@/hooks/state/use-file-manager-state';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { backend, git_operations } from '../../wailsjs/go/models';
+import { git_operations } from '../../wailsjs/go/models';
+import { EmptyState } from './empty-state';
+import { GitCompare } from 'lucide-react';
+import { GetDiffSessionKeyForFileTabManagerSession } from '@/hooks/state/repo/use-git-diff-state';
 
 const getFileKey = (file: git_operations.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
 };
 
-export function DirDiffViewer(props: { repoPath: string }) {
-	const { repoPath } = props;
+export interface DirDiffViewerProps {
+	repoPath: string;
+	diffSessionID: string;
+}
+
+export function DirDiffViewer(props: DirDiffViewerProps) {
+	const { repoPath, diffSessionID } = props;
 	const { diffState } = useRepoState(repoPath);
 	const fileTabRef = useRef<TabsManagerHandle>(null);
 
-	const directoryData = diffState.selectedSession.getData()?.directoryData || null;
+	const diffSession = diffState.sessionData.find((s) => s.sessionId === diffSessionID);
+	if (!diffSession || !diffSession.directoryData) {
+		return (
+			<EmptyState
+				title={() => {
+					return (
+						<>
+							<GitCompare className="w-5 h-5" />
+							Could not load diff data
+						</>
+					);
+				}}
+				message="No directory diff data is available for display."
+			/>
+		);
+	}
 
-	// Force FileTabs to remount when session changes by using session ID as key
-	const sessionKey = diffState.selectedSession.getId() || 'none';
-
-	const fileInfoMap = useMemo(() => {
-		const map: Map<string, git_operations.FileInfo> = new Map();
-
-		const recurseDir = (dir: git_operations.Directory) => {
-			// Add the current files
-			dir.Files.forEach((file) => {
-				map.set(getFileKey(file), file);
-			});
-
-			dir.SubDirs.forEach((subDir) => {
-				recurseDir(subDir);
-			});
-		};
-
-		if (directoryData) {
-			recurseDir(directoryData);
-		}
-
-		return map;
-	}, [directoryData]);
-
-	// Store fileInfoMap in state for components to access
-	useEffect(() => {
-		if (diffState.fileInfoMap !== fileInfoMap) {
-			diffState.setFileInfoMap(fileInfoMap);
-		}
-	}, [fileInfoMap, diffState]);
-
-	if (!directoryData) {
+	if (!diffSession.directoryData) {
 		return (
 			<div className="w-full h-full flex items-center justify-center">
 				<div className="text-center text-muted-foreground">
@@ -65,7 +57,7 @@ export function DirDiffViewer(props: { repoPath: string }) {
 				{/* Left pane that contains the file structure */}
 				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
 					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
-						<FileTree tabManagerHandler={fileTabRef} directoryData={directoryData} />
+						<FileTree tabManagerHandler={fileTabRef} directoryData={diffSession.directoryData} />
 					</div>
 				</ResizablePanel>
 
@@ -75,10 +67,10 @@ export function DirDiffViewer(props: { repoPath: string }) {
 				<ResizablePanel id="diff-content-panel">
 					<div className="grow h-full flex flex-col min-h-0">
 						<FileTabs
-							key={sessionKey}
+							key={diffSessionID}
 							ref={fileTabRef}
 							initialTabs={[]}
-							fileTabManageSessionKey={`diff-session-${sessionKey}`}
+							fileTabManageSessionKey={GetDiffSessionKeyForFileTabManagerSession(diffSessionID)}
 						/>
 					</div>
 				</ResizablePanel>

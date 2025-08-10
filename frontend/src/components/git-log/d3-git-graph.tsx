@@ -1,5 +1,5 @@
 import { GitRefs } from '@/components/git-refs';
-import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git/use-git-graph';
+import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git-log/use-git-graph';
 import { useUnixTime } from '@/hooks/use-unix-time';
 import { CommitSelectType } from '@/pages/repo/RepoLogView';
 import * as d3 from 'd3';

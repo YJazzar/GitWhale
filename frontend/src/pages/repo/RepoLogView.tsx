@@ -6,7 +6,7 @@ import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
+import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
 import { ChevronUp } from 'lucide-react';
 
 export type CommitSelectType = "primarySelect" | "secondarySelect" | "unselect"
@@ -40,7 +40,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 			handleShowCommitDetails();
 		}
 	};
-	
+
 	const onCommitDoubleClick = (commitHash: string) => {
 		logState.selectedCommits.addToSelectedCommitsList(commitHash, false);
 		handleViewFullCommit(commitHash, false);

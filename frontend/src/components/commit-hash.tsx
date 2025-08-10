@@ -1,6 +1,6 @@
 import { GitCommit, GitMerge } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useNavigateToCommit } from '@/hooks/use-navigate-to-commit';
+import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
 
 interface CommitHashProps {
 	commitHash: string;
