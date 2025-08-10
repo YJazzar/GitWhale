@@ -1,18 +1,11 @@
-import FileDiffView, { FileDiffViewProps } from '@/components/file-diff-view';
 import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
-import { TreeNode } from '@/components/tree-component';
+import { FileTree } from '@/components/file-tree';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { TabProps } from '@/hooks/state/use-file-manager-state';
-import React, { useEffect, useMemo, useRef } from 'react';
-import { git_operations } from '../../wailsjs/go/models';
-import { EmptyState } from './empty-state';
-import { GitCompare } from 'lucide-react';
 import { GetDiffSessionKeyForFileTabManagerSession } from '@/hooks/state/repo/use-git-diff-state';
-
-const getFileKey = (file: git_operations.FileInfo) => {
-	return `${file.Path}/${file.Name}`;
-};
+import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { GitCompare } from 'lucide-react';
+import { useRef } from 'react';
+import { EmptyState } from './empty-state';
 
 export interface DirDiffViewerProps {
 	repoPath: string;
@@ -57,7 +50,7 @@ export function DirDiffViewer(props: DirDiffViewerProps) {
 				{/* Left pane that contains the file structure */}
 				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
 					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
-						<FileTree tabManagerHandler={fileTabRef} directoryData={diffSession.directoryData} />
+						<FileTree directoryData={diffSession.directoryData} tabManagerHandler={fileTabRef} />
 					</div>
 				</ResizablePanel>
 
@@ -75,40 +68,6 @@ export function DirDiffViewer(props: DirDiffViewerProps) {
 					</div>
 				</ResizablePanel>
 			</ResizablePanelGroup>
-		</div>
-	);
-}
-
-// TODO: generalize and move this to it's own file?
-export function FileTree(props: {
-	tabManagerHandler: React.RefObject<TabsManagerHandle>;
-	directoryData: git_operations.Directory;
-}) {
-	const { directoryData, tabManagerHandler } = props;
-
-	const onOpenFile = (file: git_operations.FileInfo, keepFileOpen: boolean) => {
-		const tabKey = getFileKey(file);
-
-		const fileDiffViewProps: FileDiffViewProps = {
-			file,
-		};
-
-		let fileToOpen: TabProps = {
-			tabKey: tabKey,
-			titleRender: () => <>{file.Name}</>,
-			component: <FileDiffView file={file} />,
-			isPermanentlyOpen: keepFileOpen,
-		};
-
-		tabManagerHandler.current?.openTab(fileToOpen);
-		if (keepFileOpen) {
-			tabManagerHandler.current?.setTabPermaOpen(fileToOpen);
-		}
-	};
-
-	return (
-		<div className="w-full h-full p-2 overflow-y-auto">
-			<TreeNode directory={directoryData} onFileClick={onOpenFile} />
 		</div>
 	);
 }

@@ -1,4 +1,4 @@
-import { FileTree } from '@/components/dir-diff-viewer';
+
 import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 import { GetStartupDirDiffDirectory } from '../../wailsjs/go/backend/App';
 import { git_operations } from '../../wailsjs/go/models';
 import { EmptyState } from '@/components/empty-state';
+import { FileTree } from '@/components/file-tree';
 
 const directoryDataAtom = atom<git_operations.Directory>();
 
