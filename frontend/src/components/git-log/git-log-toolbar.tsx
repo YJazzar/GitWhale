@@ -203,19 +203,55 @@ function SearchSection({ repoPath }: { repoPath: string }) {
 		logState.refreshLogAndRefs();
 	};
 
+	const onClearSearch = () => {
+		setSearchQuery('');
+		logState.refreshLogAndRefs();
+	};
+
 	return (
-		<div className="flex items-center gap-2">
-			<Search className="w-4 h-4 text-muted-foreground" />
+		<div className="relative flex items-center">
+			{/* Search icon on the left inside input */}
+			<div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+				<Search className="w-4 h-4 text-muted-foreground" />
+			</div>
+			
 			<Input
 				placeholder="Search commits..."
 				value={searchQuery}
 				onChange={(e) => setSearchQuery(e.target.value)}
 				onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-				className="h-8 w-48"
+				className="h-8 w-64 pl-10 pr-20 focus-visible:ring-2 focus-visible:ring-primary"
 			/>
-			<Button size="sm" onClick={onSearch} disabled={isLoading}>
-				Search
-			</Button>
+			
+			{/* Right side buttons container */}
+			<div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+				{/* Clear button - only show when there's text */}
+				{searchQuery && (
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={onClearSearch}
+						className="h-6 w-6 p-0 hover:bg-muted-foreground/10 text-muted-foreground hover:text-foreground"
+						aria-label="Clear search"
+					>
+						<span className="text-sm">×</span>
+					</Button>
+				)}
+				
+				{/* Search button */}
+				<Button 
+					size="sm" 
+					onClick={onSearch} 
+					disabled={isLoading || !searchQuery.trim()}
+					className="h-6 px-2 text-xs font-medium"
+				>
+					{isLoading ? (
+						<RefreshCw className="w-3 h-3 animate-spin" />
+					) : (
+						'Search'
+					)}
+				</Button>
+			</div>
 		</div>
 	);
 }
