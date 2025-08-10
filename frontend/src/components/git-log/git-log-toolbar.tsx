@@ -20,12 +20,12 @@ import {
 	Filter,
 	GitBranch,
 	GitCommitHorizontal,
+	GitCompareArrows,
 	RefreshCw,
 	Search,
 	Settings,
 	Tag,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 interface GitLogToolbarProps {
 	repoPath: string;
@@ -55,7 +55,11 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 
 			<Separator orientation="vertical" className="h-6" />
 
-			<FetchDropdown repoPath={repoPath} />
+			<FetchButton repoPath={repoPath} />
+
+			<div className="flex-grow" />
+
+			<CompareButton repoPath={repoPath} />
 		</div>
 	);
 }
@@ -173,7 +177,7 @@ function RefSelectorDropdown({ repoPath }: { repoPath: string }) {
 }
 
 // Fetch Dropdown Component
-function FetchDropdown({ repoPath }: { repoPath: string }) {
+function FetchButton({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
 
 	const onFetch = () => {
@@ -182,8 +186,34 @@ function FetchDropdown({ repoPath }: { repoPath: string }) {
 
 	return (
 		<Button variant="outline" size="sm" disabled={logState.isLoading} onClick={onFetch}>
-			<Download className="w-4 h-4 mr-2" />
+			<Download className="w-4 h-4" />
 			Fetch
+		</Button>
+	);
+}
+
+function CompareButton({ repoPath }: { repoPath: string }) {
+	const { logState } = useRepoState(repoPath);
+
+	const numSelectedCommits = logState.selectedCommits.currentSelectedCommits.length ?? 0;
+	const hasCommitSelected = numSelectedCommits > 0;
+	const isButtonDisabled = logState.isLoading || !hasCommitSelected;
+
+	const onCompare = () => {
+		logState.refetchRepo();
+	};
+
+	if (numSelectedCommits <= 1) {
+		return <Button variant="outline" size="sm" disabled={isButtonDisabled} onClick={onCompare}>
+			<GitCompareArrows className="w-4 h-4" />
+			Compare
+		</Button>;
+	}
+
+	return (
+		<Button variant="outline" size="sm" disabled={isButtonDisabled} onClick={onCompare}>
+			<GitCompareArrows className="w-4 h-4" />
+			Compare range
 		</Button>
 	);
 }
@@ -214,7 +244,7 @@ function SearchSection({ repoPath }: { repoPath: string }) {
 			<div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
 				<Search className="w-4 h-4 text-muted-foreground" />
 			</div>
-			
+
 			<Input
 				placeholder="Search commits..."
 				value={searchQuery}
@@ -222,7 +252,7 @@ function SearchSection({ repoPath }: { repoPath: string }) {
 				onKeyDown={(e) => e.key === 'Enter' && onSearch()}
 				className="h-8 w-64 pl-10 pr-20 focus-visible:ring-2 focus-visible:ring-primary"
 			/>
-			
+
 			{/* Right side buttons container */}
 			<div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
 				{/* Clear button - only show when there's text */}
@@ -237,19 +267,15 @@ function SearchSection({ repoPath }: { repoPath: string }) {
 						<span className="text-sm">×</span>
 					</Button>
 				)}
-				
+
 				{/* Search button */}
-				<Button 
-					size="sm" 
-					onClick={onSearch} 
+				<Button
+					size="sm"
+					onClick={onSearch}
 					disabled={isLoading || !searchQuery.trim()}
 					className="h-6 px-2 text-xs font-medium"
 				>
-					{isLoading ? (
-						<RefreshCw className="w-3 h-3 animate-spin" />
-					) : (
-						'Search'
-					)}
+					{isLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Search'}
 				</Button>
 			</div>
 		</div>
