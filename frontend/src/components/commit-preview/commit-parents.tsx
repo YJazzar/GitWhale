@@ -26,6 +26,7 @@ export function CommitParents({ commit, repoPath }: CommitParentsProps) {
 							showIcon={false}
 							className="flex-shrink-0"
 							repoPath={repoPath}
+							enableCopyHash
 						/>
 					))}
 				</div>

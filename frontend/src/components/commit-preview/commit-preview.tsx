@@ -102,7 +102,7 @@ export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewPr
 				<div className="flex items-start justify-between">
 					<div className="flex-1 min-w-0">
 						<CardTitle className="text-lg flex items-center gap-2">
-							<CommitHash repoPath={repoPath} commitHash={commitHash} isMerge={isMergeCommit} />
+							<CommitHash repoPath={repoPath} commitHash={commitHash} isMerge={isMergeCommit} enableCopyHash/>
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2">
