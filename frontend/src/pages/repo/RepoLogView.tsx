@@ -8,8 +8,9 @@ import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
 import { ChevronUp } from 'lucide-react';
+import { useEffect } from 'react';
 
-export type CommitSelectType = "primarySelect" | "secondarySelect" | "unselect"
+export type CommitSelectType = 'primarySelect' | 'secondarySelect' | 'unselect';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
@@ -22,12 +23,12 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	}
 
 	const onCommitSelect = (commitHash: string, selectionType: CommitSelectType) => {
-		if (selectionType === "unselect") { 
+		if (selectionType === 'unselect') {
 			logState.selectedCommits.removeFromSelectedCommitsList(commitHash);
-			return
+			return;
 		}
 
-		const isSecondarySelect = selectionType === "secondarySelect"
+		const isSecondarySelect = selectionType === 'secondarySelect';
 		logState.selectedCommits.addToSelectedCommitsList(commitHash, isSecondarySelect);
 
 		// Auto-show commit details pane if:
@@ -55,6 +56,29 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 		// Show the commit details pane
 		logState.commitDetailsPane.show();
 	};
+
+	const toggleCommitDetailsPane = () => {
+		if (logState.commitDetailsPane.shouldShow) {
+			handleCloseCommitDetails();
+		} else {
+			handleShowCommitDetails();
+		}
+	};
+
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			// Check for Cmd+J on Mac or Ctrl+J on Windows/Linux
+			if ((event.metaKey || event.ctrlKey) && event.key === 'j') {
+				event.preventDefault();
+				toggleCommitDetailsPane();
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+		return () => {
+			document.removeEventListener('keydown', handleKeyDown);
+		};
+	}, [logState.commitDetailsPane]);
 
 	const currentSelectedCommits = logState.selectedCommits.currentSelectedCommits;
 	const selectedCommitForDetails = currentSelectedCommits[currentSelectedCommits.length - 1];

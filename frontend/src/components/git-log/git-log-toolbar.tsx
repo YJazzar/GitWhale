@@ -28,7 +28,10 @@ import {
 	Search,
 	Settings,
 	Tag,
+	MoreHorizontal,
 } from 'lucide-react';
+import { CompareModal } from './compare-modal';
+import { useState } from 'react';
 
 interface GitLogToolbarProps {
 	repoPath: string;
@@ -197,7 +200,8 @@ function FetchButton({ repoPath }: { repoPath: string }) {
 
 function CompareButton({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
-	const navigateToDiff = useNavigateToCommitDiffs(repoPath);
+	const { navigateToCommitDiff } = useNavigateToCommitDiffs(repoPath);
+	const [showCompareModal, setShowCompareModal] = useState(false);
 
 	const selectedCommits = logState.selectedCommits.currentSelectedCommits;
 	const numSelectedCommits = selectedCommits.length ?? 0;
@@ -207,43 +211,47 @@ function CompareButton({ repoPath }: { repoPath: string }) {
 
 	const onCompare = () => {
 		if (numSelectedCommits === 1) {
-			navigateToDiff(selectedCommits[0], undefined);
+			navigateToCommitDiff(selectedCommits[0], undefined);
 			return;
 		}
 
 		if (numSelectedCommits === 2) {
-			navigateToDiff(selectedCommits[0], selectedCommits[1]);
+			navigateToCommitDiff(selectedCommits[0], selectedCommits[1]);
 			return;
 		}
 
-		Logger.error("User somehow attempted to diff more than two commits")
+		Logger.error('User somehow attempted to diff more than two commits');
 	};
 
 	const compareString = numSelectedCommits <= 1 ? 'Diff' : 'Diff range';
 
 	return (
-		<div className="flex items-center">
-			<Button
-				variant="outline"
-				size="sm"
-				disabled={isButtonDisabled}
-				onClick={onCompare}
-				className="rounded-r-none border-r-0 pr-2"
-			>
-				<GitCompareArrows className="w-4 h-4 mr-1" />
-				{compareString}
-			</Button>
+		<>
+			<div className="flex items-center">
+				<Button
+					variant="outline"
+					size="sm"
+					disabled={isButtonDisabled}
+					onClick={onCompare}
+					className="rounded-r-none border-r-0 pr-2"
+				>
+					<GitCompareArrows className="w-4 h-4 mr-1" />
+					{compareString}
+				</Button>
 
-			<Button
-				variant="outline"
-				size="sm"
-				disabled={isButtonDisabled}
-				onClick={onCompare}
-				className="rounded-l-none border-l-0 pl-1 pr-1 min-w-0"
-			>
-				<ChevronDown className="h-4 w-4 opacity-50" />
-			</Button>
-		</div>
+				<Button
+					variant="outline"
+					size="sm"
+					disabled={logState.isLoading}
+					onClick={() => setShowCompareModal(true)}
+					className="rounded-l-none border-l-0 pl-1 pr-1 min-w-0"
+				>
+					<ChevronDown className="h-4 w-4 opacity-50" />
+				</Button>
+			</div>
+
+			<CompareModal repoPath={repoPath} open={showCompareModal} onOpenChange={setShowCompareModal} />
+		</>
 	);
 }
 
