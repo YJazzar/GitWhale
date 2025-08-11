@@ -13,17 +13,17 @@ import {
 import { useUnixTime } from '@/hooks/use-unix-time';
 import { User, Calendar, Hash, ChevronDown, GitMerge, GitCommit } from 'lucide-react';
 import { CommitHash } from '../commit-hash';
+import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
 
 interface CommitPagerProps {
 	repoPath: string;
 	commitData: git_operations.DetailedCommitInfo;
 	className?: string;
-	onNavigateToPrevious?: (commitHash: string) => void;
-	onNavigateToNext?: () => void;
 }
 
 export function CommitPager(props: CommitPagerProps) {
-	const { repoPath, commitData, className, onNavigateToPrevious, onNavigateToNext } = props;
+	const { repoPath, commitData, className } = props;
+	const { navigateToCommitDiff } = useNavigateToCommitDiffs(repoPath);
 
 	// Process commit message - join array and get first line for truncation
 	const fullMessage = Array.isArray(commitData.commitMessage)
@@ -42,11 +42,11 @@ export function CommitPager(props: CommitPagerProps) {
 
 	// Handlers
 	const handlePreviousClick = (parentHash: string) => {
-		onNavigateToPrevious?.(parentHash);
+		navigateToCommitDiff(parentHash, undefined);
 	};
 
 	const handleNextClick = () => {
-		onNavigateToNext?.();
+		navigateToCommitDiff(commitData.nextCommitHash, undefined);
 	};
 
 	// Previous Button - Simple or Dropdown based on parent count
