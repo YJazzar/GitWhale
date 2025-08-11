@@ -4,15 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { GitBranch } from 'lucide-react';
 import { QuickRepoData } from './types';
+import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
+import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 
 interface BranchOverviewProps {
-	branches: QuickRepoData['branches'];
+	repoPath: string;
 }
 
-export function BranchOverview({ branches }: BranchOverviewProps) {
-	const sortedBranches = branches.sort((a, b) => 
-		a.isActive ? -1 : b.isActive ? 1 : b.lastCommitDate.getTime() - a.lastCommitDate.getTime()
-	);
+export function BranchOverview(props: BranchOverviewProps) {
+	const { repoPath } = props;
+	const sidebar = useSidebarContext();
+	const { logState } = useRepoState(repoPath);
+
+	const sortedBranches = logState.refs ?? [];
+	// ?.sort((a, b) =>
+	// 	a.isActive ? -1 : b.isActive ? 1 : b.lastCommitDate.getTime() - a.lastCommitDate.getTime()
+	// );
 
 	return (
 		<Card>
@@ -25,33 +32,45 @@ export function BranchOverview({ branches }: BranchOverviewProps) {
 			</CardHeader>
 			<CardContent className="pt-0">
 				<div className="space-y-1.5">
-					{sortedBranches.map((branch, index) => (
-						<div 
-							key={index} 
-							className={`flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer hover:bg-muted/50 ${
-								branch.isActive ? 'bg-primary/5 border border-primary/20' : ''
-							}`}
-						>
-							<div className="flex items-center gap-2">
-								<GitBranch className={`h-3.5 w-3.5 ${branch.isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-								<span className={`text-sm font-medium font-mono ${branch.isActive ? 'text-primary' : ''}`}>
-									{branch.name}
-								</span>
-								{branch.isActive && (
-									<Badge variant="secondary" className="text-xs px-1.5 py-0">
-										current
-									</Badge>
-								)}
+					{sortedBranches.map((branch, index) => {
+						const isRemoteBranchOrTag = branch.type === 'remoteBranch' || branch.type === 'tag';
+
+						return (
+							<div
+								key={index}
+								className={`flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer hover:bg-muted/50 ${
+									isRemoteBranchOrTag ? 'bg-primary/5 border border-primary/20' : ''
+								}`}
+							>
+								<div className="flex items-center gap-2">
+									<GitBranch
+										className={`h-3.5 w-3.5 ${
+											isRemoteBranchOrTag ? 'text-primary' : 'text-muted-foreground'
+										}`}
+									/>
+									<span
+										className={`text-sm font-medium font-mono ${
+											isRemoteBranchOrTag ? 'text-primary' : ''
+										}`}
+									>
+										{branch.name}
+									</span>
+									{isRemoteBranchOrTag && (
+										<Badge variant="secondary" className="text-xs px-1.5 py-0">
+											current
+										</Badge>
+									)}
+								</div>
+								{/* <span className="text-xs text-muted-foreground">
+									{branch.lastCommitDate.toLocaleDateString()}
+								</span> */}
 							</div>
-							<span className="text-xs text-muted-foreground">
-								{branch.lastCommitDate.toLocaleDateString()}
-							</span>
-						</div>
-					))}
+						);
+					})}
 				</div>
 
 				<Separator className="my-3" />
-				
+
 				<Button variant="ghost" className="w-full" size="sm">
 					<GitBranch className="h-3.5 w-3.5 mr-2" />
 					Manage Branches
