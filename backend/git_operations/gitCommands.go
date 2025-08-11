@@ -267,7 +267,13 @@ func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitI
 		return nil, err
 	}
 
-	// Step 3: Get additional commit metadata
+	// Step 3: Get next and previous commit hashes for navigation
+	if err := getCommitNavigation(repoPath, commitHash, commit); err != nil {
+		logger.Log.Error("Failed to get commit navigation for %s: %v", commitHash, err)
+		// Continue without navigation info rather than failing
+	}
+
+	// Step 4: Get additional commit metadata
 	getAdditionalCommitMetadata(repoPath, commitHash, commit)
 
 	logger.Log.Info("Successfully fetched detailed info for commit %s", commitHash)
@@ -365,6 +371,33 @@ func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInf
 		commit.ShortStat = strings.TrimSpace(shortStatOutput)
 	}
 
+	return nil
+}
+
+// getCommitNavigation efficiently gets the next and previous commit hashes for navigation
+func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo) error {
+	// For navigation, we want:
+	// - PrevCommitHash: The parent commit (what came before this commit)
+	// - NextCommitHash: A child commit from the current branch (what came after this commit)
+	
+	// Get the previous commit (parent) - use the first parent for merge commits
+	if len(commit.ParentCommitHashes) > 0 {
+		commit.PrevCommitHash = commit.ParentCommitHashes[0]
+	}
+	
+	// For the next commit, we need to find a commit that has our target as a parent
+	// Use git log to find commits that have our commit as a parent, limited to current branch
+	nextCmd := exec.Command("git", "log", "--format=%H", "--ancestry-path", commitHash+"..HEAD", "--reverse", "-1")
+	nextCmd.Dir = repoPath
+	nextOutput, err := command_utils.RunCommandAndLogErr(nextCmd)
+	if err == nil && strings.TrimSpace(nextOutput) != "" {
+		// Get the first commit in the ancestry path from our commit to HEAD
+		nextHash := strings.TrimSpace(strings.Split(nextOutput, "\n")[0])
+		if nextHash != "" && nextHash != commitHash {
+			commit.NextCommitHash = nextHash
+		}
+	}
+	
 	return nil
 }
 
