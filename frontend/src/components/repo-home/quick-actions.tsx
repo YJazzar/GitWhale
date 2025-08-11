@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { Eye, GitCompare, Search, Terminal, Zap } from 'lucide-react';
@@ -65,24 +66,38 @@ export function QuickActions(props: QuickActionsProps) {
 					<CardDescription className="text-sm">Common tasks to get started</CardDescription>
 				</CardHeader>
 				<CardContent className="pt-0">
-					<div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
-						{actions.map((action, index) => (
-							<Button
-								key={index}
-								variant={'outline'}
-								className="h-auto p-3 flex-col items-start gap-1 text-left"
-								onClick={action.action}
-							>
-								<div className="flex items-center gap-2 w-full">
-									<action.icon className="h-3.5 w-3.5" />
-									<span className="font-medium text-sm">{action.label}</span>
+					{repoState.logState.isLoading ? (
+						<div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+							{Array.from({ length: 4 }).map((_, index) => (
+								<div key={index} className="h-auto p-3 flex-col items-start gap-1 space-y-2 rounded-lg border">
+									<div className="flex items-center gap-2 w-full">
+										<Skeleton className="h-3.5 w-3.5 rounded-sm" />
+										<Skeleton className="h-4 w-16" />
+									</div>
+									<Skeleton className="h-3 w-full" />
 								</div>
-								<p className="text-xs text-muted-foreground text-left w-full leading-tight">
-									{action.description}
-								</p>
-							</Button>
-						))}
-					</div>
+							))}
+						</div>
+					) : (
+						<div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+							{actions.map((action, index) => (
+								<Button
+									key={index}
+									variant={'outline'}
+									className="h-auto p-3 flex-col items-start gap-1 text-left"
+									onClick={action.action}
+								>
+									<div className="flex items-center gap-2 w-full">
+										<action.icon className="h-3.5 w-3.5" />
+										<span className="font-medium text-sm">{action.label}</span>
+									</div>
+									<p className="text-xs text-muted-foreground text-left w-full leading-tight">
+										{action.description}
+									</p>
+								</Button>
+							))}
+						</div>
+					)}
 				</CardContent>
 			</Card>
 

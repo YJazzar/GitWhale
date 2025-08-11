@@ -1,6 +1,7 @@
 import { CommitHash } from '@/components/commit-hash';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, Folder, GitBranch, GitCommit } from 'lucide-react';
 import { QuickRepoData } from './types';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
@@ -28,44 +29,78 @@ export function CurrentStatus(props: CurrentStatusProps) {
 				<CardDescription className="text-sm">Current repository status</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-3 pt-0">
-				{/* Current branch */}
-				<div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
-					<div className="flex items-center gap-2">
-						<GitBranch className="h-3.5 w-3.5 text-green-500" />
-						<span className="font-medium text-sm">Current Branch</span>
-					</div>
-					<Badge variant="outline" className="font-mono text-xs">
-						{repoState.logState.refs?.[0].name}
-					</Badge>
-				</div>
-
-				{/* Last commit */}
-				{!!latestCommit && (
-					<div className="space-y-2">
-						<div className="flex items-center gap-2 text-sm font-medium">
-							<GitCommit className="h-3.5 w-3.5" />
-							Latest Commit
+				{repoState.logState.isLoading ? (
+					<>
+						{/* Current branch skeleton */}
+						<div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
+							<div className="flex items-center gap-2">
+								<GitBranch className="h-3.5 w-3.5 text-green-500" />
+								<span className="font-medium text-sm">Current Branch</span>
+							</div>
+							<Skeleton className="h-5 w-16 rounded-full" />
 						</div>
-						<div className="p-2.5 bg-muted/50 rounded-lg space-y-1.5">
-							<p className="text-sm font-medium leading-tight">{}</p>
-							<div className="flex items-center gap-3 text-xs text-muted-foreground">
-								<CommitHash
-									commitHash={latestCommit.commitHash}
-									repoPath=""
-									shortHash={true}
-									showIcon={false}
-									enableCopyHash={true}
-								/>
-								<span>{latestCommit.username}</span>
-								<div className="flex items-center gap-1">
-									<Clock className="h-3 w-3" />
-									<span>
-										{useUnixTime(latestCommit.commitTimeStamp).toLocaleDateString()}
-									</span>
+
+						{/* Last commit skeleton */}
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-sm font-medium">
+								<GitCommit className="h-3.5 w-3.5" />
+								Latest Commit
+							</div>
+							<div className="p-2.5 bg-muted/50 rounded-lg space-y-1.5">
+								<Skeleton className="h-4 w-full" />
+								<div className="flex items-center gap-3">
+									<Skeleton className="h-3 w-16" />
+									<Skeleton className="h-3 w-20" />
+									<div className="flex items-center gap-1">
+										<Clock className="h-3 w-3" />
+										<Skeleton className="h-3 w-16" />
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
+					</>
+				) : (
+					<>
+						{/* Current branch */}
+						<div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
+							<div className="flex items-center gap-2">
+								<GitBranch className="h-3.5 w-3.5 text-green-500" />
+								<span className="font-medium text-sm">Current Branch</span>
+							</div>
+							<Badge variant="outline" className="font-mono text-xs">
+								{repoState.logState.refs?.[0].name}
+							</Badge>
+						</div>
+
+						{/* Last commit */}
+						{!!latestCommit && (
+							<div className="space-y-2">
+								<div className="flex items-center gap-2 text-sm font-medium">
+									<GitCommit className="h-3.5 w-3.5" />
+									Latest Commit
+								</div>
+								<div className="p-2.5 bg-muted/50 rounded-lg space-y-1.5">
+									<p className="text-sm font-medium leading-tight">{latestCommit.commitMessage?.[0]}</p>
+									<div className="flex items-center gap-3 text-xs text-muted-foreground">
+										<CommitHash
+											commitHash={latestCommit.commitHash}
+											repoPath=""
+											shortHash={true}
+											showIcon={false}
+											enableCopyHash={true}
+										/>
+										<span>{latestCommit.username}</span>
+										<div className="flex items-center gap-1">
+											<Clock className="h-3 w-3" />
+											<span>
+												{useUnixTime(latestCommit.commitTimeStamp).toLocaleDateString()}
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						)}
+					</>
 				)}
 			</CardContent>
 		</Card>
