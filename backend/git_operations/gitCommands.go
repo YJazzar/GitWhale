@@ -236,7 +236,6 @@ type DetailedCommitInfo struct {
 
 	// Info used by the commit-pager view
 	NextCommitHash string `json:"nextCommitHash"`
-	PrevCommitHash string `json:"prevCommitHash"`
 
 	// Enhanced detailed info
 	FullDiff       string       `json:"fullDiff"`
@@ -377,14 +376,9 @@ func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInf
 // getCommitNavigation efficiently gets the next and previous commit hashes for navigation
 func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo) error {
 	// For navigation, we want:
-	// - PrevCommitHash: The parent commit (what came before this commit)
+	// - PrevCommitHash: The parent commit (what came before this commit), which is already stored in a different property
 	// - NextCommitHash: A child commit from the current branch (what came after this commit)
-	
-	// Get the previous commit (parent) - use the first parent for merge commits
-	if len(commit.ParentCommitHashes) > 0 {
-		commit.PrevCommitHash = commit.ParentCommitHashes[0]
-	}
-	
+
 	// For the next commit, we need to find a commit that has our target as a parent
 	// Use git log to find commits that have our commit as a parent, limited to current branch
 	nextCmd := exec.Command("git", "log", "--format=%H", "--ancestry-path", commitHash+"..HEAD", "--reverse", "-1")
@@ -397,7 +391,7 @@ func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo
 			commit.NextCommitHash = nextHash
 		}
 	}
-	
+
 	return nil
 }
 

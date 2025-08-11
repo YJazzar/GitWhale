@@ -44,12 +44,11 @@ export function getDiffState(repoPath: string) {
 		} catch (error) {
 			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
 			Logger.error(`${JSON.stringify(error, null, 3)}`)
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
 			toast({
 				variant: 'destructive',
 				title: 'Failed to create diff session',
-				description: errorMessage,
+				description: `${error}`,
 			});
 
 			return undefined;

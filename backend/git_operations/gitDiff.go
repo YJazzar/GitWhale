@@ -218,6 +218,7 @@ func validateDiffInputs(options DiffOptions) error {
 	}
 
 	// Check if it's a git repository
+	// TODO: only need to check then when opening a repo. Move there please
 	cmd := exec.Command("git", "rev-parse", "--git-dir")
 	cmd.Dir = options.RepoPath
 	if _, err := command_utils.RunCommandAndLogErr(cmd); err != nil {
