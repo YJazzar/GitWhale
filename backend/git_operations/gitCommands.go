@@ -235,7 +235,7 @@ type DetailedCommitInfo struct {
 	ShortStat          string   `json:"shortStat"`
 
 	// Info used by the commit-pager view
-	NextCommitHash string `json:"nextCommitHash"`
+	ChildHashes []string `json:"childHashes"`
 
 	// Enhanced detailed info
 	FullDiff       string       `json:"fullDiff"`
@@ -377,21 +377,45 @@ func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInf
 func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo) error {
 	// For navigation, we want:
 	// - PrevCommitHash: The parent commit (what came before this commit), which is already stored in a different property
-	// - NextCommitHash: A child commit from the current branch (what came after this commit)
+	// - ChildHashes: All child commits (commits that have our target as a parent)
 
-	// For the next commit, we need to find a commit that has our target as a parent
-	// Use git log to find commits that have our commit as a parent, limited to current branch
-	nextCmd := exec.Command("git", "log", "--format=%H", "--ancestry-path", commitHash+"..HEAD", "--reverse", "-1")
-	nextCmd.Dir = repoPath
-	nextOutput, err := command_utils.RunCommandAndLogErr(nextCmd)
-	if err == nil && strings.TrimSpace(nextOutput) != "" {
-		// Get the first commit in the ancestry path from our commit to HEAD
-		nextHash := strings.TrimSpace(strings.Split(nextOutput, "\n")[0])
-		if nextHash != "" && nextHash != commitHash {
-			commit.NextCommitHash = nextHash
+	// Find all commits that have our commit as a parent across all branches
+	// Use git log with --all to get all commits with their parents
+	childCmd := exec.Command("git", "log", "--format=%H %P", "--all")
+	childCmd.Dir = repoPath
+	childOutput, err := command_utils.RunCommandAndLogErr(childCmd)
+	if err != nil {
+		return err
+	}
+
+	// Parse the output to find commits that list our target as a parent
+	childHashes := []string{}
+	lines := strings.Split(strings.TrimSpace(childOutput), "\n")
+	
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		
+		// Each line format: "commit_hash parent1 parent2 ..."
+		parts := strings.Fields(line)
+		if len(parts) < 2 {
+			continue
+		}
+		
+		childCommitHash := parts[0]
+		parents := parts[1:]
+		
+		// Check if our target commit is a parent of this commit
+		for _, parent := range parents {
+			if parent == commitHash {
+				childHashes = append(childHashes, childCommitHash)
+				break
+			}
 		}
 	}
 
+	commit.ChildHashes = childHashes
 	return nil
 }
 

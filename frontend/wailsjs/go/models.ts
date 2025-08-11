@@ -294,7 +294,7 @@ export namespace git_operations {
 	    refs: string;
 	    commitMessage: string[];
 	    shortStat: string;
-	    nextCommitHash: string;
+	    childHashes: string[];
 	    fullDiff: string;
 	    changedFiles: FileChange[];
 	    commitStats: CommitStats;
@@ -321,7 +321,7 @@ export namespace git_operations {
 	        this.refs = source["refs"];
 	        this.commitMessage = source["commitMessage"];
 	        this.shortStat = source["shortStat"];
-	        this.nextCommitHash = source["nextCommitHash"];
+	        this.childHashes = source["childHashes"];
 	        this.fullDiff = source["fullDiff"];
 	        this.changedFiles = this.convertValues(source["changedFiles"], FileChange);
 	        this.commitStats = this.convertValues(source["commitStats"], CommitStats);

@@ -34,84 +34,9 @@ export function CommitPager(props: CommitPagerProps) {
 	// Format commit date
 	const commitDate = useUnixTime(commitData.commitTimeStamp);
 
-	const hasMultipleParents = commitData.parentCommitHashes.length > 1;
-	const hasParents = commitData.parentCommitHashes.length > 0;
-
-	// Navigation state
-	const hasNext = !!commitData.nextCommitHash;
-
-	// Handlers
-	const handlePreviousClick = (parentHash: string) => {
-		navigateToCommitDiff(parentHash, undefined);
+	const handleOpenNewDiff = (commitHash: string) => {
+		navigateToCommitDiff(commitHash, undefined);
 	};
-
-	const handleNextClick = () => {
-		navigateToCommitDiff(commitData.nextCommitHash, undefined);
-	};
-
-	// Previous Button - Simple or Dropdown based on parent count
-	let previousButton;
-	if (!hasParents) {
-		// No parents - disabled button
-		previousButton = (
-			<Button
-				variant={'link'}
-				size={'sm'}
-				disabled={true}
-				className="text-xs px-2 opacity-50 cursor-not-allowed hover:text-muted-foreground"
-			>
-				Previous
-			</Button>
-		);
-	} else if (!hasMultipleParents) {
-		// Single parent - simple button
-		previousButton = (
-			<Button
-				variant={'link'}
-				size={'sm'}
-				onClick={() => handlePreviousClick(commitData.parentCommitHashes[0])}
-				className="text-xs px-2 text-foreground hover:text-primary"
-			>
-				Previous
-			</Button>
-		);
-	} else {
-		// Multiple parents - dropdown menu
-		previousButton = (
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant={'link'}
-						size={'sm'}
-						className="text-xs px-1 text-foreground hover:text-primary flex items-center gap-1"
-					>
-						Previous
-						<ChevronDown className="h-3 w-3" />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="start" className="w-56">
-					<DropdownMenuLabel className="flex items-center gap-2">
-						<GitMerge className="h-3 w-3" />
-						Choose Parent Commit
-					</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					{commitData.parentCommitHashes.map((parentHash, index) => (
-						<DropdownMenuItem
-							key={parentHash}
-							onClick={() => handlePreviousClick(parentHash)}
-							className="flex items-center gap-2"
-						>
-							<GitCommit className="h-3 w-3" />
-							<div className="flex flex-col">
-								<span className="font-mono text-xs">{parentHash.substring(0, 7)}</span>
-								<span className="text-xs text-muted-foreground">Parent {index + 1}</span>
-							</div>
-						</DropdownMenuItem>
-					))}
-				</DropdownMenuContent>
-			</DropdownMenu>
-		);
-	}
 
 	return (
 		<div className={cn('text-xs p-2', className)}>
@@ -158,7 +83,7 @@ export function CommitPager(props: CommitPagerProps) {
 										shortHash
 										repoPath={repoPath}
 										enableCopyHash
-										isMerge={hasMultipleParents}
+										isMerge={commitData.parentCommitHashes.length > 0}
 										showIcon={false}
 										className="text-xs"
 									/>
@@ -170,23 +95,84 @@ export function CommitPager(props: CommitPagerProps) {
 			</TooltipProvider>
 
 			<div className="flex mt-2">
-				{previousButton}
+				{/* Previous Button */}
+				<PagingButton onClick={handleOpenNewDiff} commitHashes={commitData.parentCommitHashes} buttonText='Previous' />
+
 				<div className="flex-grow" />
 
 				{/* Next Button */}
-				<Button
-					variant={'link'}
-					size={'sm'}
-					disabled={!hasNext}
-					onClick={hasNext ? handleNextClick : undefined}
-					className={cn(
-						'text-xs px-2 text-foreground hover:text-primary',
-						!hasNext && 'opacity-50 cursor-not-allowed hover:text-muted-foreground'
-					)}
-				>
-					Next
-				</Button>
+				<PagingButton onClick={handleOpenNewDiff} commitHashes={commitData.childHashes} buttonText='Next'/>
 			</div>
 		</div>
 	);
+}
+
+interface PagingButtonProps {
+	commitHashes: string[];
+	onClick: (commitHash: string) => void;
+	buttonText: string;
+}
+
+// Button - Simple or Dropdown based on commit count
+function PagingButton(props: PagingButtonProps) {
+	const { commitHashes, onClick, buttonText} = props;
+	const hasMultipleParents = commitHashes.length > 1;
+	const hasParents = commitHashes.length > 0;
+
+	if (!hasParents) {
+		// No pareents - disabled button
+		return (
+			<Button
+				variant={'link'}
+				size={'sm'}
+				disabled={true}
+				className="text-xs px-2 opacity-50 cursor-not-allowed hover:text-muted-foreground"
+			>
+				{buttonText}
+			</Button>
+		);
+	} else if (!hasMultipleParents) {
+		// Single parent - simple button
+		return (
+			<Button
+				variant={'link'}
+				size={'sm'}
+				onClick={() => onClick(commitHashes[0])}
+				className="text-xs px-2 text-foreground hover:text-primary"
+			>
+				{buttonText}
+			</Button>
+		);
+	} else {
+		// Multiple parents - dropdown menu
+		return (
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button
+						variant={'link'}
+						size={'sm'}
+						className="text-xs px-1 text-foreground hover:text-primary flex items-center gap-1"
+					>
+						{buttonText}
+						<ChevronDown className="h-3 w-3" />
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="start" className="w-56">
+					{commitHashes.map((parentHash, index) => (
+						<DropdownMenuItem
+							key={parentHash}
+							onClick={() => onClick(parentHash)}
+							className="flex items-center gap-2"
+						>
+							<GitCommit className="h-3 w-3" />
+							<div className="flex flex-col">
+								<span className="font-mono text-xs">{parentHash.substring(0, 7)}</span>
+								<span className="text-xs text-muted-foreground">Parent {index + 1}</span>
+							</div>
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuContent>
+			</DropdownMenu>
+		);
+	}
 }
