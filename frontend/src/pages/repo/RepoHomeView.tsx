@@ -1,10 +1,4 @@
-import {
-	BranchOverview,
-	CurrentStatus,
-	QuickActions,
-	RecentActivity,
-	useQuickRepoData,
-} from '@/components/repo-home';
+import { BranchOverview, CurrentStatus, QuickActions, RecentActivity } from '@/components/repo-home';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 
@@ -12,7 +6,7 @@ interface RepoHomeViewProps {
 	repoPath: string;
 }
 
-// Need to load all the following: 
+// Need to load all the following:
 // 1. Repo Name
 // 2. Current branch name
 // 3. Time of last commit for each branch?

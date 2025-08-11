@@ -14,7 +14,6 @@ interface RecentActivityProps {
 
 export function RecentActivity(props: RecentActivityProps) {
 	const { repoPath } = props;
-	const sidebar = useSidebarContext();
 	const repoState = useRepoState(repoPath);
 
 	const recentCommits = repoState.logState.logs?.slice(0, 6) ?? [];
