@@ -74,7 +74,7 @@ export default function RepoCommitDiffView(props: RepoCommitDiffViewProps) {
 
 						{diffSession.commitInformation && (<>
 							<Separator/>
-							<CommitPager commitData={diffSession.commitInformation} />
+							<CommitPager repoPath={repoPath} commitData={diffSession.commitInformation} />
 						</>
 						)}
 					</div>
