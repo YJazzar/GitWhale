@@ -29,7 +29,6 @@ interface CompareModalProps {
 }
 
 export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps) {
-	// Form state
 	const [fromRef, setFromRef] = useState('HEAD');
 	const [toRef, setToRef] = useState('');
 	const [isLoading, setIsLoading] = useState(false);

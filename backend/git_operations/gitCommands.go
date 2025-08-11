@@ -234,6 +234,10 @@ type DetailedCommitInfo struct {
 	CommitMessage      []string `json:"commitMessage"`
 	ShortStat          string   `json:"shortStat"`
 
+	// Info used by the commit-pager view
+	NextCommitHash string `json:"nextCommitHash"`
+	PrevCommitHash string `json:"prevCommitHash"`
+
 	// Enhanced detailed info
 	FullDiff       string       `json:"fullDiff"`
 	ChangedFiles   []FileChange `json:"changedFiles"`
