@@ -1,48 +1,11 @@
-import { CommitHash } from '@/components/commit-hash';
-import { GitRefs } from '@/components/git-refs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { Logger } from '@/utils/logger';
-import {
-	Clock,
-	Copy,
-	ExternalLink,
-	FileText,
-	Folder,
-	GitBranch,
-	GitCommit,
-	GitPullRequest,
-	Star,
-	Tag,
-	Terminal,
-	TrendingUp,
-	Users,
-} from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { git_operations } from 'wailsjs/go/models';
-import { GetAllRefs } from '../../../wailsjs/go/backend/App';
-
-interface RepoStats {
-	commitCount: number;
-	branchCount: number;
-	tagCount: number;
-	contributors: string[];
-	lastActivity: Date | null;
-}
+import { BranchOverview, CurrentStatus, QuickActions, RecentActivity, useQuickRepoData } from '@/components/repo-home';
 
 interface RepoHomeViewProps {
 	repoPath: string;
 }
 
 export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
-	const repoState = useRepoState(repoPath);
-
-	// Get repository name from path
-	const repoName = repoPath.split(/[/\\]/).pop() || 'Repository';
+	const quickData = useQuickRepoData(repoPath);
 
 	if (!repoPath) {
 		return (
@@ -53,8 +16,25 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 	}
 
 	return (
-		<div className="p-6 space-y-6 max-w-7xl mx-auto">
-			hi there. Showing {repoName}
+		<div className="h-full overflow-y-auto">
+			<div className="p-4 space-y-4 max-w-7xl mx-auto">
+			{/* Quick Actions at the top */}
+			<QuickActions repoPath={repoPath} />
+
+			{/* Main content grid */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+				{/* Status and branches */}
+				<div className="space-y-4">
+					<CurrentStatus data={quickData} />
+					<BranchOverview branches={quickData.branches} />
+				</div>
+				
+				{/* Recent activity - spans remaining columns */}
+				<div className="lg:col-span-1 xl:col-span-2">
+					<RecentActivity commits={quickData.recentCommits} repoPath={repoPath} />
+				</div>
+			</div>
+		</div>
 		</div>
 	);
 }
