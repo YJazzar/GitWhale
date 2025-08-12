@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
-import { Eye, GitCompare, Search, Terminal, Zap } from 'lucide-react';
+import { Eye, FolderArchiveIcon, FolderOpen, FoldHorizontal, GitCompare, Search, Terminal, Zap } from 'lucide-react';
 import { CompareModal } from '../git-log/compare-modal';
 import { useState } from 'react';
 
@@ -60,10 +60,10 @@ export function QuickActions(props: QuickActionsProps) {
 			<Card>
 				<CardHeader className="pb-3">
 					<CardTitle className="flex items-center gap-2 text-lg">
-						<Zap className="h-4 w-4" />
-						Quick Actions
+
+						<FolderOpen className="h-4 w-4 text-blue-500" />
+						{repoPath}
 					</CardTitle>
-					<CardDescription className="text-sm">Common tasks to get started</CardDescription>
 				</CardHeader>
 				<CardContent className="pt-0">
 					{repoState.logState.isLoading ? (

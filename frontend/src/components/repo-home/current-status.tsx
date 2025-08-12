@@ -22,10 +22,6 @@ export function CurrentStatus(props: CurrentStatusProps) {
 	return (
 		<Card>
 			<CardHeader className="pb-3">
-				<CardTitle className="flex items-center gap-2 text-lg">
-					<Folder className="h-4 w-4 text-blue-500" />
-					{repoPath}
-				</CardTitle>
 				<CardDescription className="text-sm">Current repository status</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-3 pt-0">

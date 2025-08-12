@@ -12,9 +12,6 @@ interface RepoHomeViewProps {
 // 3. Time of last commit for each branch?
 
 export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
-	const sidebar = useSidebarContext();
-	const repoState = useRepoState(repoPath);
-
 	if (!repoPath) {
 		return (
 			<div className="flex items-center justify-center h-64">
