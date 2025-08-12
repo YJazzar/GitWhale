@@ -1,19 +1,17 @@
+import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
+import { useUnixTime } from '@/hooks/use-unix-time';
 import { cn } from '@/lib/utils';
+import { Calendar, ChevronDown, GitCommit, Hash, User } from 'lucide-react';
 import { git_operations } from '../../../wailsjs/go/models';
+import { CommitHash } from '../commit-hash';
 import { Button } from '../ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
+	DropdownMenuTrigger
 } from '../ui/dropdown-menu';
-import { useUnixTime } from '@/hooks/use-unix-time';
-import { User, Calendar, Hash, ChevronDown, GitMerge, GitCommit, Loader2 } from 'lucide-react';
-import { CommitHash } from '../commit-hash';
-import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface CommitPagerProps {
 	repoPath: string;

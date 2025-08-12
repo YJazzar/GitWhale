@@ -295,16 +295,10 @@ export namespace git_operations {
 	    commitMessage: string[];
 	    shortStat: string;
 	    childHashes: string[];
-	    fullDiff: string;
 	    changedFiles: FileChange[];
 	    commitStats: CommitStats;
-	    authorDate: string;
 	    committerName: string;
 	    committerEmail: string;
-	    gpgSignature: string;
-	    treeHash: string;
-	    commitSize: number;
-	    encoding: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new DetailedCommitInfo(source);
@@ -322,16 +316,10 @@ export namespace git_operations {
 	        this.commitMessage = source["commitMessage"];
 	        this.shortStat = source["shortStat"];
 	        this.childHashes = source["childHashes"];
-	        this.fullDiff = source["fullDiff"];
 	        this.changedFiles = this.convertValues(source["changedFiles"], FileChange);
 	        this.commitStats = this.convertValues(source["commitStats"], CommitStats);
-	        this.authorDate = source["authorDate"];
 	        this.committerName = source["committerName"];
 	        this.committerEmail = source["committerEmail"];
-	        this.gpgSignature = source["gpgSignature"];
-	        this.treeHash = source["treeHash"];
-	        this.commitSize = source["commitSize"];
-	        this.encoding = source["encoding"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

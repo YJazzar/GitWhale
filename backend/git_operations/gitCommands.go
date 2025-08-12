@@ -237,17 +237,11 @@ type DetailedCommitInfo struct {
 	// Info used by the commit-pager view
 	ChildHashes []string `json:"childHashes"`
 
-	// Enhanced detailed info
-	FullDiff       string       `json:"fullDiff"`
+	// Enhanced detailed info (only what's used in UI)
 	ChangedFiles   []FileChange `json:"changedFiles"`
 	CommitStats    CommitStats  `json:"commitStats"`
-	AuthorDate     string       `json:"authorDate"`
 	CommitterName  string       `json:"committerName"`
 	CommitterEmail string       `json:"committerEmail"`
-	GPGSignature   string       `json:"gpgSignature"`
-	TreeHash       string       `json:"treeHash"`
-	CommitSize     int          `json:"commitSize"`
-	Encoding       string       `json:"encoding"`
 }
 
 // GetDetailedCommitInfo fetches comprehensive information about a specific commit
@@ -272,9 +266,6 @@ func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitI
 		// Continue without navigation info rather than failing
 	}
 
-	// Step 4: Get additional commit metadata
-	getAdditionalCommitMetadata(repoPath, commitHash, commit)
-
 	logger.Log.Info("Successfully fetched detailed info for commit %s", commitHash)
 	return commit, nil
 }
@@ -282,7 +273,7 @@ func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitI
 // getBasicCommitInfo fetches the core commit information using git show
 func getBasicCommitInfo(repoPath, commitHash string, commit *DetailedCommitInfo) error {
 	// Use git show with precise format to get basic commit info
-	cmd := exec.Command("git", "show", "--no-patch", "--format=%H%n%an%n%ae%n%cn%n%ce%n%ct%n%at%n%P%n%D%n%T%n%s%n%b", commitHash)
+	cmd := exec.Command("git", "show", "--no-patch", "--format=%H%n%an%n%ae%n%cn%n%ce%n%ct%n%at%n%P%n%D%n%s%n%B", commitHash)
 	cmd.Dir = repoPath
 	output, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || output == "" {
@@ -304,12 +295,10 @@ func getBasicCommitInfo(repoPath, commitHash string, commit *DetailedCommitInfo)
 	commit.AuthoredTimeStamp = strings.TrimSpace(lines[6]) // %at
 	commit.ParentCommitHashes = strings.Fields(lines[7])   // %P
 	commit.Refs = strings.TrimSpace(lines[8])              // %D
-	commit.TreeHash = strings.TrimSpace(lines[9])          // %T
-	commit.AuthorDate = commit.AuthoredTimeStamp           // same as authored timestamp
 
-	// Parse commit message (subject + body)
+	// Parse commit message (subject + body) -- %s and %B
 	messageLines := []string{}
-	if len(lines) > 10 {
+	if len(lines) > 9 {
 		// Remaining lines are the body (%b), including empty lines
 		for i := 10; i < len(lines); i++ {
 			messageLines = append(messageLines, lines[i])
@@ -391,21 +380,21 @@ func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo
 	// Parse the output to find commits that list our target as a parent
 	childHashes := []string{}
 	lines := strings.Split(strings.TrimSpace(childOutput), "\n")
-	
+
 	for _, line := range lines {
 		if line == "" {
 			continue
 		}
-		
+
 		// Each line format: "commit_hash parent1 parent2 ..."
 		parts := strings.Fields(line)
 		if len(parts) < 2 {
 			continue
 		}
-		
+
 		childCommitHash := parts[0]
 		parents := parts[1:]
-		
+
 		// Check if our target commit is a parent of this commit
 		for _, parent := range parents {
 			if parent == commitHash {
@@ -552,49 +541,4 @@ func getNumstatData(repoPath, parentRef, commitHash string, fileChanges []FileCh
 	}
 
 	return stats, nil
-}
-
-// getAdditionalCommitMetadata fetches GPG signatures, encoding, size, and full diff
-func getAdditionalCommitMetadata(repoPath, commitHash string, commit *DetailedCommitInfo) {
-	// Get full diff
-	diffCmd := exec.Command("git", "show", commitHash)
-	diffCmd.Dir = repoPath
-	if diffOutput, err := command_utils.RunCommandAndLogErr(diffCmd); err == nil {
-		commit.FullDiff = diffOutput
-	} else {
-		commit.FullDiff = "Error getting diff"
-	}
-
-	// Get GPG signature verification
-	gpgCmd := exec.Command("git", "verify-commit", commitHash)
-	gpgCmd.Dir = repoPath
-	if gpgOutput, err := command_utils.RunCommandAndLogErr(gpgCmd); err == nil {
-		commit.GPGSignature = gpgOutput
-	} else {
-		commit.GPGSignature = "Not signed or verification failed"
-	}
-
-	// Get commit object size
-	sizeCmd := exec.Command("git", "cat-file", "-s", commitHash)
-	sizeCmd.Dir = repoPath
-	if sizeOutput, err := command_utils.RunCommandAndLogErr(sizeCmd); err == nil && sizeOutput != "" {
-		if size, parseErr := strconv.Atoi(strings.TrimSpace(sizeOutput)); parseErr == nil {
-			commit.CommitSize = size
-		}
-	}
-
-	// Get encoding info
-	catCmd := exec.Command("git", "cat-file", "commit", commitHash)
-	catCmd.Dir = repoPath
-	if catOutput, err := command_utils.RunCommandAndLogErr(catCmd); err == nil {
-		commit.Encoding = "UTF-8" // Default
-		for _, line := range strings.Split(catOutput, "\n") {
-			if strings.HasPrefix(line, "encoding ") {
-				commit.Encoding = strings.TrimSpace(strings.TrimPrefix(line, "encoding "))
-				break
-			}
-		}
-	} else {
-		commit.Encoding = "ERROR"
-	}
 }
