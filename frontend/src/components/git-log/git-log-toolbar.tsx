@@ -29,6 +29,7 @@ import {
 	Settings,
 	Tag,
 	MoreHorizontal,
+	Loader2,
 } from 'lucide-react';
 import { CompareModal } from './compare-modal';
 import { useState } from 'react';
@@ -110,14 +111,14 @@ function FetchButton({ repoPath }: { repoPath: string }) {
 
 function CompareButton({ repoPath }: { repoPath: string }) {
 	const { logState } = useRepoState(repoPath);
-	const { navigateToCommitDiff } = useNavigateToCommitDiffs(repoPath);
+	const { navigateToCommitDiff, isLoadingNewDiff } = useNavigateToCommitDiffs(repoPath);
 	const [showCompareModal, setShowCompareModal] = useState(false);
 
 	const selectedCommits = logState.selectedCommits.currentSelectedCommits;
 	const numSelectedCommits = selectedCommits.length ?? 0;
 
 	const hasCommitSelected = numSelectedCommits > 0;
-	const isButtonDisabled = logState.isLoading || !hasCommitSelected;
+	const isButtonDisabled = logState.isLoading || !hasCommitSelected || isLoadingNewDiff;
 
 	const onCompare = () => {
 		if (numSelectedCommits === 1) {
@@ -145,7 +146,11 @@ function CompareButton({ repoPath }: { repoPath: string }) {
 					onClick={onCompare}
 					className="rounded-r-none border-r-0 pr-2"
 				>
-					<GitCompareArrows className="w-4 h-4 mr-1" />
+					{isLoadingNewDiff ? (
+						<Loader2 className="w-4 h-4 mr-1 animate-spin" />
+					) : (
+						<GitCompareArrows className="w-4 h-4 mr-1" />
+					)}
 					{compareString}
 				</Button>
 

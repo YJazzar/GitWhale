@@ -5,10 +5,12 @@ import { GitCompareArrows } from 'lucide-react';
 import { Logger } from '../../utils/logger';
 import { useRepoState } from '../state/repo/use-repo-state';
 import { git_operations } from 'wailsjs/go/models';
+import { useState } from 'react';
 
 export function useNavigateToCommitDiffs(repoPath: string) {
 	const sidebar = useSidebarContext();
 	const { diffState } = useRepoState(repoPath);
+	const [isLoadingNewDiff, setIsLoadingNewDiff] = useState(false)
 
 	const navigateToCommitDiff = async (firstCommitHash: string, secondCommitHash: string | undefined) => {
 		navigateToCommitDiffWithOptions({
@@ -20,6 +22,7 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 	};
 
 	const navigateToCommitDiffWithOptions = async (options: git_operations.DiffOptions) => {
+		setIsLoadingNewDiff(true)
 		const pageKey = `commit-${options.fromRef}-${options.toRef}`;
 
 		// Check if this commit is already open in the sidebar
@@ -28,6 +31,7 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 		const existingCommit = existingItems.find((item) => item.id === pageKey);
 		if (existingCommit) {
 			sidebar.setActiveItem(pageKey);
+			setIsLoadingNewDiff(false)
 			return;
 		}
 
@@ -40,6 +44,7 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 			);
 			Logger.error(`\t - fromRef: ${options.fromRef}`, 'useNavigateToCommitDiffs');
 			Logger.error(`\t - toRef: ${options.toRef}`, 'useNavigateToCommitDiffs');
+			setIsLoadingNewDiff(false)
 			return;
 		}
 
@@ -67,7 +72,8 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 
 		// Add the item to the sidebar and set it as active
 		sidebar.addDynamicItem(commitItem);
+		setIsLoadingNewDiff(false)
 	};
 
-	return { navigateToCommitDiffWithOptions, navigateToCommitDiff };
+	return { navigateToCommitDiffWithOptions, navigateToCommitDiff, isLoadingNewDiff };
 }

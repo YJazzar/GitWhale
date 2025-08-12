@@ -32,7 +32,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 	const [fromRef, setFromRef] = useState('HEAD');
 	const [toRef, setToRef] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
-	const { navigateToCommitDiffWithOptions } = useNavigateToCommitDiffs(repoPath);
+	const { navigateToCommitDiffWithOptions, isLoadingNewDiff } = useNavigateToCommitDiffs(repoPath);
 
 	const quickOptions = useMemo(
 		() => [
@@ -125,8 +125,8 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						Cancel
 					</Button>
-					<Button onClick={handleCompare} disabled={!fromRef || isLoading}>
-						{isLoading ? (
+					<Button onClick={handleCompare} disabled={!fromRef || isLoading || isLoadingNewDiff}>
+						{isLoading || isLoadingNewDiff ? (
 							<Loader2 className="w-4 h-4 mr-2 animate-spin" />
 						) : (
 							<GitCompare className="w-4 h-4 mr-2" />

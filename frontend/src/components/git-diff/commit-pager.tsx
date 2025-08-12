@@ -11,7 +11,7 @@ import {
 	DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { useUnixTime } from '@/hooks/use-unix-time';
-import { User, Calendar, Hash, ChevronDown, GitMerge, GitCommit } from 'lucide-react';
+import { User, Calendar, Hash, ChevronDown, GitMerge, GitCommit, Loader2 } from 'lucide-react';
 import { CommitHash } from '../commit-hash';
 import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
 
@@ -23,7 +23,6 @@ interface CommitPagerProps {
 
 export function CommitPager(props: CommitPagerProps) {
 	const { repoPath, commitData, className } = props;
-	const { navigateToCommitDiff } = useNavigateToCommitDiffs(repoPath);
 
 	// Process commit message - join array and get first line for truncation
 	const fullMessage = Array.isArray(commitData.commitMessage)
@@ -33,10 +32,6 @@ export function CommitPager(props: CommitPagerProps) {
 
 	// Format commit date
 	const commitDate = useUnixTime(commitData.commitTimeStamp);
-
-	const handleOpenNewDiff = (commitHash: string) => {
-		navigateToCommitDiff(commitHash, undefined);
-	};
 
 	return (
 		<div className={cn('text-xs p-2', className)}>
@@ -96,31 +91,41 @@ export function CommitPager(props: CommitPagerProps) {
 
 			<div className="flex mt-2">
 				{/* Previous Button */}
-				<PagingButton onClick={handleOpenNewDiff} commitHashes={commitData.parentCommitHashes} buttonText='Previous' />
+				<PagingButton
+					repoPath={repoPath}
+					commitHashes={commitData.parentCommitHashes}
+					buttonText="Previous"
+				/>
 
 				<div className="flex-grow" />
 
 				{/* Next Button */}
-				<PagingButton onClick={handleOpenNewDiff} commitHashes={commitData.childHashes} buttonText='Next'/>
+				<PagingButton repoPath={repoPath} commitHashes={commitData.childHashes} buttonText="Next" />
 			</div>
 		</div>
 	);
 }
 
 interface PagingButtonProps {
+	repoPath: string;
 	commitHashes: string[];
-	onClick: (commitHash: string) => void;
 	buttonText: string;
 }
 
 // Button - Simple or Dropdown based on commit count
 function PagingButton(props: PagingButtonProps) {
-	const { commitHashes, onClick, buttonText} = props;
+	const { commitHashes, buttonText, repoPath } = props;
+	const { navigateToCommitDiff, isLoadingNewDiff } = useNavigateToCommitDiffs(repoPath);
+
 	const hasMultipleParents = commitHashes.length > 1;
 	const hasParents = commitHashes.length > 0;
 
+	const onClick = (commitHash: string) => {
+		navigateToCommitDiff(commitHash, undefined);
+	};
+
 	if (!hasParents) {
-		// No pareents - disabled button
+		// No parents - disabled button
 		return (
 			<Button
 				variant={'link'}
@@ -138,6 +143,7 @@ function PagingButton(props: PagingButtonProps) {
 				variant={'link'}
 				size={'sm'}
 				onClick={() => onClick(commitHashes[0])}
+				disabled={isLoadingNewDiff}
 				className="text-xs px-2 text-foreground hover:text-primary"
 			>
 				{buttonText}
@@ -151,6 +157,7 @@ function PagingButton(props: PagingButtonProps) {
 					<Button
 						variant={'link'}
 						size={'sm'}
+						disabled={isLoadingNewDiff}
 						className="text-xs px-1 text-foreground hover:text-primary flex items-center gap-1"
 					>
 						{buttonText}

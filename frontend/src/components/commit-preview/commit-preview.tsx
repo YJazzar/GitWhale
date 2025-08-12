@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDetailedCommit } from '@/hooks/git-log/use-detailed-commit';
 import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
 import { Logger } from '@/utils/logger';
-import { AlertCircle, GitCompareArrows, X } from 'lucide-react';
+import { AlertCircle, GitCompareArrows, X, Loader2 } from 'lucide-react';
 import { CommitHash } from '../commit-hash';
 import { CommitAuthorInfo } from './commit-author-info';
 import { CommitMessage } from './commit-message';
@@ -21,7 +21,7 @@ interface CommitPreviewProps {
 
 export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewProps) {
 	const { data: commit, isLoading, isError, error } = useDetailedCommit(repoPath, commitHash);
-	const { navigateToCommitDiff } = useNavigateToCommitDiffs(repoPath);
+	const { navigateToCommitDiff, isLoadingNewDiff } = useNavigateToCommitDiffs(repoPath);
 
 	// Early return if required props are missing
 	if (!commitHash || !repoPath || repoPath.trim() === '') {
@@ -111,8 +111,12 @@ export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewPr
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2">
-						<Button onClick={handleViewDiff} size="sm" variant="outline">
-							<GitCompareArrows className="w-4 h-4 mr-1" />
+						<Button onClick={handleViewDiff} size="sm" variant="outline" disabled={isLoadingNewDiff}>
+							{isLoadingNewDiff ? (
+								<Loader2 className="w-4 h-4 mr-1 animate-spin" />
+							) : (
+								<GitCompareArrows className="w-4 h-4 mr-1" />
+							)}
 							View Diff
 						</Button>
 						{onClose && (
