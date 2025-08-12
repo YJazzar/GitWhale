@@ -11,6 +11,7 @@ import { CommitFileList } from './commit-file-list';
 import { CommitMessage } from './commit-message';
 import { CommitParents } from './commit-parents';
 import { CommitRefs } from './commit-refs';
+import { useShortHash } from '@/hooks/git-log/use-short-hash';
 
 interface CommitPreviewProps {
 	commitHash: string;
@@ -75,7 +76,7 @@ export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewPr
 					<p className="text-muted-foreground mb-4">
 						{error?.message ||
 							`Failed to load commit details for ${
-								commitHash?.slice(0, 7) || 'unknown commit'
+								useShortHash(commitHash) || 'unknown commit'
 							}`}
 					</p>
 					{onClose && (
@@ -110,7 +111,12 @@ export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewPr
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2">
-						<Button onClick={handleViewDiff} size="sm" variant="outline" disabled={isLoadingNewDiff}>
+						<Button
+							onClick={handleViewDiff}
+							size="sm"
+							variant="outline"
+							disabled={isLoadingNewDiff}
+						>
 							{isLoadingNewDiff ? (
 								<Loader2 className="w-4 h-4 mr-1 animate-spin" />
 							) : (

@@ -1,5 +1,6 @@
 import { GitRefs } from '@/components/git-refs';
 import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git-log/use-git-graph';
+import { useShortHash } from '@/hooks/git-log/use-short-hash';
 import { useUnixTime } from '@/hooks/use-unix-time';
 import { CommitSelectType } from '@/pages/repo/RepoLogView';
 import * as d3 from 'd3';
@@ -321,7 +322,7 @@ function CommitDetails({
 
 				const firstLine = commitMessage.split('\n')[0];
 				const displayMessage = firstLine.length > 60 ? firstLine.slice(0, 60) + '...' : firstLine;
-				const shortHash = commit.commitHash.slice(0, 7);
+				const shortHash = useShortHash(commit.commitHash);
 
 				const nodeX = getNodeX(item.column);
 				const nodeY = getNodeY(index) - ROW_HEIGHT / 2 + 6;

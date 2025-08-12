@@ -49,3 +49,5 @@ export function Startup(arg1:context.Context,arg2:backend.StartupState):Promise<
 export function ToggleStarRepo(arg1:string):Promise<boolean>;
 
 export function UpdateSettings(arg1:backend.AppSettings):Promise<void>;
+
+export function ValidateRef(arg1:string,arg2:string):Promise<boolean>;

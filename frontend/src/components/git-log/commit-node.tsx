@@ -1,4 +1,5 @@
 import { GitRefs } from '@/components/git-refs';
+import { useShortHash } from '@/hooks/git-log/use-short-hash';
 import { useUnixTime } from '@/hooks/use-unix-time';
 import { Calendar, GitCommit, GitMerge, Hash, User } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
@@ -31,7 +32,7 @@ export function CommitNode({
 	onCommitClick,
 	generateCommitPageUrl,
 }: CommitNodeProps) {
-	const shortHash = commit.commitHash.slice(0, 7);
+	const shortHash = useShortHash(commit.commitHash);
 	const commitMessage = Array.isArray(commit.commitMessage)
 		? commit.commitMessage.join('\n')
 		: commit.commitMessage;

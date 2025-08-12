@@ -161,6 +161,11 @@ func (app *App) GitFetch(gitRepoPath string) error {
 	return git_operations.GitFetch(gitRepoPath)
 }
 
+// ValidateRef checks if a Git reference is valid in the given repository
+func (app *App) ValidateRef(gitRepoPath string, ref string) bool {
+	return git_operations.ValidateGitRef(gitRepoPath, ref)
+}
+
 func (app *App) ToggleStarRepo(gitRepoPath string) bool {
 	return app.AppConfig.toggleStarRepo(gitRepoPath)
 }

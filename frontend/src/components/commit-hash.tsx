@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { useShortHash } from '@/hooks/git-log/use-short-hash';
 
 interface CommitHashProps {
 	commitHash: string;
@@ -26,7 +27,7 @@ export function CommitHash({
 	enableCopyHash = false,
 }: CommitHashProps) {
 	const [copySuccess, setCopySuccess] = useState(false);
-	const displayHash = shortHash ? commitHash.slice(0, 7) : commitHash;
+	const displayHash = shortHash ? useShortHash(commitHash) : commitHash;
 
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
 

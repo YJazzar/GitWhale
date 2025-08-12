@@ -204,6 +204,22 @@ func GitFetch(repoPath string) error {
 	return nil
 }
 
+// ValidateGitRef checks if a Git reference (branch, tag, commit hash, etc.) exists and is valid
+func ValidateGitRef(repoPath, ref string) bool {
+	if strings.TrimSpace(ref) == "" {
+		return false
+	}
+
+	// Use git rev-parse --verify which is very fast and handles all ref types
+	// This works for: commit hashes, branch names, tag names, HEAD~1, etc.
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", ref)
+	cmd.Dir = repoPath
+	err := cmd.Run()
+	
+	// If the command succeeds (exit code 0), the ref is valid
+	return err == nil
+}
+
 // Enhanced commit information structures
 type FileChange struct {
 	Path         string `json:"path"`
