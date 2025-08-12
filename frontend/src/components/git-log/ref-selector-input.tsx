@@ -40,6 +40,7 @@ export function LabeledRefSelectorInput(props: LabeledRefSelectorInputProps) {
 				currentGitRef={props.currentGitRef}
 				onUpdateGitRef={props.onUpdateGitRef}
 				allowCurrentChangesAsRef={props.allowCurrentChangesAsRef}
+				showEmptyRefAsHEAD={props.showEmptyRefAsHEAD}
 				className={props.className}
 			/>
 		</div>
@@ -51,11 +52,19 @@ interface RefSelectorInputProps {
 	currentGitRef: string;
 	onUpdateGitRef: (newRefName: string) => void;
 	allowCurrentChangesAsRef: boolean;
+	showEmptyRefAsHEAD: boolean;
 	className?: string;
 }
 
 export function RefSelectorInput(props: RefSelectorInputProps) {
-	const { repoPath, currentGitRef, onUpdateGitRef, className, allowCurrentChangesAsRef } = props;
+	const {
+		repoPath,
+		currentGitRef,
+		onUpdateGitRef,
+		className,
+		allowCurrentChangesAsRef,
+		showEmptyRefAsHEAD,
+	} = props;
 
 	const { logState } = useRepoState(repoPath);
 	const [open, setOpen] = useState(false);
@@ -135,6 +144,14 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 		}
 	};
 
+
+	let currentGitRefDisplayValue
+	if (showEmptyRefAsHEAD && (!currentGitRef || currentGitRef === "")) { 
+		currentGitRefDisplayValue = "HEAD"
+	} else { 
+		currentGitRefDisplayValue = useShortHash(currentGitRef, true)
+	}
+
 	return (
 		<TooltipProvider>
 			<Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -166,6 +183,8 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 												: currentGitRefValidation.isValid
 												? 'Valid Git reference'
 												: 'Invalid Git reference'}
+
+											{JSON.stringify(currentGitRefValidation, null, 4)}
 										</p>
 									</TooltipContent>
 								</Tooltip>
@@ -179,11 +198,10 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 								<span
 									className={cn(
 										'truncate',
-										!currentGitRefValidation.didSkipValidation &&
-											'italic pr-1'
+										!currentGitRefValidation.didSkipValidation && 'italic pr-1'
 									)}
 								>
-									{useShortHash(currentGitRef)}
+									{currentGitRefDisplayValue}
 								</span>
 							</div>
 						</div>
@@ -238,9 +256,15 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 								<CommandGroup heading="Custom Reference">
 									<CommandItem
 										value={commandSearchInput}
-										onSelect={(currentValue) => {
-											onUpdateGitRef(currentValue);
-											setOpen(false);
+										onSelect={() => {
+											if (commandInputValidation.isValid) {
+												console.log(
+													'setting command to search input: ' + commandSearchInput
+												);
+												onUpdateGitRef(commandSearchInput);
+												setOpen(false);
+												return;
+											}
 										}}
 										className={cn(
 											'flex items-center justify-between',
@@ -249,10 +273,11 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 									>
 										<div className="flex flex-col">
 											<div className="flex items-center gap-2">
-
 												{getValidationIcon(commandInputValidation)}
 
-												<span className="italic">{useShortHash(commandSearchInput)}</span>
+												<span className="italic">
+													{useShortHash(commandSearchInput, true)}
+												</span>
 
 												<Check
 													className={cn(

@@ -206,18 +206,24 @@ func GitFetch(repoPath string) error {
 
 // ValidateGitRef checks if a Git reference (branch, tag, commit hash, etc.) exists and is valid
 func ValidateGitRef(repoPath, ref string) bool {
+	logger.Log.Info(fmt.Sprintf("ValidateGitRef: Starting validation for ref '%s' in repo '%s'", ref, repoPath))
+
 	if strings.TrimSpace(ref) == "" {
+		logger.Log.Debug("ValidateGitRef: Empty ref provided, returning false")
 		return false
 	}
 
 	// Use git rev-parse --verify which is very fast and handles all ref types
 	// This works for: commit hashes, branch names, tag names, HEAD~1, etc.
+	logger.Log.Debug(fmt.Sprintf("ValidateGitRef: Running 'git rev-parse --verify --quiet %s' in repo '%s'", ref, repoPath))
 	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", ref)
 	cmd.Dir = repoPath
-	err := cmd.Run()
-	
+	_, err := command_utils.RunCommandAndLogErr(cmd)
+
+	isValid := err == nil
+
 	// If the command succeeds (exit code 0), the ref is valid
-	return err == nil
+	return isValid
 }
 
 // Enhanced commit information structures
@@ -382,12 +388,12 @@ func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInf
 func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo) error {
 	// Use a more direct approach: search all reachable commits for those that have our commit as a parent
 	// This is more efficient than the original approach but still finds all children regardless of branches
-	
+
 	childHashes := []string{}
-	
+
 	// Method: Use git rev-list with --all --parents to get commits and their parents,
 	// but limit the search scope to avoid loading too many commits in huge repos
-	
+
 	// First, try to get a reasonable subset of recent commits from all refs
 	// This covers most use cases while avoiding the full repository scan
 	recentCmd := exec.Command("git", "rev-list", "--all", "--parents", "--max-count=10000")
@@ -434,7 +440,7 @@ func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo
 		refsCmd := exec.Command("git", "for-each-ref", "--format=%(refname)")
 		refsCmd.Dir = repoPath
 		refsOutput, refsErr := command_utils.RunCommandAndLogErr(refsCmd)
-		
+
 		if refsErr == nil {
 			refs := strings.Split(strings.TrimSpace(refsOutput), "\n")
 			for _, ref := range refs {
@@ -442,20 +448,20 @@ func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo
 				if ref == "" {
 					continue
 				}
-				
+
 				// Check for commits that descend from our target on this ref
 				descendantCmd := exec.Command("git", "rev-list", "--ancestry-path", "--reverse", commitHash+".."+ref, "-n", "1")
 				descendantCmd.Dir = repoPath
 				descendantOutput, descendantErr := command_utils.RunCommandAndLogErr(descendantCmd)
-				
+
 				if descendantErr == nil && strings.TrimSpace(descendantOutput) != "" {
 					candidateHash := strings.TrimSpace(descendantOutput)
-					
+
 					// Verify this commit actually has our target as a direct parent
 					parentsCmd := exec.Command("git", "rev-list", "--parents", "-n", "1", candidateHash)
 					parentsCmd.Dir = repoPath
 					parentsOutput, parentsErr := command_utils.RunCommandAndLogErr(parentsCmd)
-					
+
 					if parentsErr == nil {
 						parentsParts := strings.Fields(strings.TrimSpace(parentsOutput))
 						if len(parentsParts) > 1 {

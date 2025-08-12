@@ -1,12 +1,12 @@
 
 
 
-export function useShortHash(commitHash: string | undefined) { 
+export function useShortHash(commitHash: string | undefined, smartShortening: boolean = false) { 
 	if (!commitHash) { 
 		return undefined
 	}
 
-	if (commitHash.length < 28) { 
+	if (commitHash.length < 28 && smartShortening) { 
 		return commitHash
 	}
 
