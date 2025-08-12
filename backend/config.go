@@ -52,7 +52,7 @@ func LoadAppConfig() (*AppConfig, error) {
 			FilePath: appConfigFile,
 			Settings: AppSettings{
 				Git: GitSettings{
-					CommitsToLoad: 100,
+					CommitsToLoad: 25,
 				},
 				Terminal: command_utils.TerminalSettings{
 					DefaultCommand: "",
