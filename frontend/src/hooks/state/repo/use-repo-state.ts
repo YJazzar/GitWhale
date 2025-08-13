@@ -1,5 +1,6 @@
 import { getDiffState } from './use-git-diff-state';
 import { getLogState } from './use-git-log-state';
+import { getHomeState } from './use-git-home-state';
 import { getTerminalState } from './use-repo-terminal';
 
 
@@ -8,12 +9,14 @@ export const useRepoState = (repoPath: string) => {
 		terminalState: getTerminalState(repoPath),
 		diffState: getDiffState(repoPath),
 		logState: getLogState(repoPath),
+		homeState: getHomeState(repoPath),
 	};
 
 	const onCloseRepo = () => {
 		stateObjects.terminalState.disposeTerminal();
 		stateObjects.diffState.disposeSessions();
 		stateObjects.logState.disposeLogState();
+		stateObjects.homeState.disposeHomeState();
 	};
 
 	return {

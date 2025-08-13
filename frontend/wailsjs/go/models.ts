@@ -532,6 +532,24 @@ export namespace git_operations {
 	        this.hash = source["hash"];
 	    }
 	}
+	export class WorktreeInfo {
+	    path: string;
+	    branch: string;
+	    hash: string;
+	    bare: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorktreeInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.branch = source["branch"];
+	        this.hash = source["hash"];
+	        this.bare = source["bare"];
+	    }
+	}
 
 }
 

@@ -30,6 +30,10 @@ export function GetApplicationLogHistory() {
   return window['go']['backend']['App']['GetApplicationLogHistory']();
 }
 
+export function GetCurrentBranchName(arg1) {
+  return window['go']['backend']['App']['GetCurrentBranchName'](arg1);
+}
+
 export function GetDefaultShellCommand() {
   return window['go']['backend']['App']['GetDefaultShellCommand']();
 }
@@ -42,8 +46,16 @@ export function GetDiffSession(arg1) {
   return window['go']['backend']['App']['GetDiffSession'](arg1);
 }
 
+export function GetRecentBranches(arg1, arg2) {
+  return window['go']['backend']['App']['GetRecentBranches'](arg1, arg2);
+}
+
 export function GetStartupDirDiffDirectory() {
   return window['go']['backend']['App']['GetStartupDirDiffDirectory']();
+}
+
+export function GetWorktrees(arg1) {
+  return window['go']['backend']['App']['GetWorktrees'](arg1);
 }
 
 export function GitFetch(arg1) {

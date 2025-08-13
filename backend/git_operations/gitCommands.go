@@ -210,6 +210,95 @@ func GetAllRefs(repoPath string) []GitRef {
 	return parsedRefs
 }
 
+type WorktreeInfo struct {
+	Path   string `json:"path"`
+	Branch string `json:"branch"`
+	Hash   string `json:"hash"`
+	Bare   bool   `json:"bare"`
+}
+
+func GetRecentBranches(repoPath string, limit int) []GitRef {
+	logger.Log.Info("Getting recent branches for repo: %v (limit: %d)", repoPath, limit)
+
+	// Get local branches with last commit date using for-each-ref
+	cmd := exec.Command("git", "for-each-ref", 
+		"--format=%(refname:short)|%(objectname)|%(committerdate:unix)", 
+		"--sort=-committerdate", 
+		fmt.Sprintf("--count=%d", limit),
+		"refs/heads/")
+	cmd.Dir = repoPath
+	output, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		logger.Log.Error("Failed to get recent branches: %v", err)
+		return make([]GitRef, 0)
+	}
+
+	var recentBranches []GitRef
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Split(line, "|")
+		if len(parts) != 3 {
+			continue
+		}
+
+		recentBranches = append(recentBranches, GitRef{
+			Name: parts[0],
+			Hash: parts[1],
+			Type: "localBranch",
+		})
+	}
+
+	return recentBranches
+}
+
+func GetWorktrees(repoPath string) []WorktreeInfo {
+	logger.Log.Info("Getting worktrees for repo: %v", repoPath)
+
+	cmd := exec.Command("git", "worktree", "list", "--porcelain")
+	cmd.Dir = repoPath
+	output, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		// If worktree command fails, this might not be a git repo or worktrees not supported
+		logger.Log.Debug("Failed to get worktrees (likely not a worktree repo): %v", err)
+		return make([]WorktreeInfo, 0)
+	}
+
+	var worktrees []WorktreeInfo
+	var current WorktreeInfo
+	
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			// Empty line indicates end of worktree entry
+			if current.Path != "" {
+				worktrees = append(worktrees, current)
+				current = WorktreeInfo{}
+			}
+			continue
+		}
+
+		if strings.HasPrefix(line, "worktree ") {
+			current.Path = strings.TrimPrefix(line, "worktree ")
+		} else if strings.HasPrefix(line, "HEAD ") {
+			current.Hash = strings.TrimPrefix(line, "HEAD ")
+		} else if strings.HasPrefix(line, "branch ") {
+			current.Branch = strings.TrimPrefix(line, "branch refs/heads/")
+		} else if line == "bare" {
+			current.Bare = true
+		}
+	}
+
+	// Add the last worktree if it exists
+	if current.Path != "" {
+		worktrees = append(worktrees, current)
+	}
+
+	return worktrees
+}
+
 func GitFetch(repoPath string) error {
 	logger.Log.Info("Fetching for repo: %v", repoPath)
 

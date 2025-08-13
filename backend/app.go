@@ -157,6 +157,18 @@ func (app *App) GetAllRefs(gitRepoPath string) []git_operations.GitRef {
 	return git_operations.GetAllRefs(gitRepoPath)
 }
 
+func (app *App) GetRecentBranches(gitRepoPath string, limit int) []git_operations.GitRef {
+	return git_operations.GetRecentBranches(gitRepoPath, limit)
+}
+
+func (app *App) GetWorktrees(gitRepoPath string) []git_operations.WorktreeInfo {
+	return git_operations.GetWorktrees(gitRepoPath)
+}
+
+func (app *App) GetCurrentBranchName(gitRepoPath string) string {
+	return git_operations.GetCurrentBranchName(gitRepoPath)
+}
+
 func (app *App) GitFetch(gitRepoPath string) error {
 	return git_operations.GitFetch(gitRepoPath)
 }

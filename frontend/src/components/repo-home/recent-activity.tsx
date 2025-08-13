@@ -4,8 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react';
-import { QuickRepoData } from './types';
-import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useUnixTime } from '@/hooks/use-unix-time';
 
@@ -15,9 +13,10 @@ interface RecentActivityProps {
 
 export function RecentActivity(props: RecentActivityProps) {
 	const { repoPath } = props;
-	const repoState = useRepoState(repoPath);
+	const { homeState } = useRepoState(repoPath);
 
-	const recentCommits = repoState.logState.logs?.slice(0, 6) ?? [];
+	const recentCommits = homeState.recentCommits;
+	const isLoading = homeState.loadingStates.recentCommits;
 
 	return (
 		<Card>
@@ -29,7 +28,7 @@ export function RecentActivity(props: RecentActivityProps) {
 				<CardDescription className="text-sm">Latest commits in this repository</CardDescription>
 			</CardHeader>
 			<CardContent className="pt-0">
-				{repoState.logState.isLoading ? (
+				{isLoading ? (
 					<div className="space-y-2">
 						{Array.from({ length: 5 }).map((_, index) => (
 							<div key={index} className="flex items-start gap-2.5 p-2.5 rounded-lg">
@@ -79,7 +78,9 @@ export function RecentActivity(props: RecentActivityProps) {
 										<span>{commit.username}</span>
 										<span>•</span>
 										<Calendar className="h-3 w-3" />
-										<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
+										<span>
+											{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}
+										</span>
 									</div>
 								</div>
 								<ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
