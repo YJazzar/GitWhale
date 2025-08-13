@@ -8,7 +8,7 @@ import {
 	RunGitLog,
 } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
-import { useMapPrimitive } from '../use-map-primitive';
+import { useMapPrimitive } from '../../primitives/use-map-primitive';
 
 // State atoms for home view data per repository path
 const recentBranchesAtom = atom<Map<string, git_operations.GitRef[]>>(new Map());

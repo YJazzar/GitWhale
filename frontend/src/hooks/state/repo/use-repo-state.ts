@@ -7,9 +7,9 @@ import { getTerminalState } from './use-repo-terminal';
 export const useRepoState = (repoPath: string) => {
 	const stateObjects = {
 		terminalState: getTerminalState(repoPath),
+		homeState: getHomeState(repoPath),
 		diffState: getDiffState(repoPath),
 		logState: getLogState(repoPath),
-		homeState: getHomeState(repoPath),
 	};
 
 	const onCloseRepo = () => {

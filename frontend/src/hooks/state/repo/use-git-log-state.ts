@@ -3,7 +3,7 @@ import { atom, useAtom } from 'jotai';
 import { useState, useEffect, useMemo } from 'react';
 import { RunGitLog, GetAllRefs, GitFetch } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
-import { useMapPrimitive } from '../use-map-primitive';
+import { useMapPrimitive } from '../../primitives/use-map-primitive';
 import { UseAppState } from '../use-app-state';
 
 // Map because each repo path needs to have the same data
