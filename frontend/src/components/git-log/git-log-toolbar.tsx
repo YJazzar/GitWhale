@@ -73,7 +73,7 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 			<RefSelectorInput
 				repoPath={repoPath}
 				currentGitRef={toolbarOptions.fromRef ?? ""}
-				showEmptyRefAsHEAD={true}
+				showEmptyAs={"HEAD"}
 				onUpdateGitRef={onUpdateSelectedRefForLog}
 				allowCurrentChangesAsRef={false}
 			/>

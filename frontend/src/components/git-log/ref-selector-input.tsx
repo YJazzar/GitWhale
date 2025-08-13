@@ -40,7 +40,7 @@ export function LabeledRefSelectorInput(props: LabeledRefSelectorInputProps) {
 				currentGitRef={props.currentGitRef}
 				onUpdateGitRef={props.onUpdateGitRef}
 				allowCurrentChangesAsRef={props.allowCurrentChangesAsRef}
-				showEmptyRefAsHEAD={props.showEmptyRefAsHEAD}
+				showEmptyAs={props.showEmptyAs}
 				className={props.className}
 			/>
 		</div>
@@ -52,7 +52,7 @@ interface RefSelectorInputProps {
 	currentGitRef: string;
 	onUpdateGitRef: (newRefName: string) => void;
 	allowCurrentChangesAsRef: boolean;
-	showEmptyRefAsHEAD: boolean;
+	showEmptyAs: string;
 	className?: string;
 }
 
@@ -63,7 +63,7 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 		onUpdateGitRef,
 		className,
 		allowCurrentChangesAsRef,
-		showEmptyRefAsHEAD,
+		showEmptyAs,
 	} = props;
 
 	const { logState } = useRepoState(repoPath);
@@ -146,8 +146,8 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 
 
 	let currentGitRefDisplayValue
-	if (showEmptyRefAsHEAD && (!currentGitRef || currentGitRef === "")) { 
-		currentGitRefDisplayValue = "HEAD"
+	if (!!showEmptyAs && (!currentGitRef || currentGitRef === "")) { 
+		currentGitRefDisplayValue = showEmptyAs
 	} else { 
 		currentGitRefDisplayValue = useShortHash(currentGitRef, true)
 	}

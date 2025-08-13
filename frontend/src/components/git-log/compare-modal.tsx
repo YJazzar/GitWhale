@@ -98,6 +98,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 									currentGitRef={fromRef}
 									onUpdateGitRef={setFromRef}
 									allowCurrentChangesAsRef={false}
+									showEmptyAs='Working Directory'
 									className="min-w-48 max-w-full"
 								/>
 							</div>
@@ -111,6 +112,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 									currentGitRef={toRef}
 									onUpdateGitRef={setToRef}
 									allowCurrentChangesAsRef={allowCurrentChangeSelectionInToRef}
+									showEmptyAs='Working Directory'
 									className="min-w-48 max-w-full"
 								/>
 							</div>
