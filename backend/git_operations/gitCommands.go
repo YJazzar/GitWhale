@@ -221,9 +221,9 @@ func GetRecentBranches(repoPath string, limit int) []GitRef {
 	logger.Log.Info("Getting recent branches for repo: %v (limit: %d)", repoPath, limit)
 
 	// Get local branches with last commit date using for-each-ref
-	cmd := exec.Command("git", "for-each-ref", 
-		"--format=%(refname:short)|%(objectname)|%(committerdate:unix)", 
-		"--sort=-committerdate", 
+	cmd := exec.Command("git", "for-each-ref",
+		"--format=%(refname:short)|%(objectname)|%(committerdate:unix)",
+		"--sort=-committerdate",
 		fmt.Sprintf("--count=%d", limit),
 		"refs/heads/")
 	cmd.Dir = repoPath
@@ -268,7 +268,7 @@ func GetWorktrees(repoPath string) []WorktreeInfo {
 
 	var worktrees []WorktreeInfo
 	var current WorktreeInfo
-	
+
 	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -366,9 +366,6 @@ type DetailedCommitInfo struct {
 	CommitMessage      []string `json:"commitMessage"`
 	ShortStat          string   `json:"shortStat"`
 
-	// Info used by the commit-pager view
-	ChildHashes []string `json:"childHashes"`
-
 	// Enhanced detailed info (only what's used in UI)
 	ChangedFiles   []FileChange `json:"changedFiles"`
 	CommitStats    CommitStats  `json:"commitStats"`
@@ -390,12 +387,6 @@ func GetDetailedCommitInfo(repoPath string, commitHash string) (*DetailedCommitI
 	// Step 2: Get file changes using git diff-tree
 	if err := getCommitFileChanges(repoPath, commitHash, commit); err != nil {
 		return nil, err
-	}
-
-	// Step 3: Get next and previous commit hashes for navigation
-	if err := getCommitNavigation(repoPath, commitHash, commit); err != nil {
-		logger.Log.Error("Failed to get commit navigation for %s: %v", commitHash, err)
-		// Continue without navigation info rather than failing
 	}
 
 	logger.Log.Info("Successfully fetched detailed info for commit %s", commitHash)
@@ -491,105 +482,6 @@ func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInf
 		commit.ShortStat = strings.TrimSpace(shortStatOutput)
 	}
 
-	return nil
-}
-
-// getCommitNavigation efficiently gets the next and previous commit hashes for navigation
-func getCommitNavigation(repoPath, commitHash string, commit *DetailedCommitInfo) error {
-	// Use a more direct approach: search all reachable commits for those that have our commit as a parent
-	// This is more efficient than the original approach but still finds all children regardless of branches
-
-	childHashes := []string{}
-
-	// Method: Use git rev-list with --all --parents to get commits and their parents,
-	// but limit the search scope to avoid loading too many commits in huge repos
-
-	// First, try to get a reasonable subset of recent commits from all refs
-	// This covers most use cases while avoiding the full repository scan
-	recentCmd := exec.Command("git", "rev-list", "--all", "--parents", "--max-count=10000")
-	recentCmd.Dir = repoPath
-	recentOutput, err := command_utils.RunCommandAndLogErr(recentCmd)
-	if err != nil {
-		// If this fails, fall back to empty child hashes rather than crashing
-		commit.ChildHashes = []string{}
-		return nil
-	}
-
-	// Parse the output to find commits that have our target commit as a parent
-	lines := strings.Split(strings.TrimSpace(recentOutput), "\n")
-	seenChildren := make(map[string]bool) // Avoid duplicates
-
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-
-		// Each line format: "commit_hash parent1_hash parent2_hash ..."
-		parts := strings.Fields(line)
-		if len(parts) < 2 {
-			continue // No parents, skip
-		}
-
-		childCommitHash := parts[0]
-		parents := parts[1:]
-
-		// Check if our target commit is a parent of this commit
-		for _, parent := range parents {
-			if parent == commitHash && !seenChildren[childCommitHash] {
-				childHashes = append(childHashes, childCommitHash)
-				seenChildren[childCommitHash] = true
-				break
-			}
-		}
-	}
-
-	// If we didn't find any children in the recent commits, and the repo might be large,
-	// try a more targeted approach using git log with ancestry-path from all refs
-	if len(childHashes) == 0 {
-		// Get all refs and check for immediate descendants
-		refsCmd := exec.Command("git", "for-each-ref", "--format=%(refname)")
-		refsCmd.Dir = repoPath
-		refsOutput, refsErr := command_utils.RunCommandAndLogErr(refsCmd)
-
-		if refsErr == nil {
-			refs := strings.Split(strings.TrimSpace(refsOutput), "\n")
-			for _, ref := range refs {
-				ref = strings.TrimSpace(ref)
-				if ref == "" {
-					continue
-				}
-
-				// Check for commits that descend from our target on this ref
-				descendantCmd := exec.Command("git", "rev-list", "--ancestry-path", "--reverse", commitHash+".."+ref, "-n", "1")
-				descendantCmd.Dir = repoPath
-				descendantOutput, descendantErr := command_utils.RunCommandAndLogErr(descendantCmd)
-
-				if descendantErr == nil && strings.TrimSpace(descendantOutput) != "" {
-					candidateHash := strings.TrimSpace(descendantOutput)
-
-					// Verify this commit actually has our target as a direct parent
-					parentsCmd := exec.Command("git", "rev-list", "--parents", "-n", "1", candidateHash)
-					parentsCmd.Dir = repoPath
-					parentsOutput, parentsErr := command_utils.RunCommandAndLogErr(parentsCmd)
-
-					if parentsErr == nil {
-						parentsParts := strings.Fields(strings.TrimSpace(parentsOutput))
-						if len(parentsParts) > 1 {
-							for _, parent := range parentsParts[1:] {
-								if parent == commitHash && !seenChildren[candidateHash] {
-									childHashes = append(childHashes, candidateHash)
-									seenChildren[candidateHash] = true
-									break
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	commit.ChildHashes = childHashes
 	return nil
 }
 
