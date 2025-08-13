@@ -1,6 +1,6 @@
 import Logger from '@/utils/logger';
 import { atom, useAtom } from 'jotai';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { RunGitLog, GetAllRefs, GitFetch } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { useMapPrimitive } from '../use-map-primitive';
@@ -38,6 +38,39 @@ export function getLogState(repoPath: string) {
 	const [needsToReload, setNeedsToReload] = useState(false);
 
 	const currentSelectedCommits = _selectedCommitsPrim.value ?? [];
+
+	// Compute child commit cache from loaded logs
+	const childCommitCache = useMemo(() => {
+		const logs = _gitLogDataPrim.value;
+		if (!logs || logs.length === 0) {
+			return new Map<string, string[]>();
+		}
+
+		const cache = new Map<string, string[]>();
+		
+		// Build parent -> children relationship map
+		logs.forEach(commit => {
+			// For each parent of this commit, add this commit as a child
+			commit.parentCommitHashes.forEach(parentHash => {
+				if (!cache.has(parentHash)) {
+					cache.set(parentHash, []);
+				}
+				const children = cache.get(parentHash)!;
+				// Avoid duplicates (shouldn't happen, but be safe)
+				if (!children.includes(commit.commitHash)) {
+					children.push(commit.commitHash);
+				}
+			});
+		});
+
+		return cache;
+	}, [_gitLogDataPrim.value]);
+
+	// Function to get child commits for a given commit hash
+	const getChildCommits = (commitHash: string): string[] => {
+		return childCommitCache.get(commitHash) || [];
+	};
+
 	const addToSelectedCommitsList = (commitHashToSelect: string, isSecondarySelect: boolean) => {
 		if (!isSecondarySelect) {
 			// we're in single-select mode right now, so we can clear out all other things selected
@@ -167,6 +200,9 @@ export function getLogState(repoPath: string) {
 			get: () => currentLogOptions,
 			set: _gitLogOptionsPrim.set,
 		},
+
+		// Get child commits for a given commit hash (for navigation)
+		getChildCommits,
 
 		// Clear all log state for this repo
 		disposeLogState: () => {
