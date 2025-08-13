@@ -127,6 +127,9 @@ func saveNewHelperDiffScript() (string, error) {
 		return "", fmt.Errorf("failed to resolve the path where the helper script should be saved to: %v", err)
 	}
 	scriptPath = filepath.Clean(scriptPath)
+	if runtime.GOOS == "windows" {
+		scriptPath = strings.Replace(scriptPath, "\\", "/", -1)
+	}
 
 	// Create the script
 	err = os.WriteFile(scriptPath, []byte(scriptContent), 0755)
