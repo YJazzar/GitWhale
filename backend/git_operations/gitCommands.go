@@ -134,6 +134,27 @@ func ReadGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
 	return parsedLogs
 }
 
+// GetGitLogCommitInfo fetches basic commit information for a single commit using git log
+// This is much faster than GetDetailedCommitInfo as it uses a single git log command
+func GetGitLogCommitInfo(repoPath, commitHash string) (*GitLogCommitInfo, error) {
+	logger.Log.Info("Fetching git log commit info for %s in %s", commitHash, repoPath)
+
+	// Use git log with -n1 to get just this commit
+	commitsToLoad := 1
+	options := GitLogOptions{
+		CommitsToLoad: &commitsToLoad,
+		FromRef:       &commitHash,
+	}
+
+	commits := ReadGitLog(repoPath, options)
+	if len(commits) == 0 {
+		return nil, fmt.Errorf("commit %s not found in repository %s", commitHash, repoPath)
+	}
+
+	// Return the first (and only) commit
+	return &commits[0], nil
+}
+
 func GetAllRefs(repoPath string) []GitRef {
 	logger.Log.Info("Getting branches for repo: %v", repoPath)
 

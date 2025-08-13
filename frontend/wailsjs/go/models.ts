@@ -358,6 +358,34 @@ export namespace git_operations {
 	        this.isSingleCommitDiff = source["isSingleCommitDiff"];
 	    }
 	}
+	export class GitLogCommitInfo {
+	    commitHash: string;
+	    username: string;
+	    userEmail: string;
+	    commitTimeStamp: string;
+	    authoredTimeStamp: string;
+	    parentCommitHashes: string[];
+	    refs: string;
+	    commitMessage: string[];
+	    shortStat: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GitLogCommitInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commitHash = source["commitHash"];
+	        this.username = source["username"];
+	        this.userEmail = source["userEmail"];
+	        this.commitTimeStamp = source["commitTimeStamp"];
+	        this.authoredTimeStamp = source["authoredTimeStamp"];
+	        this.parentCommitHashes = source["parentCommitHashes"];
+	        this.refs = source["refs"];
+	        this.commitMessage = source["commitMessage"];
+	        this.shortStat = source["shortStat"];
+	    }
+	}
 	export class FileInfo {
 	    Path: string;
 	    Name: string;
@@ -428,7 +456,7 @@ export namespace git_operations {
 	    title: string;
 	    directoryData?: Directory;
 	    hasDiffData: boolean;
-	    commitInformation?: DetailedCommitInfo;
+	    commitInformation?: GitLogCommitInfo;
 	
 	    static createFrom(source: any = {}) {
 	        return new DiffSession(source);
@@ -447,7 +475,7 @@ export namespace git_operations {
 	        this.title = source["title"];
 	        this.directoryData = this.convertValues(source["directoryData"], Directory);
 	        this.hasDiffData = source["hasDiffData"];
-	        this.commitInformation = this.convertValues(source["commitInformation"], DetailedCommitInfo);
+	        this.commitInformation = this.convertValues(source["commitInformation"], GitLogCommitInfo);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -471,34 +499,7 @@ export namespace git_operations {
 	
 	
 	
-	export class GitLogCommitInfo {
-	    commitHash: string;
-	    username: string;
-	    userEmail: string;
-	    commitTimeStamp: string;
-	    authoredTimeStamp: string;
-	    parentCommitHashes: string[];
-	    refs: string;
-	    commitMessage: string[];
-	    shortStat: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new GitLogCommitInfo(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.commitHash = source["commitHash"];
-	        this.username = source["username"];
-	        this.userEmail = source["userEmail"];
-	        this.commitTimeStamp = source["commitTimeStamp"];
-	        this.authoredTimeStamp = source["authoredTimeStamp"];
-	        this.parentCommitHashes = source["parentCommitHashes"];
-	        this.refs = source["refs"];
-	        this.commitMessage = source["commitMessage"];
-	        this.shortStat = source["shortStat"];
-	    }
-	}
 	export class GitLogOptions {
 	    commitsToLoad?: number;
 	    fromRef?: string;

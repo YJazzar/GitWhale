@@ -2,13 +2,9 @@ import { Button } from '@/components/ui/button';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
-	DropdownMenuTrigger,
+	DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,22 +13,17 @@ import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-d
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import Logger from '@/utils/logger';
 import {
-	Check,
 	ChevronDown,
 	Download,
 	Filter,
-	GitBranch,
-	GitCommitHorizontal,
 	GitCompareArrows,
+	Loader2,
 	RefreshCw,
 	Search,
-	Settings,
-	Tag,
-	MoreHorizontal,
-	Loader2,
+	Settings
 } from 'lucide-react';
-import { CompareModal } from './compare-modal';
 import { useState } from 'react';
+import { CompareModal } from './compare-modal';
 import { RefSelectorInput } from './ref-selector-input';
 
 interface GitLogToolbarProps {

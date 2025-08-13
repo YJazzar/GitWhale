@@ -27,7 +27,7 @@ type DiffSession struct {
 	Title             string              `json:"title"`
 	DirectoryData     *Directory          `json:"directoryData"`
 	HasDiffData       bool                `json:"hasDiffData"`
-	CommitInformation *DetailedCommitInfo `json:"commitInformation"`
+	CommitInformation *GitLogCommitInfo `json:"commitInformation"`
 }
 
 type DiffOptions struct {
@@ -192,10 +192,10 @@ func CreateDiffSession(options DiffOptions) (*DiffSession, error) {
 	}
 
 	if options.IsSingleCommitDiff {
-		session.CommitInformation, err = GetDetailedCommitInfo(options.RepoPath, options.FromRef)
+		session.CommitInformation, err = GetGitLogCommitInfo(options.RepoPath, options.FromRef)
 		if err != nil {
 			CleanupDiffSession(sessionId)
-			return nil, fmt.Errorf("failed to load detailed information about the commit %s", options.FromRef)
+			return nil, fmt.Errorf("failed to load information about the commit %s", options.FromRef)
 		}
 	}
 

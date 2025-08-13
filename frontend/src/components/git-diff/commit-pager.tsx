@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 
 interface CommitPagerProps {
 	repoPath: string;
-	commitData: git_operations.DetailedCommitInfo;
+	commitData: git_operations.GitLogCommitInfo;
 	className?: string;
 }
 
@@ -98,7 +98,7 @@ export function CommitPager(props: CommitPagerProps) {
 				<div className="flex-grow" />
 
 				{/* Next Button */}
-				<PagingButton repoPath={repoPath} commitHashes={commitData.childHashes} buttonText="Next" />
+				<PagingButton repoPath={repoPath} commitHashes={(commitData as any).childHashes || []} buttonText="Next" />
 			</div>
 		</div>
 	);
