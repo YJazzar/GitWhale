@@ -32,7 +32,7 @@ export function getHomeState(repoPath: string) {
 
 	const _recentCommitsPrim = useLoadTrackedMapPrimitive(recentCommitsAtom, repoPath, async () => {
 		try {
-			const commitsToLoad = 6;
+			const commitsToLoad = 10;
 			const options = {
 				commitsToLoad,
 				fromRef: undefined,
