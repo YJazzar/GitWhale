@@ -4,6 +4,7 @@
         "hookstate",
         "notif",
         "Setsize",
-        "wailsjs"
+        "wailsjs",
+        "Worktrees"
     ]
 }
