@@ -1,10 +1,11 @@
 import { SidebarItemProps, SidebarProps, useSidebarState } from '@/hooks/state/use-sidebar-state';
 import clsx from 'clsx';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { forwardRef, useCallback, useImperativeHandle, useMemo } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
 
 export type SidebarHandle = {
 	addDynamicItem: (item: SidebarItemProps) => void;
@@ -93,6 +94,20 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 
 	const state = useSidebarState(sessionKey, staticItems, initialMode, defaultItemId);
 	const operations = useSidebarOperations(state, onItemClick);
+	useKeyboardShortcut("b", () => { 
+		state.sidebarMode.toggle()
+	})
+	// For some reason, uncommenting this breaks the File-tabs ctrl+w listener
+	// useKeyboardShortcut( "w", (event) => { 
+	// 	let activeItem = state.activeItem.get()
+	// 	if (!!activeItem && activeItem.isDynamic == true) { 
+	// 		event.preventDefault()
+	// 		event.stopPropagation()
+
+	// 		operations.removeDynamicItem(activeItem.id)
+	// 	}
+	// })
+
 
 	// Create handlers for the imperative API
 	const handlers: SidebarHandle = useMemo(
@@ -110,7 +125,7 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 	// Expose imperative API
 	useImperativeHandle(ref, () => handlers, [handlers]);
 
-	const isCompactMode = state.currentMode === 'compact';
+	const isCompactMode = state.sidebarMode.get() === 'compact';
 	const hasDynamicItems = state.dynamicItems.get().length > 0;
 
 	return (

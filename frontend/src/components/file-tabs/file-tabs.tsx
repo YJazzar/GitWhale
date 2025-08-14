@@ -1,7 +1,8 @@
 import { FileTabManagerProps, TabProps, useFileManagerState } from '@/hooks/state/use-file-manager-state';
+import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
 import clsx from 'clsx';
 import { Circle, X } from 'lucide-react';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
 
 export type TabsManagerHandle = {
 	closeTab: (tabToClose: TabProps) => void;
@@ -94,6 +95,14 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 	const state = useFileManagerState(fileTabManageSessionKey, initialTabs, defaultTabKey);
 	const operations = useFileTabsOperations(state);
 
+	// Handles the keyboard shortcut to close stuff
+	useKeyboardShortcut('w', () => {
+		let currentTab = state.activeTab;
+		if (currentTab) {
+			operations.closeFile(currentTab);
+		}
+	});
+
 	// Create handlers for the imperative API
 	const handlers: TabsManagerHandle = useMemo(
 		() => ({
@@ -108,27 +117,6 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 
 	// Hooks that can be called by the parent component
 	useImperativeHandle(ref, () => handlers, [handlers]);
-
-	// Handles the keyboard shortcut to close stuff
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if ((event.metaKey || event.ctrlKey) && event.key === 'w') {
-				event.preventDefault();
-				event.stopPropagation();
-
-				let currentTab = state.activeTab;
-				if (currentTab) {
-					operations.closeFile(currentTab);
-				}
-			}
-		};
-
-		document.addEventListener('keydown', handleKeyDown);
-
-		return () => {
-			document.removeEventListener('keydown', handleKeyDown);
-		};
-	}, [state, operations]);
 
 	return (
 		<div className="h-full w-full flex flex-col overflow-hidden">
@@ -160,13 +148,11 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 								'opacity-100 z-10': isActive,
 								'opacity-0 z-0 pointer-events-none': !isActive,
 							})}
-							style={{ 
+							style={{
 								visibility: isActive ? 'visible' : 'hidden',
 							}}
 						>
-							<div className="w-full h-full overflow-auto">
-								{tab.component}
-							</div>
+							<div className="w-full h-full overflow-auto">{tab.component}</div>
 						</div>
 					);
 				})}

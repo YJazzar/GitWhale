@@ -113,9 +113,6 @@ export function useSidebarState(
 	}, [sessionKey, staticItems, defaultItemId, initialMode, activeItemId, sidebarModeMap, setSidebarMode, setActiveItemId]);
 
 	return {
-		// Current state
-		currentMode,
-
 		// State setters with convenient API
 		activeItem: {
 			get: () => activeItem,
