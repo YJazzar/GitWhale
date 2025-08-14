@@ -12,9 +12,9 @@ export function CurrentStatus(props: CurrentStatusProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
 
-	const isLoadingBranch = homeState.loadingStates.currentBranch;
-	const isLoadingCommits = homeState.loadingStates.recentCommits;
-	const commitCount = homeState.recentCommits.length;
+	const isLoadingBranch = homeState.currentBranch;
+	const isLoadingCommits = homeState.recentCommits.isLoading;
+	const commitCount = homeState.recentCommits.value?.length ?? 0;
 
 	return (
 		<Card>
@@ -36,7 +36,7 @@ export function CurrentStatus(props: CurrentStatusProps) {
 						<Skeleton className="h-5 w-16 rounded-full" />
 					) : (
 						<Badge variant="outline" className="font-mono text-xs">
-							{homeState.currentBranch || 'unknown'}
+							{homeState.currentBranch.value || 'unknown'}
 						</Badge>
 					)}
 				</div>
@@ -60,10 +60,12 @@ export function CurrentStatus(props: CurrentStatusProps) {
 							<GitBranch className="h-3.5 w-3.5 text-purple-500" />
 							<span className="font-medium text-sm">Branches</span>
 						</div>
-						{homeState.loadingStates.branches ? (
+						{homeState.recentBranches.isLoading ? (
 							<Skeleton className="h-4 w-6" />
 						) : (
-							<span className="text-sm font-mono">{homeState.recentBranches.length}</span>
+							<span className="text-sm font-mono">
+								{homeState.recentBranches.value?.length || 'N/A'}
+							</span>
 						)}
 					</div>
 				</div>

@@ -14,8 +14,8 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
 
-	const isLoading = homeState.loadingStates.worktrees;
-	const worktrees = homeState.worktrees;
+	const isLoading = homeState.worktrees.isLoading;
+	const worktrees = homeState.worktrees.value ?? [];
 	const hasWorktrees = worktrees.length > 0;
 
 	// Don't render if no worktrees found

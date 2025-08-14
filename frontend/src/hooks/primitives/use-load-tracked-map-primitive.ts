@@ -1,3 +1,4 @@
+import Logger from '@/utils/logger';
 import { atom, useAtom, WritableAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
@@ -14,19 +15,18 @@ export function createLoadTrackedMappedAtom<T>(): LoadTrackedMappedWritableAtom<
 // A wrapped function type that re-returns the callback's output
 // used in a triggerLoadOperation that automatically sets the loading state before and after the promise
 type LoadOperation<V> = () => Promise<V>;
-type LoadOperationCallback = <V>(callback: LoadOperation<V>) => Promise<V>;
 
 type LoadTrackedPrimitive<T> = {
 	isLoading: boolean;
 	value: T | undefined;
-	set: (newValue: T) => void;
-	useLoadOperation: <V>(innerLoadBlock: () => Promise<V>) => () => Promise<V>;
+	load: LoadOperation<void>;
 	kill: () => void;
 };
 
 export function useLoadTrackedMapPrimitive<T>(
 	atom: LoadTrackedMappedWritableAtom<T>,
-	mapKey: string
+	mapKey: string,
+	loadOperation: LoadOperation<T | undefined>
 ): LoadTrackedPrimitive<T> {
 	const [mapData, setMapData] = useAtom(atom);
 
@@ -34,12 +34,12 @@ export function useLoadTrackedMapPrimitive<T>(
 		return mapData.get(mapKey);
 	}, [mapData, mapKey]);
 
-	const updateMapAtKey = useCallback(
-		(newData: T) => {
+	const updateAtom = useCallback(
+		(isLoading: boolean, newData: T | undefined) => {
 			const newMap = new Map(mapData);
 			newMap.set(mapKey, {
-				isLoading: keyedData?.isLoading ?? false,
-				data: newData,
+				isLoading: isLoading,
+				data: newData ?? keyedData?.data,
 			});
 			setMapData(newMap);
 		},
@@ -52,41 +52,22 @@ export function useLoadTrackedMapPrimitive<T>(
 		setMapData(newMap);
 	}, [setMapData, mapKey]);
 
-	const setLoading = useCallback(
-		(newLoadingState: boolean) => {
-			const newMap = new Map(mapData);
-			newMap.set(mapKey, {
-				isLoading: newLoadingState,
-				data: keyedData?.data,
-			});
-			setMapData(newMap);
-		},
-		[mapData, setMapData, mapKey]
-	);
+	const loadBlock = useCallback(async () => {
+		updateAtom(true, undefined);
 
-	const loadBlock = useCallback(
-		<V>(innerLoadBlock: () => Promise<V>) =>
-			async () => {
-				setLoading(true);
-
-				let returnValue: V | undefined;
-				try {
-					returnValue = await innerLoadBlock();
-				} finally {
-					setLoading(false);
-				}
-
-				setLoading(false);
-				return returnValue;
-			},
-		[setLoading]
-	);
+		try {
+			let updatedValue = await loadOperation();
+			updateAtom(false, updatedValue);
+		} catch (error) {
+			Logger.error(`Load operation threw an error: ${error}`, 'useLoadTrackedMapPrimitive');
+			updateAtom(false, undefined);
+		}
+	}, [updateAtom, loadOperation]);
 
 	return {
 		isLoading: keyedData?.isLoading ?? false,
 		value: keyedData?.data,
-		set: updateMapAtKey,
-		useLoadOperation: loadBlock,
+		load: loadBlock,
 		kill: deleteKey,
 	};
 }

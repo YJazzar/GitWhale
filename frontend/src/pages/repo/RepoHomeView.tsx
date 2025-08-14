@@ -1,7 +1,12 @@
-import { BranchOverview, WorktreesOverview, CurrentStatus, QuickActions, RecentActivity } from '@/components/repo-home';
+import {
+	BranchOverview,
+	CurrentStatus,
+	QuickActions,
+	RecentActivity,
+	WorktreesOverview,
+} from '@/components/repo-home';
 import { Button } from '@/components/ui/button';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { RefreshCw } from 'lucide-react';
 
 interface RepoHomeViewProps {
@@ -19,7 +24,7 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 		);
 	}
 
-	const isAnyLoading = Object.values(homeState.loadingStates).some(loading => loading);
+	const isAnyLoading = homeState.isAnyLoading;
 
 	const handleRefresh = () => {
 		homeState.refreshHomeData();
@@ -33,9 +38,9 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 					<div className="flex-1">
 						<QuickActions repoPath={repoPath} />
 					</div>
-					<Button 
-						variant="outline" 
-						size="sm" 
+					<Button
+						variant="outline"
+						size="sm"
 						onClick={handleRefresh}
 						disabled={isAnyLoading}
 						className="shrink-0"
@@ -50,7 +55,7 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 					{/* Status and branches */}
 					<div className="space-y-4">
 						<CurrentStatus repoPath={repoPath} />
-						
+
 						{/* Show worktrees first if available, then branches */}
 						<WorktreesOverview repoPath={repoPath} />
 						<BranchOverview repoPath={repoPath} />

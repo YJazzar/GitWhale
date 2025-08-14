@@ -14,8 +14,8 @@ export function BranchOverview(props: BranchOverviewProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
 
-	const isLoading = homeState.loadingStates.branches;
-	const recentBranches = homeState.recentBranches;
+	const isLoading = homeState.recentBranches.isLoading;
+	const recentBranches = homeState.recentBranches.value ?? [];
 
 	return (
 		<Card>
@@ -59,7 +59,7 @@ export function BranchOverview(props: BranchOverviewProps) {
 									<div className="flex items-center gap-2">
 										<GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
 										<span className="text-sm font-medium font-mono">{branch.name}</span>
-										{branch.name === homeState.currentBranch && (
+										{branch.name === homeState.currentBranch.value && (
 											<Badge variant="secondary" className="text-xs px-1.5 py-0">
 												current
 											</Badge>

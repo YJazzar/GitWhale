@@ -15,8 +15,8 @@ export function RecentActivity(props: RecentActivityProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
 
-	const recentCommits = homeState.recentCommits;
-	const isLoading = homeState.loadingStates.recentCommits;
+	const recentCommits = homeState.recentCommits.value ?? [];
+	const isLoading = homeState.recentCommits.isLoading;
 
 	return (
 		<Card>
