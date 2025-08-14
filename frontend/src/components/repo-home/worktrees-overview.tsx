@@ -24,7 +24,7 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 	}
 
 	return (
-		<Card>
+		<Card className='h-full'>
 			<CardHeader className="pb-3">
 				<CardTitle className="flex items-center gap-2 text-lg">
 					<FolderTree className="h-4 w-4" />
@@ -32,7 +32,7 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 				</CardTitle>
 				<CardDescription className="text-sm">Available worktree repositories</CardDescription>
 			</CardHeader>
-			<CardContent className="pt-0">
+			<CardContent className="pt-0 h-full overflow-auto">
 				{isLoading ? (
 					<>
 						<div className="space-y-1.5">

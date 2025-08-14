@@ -62,7 +62,7 @@ export function QuickActions(props: QuickActionsProps) {
 
 	return (
 		<>
-			<Card>
+			<Card className='flex-shrink'>
 				<CardHeader className="pb-3">
 					<CardTitle className="flex items-center justify-between text-lg">
 						<div className="flex items-center gap-2 min-w-0 flex-1">

@@ -26,19 +26,16 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 
 	return (
 		<div className="h-full overflow-y-auto">
-			<div className="p-4 space-y-4 max-w-7xl mx-auto">
+			<div className="p-4 space-y-4 max-w-7xl mx-auto h-full flex flex-col">
 				{/* Header with Quick Actions */}
-				<div>
+				<div className="flex-shrink">
 					<QuickActions repoPath={repoPath} onRefresh={handleRefresh} isRefreshing={isAnyLoading} />
 				</div>
 
 				{/* Main content grid */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-					{/* Status and branches */}
-					<div className="space-y-4">
-						{/* Show worktrees first if available, then branches */}
-						<WorktreesOverview repoPath={repoPath} />
-					</div>
+				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 flex-grow">
+					{/* Show worktrees first if available, then branches */}
+					<WorktreesOverview repoPath={repoPath} />
 
 					{/* Recent activity - spans remaining columns */}
 					<div className="lg:col-span-1 xl:col-span-2">
