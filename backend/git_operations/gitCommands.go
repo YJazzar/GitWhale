@@ -217,43 +217,6 @@ type WorktreeInfo struct {
 	Bare   bool   `json:"bare"`
 }
 
-func GetRecentBranches(repoPath string, limit int) []GitRef {
-	logger.Log.Info("Getting recent branches for repo: %v (limit: %d)", repoPath, limit)
-
-	// Get local branches with last commit date using for-each-ref
-	cmd := exec.Command("git", "for-each-ref",
-		"--format=%(refname:short)|%(objectname)|%(committerdate:unix)",
-		"--sort=-committerdate",
-		fmt.Sprintf("--count=%d", limit),
-		"refs/heads/")
-	cmd.Dir = repoPath
-	output, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
-		logger.Log.Error("Failed to get recent branches: %v", err)
-		return make([]GitRef, 0)
-	}
-
-	var recentBranches []GitRef
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
-		if line == "" {
-			continue
-		}
-
-		parts := strings.Split(line, "|")
-		if len(parts) != 3 {
-			continue
-		}
-
-		recentBranches = append(recentBranches, GitRef{
-			Name: parts[0],
-			Hash: parts[1],
-			Type: "localBranch",
-		})
-	}
-
-	return recentBranches
-}
-
 func GetWorktrees(repoPath string) []WorktreeInfo {
 	logger.Log.Info("Getting worktrees for repo: %v", repoPath)
 

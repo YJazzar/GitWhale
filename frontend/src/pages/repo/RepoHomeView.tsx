@@ -1,10 +1,6 @@
-import {
-	BranchOverview,
-	CurrentStatus,
-	QuickActions,
-	RecentActivity,
-	WorktreesOverview,
-} from '@/components/repo-home';
+import { QuickActions } from '@/components/repo-home/quick-actions';
+import { RecentActivity } from '@/components/repo-home/recent-activity';
+import { WorktreesOverview } from '@/components/repo-home/worktrees-overview';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 
 interface RepoHomeViewProps {
@@ -33,22 +29,15 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 			<div className="p-4 space-y-4 max-w-7xl mx-auto">
 				{/* Header with Quick Actions */}
 				<div>
-					<QuickActions 
-						repoPath={repoPath} 
-						onRefresh={handleRefresh}
-						isRefreshing={isAnyLoading}
-					/>
+					<QuickActions repoPath={repoPath} onRefresh={handleRefresh} isRefreshing={isAnyLoading} />
 				</div>
 
 				{/* Main content grid */}
 				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 					{/* Status and branches */}
 					<div className="space-y-4">
-						<CurrentStatus repoPath={repoPath} />
-
 						{/* Show worktrees first if available, then branches */}
 						<WorktreesOverview repoPath={repoPath} />
-						<BranchOverview repoPath={repoPath} />
 					</div>
 
 					{/* Recent activity - spans remaining columns */}

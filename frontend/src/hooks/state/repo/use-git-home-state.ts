@@ -1,22 +1,18 @@
+import {
+	createLoadTrackedMappedAtom,
+	useLoadTrackedMapPrimitive,
+} from '@/hooks/primitives/use-load-tracked-map-primitive';
 import Logger from '@/utils/logger';
 import { atom } from 'jotai';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-	GetRecentBranches,
 	GetWorktrees,
-	GetCurrentBranchName,
-	RunGitLog,
+	RunGitLog
 } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { useMapPrimitive } from '../../primitives/use-map-primitive';
-import {
-	useLoadTrackedMapPrimitive,
-	createLoadTrackedMappedAtom,
-} from '@/hooks/primitives/use-load-tracked-map-primitive';
 
 // State atoms for home view data per repository path
-const recentBranchesAtom = createLoadTrackedMappedAtom<git_operations.GitRef[]>();
-const currentBranchAtom = createLoadTrackedMappedAtom<string>();
 const worktreesAtom = createLoadTrackedMappedAtom<git_operations.WorktreeInfo[]>();
 const recentCommitsAtom = createLoadTrackedMappedAtom<git_operations.GitLogCommitInfo[]>();
 
@@ -24,26 +20,6 @@ const recentCommitsAtom = createLoadTrackedMappedAtom<git_operations.GitLogCommi
 const hasInitialLoadedAtom = atom<Map<string, boolean>>(new Map());
 
 export function getHomeState(repoPath: string) {
-	const _recentBranchesPrim = useLoadTrackedMapPrimitive(recentBranchesAtom, repoPath, async () => {
-		try {
-			const branches = await GetRecentBranches(repoPath, 8);
-			return branches;
-		} catch (error) {
-			Logger.error(`Failed to load recent branches: ${error}`, 'HomeState');
-			return [];
-		}
-	});
-
-	const _currentBranchPrim = useLoadTrackedMapPrimitive(currentBranchAtom, repoPath, async () => {
-		try {
-			const currentBranch = await GetCurrentBranchName(repoPath);
-			return currentBranch;
-		} catch (error) {
-			Logger.error(`Failed to load current branch: ${error}`, 'HomeState');
-			return undefined;
-		}
-	});
-
 	const _worktreesPrim = useLoadTrackedMapPrimitive(worktreesAtom, repoPath, async () => {
 		try {
 			const worktrees = await GetWorktrees(repoPath);
@@ -80,9 +56,9 @@ export function getHomeState(repoPath: string) {
 			return;
 		}
 
-		const loadPrimitives = [_recentCommitsPrim, _currentBranchPrim, _worktreesPrim, _recentBranchesPrim];
+		const loadPrimitives = [_worktreesPrim, _recentCommitsPrim];
 		for await (const loadPrimitive of loadPrimitives) {
-			loadPrimitive.load()
+			loadPrimitive.load();
 		}
 
 		_hasInitialLoadedPrim.set(true);
@@ -103,16 +79,10 @@ export function getHomeState(repoPath: string) {
 	// Helper to determine if we're in a worktree repository
 	const isWorktreeRepo = (_worktreesPrim.value?.length ?? 0) > 0;
 
-	const isAnyLoading =
-		_recentBranchesPrim.isLoading ||
-		_currentBranchPrim.isLoading ||
-		_worktreesPrim.isLoading ||
-		_recentCommitsPrim.isLoading;
+	const isAnyLoading = _worktreesPrim.isLoading || _recentCommitsPrim.isLoading;
 
 	return {
 		// Data
-		recentBranches: _recentBranchesPrim,
-		currentBranch: _currentBranchPrim,
 		worktrees: _worktreesPrim,
 		recentCommits: _recentCommitsPrim,
 		isWorktreeRepo,
@@ -125,8 +95,6 @@ export function getHomeState(repoPath: string) {
 
 		// Cleanup
 		disposeHomeState: () => {
-			_recentBranchesPrim.kill();
-			_currentBranchPrim.kill();
 			_worktreesPrim.kill();
 			_recentCommitsPrim.kill();
 			_hasInitialLoadedPrim.kill();

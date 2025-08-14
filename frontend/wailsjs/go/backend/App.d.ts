@@ -20,15 +20,11 @@ export function GetAppState():Promise<backend.App>;
 
 export function GetApplicationLogHistory():Promise<Array<logger.LogEntry>>;
 
-export function GetCurrentBranchName(arg1:string):Promise<string>;
-
 export function GetDefaultShellCommand():Promise<string>;
 
 export function GetDetailedCommitInfo(arg1:string,arg2:string):Promise<git_operations.DetailedCommitInfo>;
 
 export function GetDiffSession(arg1:string):Promise<git_operations.DiffSession>;
-
-export function GetRecentBranches(arg1:string,arg2:number):Promise<Array<git_operations.GitRef>>;
 
 export function GetStartupDirDiffDirectory():Promise<git_operations.Directory>;
 
