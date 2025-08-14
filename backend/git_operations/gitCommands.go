@@ -458,29 +458,37 @@ func parseFileChanges(output string) ([]FileChange, error) {
 	parts := strings.Split(strings.TrimSuffix(output, "\x00"), "\x00")
 	fileChanges := []FileChange{}
 
-	for i := 0; i < len(parts); i += 2 {
-		if i+1 >= len(parts) {
+	for i := 0; i < len(parts); {
+		if i >= len(parts) {
 			break
 		}
 
 		status := parts[i]
-		paths := parts[i+1]
+		if status == "" {
+			i++
+			continue
+		}
 
 		fileChange := FileChange{
 			Status: string(status[0]), // Get base status (R, C, M, A, D)
 		}
 
-		// Handle renames and copies which have "old\tnew" format
-		if strings.Contains(paths, "\t") {
-			pathParts := strings.Split(paths, "\t")
-			if len(pathParts) == 2 {
-				fileChange.OldPath = pathParts[0]
-				fileChange.Path = pathParts[1]
-			} else {
-				fileChange.Path = paths
+		// Check if this is a rename or copy (starts with R or C)
+		if len(status) > 0 && (status[0] == 'R' || status[0] == 'C') {
+			// For renames/copies: status, old_path, new_path
+			if i+2 >= len(parts) {
+				break
 			}
+			fileChange.OldPath = parts[i+1]
+			fileChange.Path = parts[i+2]
+			i += 3
 		} else {
-			fileChange.Path = paths
+			// For other changes: status, path
+			if i+1 >= len(parts) {
+				break
+			}
+			fileChange.Path = parts[i+1]
+			i += 2
 		}
 
 		fileChanges = append(fileChanges, fileChange)
@@ -491,7 +499,7 @@ func parseFileChanges(output string) ([]FileChange, error) {
 
 // getNumstatData runs git diff --numstat once and returns both aggregate stats and enriches file changes
 func getNumstatData(repoPath, parentRef, commitHash string, fileChanges []FileChange) (*CommitStats, error) {
-	cmd := exec.Command("git", "diff", "--numstat", parentRef, commitHash)
+	cmd := exec.Command("git", "diff", "--numstat", "-z", parentRef, commitHash)
 	cmd.Dir = repoPath
 	output, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil {
@@ -507,13 +515,17 @@ func getNumstatData(repoPath, parentRef, commitHash string, fileChanges []FileCh
 		isBinary     bool
 	})
 
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-	for _, line := range lines {
-		if line == "" {
+	// Split by null character for -z output, removing empty last element
+	records := strings.Split(strings.TrimSuffix(output, "\x00"), "\x00")
+	
+	for _, record := range records {
+		if record == "" {
 			continue
 		}
 
-		parts := strings.Fields(line)
+		// Each record is "additions\tdeletions\tfilepath"
+		// Use SplitN to limit to 3 parts in case filepath contains tabs
+		parts := strings.SplitN(record, "\t", 3)
 		if len(parts) < 3 {
 			continue
 		}
