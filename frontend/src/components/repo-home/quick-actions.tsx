@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CopyButton } from '@/components/ui/copy-button';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import {
@@ -64,9 +65,15 @@ export function QuickActions(props: QuickActionsProps) {
 			<Card>
 				<CardHeader className="pb-3">
 					<CardTitle className="flex items-center justify-between text-lg">
-						<div className="flex items-center gap-2">
-							<FolderOpen className="h-4 w-4 text-blue-500" />
+						<div className="flex items-center gap-2 min-w-0 flex-1">
+							<FolderOpen className="h-4 w-4 text-blue-500 shrink-0" />
 							<span className="truncate">{repoPath}</span>
+							<CopyButton
+								text={repoPath}
+								title="Copy repository path"
+								successTitle="Repository path copied!"
+								className="shrink-0"
+							/>
 						</div>
 						{onRefresh && (
 							<Button
