@@ -1,10 +1,11 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FolderTree } from 'lucide-react';
+import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { FolderTree } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 
 interface WorktreesOverviewProps {
@@ -33,6 +34,7 @@ function WorktreesSkeleton() {
 export function WorktreesOverview(props: WorktreesOverviewProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
+	const rootNavigation = useNavigateRootFilTabs()
 
 	const isLoading = homeState.worktrees.isLoading;
 	const worktrees = homeState.worktrees.value ?? [];
@@ -44,7 +46,7 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 	}
 
 	const onOpenWorktree = (worktree: git_operations.WorktreeInfo) => {
-
+		rootNavigation.onOpenRepoWithPath(worktree.path)
 	}
 
 	return (

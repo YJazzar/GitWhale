@@ -70,6 +70,10 @@ export function OpenNewRepo() {
   return window['go']['backend']['App']['OpenNewRepo']();
 }
 
+export function OpenRepoWithPath(arg1) {
+  return window['go']['backend']['App']['OpenRepoWithPath'](arg1);
+}
+
 export function ReadFile(arg1) {
   return window['go']['backend']['App']['ReadFile'](arg1);
 }

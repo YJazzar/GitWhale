@@ -4,7 +4,7 @@ import ApplicationLogsPage from '@/pages/ApplicationLogsPage';
 import RepoPage from '@/pages/repo/RepoPage';
 import SettingsPage from '@/pages/SettingsPage';
 import { useCallback } from 'react';
-import { OpenNewRepo } from '../../../wailsjs/go/backend/App';
+import { OpenNewRepo, OpenRepoWithPath } from '../../../wailsjs/go/backend/App';
 import { UseAppState } from '../state/use-app-state';
 
 export function useNavigateRootFilTabs() {
@@ -14,14 +14,16 @@ export function useNavigateRootFilTabs() {
 	// Callback to open a new repository tab
 	const onOpenNewRepo = useCallback(async () => {
 		const newRepoPath = await OpenNewRepo();
-		await appState.refreshAppState();
 		onOpenRepoWithPath(newRepoPath);
 	}, []);
 
-	const onOpenRepoWithPath = (repoPath: string) => {
+	const onOpenRepoWithPath = async (repoPath: string) => {
 		if (!repoPath || repoPath === '') {
 			return;
 		}
+
+		await OpenRepoWithPath(repoPath)
+		await appState.refreshAppState();
 
 		const newRepoTab: TabProps = {
 			tabKey: repoPath,

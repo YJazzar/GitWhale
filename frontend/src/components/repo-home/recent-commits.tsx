@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useUnixTime } from '@/hooks/use-unix-time';
+import { useNavigateToCommit } from '@/hooks/navigation/use-navigate-to-commit';
+import { git_operations } from 'wailsjs/go/models';
 
 interface RecentCommitsProps {
 	repoPath: string;
@@ -14,9 +16,14 @@ interface RecentCommitsProps {
 export function RecentCommits(props: RecentCommitsProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
+	const handleViewFullCommit = useNavigateToCommit(repoPath);
 
 	const recentCommits = homeState.recentCommits.value ?? [];
 	const isLoading = homeState.recentCommits.isLoading;
+
+	const onCommitClick = (commitData: git_operations.GitLogCommitInfo) => {
+		handleViewFullCommit(commitData.commitHash, commitData.parentCommitHashes.length > 1);
+	};
 
 	return (
 		<Card className="h-full flex flex-col">
@@ -53,6 +60,7 @@ export function RecentCommits(props: RecentCommitsProps) {
 							<div
 								key={index}
 								className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+								onClick={() => onCommitClick(commit)}
 							>
 								{commit.parentCommitHashes.length > 1 ? (
 									<GitMerge className="h-3.5 w-3.5 mt-0.5 text-purple-500 flex-shrink-0" />

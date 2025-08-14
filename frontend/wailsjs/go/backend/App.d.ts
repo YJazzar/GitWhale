@@ -40,6 +40,8 @@ export function OnTerminalSessionWasResized(arg1:string,arg2:command_utils.TTYSi
 
 export function OpenNewRepo():Promise<string>;
 
+export function OpenRepoWithPath(arg1:string):Promise<void>;
+
 export function ReadFile(arg1:string):Promise<string>;
 
 export function RunGitLog(arg1:string,arg2:git_operations.GitLogOptions):Promise<Array<git_operations.GitLogCommitInfo>>;

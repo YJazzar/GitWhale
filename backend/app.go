@@ -115,7 +115,12 @@ func (app *App) OpenNewRepo() string {
 		return ""
 	}
 
-	return app.AppConfig.openNewRepo(newRepoPath)
+	return newRepoPath
+}
+
+// Actually opens the repo and adds it to the app's state
+func (app *App) OpenRepoWithPath(gitRepoPath string) {
+	app.AppConfig.openNewRepo(gitRepoPath)
 }
 
 func (app *App) CloseRepo(gitRepoPath string) *App {
