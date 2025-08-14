@@ -7,11 +7,11 @@ import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useUnixTime } from '@/hooks/use-unix-time';
 
-interface RecentActivityProps {
+interface RecentCommitsProps {
 	repoPath: string;
 }
 
-export function RecentActivity(props: RecentActivityProps) {
+export function RecentCommits(props: RecentCommitsProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
 
@@ -23,9 +23,8 @@ export function RecentActivity(props: RecentActivityProps) {
 			<CardHeader className="pb-3 flex-shrink-0">
 				<CardTitle className="flex items-center gap-2 text-lg">
 					<History className="h-4 w-4" />
-					Recent Activity
+					Recent Commits
 				</CardTitle>
-				<CardDescription className="text-sm">Latest commits in this repository</CardDescription>
 			</CardHeader>
 			<CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
 				{isLoading ? (

@@ -1,5 +1,5 @@
 import { QuickActions } from '@/components/repo-home/quick-actions';
-import { RecentActivity } from '@/components/repo-home/recent-activity';
+import { RecentCommits } from '@/components/repo-home/recent-commits';
 import { WorktreesOverview } from '@/components/repo-home/worktrees-overview';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 
@@ -41,7 +41,7 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 
 					{/* Recent activity - spans remaining columns */}
 					<div className="lg:col-span-1 xl:col-span-2 h-full overflow-auto">
-						<RecentActivity repoPath={repoPath} />
+						<RecentCommits repoPath={repoPath} />
 					</div>
 				</div>
 			</div>

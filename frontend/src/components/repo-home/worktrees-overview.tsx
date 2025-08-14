@@ -10,6 +10,25 @@ interface WorktreesOverviewProps {
 	repoPath: string;
 }
 
+function WorktreesSkeleton() {
+	return (
+		<div className="space-y-1.5">
+			{Array.from({ length: 3 }).map((_, index) => (
+				<div key={index} className="flex items-center justify-between p-2 rounded-lg">
+					<div className="flex items-center gap-2">
+						<FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
+						<div className="flex flex-col space-y-1">
+							<Skeleton className="h-4 w-20" />
+							<Skeleton className="h-3 w-32" />
+						</div>
+						{index === 0 && <Skeleton className="h-4 w-12 rounded-full" />}
+					</div>
+				</div>
+			))}
+		</div>
+	);
+}
+
 export function WorktreesOverview(props: WorktreesOverviewProps) {
 	const { repoPath } = props;
 	const { homeState } = useRepoState(repoPath);
@@ -30,35 +49,19 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 					<FolderTree className="h-4 w-4" />
 					Worktrees
 				</CardTitle>
-				<CardDescription className="text-sm">Available worktree repositories</CardDescription>
 			</CardHeader>
 			<CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
-				{isLoading ? (
-					<>
-						<div className="space-y-1.5">
-							{Array.from({ length: 3 }).map((_, index) => (
-								<div key={index} className="flex items-center justify-between p-2 rounded-lg">
-									<div className="flex items-center gap-2">
-										<FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
-										<div className="flex flex-col space-y-1">
-											<Skeleton className="h-4 w-20" />
-											<Skeleton className="h-3 w-32" />
-										</div>
-										{index === 0 && <Skeleton className="h-4 w-12 rounded-full" />}
-									</div>
-								</div>
-							))}
-						</div>
+				<div className="space-y-3">
+					<Button variant="ghost" className="w-full" size="sm" disabled={isLoading}>
+						<FolderTree className="h-3.5 w-3.5 mr-2" />
+						Manage Worktrees
+					</Button>
 
-						<Separator className="my-3" />
+					<Separator />
 
-						<Button variant="ghost" className="w-full" size="sm" disabled>
-							<FolderTree className="h-3.5 w-3.5 mr-2" />
-							Manage Worktrees
-						</Button>
-					</>
-				) : (
-					<>
+					{isLoading ? (
+						<WorktreesSkeleton />
+					) : (
 						<div className="space-y-1.5">
 							{worktrees.map((worktree, index) => (
 								<div
@@ -88,15 +91,8 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 								</div>
 							))}
 						</div>
-
-						<Separator className="my-3" />
-
-						<Button variant="ghost" className="w-full" size="sm">
-							<FolderTree className="h-3.5 w-3.5 mr-2" />
-							Manage Worktrees
-						</Button>
-					</>
-				)}
+					)}
+				</div>
 			</CardContent>
 		</Card>
 	);
