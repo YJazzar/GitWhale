@@ -5,9 +5,7 @@ import {
 	RecentActivity,
 	WorktreesOverview,
 } from '@/components/repo-home';
-import { Button } from '@/components/ui/button';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { RefreshCw } from 'lucide-react';
 
 interface RepoHomeViewProps {
 	repoPath: string;
@@ -33,21 +31,13 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 	return (
 		<div className="h-full overflow-y-auto">
 			<div className="p-4 space-y-4 max-w-7xl mx-auto">
-				{/* Header with Quick Actions and Refresh */}
-				<div className="flex items-center justify-between gap-4">
-					<div className="flex-1">
-						<QuickActions repoPath={repoPath} />
-					</div>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleRefresh}
-						disabled={isAnyLoading}
-						className="shrink-0"
-					>
-						<RefreshCw className={`h-4 w-4 mr-2 ${isAnyLoading ? 'animate-spin' : ''}`} />
-						Refresh
-					</Button>
+				{/* Header with Quick Actions */}
+				<div>
+					<QuickActions 
+						repoPath={repoPath} 
+						onRefresh={handleRefresh}
+						isRefreshing={isAnyLoading}
+					/>
 				</div>
 
 				{/* Main content grid */}

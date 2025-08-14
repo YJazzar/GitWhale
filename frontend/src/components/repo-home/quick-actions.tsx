@@ -6,6 +6,7 @@ import {
 	Eye,
 	FolderOpen,
 	GitCompare,
+	RefreshCw,
 	Search,
 	Terminal
 } from 'lucide-react';
@@ -14,10 +15,12 @@ import { CompareModal } from '../git-log/compare-modal';
 
 interface QuickActionsProps {
 	repoPath: string;
+	onRefresh?: () => void;
+	isRefreshing?: boolean;
 }
 
 export function QuickActions(props: QuickActionsProps) {
-	const { repoPath } = props;
+	const { repoPath, onRefresh, isRefreshing } = props;
 	const sidebar = useSidebarContext();
 	const repoState = useRepoState(repoPath);
 
@@ -27,7 +30,6 @@ export function QuickActions(props: QuickActionsProps) {
 		{
 			icon: Eye,
 			label: 'View Log',
-			description: 'Browse commit history',
 			action: () => {
 				/* Navigate to log view */
 				sidebar.setActiveItem('log');
@@ -36,7 +38,6 @@ export function QuickActions(props: QuickActionsProps) {
 		{
 			icon: GitCompare,
 			label: 'Compare',
-			description: 'Compare branches or commits',
 			action: () => {
 				setShowCompareModal(true);
 			},
@@ -44,7 +45,6 @@ export function QuickActions(props: QuickActionsProps) {
 		{
 			icon: Search,
 			label: 'Search',
-			description: 'Find commits or files',
 			action: () => {
 				/* Focus search */
 			},
@@ -52,7 +52,6 @@ export function QuickActions(props: QuickActionsProps) {
 		{
 			icon: Terminal,
 			label: 'Terminal',
-			description: 'Open in terminal',
 			action: () => {
 				/* Open terminal */
 				sidebar.setActiveItem('terminal');
@@ -64,9 +63,23 @@ export function QuickActions(props: QuickActionsProps) {
 		<>
 			<Card>
 				<CardHeader className="pb-3">
-					<CardTitle className="flex items-center gap-2 text-lg">
-						<FolderOpen className="h-4 w-4 text-blue-500" />
-						{repoPath}
+					<CardTitle className="flex items-center justify-between text-lg">
+						<div className="flex items-center gap-2">
+							<FolderOpen className="h-4 w-4 text-blue-500" />
+							<span className="truncate">{repoPath}</span>
+						</div>
+						{onRefresh && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={onRefresh}
+								disabled={isRefreshing}
+								className="h-8 w-8 p-0 shrink-0 hover:bg-muted"
+							>
+								<RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+								<span className="sr-only">Refresh</span>
+							</Button>
+						)}
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="pt-0">
@@ -75,16 +88,13 @@ export function QuickActions(props: QuickActionsProps) {
 							<Button
 								key={index}
 								variant={'outline'}
-								className="h-auto p-3 flex-col items-start gap-1 text-left"
+								className="h-auto p-3 flex-col items-center justify-center gap-1 text-left"
 								onClick={action.action}
 							>
-								<div className="flex items-center gap-2 w-full">
+								<div className="flex items-center justify-center gap-2 w-full">
 									<action.icon className="h-3.5 w-3.5" />
 									<span className="font-medium text-sm">{action.label}</span>
 								</div>
-								<p className="text-xs text-muted-foreground text-left w-full leading-tight">
-									{action.description}
-								</p>
 							</Button>
 						))}
 					</div>
