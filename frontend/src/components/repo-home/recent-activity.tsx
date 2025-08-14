@@ -19,15 +19,15 @@ export function RecentActivity(props: RecentActivityProps) {
 	const isLoading = homeState.recentCommits.isLoading;
 
 	return (
-		<Card className='h-full'>
-			<CardHeader className="pb-3">
+		<Card className="h-full flex flex-col">
+			<CardHeader className="pb-3 flex-shrink-0">
 				<CardTitle className="flex items-center gap-2 text-lg">
 					<History className="h-4 w-4" />
 					Recent Activity
 				</CardTitle>
 				<CardDescription className="text-sm">Latest commits in this repository</CardDescription>
 			</CardHeader>
-			<CardContent className="pt-0 h-full overflow-auto">
+			<CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
 				{isLoading ? (
 					<div className="space-y-2">
 						{Array.from({ length: 5 }).map((_, index) => (

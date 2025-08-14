@@ -25,20 +25,22 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 	};
 
 	return (
-		<div className="h-full overflow-y-auto">
-			<div className="p-4 space-y-4 max-w-7xl mx-auto h-full flex flex-col">
+		<div className="h-full flex flex-col">
+			<div className="flex-shrink-0 p-4 max-w-7xl mx-auto w-full">
 				{/* Header with Quick Actions */}
-				<div className="flex-shrink">
-					<QuickActions repoPath={repoPath} onRefresh={handleRefresh} isRefreshing={isAnyLoading} />
-				</div>
+				<QuickActions repoPath={repoPath} onRefresh={handleRefresh} isRefreshing={isAnyLoading} />
+			</div>
 
-				{/* Main content grid */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 flex-grow">
+			{/* Main content grid - takes remaining height */}
+			<div className="flex-1 min-h-0 px-4 pb-4 max-w-7xl mx-auto w-full">
+				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 h-full">
 					{/* Show worktrees first if available, then branches */}
-					<WorktreesOverview repoPath={repoPath} />
+					<div className="h-full overflow-auto">
+						<WorktreesOverview repoPath={repoPath} />
+					</div>
 
 					{/* Recent activity - spans remaining columns */}
-					<div className="lg:col-span-1 xl:col-span-2">
+					<div className="lg:col-span-1 xl:col-span-2 h-full overflow-auto">
 						<RecentActivity repoPath={repoPath} />
 					</div>
 				</div>
