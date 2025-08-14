@@ -1,5 +1,5 @@
 
-import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
+import { FileTabs, TabsManagerHandle, FileTabsContextProvider } from '@/components/file-tabs';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { atom, useAtom } from 'jotai';
@@ -43,28 +43,30 @@ export default function DirDiffPage() {
 	}
 
 	return (
-		<div className="w-full h-full flex flex-row min-h-0">
-			<ResizablePanelGroup direction="horizontal">
-				{/* Left pane that contains the file structure */}
-				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
-					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
-						<FileTree tabManagerHandler={fileTabRef} directoryData={directoryData} />
-					</div>
-				</ResizablePanel>
+		<FileTabsContextProvider fileTabsRef={fileTabRef}>
+			<div className="w-full h-full flex flex-row min-h-0">
+				<ResizablePanelGroup direction="horizontal">
+					{/* Left pane that contains the file structure */}
+					<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
+						<div className="border-r h-full overflow-y-auto overflow-x-hidden">
+							<FileTree tabManagerHandler={fileTabRef} directoryData={directoryData} />
+						</div>
+					</ResizablePanel>
 
-				<ResizableHandle withHandle />
+					<ResizableHandle withHandle />
 
-				{/* Right pane containing the actual diffs */}
-				<ResizablePanel id="diff-content-panel">
-					<div className="grow h-full flex flex-col min-h-0">
-						<FileTabs
-							ref={fileTabRef}
-							initialTabs={[]}
-							fileTabManageSessionKey={'startup-diff-viewer'}
-						/>
-					</div>
-				</ResizablePanel>
-			</ResizablePanelGroup>
-		</div>
+					{/* Right pane containing the actual diffs */}
+					<ResizablePanel id="diff-content-panel">
+						<div className="grow h-full flex flex-col min-h-0">
+							<FileTabs
+								ref={fileTabRef}
+								initialTabs={[]}
+								fileTabManageSessionKey={'startup-diff-viewer'}
+							/>
+						</div>
+					</ResizablePanel>
+				</ResizablePanelGroup>
+			</div>
+		</FileTabsContextProvider>
 	);
 }

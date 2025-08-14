@@ -4,28 +4,11 @@ import { Star, Settings, FolderOpen, FolderGit2, FileText } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
 import { useEffect, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
+import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 
-export default function HomePage(props: {
-	onOpenRepo: (repoPath: string) => void;
-	onOpenSettings: () => void;
-	onOpenApplicationLogs: () => void;
-}) {
-	const { onOpenRepo, onOpenSettings, onOpenApplicationLogs } = props;
+export default function HomePage() {
 	const { appState, refreshAppState } = UseAppState();
-
-	const onOpenRecentRepo = (repoPath: string) => {
-		if (!appState) {
-			return;
-		}
-
-		onOpenRepo(repoPath);
-	};
-
-	const onOpenNewRepo = async () => {
-		const newRepoPath = await OpenNewRepo();
-		await refreshAppState();
-		onOpenRepo(newRepoPath);
-	};
+	const rootNavigation = useNavigateRootFilTabs()
 
 	const onToggleStar = async (repoPath: string) => {
 		await ToggleStarRepo(repoPath);
@@ -47,7 +30,7 @@ export default function HomePage(props: {
 			{/* Repo open link */}
 			<Button
 				variant="link"
-				onClick={() => onOpenRecentRepo(repoPath)}
+				onClick={() => rootNavigation.onOpenRepoWithPath(repoPath)}
 				className="flex-1 justify-start"
 				title={repoPath}
 			>
@@ -68,19 +51,19 @@ export default function HomePage(props: {
 				<div className="flex flex-col items-center justify-center">
 					<ul className="space-y-2">
 						<li>
-							<Button variant="link" onClick={onOpenNewRepo} className="justify-start p-0">
+							<Button variant="link" onClick={rootNavigation.onOpenNewRepo} className="justify-start p-0">
 								<FolderOpen />
 								Open Repository
 							</Button>
 						</li>
 						<li>
-							<Button variant="link" onClick={onOpenSettings} className="justify-start p-0">
+							<Button variant="link" onClick={rootNavigation.onOpenSettings} className="justify-start p-0">
 								<Settings className="h-4 w-4 mr-2" />
 								Settings
 							</Button>
 						</li>
 						<li>
-							<Button variant="link" onClick={onOpenApplicationLogs} className="justify-start p-0">
+							<Button variant="link" onClick={rootNavigation.onOpenApplicationLogs} className="justify-start p-0">
 								<FileText className="h-4 w-4 mr-2" />
 								Application Logs
 							</Button>

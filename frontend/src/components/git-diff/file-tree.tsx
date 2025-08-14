@@ -4,7 +4,7 @@ import { git_operations } from '../../../wailsjs/go/models';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TabsManagerHandle } from '../file-tabs';
+import { TabsManagerHandle } from '../file-tabs/file-tabs';
 import { TabProps } from '@/hooks/state/use-file-manager-state';
 import FileDiffView from '../file-diff-view';
 

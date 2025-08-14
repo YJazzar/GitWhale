@@ -1,5 +1,5 @@
 import { EmptyState } from '@/components/empty-state';
-import { FileTabs, TabsManagerHandle } from '@/components/file-tabs';
+import { FileTabs, TabsManagerHandle, FileTabsContextProvider } from '@/components/file-tabs';
 import { CommitPager } from '@/components/git-diff/commit-pager';
 import { FileTree } from '@/components/git-diff/file-tree';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
@@ -61,39 +61,41 @@ export default function RepoCommitDiffView(props: RepoCommitDiffViewProps) {
 	};
 
 	return (
-		<div className="w-full h-full flex flex-row min-h-0">
-			<ResizablePanelGroup direction="horizontal" onLayout={handleLayoutChange}>
-				{/* Left pane that contains the file structure */}
-				<ResizablePanel id="file-tree-panel" defaultSize={panelSizes[0]} minSize={15}>
-					<div className="border-r h-full overflow-y-auto overflow-x-hidden flex flex-col">
-						<FileTree
-							className="flex-grow"
-							directoryData={diffSession.directoryData}
-							tabManagerHandler={fileTabRef}
-						/>
+		<FileTabsContextProvider fileTabsRef={fileTabRef}>
+			<div className="w-full h-full flex flex-row min-h-0">
+				<ResizablePanelGroup direction="horizontal" onLayout={handleLayoutChange}>
+					{/* Left pane that contains the file structure */}
+					<ResizablePanel id="file-tree-panel" defaultSize={panelSizes[0]} minSize={15}>
+						<div className="border-r h-full overflow-y-auto overflow-x-hidden flex flex-col">
+							<FileTree
+								className="flex-grow"
+								directoryData={diffSession.directoryData}
+								tabManagerHandler={fileTabRef}
+							/>
 
-						{diffSession.commitInformation && (<>
-							<Separator/>
-							<CommitPager repoPath={repoPath} commitData={diffSession.commitInformation} />
-						</>
-						)}
-					</div>
-				</ResizablePanel>
+							{diffSession.commitInformation && (<>
+								<Separator/>
+								<CommitPager repoPath={repoPath} commitData={diffSession.commitInformation} />
+							</>
+							)}
+						</div>
+					</ResizablePanel>
 
-				<ResizableHandle withHandle />
+					<ResizableHandle withHandle />
 
-				{/* Right pane containing the actual diffs */}
-				<ResizablePanel id="diff-content-panel" defaultSize={panelSizes[1]}>
-					<div className="grow h-full flex flex-col min-h-0">
-						<FileTabs
-							key={diffSessionID}
-							ref={fileTabRef}
-							initialTabs={[]}
-							fileTabManageSessionKey={GetDiffSessionKeyForFileTabManagerSession(diffSessionID)}
-						/>
-					</div>
-				</ResizablePanel>
-			</ResizablePanelGroup>
-		</div>
+					{/* Right pane containing the actual diffs */}
+					<ResizablePanel id="diff-content-panel" defaultSize={panelSizes[1]}>
+						<div className="grow h-full flex flex-col min-h-0">
+							<FileTabs
+								key={diffSessionID}
+								ref={fileTabRef}
+								initialTabs={[]}
+								fileTabManageSessionKey={GetDiffSessionKeyForFileTabManagerSession(diffSessionID)}
+							/>
+						</div>
+					</ResizablePanel>
+				</ResizablePanelGroup>
+			</div>
+		</FileTabsContextProvider>
 	);
 }

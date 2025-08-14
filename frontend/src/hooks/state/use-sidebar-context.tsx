@@ -40,11 +40,7 @@ export function SidebarContextProvider({ children, sidebarRef }: SidebarContextP
 		},
 	};
 
-	return (
-		<SidebarContext.Provider value={contextValue}>
-			{children}
-		</SidebarContext.Provider>
-	);
+	return <SidebarContext.Provider value={contextValue}>{children}</SidebarContext.Provider>;
 }
 
 export function useSidebarContext(): SidebarContextType {

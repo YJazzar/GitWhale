@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FolderTree } from 'lucide-react';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { git_operations } from 'wailsjs/go/models';
 
 interface WorktreesOverviewProps {
 	repoPath: string;
@@ -42,6 +43,10 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 		return null;
 	}
 
+	const onOpenWorktree = (worktree: git_operations.WorktreeInfo) => {
+
+	}
+
 	return (
 		<Card className="h-full flex flex-col">
 			<CardHeader className="pb-3 flex-shrink-0">
@@ -63,33 +68,37 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 						<WorktreesSkeleton />
 					) : (
 						<div className="space-y-1.5">
-							{worktrees.map((worktree, index) => (
-								<div
-									key={index}
-									className="flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer hover:bg-muted/50"
-									onClick={() => {
-										// TODO: Open worktree in new window/tab
-										console.log('Open worktree:', worktree.path);
-									}}
-								>
-									<div className="flex items-center gap-2">
-										<FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
-										<div className="flex flex-col">
-											<span className="text-sm font-medium font-mono">
-												{worktree.branch || 'detached'}
-											</span>
-											<span className="text-xs text-muted-foreground truncate max-w-[200px]">
-												{worktree.path}
-											</span>
+							{worktrees
+								.filter((worktree) => !!worktree.branch)
+								.map((worktree, index) => (
+									<div
+										key={index}
+										className="flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer hover:bg-muted/50"
+										onClick={() => {
+											onOpenWorktree(worktree)
+										}}
+									>
+										<div className="flex items-center gap-2">
+											<FolderTree className="h-4 w-4 text-muted-foreground" />
+											<div className="flex flex-col">
+												<span className="text-sm font-medium font-mono my-1">
+													{worktree.branch || worktree.hash}
+													{worktree.path === repoPath && (
+														<Badge
+															variant="secondary"
+															className="text-xs px-1.5 mx-2 "
+														>
+															current
+														</Badge>
+													)}
+												</span>
+												<span className="text-xs text-muted-foreground truncate">
+													{worktree.path}
+												</span>
+											</div>
 										</div>
-										{worktree.path === repoPath && (
-											<Badge variant="secondary" className="text-xs px-1.5 py-0">
-												current
-											</Badge>
-										)}
 									</div>
-								</div>
-							))}
+								))}
 						</div>
 					)}
 				</div>
