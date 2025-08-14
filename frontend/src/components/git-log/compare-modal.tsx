@@ -8,7 +8,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
+import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
 import { ArrowRight, ChevronDown, GitCompare, Loader2 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { git_operations } from 'wailsjs/go/models';

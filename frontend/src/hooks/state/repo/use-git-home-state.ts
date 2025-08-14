@@ -1,7 +1,7 @@
 import {
 	createLoadTrackedMappedAtom,
 	useLoadTrackedMapPrimitive,
-} from '@/hooks/primitives/use-load-tracked-map-primitive';
+} from '@/hooks/state/primitives/use-load-tracked-map-primitive';
 import Logger from '@/utils/logger';
 import { atom } from 'jotai';
 import { useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ import {
 	RunGitLog
 } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
-import { useMapPrimitive } from '../../primitives/use-map-primitive';
+import { useMapPrimitive } from '../primitives/use-map-primitive';
 
 // State atoms for home view data per repository path
 const worktreesAtom = createLoadTrackedMappedAtom<git_operations.WorktreeInfo[]>();

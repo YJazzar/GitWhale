@@ -4,7 +4,7 @@ import { atom, useAtom } from 'jotai';
 import { StartDiffSession, EndDiffSession } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { useFileManagerStatesCleanup } from '../use-file-manager-state';
-import { useMapPrimitive } from '../../primitives/use-map-primitive';
+import { useMapPrimitive } from '../primitives/use-map-primitive';
 
 // Store diff sessions per repository path
 const diffSessionsAtom = atom<Map<string, git_operations.DiffSession[]>>(new Map());

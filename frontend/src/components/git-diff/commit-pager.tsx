@@ -1,4 +1,4 @@
-import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
+import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useUnixTime } from '@/hooks/use-unix-time';
 import { cn } from '@/lib/utils';

@@ -9,7 +9,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
+import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import Logger from '@/utils/logger';
 import {

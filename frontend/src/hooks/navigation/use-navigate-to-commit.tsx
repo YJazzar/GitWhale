@@ -4,7 +4,7 @@ import { CommitPreview } from '@/components/commit-preview/commit-preview';
 import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
 import { SidebarItemProps } from '@/hooks/state/use-sidebar-state';
 import { Logger } from '../../utils/logger';
-import { useShortHash } from './use-short-hash';
+import { useShortHash } from '../git-log/use-short-hash';
 
 export function useNavigateToCommit(repoPath: string) {
 	const sidebar = useSidebarContext();

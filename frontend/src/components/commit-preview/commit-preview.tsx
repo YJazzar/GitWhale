@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useNavigateToCommitDiffs } from '@/hooks/git-diff/use-navigate-commit-diffs';
+import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
 import { useDetailedCommit } from '@/hooks/git-log/use-detailed-commit';
 import { AlertCircle, GitCompareArrows, Loader2, X } from 'lucide-react';
 import { CommitHash } from '../commit-hash';

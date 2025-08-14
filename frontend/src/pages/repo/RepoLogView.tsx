@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
-import { useNavigateToCommit } from '@/hooks/git-log/use-navigate-to-commit';
+import { useNavigateToCommit } from '@/hooks/navigation/use-navigate-to-commit';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { ChevronUp } from 'lucide-react';
