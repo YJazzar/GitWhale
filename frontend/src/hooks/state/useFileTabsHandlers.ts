@@ -1,109 +1,98 @@
-import { useCallback } from 'react';
-import { useFileTabsState, TabProps } from './useFileTabsState';
+import { TabProps, useFileTabsState } from './useFileTabsState';
 export type { TabProps } from './useFileTabsState';
 
 type FileTabSessionKey = string;
 
 export function useFileTabsHandlers(
 	sessionKey: FileTabSessionKey,
-	initialTabs: TabProps[],
-	defaultTabKey?: string
+	initialValues?: {
+		initialTabs: TabProps[];
+		defaultTabKey?: string;
+	}
 ) {
-	const state = useFileTabsState(sessionKey, initialTabs, defaultTabKey);
+	const state = useFileTabsState(sessionKey, initialValues);
 
 	/**
 	 * Close the specified tab
 	 */
-	const closeTab = useCallback(
-		(tabToClose: TabProps): void => {
-			const activeTabKey = state.activeTabKey;
+	const closeTab = (tabToClose: TabProps): void => {
+		const activeTabKey = state.activeTabKey;
 
-			let prevActiveIndex = state.openTabs.findIndex((file) => file.tabKey === activeTabKey);
-			if (tabToClose.tabKey === activeTabKey) {
-				prevActiveIndex += 1;
+		let prevActiveIndex = state.openTabs.findIndex((file) => file.tabKey === activeTabKey);
+		if (tabToClose.tabKey === activeTabKey) {
+			prevActiveIndex += 1;
+		}
+
+		const newAvailableTabs = state.openTabs.filter((openFile) => {
+			if (openFile.preventUserClose) {
+				return true; // don't close things the user isn't allowed to close
 			}
-
-			const newAvailableTabs = state.openTabs.filter((openFile) => {
-				if (openFile.preventUserClose) {
-					return true; // don't close things the user isn't allowed to close
-				}
-				if (openFile.tabKey === tabToClose.tabKey) {
-					return false; // close the tab
-				}
-				return true;
-			});
-
-			// Update state
-			prevActiveIndex %= newAvailableTabs.length;
-			if (prevActiveIndex < newAvailableTabs.length) {
-				state.setActiveTabKey(newAvailableTabs[prevActiveIndex]?.tabKey);
-			} else {
-				state.setActiveTabKey(undefined);
+			if (openFile.tabKey === tabToClose.tabKey) {
+				return false; // close the tab
 			}
-			state.setOpenTabs([...newAvailableTabs]);
+			return true;
+		});
 
-			const actuallyClosingFile = newAvailableTabs.length !== state.openTabs.length;
-			if (actuallyClosingFile) {
-				tabToClose.onTabClose?.();
-			}
-		},
-		[state]
-	);
+		// Update state
+		prevActiveIndex %= newAvailableTabs.length;
+		if (prevActiveIndex < newAvailableTabs.length) {
+			state.setActiveTabKey(newAvailableTabs[prevActiveIndex]?.tabKey);
+		} else {
+			state.setActiveTabKey(undefined);
+		}
+		state.setOpenTabs([...newAvailableTabs]);
+
+		const actuallyClosingFile = newAvailableTabs.length !== state.openTabs.length;
+		if (actuallyClosingFile) {
+			tabToClose.onTabClose?.();
+		}
+	};
 
 	/**
 	 * Open a new tab or switch to an existing tab with the same key
 	 */
-	const openTab = useCallback(
-		(newTab: TabProps): void => {
-			// If the tab is already open in a different tab
-			if (state.openTabs.some((tab) => tab.tabKey === newTab.tabKey)) {
-				state.setActiveTabKey(newTab.tabKey);
-				return;
-			}
-
-			// Filter out any non-permanently open files
-			const newAvailableTabs = state.openTabs.filter((openFile) => {
-				return openFile.isPermanentlyOpen || openFile.preventUserClose;
-			});
-
-			state.setOpenTabs([...newAvailableTabs, newTab]);
+	const openTab = (newTab: TabProps): void => {
+		// If the tab is already open in a different tab
+		if (state.openTabs.some((tab) => tab.tabKey === newTab.tabKey)) {
 			state.setActiveTabKey(newTab.tabKey);
-		},
-		[state]
-	);
+			return;
+		}
+
+		// Filter out any non-permanently open files
+		const newAvailableTabs = state.openTabs.filter((openFile) => {
+			return openFile.isPermanentlyOpen || openFile.preventUserClose;
+		});
+
+		state.setOpenTabs([...newAvailableTabs, newTab]);
+		state.setActiveTabKey(newTab.tabKey);
+	};
 
 	/**
 	 * Make a tab permanently open (prevents auto-closing)
 	 */
-	const setTabPermaOpen = useCallback(
-		(tabToKeepOpen: TabProps): void => {
-			const newAvailableTabs = state.openTabs.map((tab) => {
-				if (tab.tabKey === tabToKeepOpen.tabKey) {
-					return { ...tab, isPermanentlyOpen: true };
-				}
-				return tab;
-			});
-			state.setOpenTabs(newAvailableTabs);
-		},
-		[state]
-	);
+	const setTabPermaOpen = (tabToKeepOpen: TabProps): void => {
+		const newAvailableTabs = state.openTabs.map((tab) => {
+			if (tab.tabKey === tabToKeepOpen.tabKey) {
+				return { ...tab, isPermanentlyOpen: true };
+			}
+			return tab;
+		});
+		state.setOpenTabs(newAvailableTabs);
+	};
 
 	/**
 	 * Get the currently active tab, if any
 	 */
-	const getActiveTab = useCallback((): TabProps | undefined => {
+	const getActiveTab = (): TabProps | undefined => {
 		return state.activeTab;
-	}, [state.activeTab]);
+	};
 
 	/**
 	 * Get tab properties by tab key
 	 */
-	const getTabProps = useCallback(
-		(tabKey: string): TabProps | undefined => {
-			return state.openTabs.find((tab) => tab.tabKey === tabKey);
-		},
-		[state.openTabs]
-	);
+	const getTabProps = (tabKey: string): TabProps | undefined => {
+		return state.openTabs.find((tab) => tab.tabKey === tabKey);
+	};
 
 	return {
 		// State (read-only)

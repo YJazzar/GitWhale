@@ -1,14 +1,13 @@
 
-import { FileTabs } from '@/components/file-tabs';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/empty-state';
+import { FileTree } from '@/components/git-diff/file-tree';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { atom, useAtom } from 'jotai';
 import { GitCompare } from 'lucide-react';
 import { useEffect } from 'react';
 import { GetStartupDirDiffDirectory } from '../../wailsjs/go/backend/App';
 import { git_operations } from '../../wailsjs/go/models';
-import { EmptyState } from '@/components/empty-state';
-import { FileTree } from '@/components/git-diff/file-tree';
+import { FileTabs } from '@/components/file-tabs/file-tabs';
 
 const directoryDataAtom = atom<git_operations.Directory>();
 

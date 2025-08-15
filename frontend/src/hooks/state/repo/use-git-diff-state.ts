@@ -3,7 +3,8 @@ import Logger from '@/utils/logger';
 import { atom, useAtom } from 'jotai';
 import { StartDiffSession, EndDiffSession } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
-import { useFileManagerStatesCleanup } from '../use-file-manager-state';
+// Note: This import was removed as file manager state is now handled differently
+// import { useFileManagerStatesCleanup } from '../use-file-manager-state';
 import { useMapPrimitive } from '../primitives/use-map-primitive';
 
 // Store diff sessions per repository path
@@ -20,7 +21,7 @@ export function getDiffState(repoPath: string) {
 	// Get selected session ID for this repo
 	const allSessionIDs = _diffSessionsPrim.value?.map((session) => session.sessionId) ?? [];
 	const allFileTabManagerSessionIDs = allSessionIDs.map(GetDiffSessionKeyForFileTabManagerSession);
-	const { cleanupFileManagerStates } = useFileManagerStatesCleanup(allFileTabManagerSessionIDs);
+	// Note: File manager state cleanup is now handled automatically by the new hook architecture
 	const { toast } = useToast();
 
 	const createSession = async (options: git_operations.DiffOptions) => {
@@ -82,7 +83,7 @@ export function getDiffState(repoPath: string) {
 			_diffSessionsPrim.kill();
 			_isLoadingPrim.kill();
 
-			cleanupFileManagerStates();
+			// Note: File manager state cleanup is now handled automatically by the new hook architecture
 		},
 	};
 }

@@ -1,5 +1,6 @@
 import { atom, useAtom } from 'jotai';
 import { useEffect } from 'react';
+import { useMapPrimitive } from './primitives/use-map-primitive';
 
 type FileTabSessionKey = string;
 type TabKey = string;
@@ -19,42 +20,40 @@ const openTabsAtom = atom<Map<FileTabSessionKey, TabProps[]>>(new Map());
 
 export function useFileTabsState(
 	sessionKey: FileTabSessionKey,
-	initialTabs: TabProps[],
-	defaultTabKey?: string
+	initialValues?: {
+		initialTabs: TabProps[];
+		defaultTabKey?: string;
+	}
 ) {
-	const [activeTabKeyMap, setActiveTabKeyMap] = useAtom(activeTabKeyAtom);
-	const [openTabsMap, setOpenTabsMap] = useAtom(openTabsAtom);
+	const _activeTabKeyPrim = useMapPrimitive(activeTabKeyAtom, sessionKey);
+	const _openTabsPrim = useMapPrimitive(openTabsAtom, sessionKey);
 
 	// Get current session state
-	const activeTabKey = activeTabKeyMap.get(sessionKey);
-	const openTabs = openTabsMap.get(sessionKey) || [];
+	const activeTabKey = _activeTabKeyPrim.value;
+	const openTabs = _openTabsPrim.value || [];
 
 	// Direct setters
 	const setActiveTabKey = (tabKey: TabKey | undefined) => {
-		setActiveTabKeyMap(prev => {
-			const newMap = new Map(prev);
-			if (tabKey === undefined) {
-				newMap.delete(sessionKey);
-			} else {
-				newMap.set(sessionKey, tabKey);
-			}
-			return newMap;
-		});
-	};
-
-	const setOpenTabs = (tabs: TabProps[]) => {
-		setOpenTabsMap(prev => {
-			const newMap = new Map(prev);
-			newMap.set(sessionKey, tabs);
-			return newMap;
-		});
+		if (tabKey === undefined) {
+			_activeTabKeyPrim.kill();
+		} else {
+			_activeTabKeyPrim.set(tabKey);
+		}
 	};
 
 	// Initialize state on mount
 	useEffect(() => {
+		if (!initialValues) {
+			// We're getting called from a place where we shouldn't initialize the variables yet
+			return;
+		}
+
+		const initialTabs = initialValues.initialTabs;
+		const defaultTabKey = initialValues.defaultTabKey;
+
 		// Copy all initial tabs into the state if empty
 		if (!openTabs.length && initialTabs.length > 0) {
-			setOpenTabs(initialTabs);
+			_openTabsPrim.set(initialTabs);
 		}
 
 		// Figure out a default tab
@@ -64,36 +63,31 @@ export function useFileTabsState(
 				initialTabKeyToOpen = initialTabs[0].tabKey;
 			}
 			if (initialTabKeyToOpen) {
-				setActiveTabKey(initialTabKeyToOpen);
+				_activeTabKeyPrim.set(initialTabKeyToOpen);
 			}
 		}
-	}, [sessionKey, initialTabs, defaultTabKey, activeTabKey, openTabs.length]);
+	}, [sessionKey, initialValues, activeTabKey, openTabs.length]);
 
 	// Computed values
-	const activeTab = openTabs.find(tab => tab.tabKey === activeTabKey);
+	const activeTab = openTabs.find((tab) => tab.tabKey === activeTabKey);
 
 	return {
 		// Direct state access
 		activeTabKey,
 		activeTab,
 		openTabs,
-		
+
 		// Direct setters
 		setActiveTabKey,
-		setOpenTabs,
-		
+		setOpenTabs:(newValue: TabProps[]) => {
+			debugger
+			 _openTabsPrim.set(newValue)
+		},
+
 		// Cleanup function
 		cleanup: () => {
-			setActiveTabKeyMap(prev => {
-				const newMap = new Map(prev);
-				newMap.delete(sessionKey);
-				return newMap;
-			});
-			setOpenTabsMap(prev => {
-				const newMap = new Map(prev);
-				newMap.delete(sessionKey);
-				return newMap;
-			});
-		}
+			_activeTabKeyPrim.kill();
+			_openTabsPrim.kill();
+		},
 	};
 }

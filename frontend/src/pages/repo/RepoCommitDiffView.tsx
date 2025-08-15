@@ -1,5 +1,5 @@
 import { EmptyState } from '@/components/empty-state';
-import { FileTabs } from '@/components/file-tabs';
+import { FileTabs } from '@/components/file-tabs/file-tabs';
 import { CommitPager } from '@/components/git-diff/commit-pager';
 import { FileTree } from '@/components/git-diff/file-tree';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';

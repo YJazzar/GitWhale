@@ -9,8 +9,8 @@ import { OpenNewRepo, OpenRepoWithPath } from '../../../wailsjs/go/backend/App';
 import { UseAppState } from '../state/use-app-state';
 
 export function useNavigateRootFilTabs() {
-	const appState = UseAppState()
-	const fileTabs = useFileTabsHandlers('app-workspace', []);
+	const appState = UseAppState();
+	const fileTabs = useFileTabsHandlers('app-workspace');
 
 	// Callback to open a new repository tab
 	const onOpenNewRepo = useCallback(async () => {
@@ -23,7 +23,7 @@ export function useNavigateRootFilTabs() {
 			return;
 		}
 
-		await OpenRepoWithPath(repoPath)
+		await OpenRepoWithPath(repoPath);
 		await appState.refreshAppState();
 
 		const newRepoTab: TabProps = {
@@ -38,24 +38,24 @@ export function useNavigateRootFilTabs() {
 	};
 
 	// Callback to open settings tab
-	const onOpenSettings = useCallback(() => {
+	const onOpenSettings = () => {
 		fileTabs.openTab({
 			tabKey: '$$setting$$',
 			titleRender: () => <>Settings</>,
 			component: <SettingsPage />,
 			isPermanentlyOpen: true,
 		});
-	}, []);
+	};
 
 	// Callback to open application logs tab
-	const onOpenApplicationLogs = useCallback(() => {
+	const onOpenApplicationLogs = () => {
 		fileTabs.openTab({
 			tabKey: '$$logs$$',
 			titleRender: () => <>Application Logs</>,
 			component: <ApplicationLogsPage />,
 			isPermanentlyOpen: true,
 		});
-	}, []);
+	};
 
 	return { onOpenNewRepo, onOpenRepoWithPath, onOpenSettings, onOpenApplicationLogs };
 }

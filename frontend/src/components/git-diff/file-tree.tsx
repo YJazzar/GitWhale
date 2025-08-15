@@ -14,7 +14,8 @@ interface FileTreeProps {
 }
 
 export function FileTree({ directoryData, fileTabsSessionKey, className }: FileTreeProps) {
-	const fileTabsHandlers = useFileTabsHandlers(fileTabsSessionKey, []);
+	const fileTabsHandlers = useFileTabsHandlers(fileTabsSessionKey);
+	
 	const onOpenFile = (file: git_operations.FileInfo, keepFileOpen: boolean) => {
 		const tabKey = getFileKey(file);
 

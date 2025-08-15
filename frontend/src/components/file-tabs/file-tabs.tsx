@@ -13,7 +13,7 @@ export type FileTabManagerProps = {
 export const FileTabs: React.FC<FileTabManagerProps> = (props) => {
 	const { fileTabManageSessionKey, initialTabs, defaultTabKey } = props;
 
-	const handlers = useFileTabsHandlers(fileTabManageSessionKey, initialTabs, defaultTabKey);
+	const handlers = useFileTabsHandlers(fileTabManageSessionKey, { initialTabs, defaultTabKey });
 
 	// Handles the keyboard shortcut to close stuff
 	useKeyboardShortcut('w', () => {
