@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useShortHash } from '../git-log/use-short-hash';
 
 export function useNavigateToCommitDiffs(repoPath: string) {
-	const sidebar = useSidebarHandlers(`repo-${repoPath}`, []);
+	const sidebar = useSidebarHandlers(`repo-${repoPath}`);
 	const { diffState } = useRepoState(repoPath);
 	const [isLoadingNewDiff, setIsLoadingNewDiff] = useState(false)
 

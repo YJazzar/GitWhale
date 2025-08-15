@@ -1,5 +1,6 @@
 import { atom, useAtom } from 'jotai';
 import { ReactNode, useEffect } from 'react';
+import { useMapPrimitive } from './primitives/use-map-primitive';
 
 type SidebarSessionKey = string;
 type SidebarItemId = string;
@@ -17,57 +18,56 @@ export interface SidebarItemProps {
 
 // Global atoms for session-based state
 const activeItemAtom = atom<Map<SidebarSessionKey, SidebarItemId>>(new Map());
+const staticItemsAtom = atom<Map<SidebarSessionKey, SidebarItemProps[]>>(new Map());
 const dynamicItemsAtom = atom<Map<SidebarSessionKey, SidebarItemProps[]>>(new Map());
 const sidebarModeAtom = atom<Map<SidebarSessionKey, SidebarMode>>(new Map());
 
 export function useSidebarState(
 	sessionKey: SidebarSessionKey,
-	staticItems: SidebarItemProps[],
-	initialMode: SidebarMode = 'wide',
-	defaultItemId?: string
+	initialValues?: {
+		staticItems: SidebarItemProps[];
+		initialMode: SidebarMode;
+		defaultItemId?: string;
+	}
 ) {
-	const [activeItemMap, setActiveItemMap] = useAtom(activeItemAtom);
-	const [dynamicItemsMap, setDynamicItemsMap] = useAtom(dynamicItemsAtom);
-	const [sidebarModeMap, setSidebarModeMap] = useAtom(sidebarModeAtom);
+	const _activeItemPrim = useMapPrimitive(activeItemAtom, sessionKey);
+	const _staticItemsPrim = useMapPrimitive(dynamicItemsAtom, sessionKey);
+	const _dynamicItemsPrim = useMapPrimitive(dynamicItemsAtom, sessionKey);
+	const _sidebarModePrim = useMapPrimitive(sidebarModeAtom, sessionKey);
 
 	// Get current session state
-	const activeItemId = activeItemMap.get(sessionKey);
-	const dynamicItems = dynamicItemsMap.get(sessionKey) || [];
-	const currentMode = sidebarModeMap.get(sessionKey) || initialMode;
+	const activeItemId = _activeItemPrim.value;
+	const dynamicItems = _dynamicItemsPrim.value;
+	const currentMode = _sidebarModePrim.value;
 
 	// Direct setters
 	const setActiveItemId = (itemId: SidebarItemId | undefined) => {
-		setActiveItemMap(prev => {
-			const newMap = new Map(prev);
-			if (itemId === undefined) {
-				newMap.delete(sessionKey);
-			} else {
-				newMap.set(sessionKey, itemId);
-			}
-			return newMap;
-		});
+		if (itemId === undefined) {
+			_activeItemPrim.kill();
+		} else {
+			_activeItemPrim.set(itemId);
+		}
 	};
 
 	const setDynamicItems = (items: SidebarItemProps[]) => {
-		setDynamicItemsMap(prev => {
-			const newMap = new Map(prev);
-			newMap.set(sessionKey, items);
-			return newMap;
-		});
+		_dynamicItemsPrim.set(items);
 	};
 
 	const setSidebarMode = (mode: SidebarMode) => {
-		setSidebarModeMap(prev => {
-			const newMap = new Map(prev);
-			newMap.set(sessionKey, mode);
-			return newMap;
-		});
+		_sidebarModePrim.set(mode);
 	};
 
 	// Initialize state on mount
 	useEffect(() => {
+		if (!initialValues) {
+			// In code path that shouldn't be initializing any state
+			return;
+		}
+
+		const { initialMode, defaultItemId, staticItems } = initialValues;
+
 		// Set initial mode if not already set
-		if (!sidebarModeMap.has(sessionKey)) {
+		if (!_sidebarModePrim.value) {
 			setSidebarMode(initialMode);
 		}
 
@@ -76,11 +76,16 @@ export function useSidebarState(
 			const initialItemId = defaultItemId || staticItems[0].id;
 			setActiveItemId(initialItemId);
 		}
-	}, [sessionKey, staticItems, defaultItemId, initialMode, activeItemId]);
+
+		// Store the static items
+		if (!_staticItemsPrim.value && staticItems.length > 0) {
+			_staticItemsPrim.set(staticItems);
+		}
+	}, [sessionKey, initialValues, activeItemId, setSidebarMode, setActiveItemId, _staticItemsPrim]);
 
 	// Computed values
-	const allItems = [...staticItems, ...dynamicItems];
-	const activeItem = allItems.find(item => item.id === activeItemId);
+	const allItems = [...(_staticItemsPrim.value ?? []), ...(_dynamicItemsPrim.value ?? [])];
+	const activeItem = allItems.find((item) => item.id === activeItemId);
 
 	return {
 		// Direct state access
@@ -88,31 +93,19 @@ export function useSidebarState(
 		activeItem,
 		dynamicItems,
 		currentMode,
-		staticItems,
+		staticItems: _staticItemsPrim.value,
 		allItems,
-		
+
 		// Direct setters
 		setActiveItemId,
 		setDynamicItems,
 		setSidebarMode,
-		
+
 		// Cleanup function
 		cleanup: () => {
-			setActiveItemMap(prev => {
-				const newMap = new Map(prev);
-				newMap.delete(sessionKey);
-				return newMap;
-			});
-			setDynamicItemsMap(prev => {
-				const newMap = new Map(prev);
-				newMap.delete(sessionKey);
-				return newMap;
-			});
-			setSidebarModeMap(prev => {
-				const newMap = new Map(prev);
-				newMap.delete(sessionKey);
-				return newMap;
-			});
-		}
+			_activeItemPrim.kill();
+			_dynamicItemsPrim.kill();
+			_sidebarModePrim.kill();
+		},
 	};
 }

@@ -6,7 +6,7 @@ import { Logger } from '../../utils/logger';
 import { useShortHash } from '../git-log/use-short-hash';
 
 export function useNavigateToCommit(repoPath: string) {
-	const sidebar = useSidebarHandlers(`repo-${repoPath}`, []);
+	const sidebar = useSidebarHandlers(`repo-${repoPath}`);
 
 	const handleViewFullCommit = (commitHash: string, isMergeCommit?: boolean) => {
 		// Check if this commit is already open in the sidebar

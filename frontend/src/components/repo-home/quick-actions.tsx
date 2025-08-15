@@ -22,7 +22,7 @@ interface QuickActionsProps {
 
 export function QuickActions(props: QuickActionsProps) {
 	const { repoPath, onRefresh, isRefreshing } = props;
-	const sidebar = useSidebarHandlers(`repo-${repoPath}`, []);
+	const sidebar = useSidebarHandlers(`repo-${repoPath}`);
 	const repoState = useRepoState(repoPath);
 
 	const [showCompareModal, setShowCompareModal] = useState(false);

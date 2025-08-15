@@ -1,78 +1,85 @@
 import { useCallback } from 'react';
 import { useSidebarState, SidebarItemProps } from './useSidebarState';
+import Logger from '@/utils/logger';
+import { r } from 'react-router/dist/development/fog-of-war-DU_DzpDb';
 export type { SidebarItemProps } from './useSidebarState';
 
 type SidebarSessionKey = string;
 
 export function useSidebarHandlers(
 	sessionKey: SidebarSessionKey,
-	staticItems: SidebarItemProps[],
-	initialMode: 'compact' | 'wide' = 'wide',
-	defaultItemId?: string,
-	onItemClick?: (itemId: string) => void
+	initialValues?: {
+		staticItems: SidebarItemProps[];
+		initialMode: 'compact' | 'wide';
+		defaultItemId?: string;
+	}
 ) {
-	const state = useSidebarState(sessionKey, staticItems, initialMode, defaultItemId);
+	const state = useSidebarState(sessionKey, initialValues);
 
-	const addDynamicItem = useCallback((item: SidebarItemProps): void => {
+	const addDynamicItem = (item: SidebarItemProps): void => {
 		// Check if item already exists
 		const existingItems = state.dynamicItems;
-		const itemExists = existingItems.some(existing => existing.id === item.id);
-		
+		const itemExists = existingItems?.some((existing) => existing.id === item.id);
+
 		if (!itemExists) {
-			const newItems = [...existingItems, { ...item, isDynamic: true }];
+			const newItems = [...(existingItems ?? []), { ...item, isDynamic: true }];
 			state.setDynamicItems(newItems);
 		}
-		
+
 		// Set as active item
 		state.setActiveItemId(item.id);
-		onItemClick?.(item.id);
-	}, [state, onItemClick]);
+		Logger.debug(`Clicked sidebar item: ${item.id}`, 'useSidebarHandlers');
+	};
 
-	const removeDynamicItem = useCallback((itemId: string): void => {
+	const removeDynamicItem = (itemId: string): void => {
 		const currentItems = state.dynamicItems;
-		const itemToRemove = currentItems.find(item => item.id === itemId);
-		
+		if (!currentItems) {
+			return; // nothing to remove
+		}
+
+		const itemToRemove = currentItems.find((item) => item.id === itemId);
+
 		// Don't remove if preventClose is true
 		if (itemToRemove?.preventClose) {
 			return;
 		}
 
-		const newItems = currentItems.filter(item => item.id !== itemId);
+		const newItems = currentItems.filter((item) => item.id !== itemId);
 		state.setDynamicItems(newItems);
 
 		// If we're removing the active item, switch to the first static item
 		if (state.activeItemId === itemId) {
-			const firstStaticItem = state.staticItems[0];
+			const firstStaticItem = state.staticItems?.[0];
 			if (firstStaticItem) {
 				state.setActiveItemId(firstStaticItem.id);
-				onItemClick?.(firstStaticItem.id);
+				Logger.debug(`Clicked sidebar item: ${firstStaticItem.id}`, 'useSidebarHandlers');
 			}
 		}
 
 		// Call the item's onClose callback if it exists
 		itemToRemove?.onClose?.();
-	}, [state, onItemClick]);
+	};
 
-	const setActiveItem = useCallback((itemId: string): void => {
-		const item = state.allItems.find(item => item.id === itemId);
+	const setActiveItem = (itemId: string): void => {
+		const item = state.allItems.find((item) => item.id === itemId);
 		if (item) {
 			state.setActiveItemId(itemId);
-			onItemClick?.(itemId);
+			Logger.debug(`Clicked sidebar item: ${itemId}`, 'useSidebarHandlers');
 		}
-	}, [state, onItemClick]);
+	};
 
-	const toggleMode = useCallback((): void => {
+	const toggleMode = (): void => {
 		const newMode = state.currentMode === 'compact' ? 'wide' : 'compact';
 		state.setSidebarMode(newMode);
-	}, [state]);
+	};
 
-	const getActiveItem = useCallback((): SidebarItemProps | undefined => {
+	const getActiveItem = (): SidebarItemProps | undefined => {
 		return state.activeItem;
-	}, [state.activeItem]);
+	};
 
-	const getAllItems = useCallback((): SidebarItemProps[] => {
+	const getAllItems = (): SidebarItemProps[] => {
 		return state.allItems;
-	}, [state.allItems]);
+	};
 
 	return {
 		// State (read-only)
@@ -82,7 +89,7 @@ export function useSidebarHandlers(
 		currentMode: state.currentMode,
 		staticItems: state.staticItems,
 		allItems: state.allItems,
-		
+
 		// Actions
 		addDynamicItem,
 		removeDynamicItem,
@@ -90,8 +97,8 @@ export function useSidebarHandlers(
 		toggleMode,
 		getActiveItem,
 		getAllItems,
-		
+
 		// Cleanup
-		cleanup: state.cleanup
+		cleanup: state.cleanup,
 	};
 }

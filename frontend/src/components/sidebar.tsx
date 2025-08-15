@@ -11,24 +11,23 @@ import { ReactNode } from 'react';
 export type SidebarProps = {
 	sidebarSessionKey: string;
 	staticItems: SidebarItemProps[];
-	initialMode?: 'compact' | 'wide';
+	initialMode: 'compact' | 'wide';
 	defaultItemId?: string;
-	onItemClick?: (itemId: string) => void;
 };
 
 export const Sidebar: React.FC<SidebarProps> = (props) => {
-	const { sidebarSessionKey: sessionKey, staticItems, initialMode = 'wide', defaultItemId, onItemClick } = props;
+	const { sidebarSessionKey: sessionKey, staticItems, initialMode, defaultItemId } = props;
 
-	const handlers = useSidebarHandlers(sessionKey, staticItems, initialMode, defaultItemId, onItemClick);
-	
-	useKeyboardShortcut("b", () => { 
+	const handlers = useSidebarHandlers(sessionKey, { staticItems, initialMode, defaultItemId });
+
+	useKeyboardShortcut('b', () => {
 		handlers.toggleMode();
 	});
-	
+
 	// For some reason, uncommenting this breaks the File-tabs ctrl+w listener
-	// useKeyboardShortcut( "w", (event) => { 
+	// useKeyboardShortcut( "w", (event) => {
 	// 	let activeItem = state.activeItem.get()
-	// 	if (!!activeItem && activeItem.isDynamic == true) { 
+	// 	if (!!activeItem && activeItem.isDynamic == true) {
 	// 		event.preventDefault()
 	// 		event.stopPropagation()
 
@@ -36,16 +35,18 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
 	// 	}
 	// })
 	const isCompactMode = handlers.currentMode === 'compact';
-	const hasDynamicItems = handlers.dynamicItems.length > 0;
+	const hasDynamicItems = (handlers.dynamicItems?.length ?? 0) > 0;
 
 	return (
 		<TooltipProvider>
 			<div className="h-full w-full flex">
 				{/* Sidebar Navigation */}
-				<div className={clsx(
-					'h-full bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-200',
-					isCompactMode ? 'w-12' : 'w-64'
-				)}>
+				<div
+					className={clsx(
+						'h-full bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-200',
+						isCompactMode ? 'w-12' : 'w-64'
+					)}
+				>
 					{/* Header with mode toggle */}
 					<div className="flex items-center justify-between p-2 border-b border-sidebar-border">
 						{!isCompactMode && (
@@ -74,33 +75,11 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
 						</Tooltip>
 					</div>
 
-				{/* Content */}
-				<div className="flex-1 overflow-y-auto">
-					{/* Static items */}
-					<div className="p-2">
-						{handlers.staticItems.map((item) => (
-							<SidebarMenuItem
-								key={item.id}
-								item={item}
-								isActive={handlers.activeItemId === item.id}
-								isCompact={isCompactMode}
-								onClick={handlers.setActiveItem}
-								onRemove={handlers.removeDynamicItem}
-							/>
-						))}
-					</div>
-
-					{/* Separator between static and dynamic items */}
-					{hasDynamicItems && (
-						<div className="px-2">
-							<Separator className="bg-sidebar-border" />
-						</div>
-					)}
-
-					{/* Dynamic items */}
-					{hasDynamicItems && (
+					{/* Content */}
+					<div className="flex-1 overflow-y-auto">
+						{/* Static items */}
 						<div className="p-2">
-							{handlers.dynamicItems.map((item) => (
+							{handlers.staticItems?.map((item) => (
 								<SidebarMenuItem
 									key={item.id}
 									item={item}
@@ -111,26 +90,46 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
 								/>
 							))}
 						</div>
+
+						{/* Separator between static and dynamic items */}
+						{hasDynamicItems && (
+							<div className="px-2">
+								<Separator className="bg-sidebar-border" />
+							</div>
+						)}
+
+						{/* Dynamic items */}
+						{hasDynamicItems && (
+							<div className="p-2">
+								{handlers.dynamicItems?.map((item) => (
+									<SidebarMenuItem
+										key={item.id}
+										item={item}
+										isActive={handlers.activeItemId === item.id}
+										isCompact={isCompactMode}
+										onClick={handlers.setActiveItem}
+										onRemove={handlers.removeDynamicItem}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+				</div>
+
+				{/* Main Content Area */}
+				<div className="flex-1 h-full overflow-hidden">
+					{handlers.activeItem ? (
+						<div className="h-full w-full">{handlers.activeItem.component}</div>
+					) : (
+						<div className="h-full w-full flex items-center justify-center text-muted-foreground">
+							No item selected
+						</div>
 					)}
 				</div>
 			</div>
-
-			{/* Main Content Area */}
-			<div className="flex-1 h-full overflow-hidden">
-				{handlers.activeItem ? (
-					<div className="h-full w-full">
-						{handlers.activeItem.component}
-					</div>
-				) : (
-					<div className="h-full w-full flex items-center justify-center text-muted-foreground">
-						No item selected
-					</div>
-				)}
-			</div>
-		</div>
 		</TooltipProvider>
 	);
-}
+};
 
 Sidebar.displayName = 'Sidebar';
 
@@ -157,11 +156,14 @@ const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
 		onClick(item.id);
 	}, [onClick, item.id]);
 
-	const handleRemove = useCallback((e: React.MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		onRemove(item.id);
-	}, [onRemove, item.id]);
+	const handleRemove = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			onRemove(item.id);
+		},
+		[onRemove, item.id]
+	);
 
 	const buttonContent = (
 		<button
@@ -180,15 +182,11 @@ const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
 			)}
 		>
 			{/* Icon */}
-			<div className="flex-shrink-0 flex items-center justify-center h-4 w-4">
-				{item.icon}
-			</div>
+			<div className="flex-shrink-0 flex items-center justify-center h-4 w-4">{item.icon}</div>
 
 			{/* Title (only in wide mode) */}
 			{!isCompact && (
-				<span className="flex-1 text-left text-sm font-medium truncate">
-					{item.title}
-				</span>
+				<span className="flex-1 text-left text-sm font-medium truncate">{item.title}</span>
 			)}
 
 			{/* Close button (only for dynamic items in wide mode) */}
@@ -216,9 +214,7 @@ const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
 		return (
 			<div className="mb-1">
 				<Tooltip>
-					<TooltipTrigger asChild>
-						{buttonContent}
-					</TooltipTrigger>
+					<TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
 					<TooltipContent side="right">
 						<p>{item.title}</p>
 					</TooltipContent>

@@ -1,12 +1,9 @@
-import { UseAppState } from '@/hooks/state/use-app-state';
-import { GitGraph, House, Terminal, GitCompare } from 'lucide-react';
-import { ReactNode } from 'react';
+import { Sidebar } from '@/components/sidebar';
+import { SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
 import RepoHomeView from '@/pages/repo/RepoHomeView';
 import RepoLogView from '@/pages/repo/RepoLogView';
 import RepoTerminalView from '@/pages/repo/RepoTerminalView';
-import { Sidebar } from '@/components/sidebar';
-import { SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
-import { Logger } from '@/utils/logger';
+import { GitGraph, House, Terminal } from 'lucide-react';
 
 export type RepoViewType = 'home' | 'log' | 'diff' | 'terminal';
 
@@ -41,12 +38,7 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 		},
 	];
 
-	// Handler for when sidebar items are clicked
-	const handleItemClick = (itemId: string) => {
-		// Additional logic can be added here if needed
-		Logger.debug(`Clicked sidebar item: ${itemId}`, 'RepoPage');
-	};
-
+	// Handler for wh
 	return (
 		<div className={`h-full w-full ${className || ''}`}>
 			<Sidebar
@@ -54,7 +46,6 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 				staticItems={staticItems}
 				initialMode="wide"
 				defaultItemId="home"
-				onItemClick={handleItemClick}
 			/>
 		</div>
 	);
