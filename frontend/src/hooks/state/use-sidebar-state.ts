@@ -1,6 +1,7 @@
 import { atom, useAtom } from 'jotai';
 import { useEffect } from 'react';
 import { ReactNode } from 'react';
+import { useMapPrimitive } from './primitives/use-map-primitive';
 
 type SidebarSessionKey = string;
 type SidebarItemId = string;
@@ -57,36 +58,30 @@ export function useSidebarState(
 	initialMode: SidebarMode = 'wide',
 	defaultItemId?: string
 ) {
-	const [activeItemMap, setActiveItemMap] = useAtom(activeItemAtom);
-	const [dynamicItemsMap, setDynamicItemsMap] = useAtom(dynamicItemsAtom);
-	const [sidebarModeMap, setSidebarModeMap] = useAtom(sidebarModeAtom);
+	const _activeItemPrim = useMapPrimitive(activeItemAtom, sessionKey);
+	const _dynamicItemsPrim = useMapPrimitive(dynamicItemsAtom, sessionKey);
+	const _sidebarModePrim = useMapPrimitive(sidebarModeAtom, sessionKey);
 
 	// Get current session state
-	const activeItemId = activeItemMap.get(sessionKey);
-	const dynamicItems = dynamicItemsMap.get(sessionKey) || [];
-	const currentMode = sidebarModeMap.get(sessionKey) || initialMode;
+	const activeItemId = _activeItemPrim.value;
+	const dynamicItems = _dynamicItemsPrim.value || [];
+	const currentMode = _sidebarModePrim.value || initialMode;
 
 	// Setters for session-specific state
 	const setActiveItemId = (itemId: SidebarItemId | undefined) => {
-		const newMap = new Map(activeItemMap);
 		if (itemId === undefined) {
-			newMap.delete(sessionKey);
+			_activeItemPrim.kill();
 		} else {
-			newMap.set(sessionKey, itemId);
+			_activeItemPrim.set(itemId);
 		}
-		setActiveItemMap(newMap);
 	};
 
 	const setDynamicItems = (items: SidebarItemProps[]) => {
-		const newMap = new Map(dynamicItemsMap);
-		newMap.set(sessionKey, items);
-		setDynamicItemsMap(newMap);
+		_dynamicItemsPrim.set(items);
 	};
 
 	const setSidebarMode = (mode: SidebarMode) => {
-		const newMap = new Map(sidebarModeMap);
-		newMap.set(sessionKey, mode);
-		setSidebarModeMap(newMap);
+		_sidebarModePrim.set(mode);
 	};
 
 	const toggleSidebarMode = () => {
@@ -101,7 +96,7 @@ export function useSidebarState(
 	// Initialize state on mount
 	useEffect(() => {
 		// Set initial mode if not already set
-		if (!sidebarModeMap.has(sessionKey)) {
+		if (!_sidebarModePrim.value) {
 			setSidebarMode(initialMode);
 		}
 
@@ -110,7 +105,16 @@ export function useSidebarState(
 			const initialItemId = defaultItemId || staticItems[0].id;
 			setActiveItemId(initialItemId);
 		}
-	}, [sessionKey, staticItems, defaultItemId, initialMode, activeItemId, sidebarModeMap, setSidebarMode, setActiveItemId]);
+	}, [
+		sessionKey,
+		staticItems,
+		defaultItemId,
+		initialMode,
+		activeItemId,
+		_sidebarModePrim,
+		setSidebarMode,
+		setActiveItemId,
+	]);
 
 	return {
 		// State setters with convenient API
@@ -129,6 +133,11 @@ export function useSidebarState(
 			get: () => currentMode,
 			set: setSidebarMode,
 			toggle: toggleSidebarMode,
+		},
+		onClose: () => {
+			_activeItemPrim.kill();
+			_dynamicItemsPrim.kill();
+			_sidebarModePrim.kill();
 		},
 	};
 }
