@@ -31,7 +31,7 @@ export function useSidebarState(
 	}
 ) {
 	const _activeItemPrim = useMapPrimitive(activeItemAtom, sessionKey);
-	const _staticItemsPrim = useMapPrimitive(dynamicItemsAtom, sessionKey);
+	const _staticItemsPrim = useMapPrimitive(staticItemsAtom, sessionKey);
 	const _dynamicItemsPrim = useMapPrimitive(dynamicItemsAtom, sessionKey);
 	const _sidebarModePrim = useMapPrimitive(sidebarModeAtom, sessionKey);
 

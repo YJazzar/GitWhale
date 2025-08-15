@@ -10,7 +10,7 @@ export function useNavigateToCommit(repoPath: string) {
 
 	const handleViewFullCommit = (commitHash: string, isMergeCommit?: boolean) => {
 		// Check if this commit is already open in the sidebar
-		const existingItems = sidebar.getAllItems();
+		const existingItems = sidebar.dynamicItems ?? [];
 		const existingCommit = existingItems.find((item) => item.id === `commit-${commitHash}`);
 
 		if (existingCommit) {

@@ -80,7 +80,6 @@ export function useFileTabsState(
 		// Direct setters
 		setActiveTabKey,
 		setOpenTabs:(newValue: TabProps[]) => {
-			debugger
 			 _openTabsPrim.set(newValue)
 		},
 

@@ -77,10 +77,6 @@ export function useSidebarHandlers(
 		return state.activeItem;
 	};
 
-	const getAllItems = (): SidebarItemProps[] => {
-		return state.allItems;
-	};
-
 	return {
 		// State (read-only)
 		activeItem: state.activeItem,
@@ -88,7 +84,6 @@ export function useSidebarHandlers(
 		dynamicItems: state.dynamicItems,
 		currentMode: state.currentMode,
 		staticItems: state.staticItems,
-		allItems: state.allItems,
 
 		// Actions
 		addDynamicItem,
@@ -96,7 +91,6 @@ export function useSidebarHandlers(
 		setActiveItem,
 		toggleMode,
 		getActiveItem,
-		getAllItems,
 
 		// Cleanup
 		cleanup: state.cleanup,

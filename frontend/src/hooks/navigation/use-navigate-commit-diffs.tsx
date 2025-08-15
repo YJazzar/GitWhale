@@ -27,7 +27,7 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 
 		// Check if this commit is already open in the sidebar
 		// If it already exists, just switch to it
-		const existingItems = sidebar.getAllItems();
+		const existingItems = sidebar.dynamicItems ?? [];
 		const existingCommit = existingItems.find((item) => item.id === pageKey);
 		if (existingCommit) {
 			sidebar.setActiveItem(pageKey);

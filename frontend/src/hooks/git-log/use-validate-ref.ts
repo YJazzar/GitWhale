@@ -24,18 +24,14 @@ export function useValidateRef(repoPath: string, refToValidate: string): UseVali
 
 	useEffect(() => {
 		const validateAsync = async (refToCheck: string) => {
-			Logger.info(`Starting validation process for: ${refToCheck}`, 'useValidateRef');
-
 			refToCheck = refToCheck.toLowerCase();
 
 			// Don't validate empty refs
 			if (!refToCheck || refToCheck.trim() === '') {
-				Logger.trace(`Skipping validation: empty ref - refToCheck: '${refToCheck}`, 'useValidateRef');
 				setValidationState('idle');
 				return;
 			}
 
-			Logger.trace(`Setting validation state to 'validating' for ref: ${refToCheck}`, 'useValidateRef');
 			setValidationState('validating');
 
 			// Check if the ref matches any of the ones we already know
@@ -87,6 +83,6 @@ export function useValidateRef(repoPath: string, refToValidate: string): UseVali
 		validationState,
 		isValid,
 		didSkipValidation: validationState === 'idle',
-		checkedRef: debouncedRefToValidate
+		checkedRef: debouncedRefToValidate,
 	} as any;
 }
