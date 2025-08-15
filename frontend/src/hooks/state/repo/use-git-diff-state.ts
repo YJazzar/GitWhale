@@ -1,11 +1,11 @@
 import { useToast } from '@/hooks/use-toast';
 import Logger from '@/utils/logger';
-import { atom, useAtom } from 'jotai';
-import { StartDiffSession, EndDiffSession } from '../../../../wailsjs/go/backend/App';
+import { atom } from 'jotai';
+import { EndDiffSession, StartDiffSession } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
-// Note: This import was removed as file manager state is now handled differently
-// import { useFileManagerStatesCleanup } from '../use-file-manager-state';
 import { useMapPrimitive } from '../primitives/use-map-primitive';
+import { FileTabsSessionKeyGenerator } from '../useFileTabsHandlers';
+import { useFileManagerStatesCleanup } from '../useFileTabsState';
 
 // Store diff sessions per repository path
 const diffSessionsAtom = atom<Map<string, git_operations.DiffSession[]>>(new Map());
@@ -20,8 +20,9 @@ export function getDiffState(repoPath: string) {
 
 	// Get selected session ID for this repo
 	const allSessionIDs = _diffSessionsPrim.value?.map((session) => session.sessionId) ?? [];
-	const allFileTabManagerSessionIDs = allSessionIDs.map(GetDiffSessionKeyForFileTabManagerSession);
-	// Note: File manager state cleanup is now handled automatically by the new hook architecture
+	const allFileTabManagerSessionIDs = allSessionIDs.map(FileTabsSessionKeyGenerator.diffSession);
+	const diffStateFileTabs = useFileManagerStatesCleanup(allFileTabManagerSessionIDs);
+
 	const { toast } = useToast();
 
 	const createSession = async (options: git_operations.DiffOptions) => {
@@ -31,12 +32,12 @@ export function getDiffState(repoPath: string) {
 			const session = await StartDiffSession(options);
 			Logger.debug(`Received session: ${session.sessionId}`, 'RepoDiffView');
 
-			if (!session.hasDiffData) { 
+			if (!session.hasDiffData) {
 				toast({
-					variant: "default", 
-					title: "No changes found"
-				})
-				return
+					variant: 'default',
+					title: 'No changes found',
+				});
+				return;
 			}
 
 			const newSessions = [...(_diffSessionsPrim.value ?? []), session];
@@ -44,7 +45,7 @@ export function getDiffState(repoPath: string) {
 			return session;
 		} catch (error) {
 			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
-			Logger.error(`${JSON.stringify(error, null, 3)}`)
+			Logger.error(`${JSON.stringify(error, null, 3)}`);
 
 			toast({
 				variant: 'destructive',
@@ -82,12 +83,7 @@ export function getDiffState(repoPath: string) {
 		disposeSessions: () => {
 			_diffSessionsPrim.kill();
 			_isLoadingPrim.kill();
-
-			// Note: File manager state cleanup is now handled automatically by the new hook architecture
+			diffStateFileTabs.cleanupFileManagerStates();
 		},
 	};
-}
-
-export function GetDiffSessionKeyForFileTabManagerSession(diffSessionID: string) {
-	return `diff-session-${diffSessionID}`;
 }

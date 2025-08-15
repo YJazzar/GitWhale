@@ -6,6 +6,13 @@ export type { SidebarItemProps } from './useSidebarState';
 
 type SidebarSessionKey = string;
 
+export const SidebarSessionKeyGenerator = { 
+	repoSidebar: (repoPath: string) => { 
+		return `repo-${repoPath}`
+	}
+}
+
+
 export function useSidebarHandlers(
 	sessionKey: SidebarSessionKey,
 	initialValues?: {

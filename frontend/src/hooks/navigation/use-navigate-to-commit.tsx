@@ -1,12 +1,16 @@
 import { GitCommit, GitMerge } from 'lucide-react';
 import { backend } from 'wailsjs/go/models';
 import { CommitPreview } from '@/components/commit-preview/commit-preview';
-import { useSidebarHandlers, SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
+import {
+	useSidebarHandlers,
+	SidebarItemProps,
+	SidebarSessionKeyGenerator,
+} from '@/hooks/state/useSidebarHandlers';
 import { Logger } from '../../utils/logger';
 import { useShortHash } from '../git-log/use-short-hash';
 
 export function useNavigateToCommit(repoPath: string) {
-	const sidebar = useSidebarHandlers(`repo-${repoPath}`);
+	const sidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoPath));
 
 	const handleViewFullCommit = (commitHash: string, isMergeCommit?: boolean) => {
 		// Check if this commit is already open in the sidebar

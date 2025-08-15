@@ -7,7 +7,7 @@ import { ThemeProvider } from './components/theme-provider';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 
 import { Toaster } from './components/ui/toaster';
-import { TabProps } from './hooks/state/useFileTabsHandlers';
+import { FileTabsSessionKeyGenerator, TabProps } from './hooks/state/useFileTabsHandlers';
 import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
 
@@ -68,7 +68,7 @@ function App() {
 				<FileTabs
 					initialTabs={initialTabs}
 					defaultTabKey={defaultTab}
-					fileTabManageSessionKey={'app-workspace'}
+					fileTabManageSessionKey={FileTabsSessionKeyGenerator.appWorkspace()}
 				/>
 				<Toaster />
 			</div>

@@ -1,4 +1,4 @@
-import { atom, useAtom } from 'jotai';
+import { atom, useAtom, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
 import { useMapPrimitive } from './primitives/use-map-primitive';
 
@@ -79,14 +79,42 @@ export function useFileTabsState(
 
 		// Direct setters
 		setActiveTabKey,
-		setOpenTabs:(newValue: TabProps[]) => {
-			 _openTabsPrim.set(newValue)
+		setOpenTabs: (newValue: TabProps[]) => {
+			_openTabsPrim.set(newValue);
 		},
 
 		// Cleanup function
 		cleanup: () => {
 			_activeTabKeyPrim.kill();
 			_openTabsPrim.kill();
+		},
+	};
+}
+
+export function useFileManagerStatesCleanup(fileTabManageSessionKeys: FileTabSessionKey[]) {
+	const setActiveTabMap = useSetAtom(activeTabKeyAtom);
+	const setOpenTabsMap = useSetAtom(openTabsAtom);
+
+	const removeActiveTabKey = () => {
+		setActiveTabMap((prevMap) => {
+			const newMap = new Map(prevMap);
+			fileTabManageSessionKeys.forEach((key) => newMap.delete(key));
+			return newMap;
+		});
+	};
+
+	const removeOpenTabs = () => {
+		setOpenTabsMap((prevMap) => {
+			const newMap = new Map(prevMap);
+			fileTabManageSessionKeys.forEach((key) => newMap.delete(key));
+			return newMap;
+		});
+	};
+
+	return {
+		cleanupFileManagerStates: () => {
+			removeActiveTabKey();
+			removeOpenTabs();
 		},
 	};
 }

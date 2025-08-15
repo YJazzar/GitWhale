@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { GetStartupDirDiffDirectory } from '../../wailsjs/go/backend/App';
 import { git_operations } from '../../wailsjs/go/models';
 import { FileTabs } from '@/components/file-tabs/file-tabs';
+import { FileTabsSessionKeyGenerator } from '@/hooks/state/useFileTabsHandlers';
 
 const directoryDataAtom = atom<git_operations.Directory>();
 
@@ -57,7 +58,7 @@ export default function DirDiffPage() {
 					<div className="grow h-full flex flex-col min-h-0">
 						<FileTabs
 							initialTabs={[]}
-							fileTabManageSessionKey={'startup-diff-viewer'}
+							fileTabManageSessionKey={FileTabsSessionKeyGenerator.startupDiffViewer()}
 						/>
 					</div>
 				</ResizablePanel>

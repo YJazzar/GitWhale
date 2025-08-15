@@ -3,6 +3,18 @@ export type { TabProps } from './useFileTabsState';
 
 type FileTabSessionKey = string;
 
+export const FileTabsSessionKeyGenerator = {
+	appWorkspace: () => {
+		return `app-workspace`;
+	},
+	startupDiffViewer: () => {
+		return 'startup-diff-viewer';
+	},
+	diffSession: (diffSessionID: string) => {
+		return `diff-session-${diffSessionID}`;
+	},
+};
+
 export function useFileTabsHandlers(
 	sessionKey: FileTabSessionKey,
 	initialValues?: {

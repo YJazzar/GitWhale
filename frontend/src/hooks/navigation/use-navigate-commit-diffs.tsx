@@ -1,4 +1,4 @@
-import { useSidebarHandlers, SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
+import { useSidebarHandlers, SidebarItemProps, SidebarSessionKeyGenerator } from '@/hooks/state/useSidebarHandlers';
 import RepoCommitDiffView from '@/pages/repo/RepoCommitDiffView';
 import { GitCompareArrows } from 'lucide-react';
 import { Logger } from '../../utils/logger';
@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useShortHash } from '../git-log/use-short-hash';
 
 export function useNavigateToCommitDiffs(repoPath: string) {
-	const sidebar = useSidebarHandlers(`repo-${repoPath}`);
+	const sidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoPath));
 	const { diffState } = useRepoState(repoPath);
 	const [isLoadingNewDiff, setIsLoadingNewDiff] = useState(false)
 

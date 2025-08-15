@@ -4,8 +4,8 @@ import { CommitPager } from '@/components/git-diff/commit-pager';
 import { FileTree } from '@/components/git-diff/file-tree';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '@/components/ui/separator';
-import { GetDiffSessionKeyForFileTabManagerSession } from '@/hooks/state/repo/use-git-diff-state';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { FileTabsSessionKeyGenerator } from '@/hooks/state/useFileTabsHandlers';
 import { usePersistentPanelSizes } from '@/hooks/use-persistent-panel-sizes';
 import { GitCompare } from 'lucide-react';
 
@@ -67,7 +67,7 @@ export default function RepoCommitDiffView(props: RepoCommitDiffViewProps) {
 						<FileTree
 							className="flex-grow"
 							directoryData={diffSession.directoryData}
-							fileTabsSessionKey={GetDiffSessionKeyForFileTabManagerSession(diffSessionID)}
+							fileTabsSessionKey={FileTabsSessionKeyGenerator.diffSession(diffSessionID)}
 						/>
 
 						{diffSession.commitInformation && (<>
@@ -86,7 +86,7 @@ export default function RepoCommitDiffView(props: RepoCommitDiffViewProps) {
 						<FileTabs
 							key={diffSessionID}
 							initialTabs={[]}
-							fileTabManageSessionKey={GetDiffSessionKeyForFileTabManagerSession(diffSessionID)}
+							fileTabManageSessionKey={FileTabsSessionKeyGenerator.diffSession(diffSessionID)}
 						/>
 					</div>
 				</ResizablePanel>
