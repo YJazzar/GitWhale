@@ -16,15 +16,43 @@ body {
 	src: local(''), url('assets/fonts/nunito-v16-latin-regular.woff2') format('woff2');
 }
 
-::-webkit-scrollbar-thumb {
-	background-color: #888; /* scrollbar thumb color */
-	border-radius: 10px;
-	border: 3px solid #f1f1f1; /* creates space around the thumb */
-  }
+/* Modern scrollbar styles */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
 
-  ::-webkit-scrollbar-track:hover {
-	background-color: rgba(0, 0, 0, 0); /* color when hovered */
-  }
+::-webkit-scrollbar-track {
+	background: transparent;
+	border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: hsl(var(--muted-foreground) / 0.3);
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background-clip: padding-box;
+	transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: hsl(var(--muted-foreground) / 0.5);
+	transform: scale(1.1);
+}
+
+::-webkit-scrollbar-thumb:active {
+	background: hsl(var(--muted-foreground) / 0.7);
+}
+
+::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+/* Firefox scrollbar styles */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
 
 @layer base {
 	:root {
