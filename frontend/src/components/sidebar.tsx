@@ -1,102 +1,30 @@
-import { SidebarItemProps, SidebarProps, useSidebarState } from '@/hooks/state/use-sidebar-state';
+import { SidebarItemProps, useSidebarHandlers } from '@/hooks/state/useSidebarHandlers';
 import clsx from 'clsx';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
+import { useCallback } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
+import { ReactNode } from 'react';
 
-export type SidebarHandle = {
-	addDynamicItem: (item: SidebarItemProps) => void;
-	removeDynamicItem: (itemId: string) => void;
-	setActiveItem: (itemId: string) => void;
-	toggleMode: () => void;
-	getActiveItem: () => SidebarItemProps | undefined;
-	getAllItems: () => SidebarItemProps[];
+export type SidebarProps = {
+	sidebarSessionKey: string;
+	staticItems: SidebarItemProps[];
+	initialMode?: 'compact' | 'wide';
+	defaultItemId?: string;
+	onItemClick?: (itemId: string) => void;
 };
 
-// Custom hook for sidebar operations
-function useSidebarOperations(state: ReturnType<typeof useSidebarState>, onItemClick?: (itemId: string) => void) {
-	const addDynamicItem = useCallback(
-		(item: SidebarItemProps): void => {
-			// Check if item already exists
-			const existingItems = state.dynamicItems.get();
-			const itemExists = existingItems.some((existing) => existing.id === item.id);
-			
-			if (!itemExists) {
-				const newItems = [...existingItems, { ...item, isDynamic: true }];
-				state.dynamicItems.set(newItems);
-			}
-			
-			// Set as active item
-			state.activeItem.setId(item.id);
-			onItemClick?.(item.id);
-		},
-		[state, onItemClick]
-	);
-
-	const removeDynamicItem = useCallback(
-		(itemId: string): void => {
-			const currentItems = state.dynamicItems.get();
-			const itemToRemove = currentItems.find((item) => item.id === itemId);
-			
-			// Don't remove if preventClose is true
-			if (itemToRemove?.preventClose) {
-				return;
-			}
-
-			const newItems = currentItems.filter((item) => item.id !== itemId);
-			state.dynamicItems.set(newItems);
-
-			// If we're removing the active item, switch to the first static item
-			if (state.activeItem.getId() === itemId) {
-				const firstStaticItem = state.staticItems[0];
-				if (firstStaticItem) {
-					state.activeItem.setId(firstStaticItem.id);
-					onItemClick?.(firstStaticItem.id);
-				}
-			}
-
-			// Call the item's onClose callback if it exists
-			itemToRemove?.onClose?.();
-		},
-		[state, onItemClick]
-	);
-
-	const setActiveItem = useCallback(
-		(itemId: string): void => {
-			const item = state.allItems.find((item) => item.id === itemId);
-			if (item) {
-				state.activeItem.setId(itemId);
-				onItemClick?.(itemId);
-			}
-		},
-		[state, onItemClick]
-	);
-
-	const toggleMode = useCallback((): void => {
-		const currentMode = state.sidebarMode.get();
-		const newMode = currentMode === 'compact' ? 'wide' : 'compact';
-		state.sidebarMode.set(newMode);
-	}, [state]);
-
-	return {
-		addDynamicItem,
-		removeDynamicItem,
-		setActiveItem,
-		toggleMode,
-	};
-}
-
-export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
+export const Sidebar: React.FC<SidebarProps> = (props) => {
 	const { sidebarSessionKey: sessionKey, staticItems, initialMode = 'wide', defaultItemId, onItemClick } = props;
 
-	const state = useSidebarState(sessionKey, staticItems, initialMode, defaultItemId);
-	const operations = useSidebarOperations(state, onItemClick);
+	const handlers = useSidebarHandlers(sessionKey, staticItems, initialMode, defaultItemId, onItemClick);
+	
 	useKeyboardShortcut("b", () => { 
-		state.sidebarMode.toggle()
-	})
+		handlers.toggleMode();
+	});
+	
 	// For some reason, uncommenting this breaks the File-tabs ctrl+w listener
 	// useKeyboardShortcut( "w", (event) => { 
 	// 	let activeItem = state.activeItem.get()
@@ -107,26 +35,8 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 	// 		operations.removeDynamicItem(activeItem.id)
 	// 	}
 	// })
-
-
-	// Create handlers for the imperative API
-	const handlers: SidebarHandle = useMemo(
-		() => ({
-			addDynamicItem: operations.addDynamicItem,
-			removeDynamicItem: operations.removeDynamicItem,
-			setActiveItem: operations.setActiveItem,
-			toggleMode: operations.toggleMode,
-			getActiveItem: () => state.activeItem.get(),
-			getAllItems: () => state.allItems,
-		}),
-		[state, operations]
-	);
-
-	// Expose imperative API
-	useImperativeHandle(ref, () => handlers, [handlers]);
-
-	const isCompactMode = state.sidebarMode.get() === 'compact';
-	const hasDynamicItems = state.dynamicItems.get().length > 0;
+	const isCompactMode = handlers.currentMode === 'compact';
+	const hasDynamicItems = handlers.dynamicItems.length > 0;
 
 	return (
 		<TooltipProvider>
@@ -148,7 +58,7 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 								<Button
 									variant="ghost"
 									size="icon"
-									onClick={operations.toggleMode}
+									onClick={handlers.toggleMode}
 									className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
 								>
 									{isCompactMode ? (
@@ -168,14 +78,14 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 				<div className="flex-1 overflow-y-auto">
 					{/* Static items */}
 					<div className="p-2">
-						{state.staticItems.map((item) => (
+						{handlers.staticItems.map((item) => (
 							<SidebarMenuItem
 								key={item.id}
 								item={item}
-								isActive={state.activeItem.getId() === item.id}
+								isActive={handlers.activeItemId === item.id}
 								isCompact={isCompactMode}
-								onClick={operations.setActiveItem}
-								onRemove={operations.removeDynamicItem}
+								onClick={handlers.setActiveItem}
+								onRemove={handlers.removeDynamicItem}
 							/>
 						))}
 					</div>
@@ -190,14 +100,14 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 					{/* Dynamic items */}
 					{hasDynamicItems && (
 						<div className="p-2">
-							{state.dynamicItems.get().map((item) => (
+							{handlers.dynamicItems.map((item) => (
 								<SidebarMenuItem
 									key={item.id}
 									item={item}
-									isActive={state.activeItem.getId() === item.id}
+									isActive={handlers.activeItemId === item.id}
 									isCompact={isCompactMode}
-									onClick={operations.setActiveItem}
-									onRemove={operations.removeDynamicItem}
+									onClick={handlers.setActiveItem}
+									onRemove={handlers.removeDynamicItem}
 								/>
 							))}
 						</div>
@@ -207,9 +117,9 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 
 			{/* Main Content Area */}
 			<div className="flex-1 h-full overflow-hidden">
-				{state.activeItem.get() ? (
+				{handlers.activeItem ? (
 					<div className="h-full w-full">
-						{state.activeItem.get()!.component}
+						{handlers.activeItem.component}
 					</div>
 				) : (
 					<div className="h-full w-full flex items-center justify-center text-muted-foreground">
@@ -220,7 +130,7 @@ export const Sidebar = forwardRef<SidebarHandle, SidebarProps>((props, ref) => {
 		</div>
 		</TooltipProvider>
 	);
-});
+}
 
 Sidebar.displayName = 'Sidebar';
 

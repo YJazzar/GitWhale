@@ -1,128 +1,33 @@
-import { FileTabManagerProps, TabProps, useFileManagerState } from '@/hooks/state/use-file-manager-state';
+import { TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
 import clsx from 'clsx';
 import { Circle, X } from 'lucide-react';
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
+import { useCallback } from 'react';
 
-export type TabsManagerHandle = {
-	closeTab: (tabToClose: TabProps) => void;
-	openTab: (tabToOpen: TabProps) => void;
-	getActiveTab: () => TabProps | undefined;
-	getTabProps: (tabKey: string) => TabProps | undefined;
-	setTabPermaOpen: (tab: TabProps) => void;
+export type FileTabManagerProps = {
+	fileTabManageSessionKey: string;
+	initialTabs: TabProps[];
+	defaultTabKey?: string;
 };
 
-// Custom hook for file operations
-function useFileTabsOperations(state: ReturnType<typeof useFileManagerState>) {
-	const closeFile = useCallback(
-		(fileToClose: TabProps): void => {
-			const activeTabKey = state.activeTabKey.get();
-
-			let prevActiveIndex = state.openTabs.get().findIndex((file) => file.tabKey === activeTabKey);
-			if (fileToClose.tabKey === activeTabKey) {
-				prevActiveIndex += 1;
-			}
-
-			const newAvailableTabs = state.openTabs.get().filter((openFile) => {
-				if (openFile.preventUserClose) {
-					return true; // don't close things the user isn't allowed to close
-				}
-				if (openFile.tabKey === fileToClose.tabKey) {
-					return false; // close the tab
-				}
-				return true;
-			});
-
-			// Update state
-			prevActiveIndex %= newAvailableTabs.length;
-			if (prevActiveIndex < newAvailableTabs.length) {
-				state.activeTabKey.set(newAvailableTabs[prevActiveIndex]?.tabKey);
-			} else {
-				state.activeTabKey.set(undefined);
-			}
-			state.openTabs.set([...newAvailableTabs]);
-
-			const actuallyClosingFile = newAvailableTabs.length !== state.openTabs.get().length;
-			if (actuallyClosingFile) {
-				fileToClose.onTabClose?.();
-			}
-		},
-		[state]
-	);
-
-	const openFile = useCallback(
-		(newPage: TabProps): void => {
-			// If the page is already open in a different tab
-			if (!!state.openTabs.get().some((tab) => tab.tabKey === newPage.tabKey)) {
-				state.activeTabKey.set(newPage.tabKey);
-				return;
-			}
-
-			//  Filter out any non-permanently open files
-			const newAvailableTabs = state.openTabs.get().filter((openFile) => {
-				return openFile.isPermanentlyOpen || openFile.preventUserClose;
-			});
-
-			state.openTabs.set([...newAvailableTabs, newPage]);
-			state.activeTabKey.set(newPage.tabKey);
-		},
-		[state]
-	);
-
-	const setFilePermaOpen = useCallback(
-		(fileToKeepOpen: TabProps): void => {
-			let newAvailableTabs = state.openTabs.get().map((file) => {
-				if (file.tabKey === fileToKeepOpen.tabKey) {
-					file.isPermanentlyOpen = true;
-				}
-				return file;
-			});
-			state.openTabs.set(newAvailableTabs);
-		},
-		[state]
-	);
-
-	return {
-		closeFile,
-		openFile,
-		setFilePermaOpen,
-	};
-}
-
-export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((props, ref) => {
+export const FileTabs: React.FC<FileTabManagerProps> = (props) => {
 	const { fileTabManageSessionKey, initialTabs, defaultTabKey } = props;
 
-	const state = useFileManagerState(fileTabManageSessionKey, initialTabs, defaultTabKey);
-	const operations = useFileTabsOperations(state);
+	const handlers = useFileTabsHandlers(fileTabManageSessionKey, initialTabs, defaultTabKey);
 
 	// Handles the keyboard shortcut to close stuff
 	useKeyboardShortcut('w', () => {
-		let currentTab = state.activeTab;
+		let currentTab = handlers.activeTab;
 		if (currentTab) {
-			operations.closeFile(currentTab);
+			handlers.closeTab(currentTab);
 		}
 	});
-
-	// Create handlers for the imperative API
-	const handlers: TabsManagerHandle = useMemo(
-		() => ({
-			closeTab: operations.closeFile,
-			openTab: operations.openFile,
-			getActiveTab: () => state.activeTab,
-			getTabProps: (tabKey: string) => state.openTabs.get().find((tab) => tab.tabKey === tabKey),
-			setTabPermaOpen: operations.setFilePermaOpen,
-		}),
-		[state, operations]
-	);
-
-	// Hooks that can be called by the parent component
-	useImperativeHandle(ref, () => handlers, [handlers]);
 
 	return (
 		<div className="h-full w-full flex flex-col overflow-hidden">
 			{/* The tabs */}
 			<div className="flex-none flex flex-row bg-muted/30 border-b border-border overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-				{state.openTabs.get().map((file, index) => {
+				{handlers.openTabs.map((file, index) => {
 					return (
 						<FileTabHeader
 							key={file.tabKey}
@@ -138,8 +43,8 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 
 			{/* The tab contents - direct component rendering */}
 			<div className="flex-1 overflow-hidden relative">
-				{state.openTabs.get().map((tab) => {
-					const isActive = tab.tabKey === state.activeTabKey.get();
+				{handlers.openTabs.map((tab) => {
+					const isActive = tab.tabKey === handlers.activeTabKey;
 
 					return (
 						<div
@@ -158,7 +63,7 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 				})}
 
 				{/* Show empty state if no tabs */}
-				{state.openTabs.get().length === 0 && (
+				{handlers.openTabs.length === 0 && (
 					<div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
 						No tabs open
 					</div>
@@ -166,11 +71,11 @@ export const FileTabs = forwardRef<TabsManagerHandle, FileTabManagerProps>((prop
 			</div>
 		</div>
 	);
-});
+};
 
 type FileTabHeaderProps = {
 	file: TabProps;
-	handlers: TabsManagerHandle;
+	handlers: ReturnType<typeof useFileTabsHandlers>;
 	isFirst?: boolean;
 };
 

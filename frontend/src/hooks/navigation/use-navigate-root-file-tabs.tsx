@@ -1,4 +1,5 @@
-import { TabProps, useFileTabs } from '@/components/file-tabs';
+import { TabProps } from '@/hooks/state/useFileTabsHandlers';
+import { useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
 import RepoFileTab from '@/components/repo-file-tab';
 import ApplicationLogsPage from '@/pages/ApplicationLogsPage';
 import RepoPage from '@/pages/repo/RepoPage';
@@ -9,7 +10,7 @@ import { UseAppState } from '../state/use-app-state';
 
 export function useNavigateRootFilTabs() {
 	const appState = UseAppState()
-	const fileTabs = useFileTabs();
+	const fileTabs = useFileTabsHandlers('app-workspace', []);
 
 	// Callback to open a new repository tab
 	const onOpenNewRepo = useCallback(async () => {

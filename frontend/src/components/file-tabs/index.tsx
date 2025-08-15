@@ -1,10 +1,9 @@
 // Main components
 export { FileTabs } from './file-tabs';
-export type { TabsManagerHandle } from './file-tabs';
+export type { FileTabManagerProps } from './file-tabs';
 
-// Context and hooks
-export { FileTabsContextProvider, useFileTabsContext } from './use-file-tabs-context';
+// Convenience hooks
 export { useFileTabs } from './use-file-tabs';
 
-// Re-export types from the hook
-export type { TabProps, FileTabManagerProps } from '@/hooks/state/use-file-manager-state';
+// Re-export types from the hooks
+export type { TabProps } from '@/hooks/state/useFileTabsHandlers';

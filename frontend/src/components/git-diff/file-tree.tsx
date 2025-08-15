@@ -4,17 +4,17 @@ import { git_operations } from '../../../wailsjs/go/models';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TabsManagerHandle } from '../file-tabs/file-tabs';
-import { TabProps } from '@/hooks/state/use-file-manager-state';
+import { TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
 import FileDiffView from '../file-diff-view';
 
 interface FileTreeProps {
 	directoryData: git_operations.Directory;
-	tabManagerHandler: React.RefObject<TabsManagerHandle>;
+	fileTabsSessionKey: string;
 	className?: string;
 }
 
-export function FileTree({ directoryData, tabManagerHandler, className }: FileTreeProps) {
+export function FileTree({ directoryData, fileTabsSessionKey, className }: FileTreeProps) {
+	const fileTabsHandlers = useFileTabsHandlers(fileTabsSessionKey, []);
 	const onOpenFile = (file: git_operations.FileInfo, keepFileOpen: boolean) => {
 		const tabKey = getFileKey(file);
 
@@ -25,9 +25,9 @@ export function FileTree({ directoryData, tabManagerHandler, className }: FileTr
 			isPermanentlyOpen: keepFileOpen,
 		};
 
-		tabManagerHandler.current?.openTab(fileToOpen);
+		fileTabsHandlers.openTab(fileToOpen);
 		if (keepFileOpen) {
-			tabManagerHandler.current?.setTabPermaOpen(fileToOpen);
+			fileTabsHandlers.setTabPermaOpen(fileToOpen);
 		}
 	};
 

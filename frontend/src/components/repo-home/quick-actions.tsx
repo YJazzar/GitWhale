@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { useSidebarContext } from '@/hooks/state/use-sidebar-context';
+import { useSidebarHandlers } from '@/hooks/state/useSidebarHandlers';
 import {
 	Eye,
 	FolderOpen,
@@ -22,7 +22,7 @@ interface QuickActionsProps {
 
 export function QuickActions(props: QuickActionsProps) {
 	const { repoPath, onRefresh, isRefreshing } = props;
-	const sidebar = useSidebarContext();
+	const sidebar = useSidebarHandlers(`repo-${repoPath}`, []);
 	const repoState = useRepoState(repoPath);
 
 	const [showCompareModal, setShowCompareModal] = useState(false);

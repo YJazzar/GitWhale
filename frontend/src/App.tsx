@@ -1,15 +1,13 @@
 import { House } from 'lucide-react';
-import { useRef } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import './App.css';
-import { FileTabs, TabsManagerHandle } from './components/file-tabs/file-tabs';
+import { FileTabs } from './components/file-tabs/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 
-import { FileTabsContextProvider } from './components/file-tabs';
 import { Toaster } from './components/ui/toaster';
-import { TabProps } from './hooks/state/use-file-manager-state';
+import { TabProps } from './hooks/state/useFileTabsHandlers';
 import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
 
@@ -36,7 +34,6 @@ export default function WrappedAppProvider() {
 
 function App() {
 	const isInDirDiffMode = UseIsDirDiffMode();
-	const fileTabRef = useRef<TabsManagerHandle>(null);
 
 	// Base application tabs (consistent structure)
 	let defaultTab = '$$home$$';
@@ -68,14 +65,11 @@ function App() {
 	return (
 		<div className=" w-full h-full flex flex-row ">
 			<div className="border grow">
-				<FileTabsContextProvider fileTabsRef={fileTabRef}>
-					<FileTabs
-						ref={fileTabRef}
-						initialTabs={initialTabs}
-						defaultTabKey={defaultTab}
-						fileTabManageSessionKey={'app-workspace'}
-					/>
-				</FileTabsContextProvider>
+				<FileTabs
+					initialTabs={initialTabs}
+					defaultTabKey={defaultTab}
+					fileTabManageSessionKey={'app-workspace'}
+				/>
 				<Toaster />
 			</div>
 		</div>
