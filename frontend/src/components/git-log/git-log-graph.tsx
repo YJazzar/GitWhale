@@ -5,6 +5,7 @@ import { useContextMenu, type ContextMenuAction } from '@/hooks/use-context-menu
 import { cn } from '@/lib/utils';
 import { CommitSelectType } from '@/pages/repo/RepoLogView';
 import { Cherry, Copy, Eye, GitBranch, RotateCcw } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface GitLogGraphProps {
 	repoPath: string;
@@ -19,6 +20,12 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 	const isLoading = logState.isLoading;
 	const selectedCommitHashes = logState.selectedCommits.currentSelectedCommits;
 	
+	useEffect(()=> {
+		if (!commits?.length) { 
+			logState.refreshLogAndRefs()
+		}
+	}, [])
+
 	// Check if we're in search mode by looking at the current log options
 	const currentLogOptions = logState.options.get();
 	const isSearchMode = !!(currentLogOptions.searchQuery && currentLogOptions.searchQuery.trim());

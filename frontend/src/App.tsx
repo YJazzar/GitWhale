@@ -1,22 +1,17 @@
 import { House } from 'lucide-react';
-import { useRef, useCallback } from 'react';
+import { useRef } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import './App.css';
 import { FileTabs, TabsManagerHandle } from './components/file-tabs/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
-import { Logger } from './utils/logger';
 
-import DirDiffPage from './pages/DirDiffPage';
-import RepoPage from './pages/repo/RepoPage';
-import { Toaster } from './components/ui/toaster';
-import HomePage from './pages/HomePage';
-import SettingsPage from './pages/SettingsPage';
-import ApplicationLogsPage from './pages/ApplicationLogsPage';
-import RepoFileTab from './components/repo-file-tab';
-import { TabProps } from './hooks/state/use-file-manager-state';
 import { FileTabsContextProvider } from './components/file-tabs';
+import { Toaster } from './components/ui/toaster';
+import { TabProps } from './hooks/state/use-file-manager-state';
+import DirDiffPage from './pages/DirDiffPage';
+import HomePage from './pages/HomePage';
 
 // Create a client
 const queryClient = new QueryClient({

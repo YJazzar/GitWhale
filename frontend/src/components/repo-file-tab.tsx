@@ -9,9 +9,6 @@ export default function RepoFileTab(props: { repoPath: string }) {
 	const repoName = getRepoDisplayName(repoPath);
 
 	useEffect(() => {
-		// One-time initialization stuff
-		repoState.logState.refreshLogAndRefs();
-
 		return () => {
 			// Cleanup the repo state when this tab is closed
 			repoState.onCloseRepo();
