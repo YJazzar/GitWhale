@@ -50,6 +50,11 @@ export const TERMINAL_CURSOR_STYLES = [
 ] as const;
 
 export const COMMITS_LOAD_OPTIONS = [
+  { value: 5, label: '5 commits' },
+  { value: 10, label: '10 commits' },
+  { value: 15, label: '15 commits' },
+  { value: 25, label: '25 commits' },
+  { value: 40, label: '40 commits' },
   { value: 50, label: '50 commits' },
   { value: 100, label: '100 commits' },
   { value: 200, label: '200 commits' },

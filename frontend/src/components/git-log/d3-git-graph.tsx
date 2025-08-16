@@ -15,6 +15,7 @@ interface D3GitGraphProps {
 	selectedCommitHashes: string[];
 	className?: string;
 	isSearchMode: boolean;
+	lastCommitElementRef?: (node: HTMLDivElement | null) => void;
 }
 
 // Layout constants
@@ -395,11 +396,13 @@ export function D3GitGraph({
 	selectedCommitHashes,
 	className,
 	isSearchMode,
+	lastCommitElementRef,
 }: D3GitGraphProps) {
 	const svgRef = useRef<SVGSVGElement>(null);
 	const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const selectedCommitHashSet = new Set(selectedCommitHashes);
+
 
 	// Create click handlers that can detect single vs double clicks
 	const handleSingleClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, commitHash: string) => {
@@ -502,10 +505,12 @@ export function D3GitGraph({
 					{graphLayout.map((item, index) => {
 						const nodeY = index * ROW_HEIGHT + MARGIN_TOP;
 						const isSelected = selectedCommitHashSet.has(item.commit.commitHash);
+						const isLastCommit = index === graphLayout.length - 1;
 
 						return (
 							<div
 								key={`hover-${item.commit.commitHash}`}
+								ref={isLastCommit ? lastCommitElementRef : undefined}
 								className={`absolute w-full pointer-events-auto group transition-all duration-200 cursor-pointer ${
 									isSelected
 										? 'bg-primary/20 hover:bg-primary/25 border-l-4 border-l-primary shadow-sm'
