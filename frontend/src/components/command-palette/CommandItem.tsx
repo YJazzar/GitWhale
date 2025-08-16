@@ -27,7 +27,6 @@ export function CommandPaletteItem({ command, isSelected }: CommandPaletteItemPr
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center justify-between">
 					<h4 className="text-sm font-medium truncate">{command.title}</h4>
-					{command.category && <Badge className="text-xs">{command.category}</Badge>}
 				</div>
 				{command.description && (
 					<p className="text-xs text-muted-foreground mt-1 truncate">{command.description}</p>

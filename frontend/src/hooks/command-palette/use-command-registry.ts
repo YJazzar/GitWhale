@@ -12,7 +12,7 @@ const registeredCommandsAtom = atom<Map<string, CommandDefinition>>(new Map());
  */
 export function useCommandRegistry(
 	searchQuery: string | undefined,
-	availableContexts: CommandPaletteContextKey[]
+	availableContexts: CommandPaletteContextKey[] | undefined
 ) {
 	const [_registeredCommands, _setRegisteredCommands] = useAtom(registeredCommandsAtom);
 
@@ -27,8 +27,13 @@ export function useCommandRegistry(
 	};
 
 	const matchedCommands = useMemo(() => {
+		if (!searchQuery || !availableContexts) { 
+			// The hook caller isn't actually interested in getting a matching list of commands
+			return []
+		}
+
 		const availableCommands = _getAvailableCommands(availableContexts);
-		if (!searchQuery || !searchQuery.trim()) {
+		if (!searchQuery.trim()) {
 			return availableCommands.map((command) => ({
 				command,
 				score: 1,

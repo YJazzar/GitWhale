@@ -6,12 +6,14 @@ import { FileTabs } from './components/file-tabs/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
 import { Toaster } from './components/ui/toaster';
-import { useCommandPaletteVisibility } from './hooks/command-palette/use-command-palette-state';
+import { useCommandPaletteState } from './hooks/command-palette/use-command-palette-state';
 import { FileTabsSessionKeyGenerator, TabProps } from './hooks/state/useFileTabsHandlers';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
+import { useRegisterGitCommands } from './hooks/command-palette/commands/git-commands';
+import { useRegisterNavigationCommands } from './hooks/command-palette/commands/navigation-commands';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -36,7 +38,11 @@ export default function WrappedAppProvider() {
 
 function App() {
 	const isInDirDiffMode = UseIsDirDiffMode();
-	const commandPaletteState = useCommandPaletteVisibility();
+
+	// Command palette stuff
+	const commandPaletteState = useCommandPaletteState();
+	useRegisterGitCommands()
+	useRegisterNavigationCommands()
 
 	useKeyboardShortcut('p', () => {
 		commandPaletteState.isActive.toggle();
