@@ -8,6 +8,7 @@ import { UseAppState } from '../use-app-state';
 
 // Map because each repo path needs to have the same data
 const gitLogDataAtom = atom<Map<string, git_operations.GitLogCommitInfo[]>>(new Map());
+const gitLogCommitSetAtom = atom<Map<string, Set<string>>>(new Map());
 const isLoadingGitDataAtom = atom<Map<string, boolean>>(new Map());
 const selectedCommitAtom = atom<Map<string, string[]>>(new Map());
 const gitLogOptionsAtom = atom<Map<string, git_operations.GitLogOptions>>(new Map());
@@ -26,6 +27,7 @@ export function getLogState(repoPath: string) {
 
 	// Store git log data
 	const _gitLogDataPrim = useMapPrimitive(gitLogDataAtom, repoPath);
+	const _gitLogCommitSetPrim = useMapPrimitive(gitLogCommitSetAtom, repoPath);
 
 	// Store git log options/filters per repository path
 	const _gitLogOptionsPrim = useMapPrimitive(gitLogOptionsAtom, repoPath);
@@ -133,13 +135,25 @@ export function getLogState(repoPath: string) {
 		const newLogs = await RunGitLog(repoPath, options);
 
 		if (append && _gitLogDataPrim.value) {
-			// Append new commits to existing ones
+			// Append new commits, filtering out duplicates
 			const existingLogs = _gitLogDataPrim.value;
-			const combinedLogs = [...existingLogs, ...newLogs];
+			const existingCommitSet = _gitLogCommitSetPrim.value || new Set<string>();
+			
+			const uniqueNewLogs = newLogs.filter(commit => !existingCommitSet.has(commit.commitHash));
+			const combinedLogs = [...existingLogs, ...uniqueNewLogs];
+			
+			// Update both the array and set
 			_gitLogDataPrim.set(combinedLogs);
+			
+			const updatedCommitSet = new Set(existingCommitSet);
+			uniqueNewLogs.forEach(commit => updatedCommitSet.add(commit.commitHash));
+			_gitLogCommitSetPrim.set(updatedCommitSet);
 		} else {
 			// Replace existing commits (initial load or refresh)
 			_gitLogDataPrim.set(newLogs);
+			
+			const commitSet = new Set(newLogs.map(commit => commit.commitHash));
+			_gitLogCommitSetPrim.set(commitSet);
 		}
 
 		// Determine if there are more commits by checking if we got the requested amount
@@ -171,28 +185,52 @@ export function getLogState(repoPath: string) {
 		}
 	};
 
+	// Find the best commit to continue loading from - one where we haven't loaded all its parents
+	const findCommitWithUnloadedParents = (
+		loadedCommits: git_operations.GitLogCommitInfo[],
+		loadedCommitSet: Set<string>
+	): string | null => {
+		// Start from the end (most recent commits in topological order) and work backwards
+		for (let i = loadedCommits.length - 2; i >= 0; i--) {
+			const commit = loadedCommits[i];
+			
+			// Check if any parent commits are not loaded
+			const hasUnloadedParents = commit.parentCommitHashes.some(
+				parentHash => !loadedCommitSet.has(parentHash)
+			);
+			
+			if (hasUnloadedParents) {
+				return commit.commitHash;
+			}
+		}
+		
+		// If all loaded commits have their parents loaded, use the last commit
+		return loadedCommits.length > 0 ? loadedCommits[loadedCommits.length - 1].commitHash : null;
+	};
+
 	const loadMoreCommits = async () => {
 		// Prevent multiple simultaneous requests
-		const prevLogs = _gitLogDataPrim.value
-		if (!prevLogs || _isLoadingMorePrim.value || _isLoadingPrim.value || !_hasMoreCommitsPrim.value) {
+		const prevLogs = _gitLogDataPrim.value;
+		const loadedCommitSet = _gitLogCommitSetPrim.value;
+		if (!prevLogs || !loadedCommitSet || _isLoadingMorePrim.value || _isLoadingPrim.value || !_hasMoreCommitsPrim.value) {
 			return;
 		}
 
-		const lastCommitHash = prevLogs[prevLogs.length - 1];
-		if (!lastCommitHash) {
+		const fromCommitHash = findCommitWithUnloadedParents(prevLogs, loadedCommitSet);
+		if (!fromCommitHash) {
 			return;
 		}
 
 		try {
 			_isLoadingMorePrim.set(true);
 
-			// Create options for incremental loading
+			// Create options for incremental loading from the optimal commit
 			const incrementalOptions: git_operations.GitLogOptions = {
 				...currentLogOptions,
-				fromRef: lastCommitHash.commitHash,
+				fromRef: fromCommitHash,
 			};
 
-			refreshLogsInner(incrementalOptions, true)
+			await refreshLogsInner(incrementalOptions, true);
 		} catch (error) {
 			Logger.error(`Failed to load more commits: ${error}`, 'RepoLogView');
 		} finally {
