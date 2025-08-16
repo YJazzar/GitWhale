@@ -16,11 +16,11 @@ export function useKeyboardShortcut(
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if ((event.metaKey || event.ctrlKey) && event.key === key) {
 				if (options?.allowDefault !== true) {
+					event.preventDefault();
 				}
-				event.preventDefault();
 				if (options?.continuePropagating !== true) {
+					event.stopPropagation();
 				}
-				event.stopPropagation();
 
 				callback(event);
 			}

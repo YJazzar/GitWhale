@@ -1,13 +1,15 @@
 import { House } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import './App.css';
+import { CommandPalette } from './components/command-palette/CommandPalette';
 import { FileTabs } from './components/file-tabs/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
-import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
-
 import { Toaster } from './components/ui/toaster';
+import { useCommandPaletteVisibility } from './hooks/command-palette/use-command-palette-state';
 import { FileTabsSessionKeyGenerator, TabProps } from './hooks/state/useFileTabsHandlers';
+import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
+import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
 
@@ -34,6 +36,11 @@ export default function WrappedAppProvider() {
 
 function App() {
 	const isInDirDiffMode = UseIsDirDiffMode();
+	const commandPaletteState = useCommandPaletteVisibility();
+
+	useKeyboardShortcut('p', () => {
+		commandPaletteState.isActive.toggle();
+	});
 
 	// Base application tabs (consistent structure)
 	let defaultTab = '$$home$$';
@@ -71,6 +78,7 @@ function App() {
 					fileTabManageSessionKey={FileTabsSessionKeyGenerator.appWorkspace()}
 				/>
 				<Toaster />
+				<CommandPalette />
 			</div>
 		</div>
 	);
