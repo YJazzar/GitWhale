@@ -1,6 +1,6 @@
 import { CommandDefinition } from '@/types/command-palette';
 import clsx from 'clsx';
-import { CommandIcon, Badge, ChevronRight } from 'lucide-react';
+import { CommandIcon, ChevronRight } from 'lucide-react';
 
 interface CommandPaletteItemProps {
 	command: CommandDefinition
@@ -11,7 +11,7 @@ export function CommandPaletteItem({ command, isSelected }: CommandPaletteItemPr
 	return (
 		<div
 			className={clsx(
-				'flex items-center gap-3 p-3 rounded-md cursor-pointer transition-all',
+				'flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer',
 				{
 					'bg-accent text-accent-foreground': isSelected,
 					'hover:bg-accent/50': !isSelected,
@@ -29,17 +29,7 @@ export function CommandPaletteItem({ command, isSelected }: CommandPaletteItemPr
 					<h4 className="text-sm font-medium truncate">{command.title}</h4>
 				</div>
 				{command.description && (
-					<p className="text-xs text-muted-foreground mt-1 truncate">{command.description}</p>
-				)}
-				{command.parameters && command.parameters.length > 0 && (
-					<div className="flex items-center gap-1 mt-1">
-						<span className="text-xs text-muted-foreground">Parameters:</span>
-						{command.parameters.map((param: any) => (
-							<Badge key={param.id} className="text-xs">
-								{param.prompt}
-							</Badge>
-						))}
-					</div>
+					<p className="text-xs text-muted-foreground truncate">{command.description}</p>
 				)}
 			</div>
 

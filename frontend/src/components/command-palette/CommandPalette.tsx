@@ -24,19 +24,19 @@ export function CommandPalette() {
 
 	// State variables related to the item selection
 	const [selectedCommand, setSelectedCommand] = useState<string>('');
-	const selectedCommandIndex = commandsToShow.findIndex((command) => (command.id == selectedCommand));
+	const selectedCommandIndex = commandsToShow.findIndex((command) => command.id == selectedCommand);
 	useEffect(() => {
 		if (selectedCommandIndex !== -1) {
 			return; // no need to change the user's selection for them
 		}
 
-		setSelectedCommand(commandsToShow?.[0].id ?? '');
+		setSelectedCommand(commandsToShow?.[0]?.id ?? '');
 	}, [commandsToShow, selectedCommandIndex, setSelectedCommand]);
 
 	const onChangeSelectionFromArrow = (direction: 'next' | 'prev') => {
 		const delta = direction === 'next' ? 1 : -1;
 		const indexToSelect = selectedCommandIndex + delta;
-		console.log(`next index to select: ${indexToSelect}`)
+
 		if (indexToSelect < 0) {
 			setSelectedCommand(commandsToShow[commandsToShow.length - 1].id);
 		} else if (indexToSelect >= commandsToShow.length) {
@@ -71,10 +71,9 @@ export function CommandPalette() {
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [isActive.get(), isActive.set]);
 
-	// Render different views based on execution state
-	const renderContent = () => {
-		return (
-			<>
+	return (
+		<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
+			<DialogContent hideCloseIcon className="sm:max-w-[600px] p-0 gap-0 h-[400px] flex flex-col">
 				{/* Search Input */}
 				<div className="p-4 border-b">
 					<CommandInput />
@@ -114,18 +113,10 @@ export function CommandPalette() {
 							<span>Esc to close</span>
 						</div>
 						<div>
-							{searchResults.length} command{searchResults.length !== 1 ? 's' : ''}
+							{commandsToShow.length} command{commandsToShow.length !== 1 ? 's' : ''}
 						</div>
 					</div>
 				</div>
-			</>
-		);
-	};
-
-	return (
-		<Dialog open={isActive.get()} onOpenChange={isActive.set}>
-			<DialogContent className="sm:max-w-[600px] p-0 gap-0 h-[400px] flex flex-col">
-				{renderContent()}
 			</DialogContent>
 		</Dialog>
 	);

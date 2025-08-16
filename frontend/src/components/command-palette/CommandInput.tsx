@@ -74,34 +74,6 @@ export function CommandInput() {
 					</div>
 				)} */}
 			</div>
-
-			{/* Footer */}
-			<div className="p-4 border-t bg-muted/30">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2 text-xs text-muted-foreground">
-						<span>↵ to continue</span>
-						<span>Esc to cancel</span>
-					</div>
-					{/* <div className="flex items-center gap-2">
-						{parameterIndex > 0 && (
-							<Button variant="outline" size="sm">
-								<ArrowLeft className="h-4 w-4 mr-1" />
-								Back
-							</Button>
-						)}
-						<Button onClick={handleSubmit} size="sm">
-							{parameterIndex < totalParams - 1 ? (
-								<>
-									Next
-									<ArrowRight className="h-4 w-4 ml-1" />
-								</>
-							) : (
-								'Execute'
-							)}
-						</Button>
-					</div> */}
-				</div>
-			</div>
 		</div>
 	);
 }

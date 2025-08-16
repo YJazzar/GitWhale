@@ -8,7 +8,6 @@ import { CommandPaletteContextKey } from '../use-command-palette-state';
 const navigateHome: CommandDefinition = {
 	id: 'navigate.home',
 	title: 'Go to: Home',
-	description: 'Navigate to the home page',
 	icon: <Home className="h-4 w-4" />,
 	keywords: ['home', 'navigate', 'main'],
 	context: CommandPaletteContextKey.Root,
@@ -23,7 +22,6 @@ const navigateHome: CommandDefinition = {
 const navigateSettings: CommandDefinition = {
 	id: 'navigate.settings',
 	title: 'Go to: Settings',
-	description: 'Open the application settings',
 	icon: <Settings className="h-4 w-4" />,
 	keywords: ['settings', 'preferences', 'config'],
 	context: CommandPaletteContextKey.Root,
@@ -38,7 +36,6 @@ const navigateSettings: CommandDefinition = {
 const navigateApplicationLogs: CommandDefinition = {
 	id: 'navigate.logs',
 	title: 'Go to: Application Logs',
-	description: 'Open the application logs',
 	icon: <FileText className="h-4 w-4" />,
 	keywords: ['logs', 'debug', 'application'],
 	context: CommandPaletteContextKey.Root,
@@ -53,7 +50,6 @@ const navigateApplicationLogs: CommandDefinition = {
 const openRepository: CommandDefinition = {
 	id: 'navigate.open.repo',
 	title: 'Open Repository',
-	description: 'Open a repository folder',
 	icon: <FolderOpen className="h-4 w-4" />,
 	keywords: ['open', 'repository', 'folder', 'browse'],
 	context: CommandPaletteContextKey.Root,
