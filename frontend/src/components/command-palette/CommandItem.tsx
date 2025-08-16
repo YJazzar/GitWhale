@@ -11,10 +11,10 @@ export function CommandPaletteItem({ command, isSelected }: CommandPaletteItemPr
 	return (
 		<div
 			className={clsx(
-				'flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors',
-				'hover:bg-accent/50',
+				'flex items-center gap-3 p-3 rounded-md cursor-pointer transition-all',
 				{
 					'bg-accent text-accent-foreground': isSelected,
+					'hover:bg-accent/50': !isSelected,
 				}
 			)}
 		>

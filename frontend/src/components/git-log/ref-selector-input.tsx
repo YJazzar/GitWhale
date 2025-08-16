@@ -258,9 +258,6 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 										value={commandSearchInput}
 										onSelect={() => {
 											if (commandInputValidation.isValid) {
-												console.log(
-													'setting command to search input: ' + commandSearchInput
-												);
 												onUpdateGitRef(commandSearchInput);
 												setOpen(false);
 												return;

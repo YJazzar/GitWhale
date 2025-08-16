@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
 import { useCommandRegistry } from '@/hooks/command-palette/use-command-registry';
 import { CommandIcon } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CommandInput } from './CommandInput';
 import { CommandPaletteItem } from './CommandItem';
 
@@ -22,6 +22,30 @@ export function CommandPalette() {
 	const showAllAvailableCommands = currentSearchQuery.length == 0;
 	const commandsToShow = showAllAvailableCommands ? registry.allAvailableCommands : searchResults;
 
+	// State variables related to the item selection
+	const [selectedCommand, setSelectedCommand] = useState<string>('');
+	const selectedCommandIndex = commandsToShow.findIndex((command) => (command.id == selectedCommand));
+	useEffect(() => {
+		if (selectedCommandIndex !== -1) {
+			return; // no need to change the user's selection for them
+		}
+
+		setSelectedCommand(commandsToShow?.[0].id ?? '');
+	}, [commandsToShow, selectedCommandIndex, setSelectedCommand]);
+
+	const onChangeSelectionFromArrow = (direction: 'next' | 'prev') => {
+		const delta = direction === 'next' ? 1 : -1;
+		const indexToSelect = selectedCommandIndex + delta;
+		console.log(`next index to select: ${indexToSelect}`)
+		if (indexToSelect < 0) {
+			setSelectedCommand(commandsToShow[commandsToShow.length - 1].id);
+		} else if (indexToSelect >= commandsToShow.length) {
+			setSelectedCommand(commandsToShow[0].id);
+		} else {
+			setSelectedCommand(commandsToShow[indexToSelect].id);
+		}
+	};
+
 	// Handle keyboard navigation
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -30,11 +54,11 @@ export function CommandPalette() {
 			switch (e.key) {
 				case 'ArrowDown':
 					e.preventDefault();
-					// selectNext(maxIndex);
+					onChangeSelectionFromArrow('next');
 					break;
 				case 'ArrowUp':
 					e.preventDefault();
-					// selectPrevious();
+					onChangeSelectionFromArrow('prev');
 					break;
 				case 'Escape':
 					e.preventDefault();
@@ -73,7 +97,7 @@ export function CommandPalette() {
 									<CommandPaletteItem
 										key={command.id}
 										command={command}
-										isSelected={true}
+										isSelected={selectedCommand === command.id}
 									/>
 								))}
 							</div>
