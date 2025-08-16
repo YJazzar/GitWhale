@@ -1,7 +1,7 @@
 import Logger from '@/utils/logger';
-import { atom, useAtom } from 'jotai';
-import { useState, useEffect, useMemo } from 'react';
-import { RunGitLog, GetAllRefs, GitFetch } from '../../../../wailsjs/go/backend/App';
+import { atom } from 'jotai';
+import { useEffect, useMemo, useState } from 'react';
+import { GetAllRefs, GitFetch, RunGitLog } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { useMapPrimitive } from '../primitives/use-map-primitive';
 import { UseAppState } from '../use-app-state';
@@ -13,6 +13,10 @@ const selectedCommitAtom = atom<Map<string, string[]>>(new Map());
 const gitLogOptionsAtom = atom<Map<string, git_operations.GitLogOptions>>(new Map());
 const gitRefsAtom = atom<Map<string, git_operations.GitRef[]>>(new Map());
 const commitDetailsPaneStateAtom = atom<Map<string, boolean>>(new Map());
+
+// Pagination state atoms
+const isLoadingMoreCommitsAtom = atom<Map<string, boolean>>(new Map());
+const hasMoreCommitsAtom = atom<Map<string, boolean>>(new Map());
 
 // MARK: Git log state management functions
 
@@ -35,6 +39,10 @@ export function getLogState(repoPath: string) {
 	// Track whether user wants commit details pane to show (per repo) true = show pane, false = user dismissed
 	const _commitDetailsPaneStatePrim = useMapPrimitive(commitDetailsPaneStateAtom, repoPath);
 
+	// Pagination state primitives
+	const _isLoadingMorePrim = useMapPrimitive(isLoadingMoreCommitsAtom, repoPath);
+	const _hasMoreCommitsPrim = useMapPrimitive(hasMoreCommitsAtom, repoPath);
+
 	const [needsToReload, setNeedsToReload] = useState(false);
 
 	const currentSelectedCommits = _selectedCommitsPrim.value ?? [];
@@ -47,11 +55,11 @@ export function getLogState(repoPath: string) {
 		}
 
 		const cache = new Map<string, string[]>();
-		
+
 		// Build parent -> children relationship map
-		logs.forEach(commit => {
+		logs.forEach((commit) => {
 			// For each parent of this commit, add this commit as a child
-			commit.parentCommitHashes.forEach(parentHash => {
+			commit.parentCommitHashes.forEach((parentHash) => {
 				if (!cache.has(parentHash)) {
 					cache.set(parentHash, []);
 				}
@@ -87,7 +95,7 @@ export function getLogState(repoPath: string) {
 
 		// Last case: enforce rule that only 2 commits can be selected at a time
 		const lastSelectedCommit = (_selectedCommitsPrim.value ?? [])[numOfSelectedCommits - 1];
-		_selectedCommitsPrim.set([lastSelectedCommit, commitHashToSelect])
+		_selectedCommitsPrim.set([lastSelectedCommit, commitHashToSelect]);
 	};
 
 	const removeFromSelectedCommitsList = (commitHash: string) => {
@@ -121,9 +129,23 @@ export function getLogState(repoPath: string) {
 		toRef: undefined,
 	};
 
-	const refreshLogsInner = async (options: git_operations.GitLogOptions) => {
+	const refreshLogsInner = async (options: git_operations.GitLogOptions, append: boolean = false) => {
 		const newLogs = await RunGitLog(repoPath, options);
-		_gitLogDataPrim.set(newLogs);
+
+		if (append && _gitLogDataPrim.value) {
+			// Append new commits to existing ones
+			const existingLogs = _gitLogDataPrim.value;
+			const combinedLogs = [...existingLogs, ...newLogs];
+			_gitLogDataPrim.set(combinedLogs);
+		} else {
+			// Replace existing commits (initial load or refresh)
+			_gitLogDataPrim.set(newLogs);
+		}
+
+		// Determine if there are more commits by checking if we got the requested amount
+		const requestedCount =
+			options.commitsToLoad || appState?.appConfig?.settings?.git?.commitsToLoad || 50;
+		_hasMoreCommitsPrim.set(newLogs.length >= requestedCount);
 	};
 
 	const loadAllRefsInner = async () => {
@@ -138,13 +160,43 @@ export function getLogState(repoPath: string) {
 
 		try {
 			_isLoadingPrim.set(true);
+			_hasMoreCommitsPrim.set(true);
 
-			await Promise.all([loadAllRefsInner(), refreshLogsInner(currentLogOptions)]);
+			await Promise.all([loadAllRefsInner(), refreshLogsInner(currentLogOptions, false)]);
 		} catch (error) {
 			Logger.error(`Failed to reload refs: ${error}`, 'RepoLogView');
 		} finally {
 			_isLoadingPrim.set(false);
 			setNeedsToReload(false);
+		}
+	};
+
+	const loadMoreCommits = async () => {
+		// Prevent multiple simultaneous requests
+		const prevLogs = _gitLogDataPrim.value
+		if (!prevLogs || _isLoadingMorePrim.value || _isLoadingPrim.value || !_hasMoreCommitsPrim.value) {
+			return;
+		}
+
+		const lastCommitHash = prevLogs[prevLogs.length - 1];
+		if (!lastCommitHash) {
+			return;
+		}
+
+		try {
+			_isLoadingMorePrim.set(true);
+
+			// Create options for incremental loading
+			const incrementalOptions: git_operations.GitLogOptions = {
+				...currentLogOptions,
+				fromRef: lastCommitHash.commitHash,
+			};
+
+			refreshLogsInner(incrementalOptions, true)
+		} catch (error) {
+			Logger.error(`Failed to load more commits: ${error}`, 'RepoLogView');
+		} finally {
+			_isLoadingMorePrim.set(false);
 		}
 	};
 
@@ -168,6 +220,8 @@ export function getLogState(repoPath: string) {
 
 	return {
 		isLoading: _isLoadingPrim.value || false,
+		isLoadingMore: _isLoadingMorePrim.value || false,
+		hasMoreCommits: _hasMoreCommitsPrim.value ?? true,
 
 		// Get git log data for this repo
 		logs: _gitLogDataPrim.value,
@@ -178,6 +232,8 @@ export function getLogState(repoPath: string) {
 		refreshLogAndRefs: () => {
 			setNeedsToReload(true);
 		},
+
+		loadMoreCommits,
 
 		refetchRepo,
 
@@ -212,6 +268,8 @@ export function getLogState(repoPath: string) {
 			_gitRefsPrim.kill();
 			_gitLogOptionsPrim.kill();
 			_commitDetailsPaneStatePrim.kill();
+			_isLoadingMorePrim.kill();
+			_hasMoreCommitsPrim.kill();
 		},
 	};
 }
