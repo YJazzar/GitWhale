@@ -6,7 +6,10 @@ import { FileTabs } from './components/file-tabs/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
 import { Toaster } from './components/ui/toaster';
-import { useCommandPaletteState } from './hooks/command-palette/use-command-palette-state';
+import {
+	CommandPaletteContextKey,
+	useCommandPaletteState,
+} from './hooks/command-palette/use-command-palette-state';
 import { FileTabsSessionKeyGenerator, TabProps } from './hooks/state/useFileTabsHandlers';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
@@ -14,6 +17,7 @@ import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
 import { useRegisterGitCommands } from './hooks/command-palette/commands/git-commands';
 import { useRegisterNavigationCommands } from './hooks/command-palette/commands/navigation-commands';
+import { useEffect } from 'react';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -41,12 +45,22 @@ function App() {
 
 	// Command palette stuff
 	const commandPaletteState = useCommandPaletteState();
-	useRegisterGitCommands()
-	useRegisterNavigationCommands()
+	useRegisterGitCommands();
+	useRegisterNavigationCommands();
 
 	useKeyboardShortcut('p', () => {
 		commandPaletteState.isActive.toggle();
 	});
+
+	useEffect(() => {
+		commandPaletteState.availableContexts.addContext({
+			contextKey: CommandPaletteContextKey.Root,
+		});
+
+		return () => {
+			commandPaletteState.availableContexts.removeContext(CommandPaletteContextKey.Root);
+		};
+	}, []);
 
 	// Base application tabs (consistent structure)
 	let defaultTab = '$$home$$';

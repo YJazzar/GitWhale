@@ -1,4 +1,4 @@
-import { atom, useAtom } from 'jotai';
+import { atom, useAtom, useAtomValue } from 'jotai';
 
 // Helper types: TODO: move to a different file if they get too long
 export enum CommandPaletteContextKey {
@@ -23,6 +23,12 @@ export type CommandPaletteContextData = RepoCommandPaletteContextData | GenericC
 const isCommandPaletteOpenAtom = atom(false);
 const searchQueryAtom = atom('');
 const availableCommandPaletteContextsAtom = atom<Map<CommandPaletteContextKey, CommandPaletteContextData>>(new Map());
+
+// Simple hook for smaller components to see what contexts are available 
+export function useCommandPaletteAvailableContexts() { 
+	const availableContexts = useAtomValue(availableCommandPaletteContextsAtom)
+	return availableContexts
+}
 
 /**
  * Hook for managing command palette visibility

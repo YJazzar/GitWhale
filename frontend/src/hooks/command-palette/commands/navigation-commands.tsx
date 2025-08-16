@@ -81,11 +81,11 @@ const openRepository: CommandDefinition = {
 
 // Register all navigation commands
 export function useRegisterNavigationCommands() {
-	const commandRegistry = useCommandRegistry(undefined, undefined);
+	const commandRegistry = useCommandRegistry(undefined);
 
 	const gitCommands = [navigateHome, navigateSettings, navigateApplicationLogs, openRepository];
 
 	useEffect(() => {
-		gitCommands.forEach((command) => commandRegistry.registerCommand(command));
+		commandRegistry.registerCommands(gitCommands);
 	}, []);
 }

@@ -10,12 +10,17 @@ import { CommandPaletteItem } from './CommandItem';
 export function CommandPalette() {
 	const commandPaletteState = useCommandPaletteState();
 	const currentSearchQuery = commandPaletteState.searchQuery.get();
-	const availableContexts = commandPaletteState.availableContexts.getAllContextKeys();
 	const isActive = commandPaletteState.isActive;
 
-	const registry = useCommandRegistry(currentSearchQuery, availableContexts);
-	const searchResults = registry.matchedCommands
-	const noCommandsFound = searchResults.length == 0;
+	const registry = useCommandRegistry(currentSearchQuery);
+	const searchResults = registry.matchedCommands;
+
+	// Decides if we should show the empty state
+	const showNowCommandsFound = searchResults.length == 0 && currentSearchQuery.length > 0;
+
+	// Decides which list of commands to show
+	const showAllAvailableCommands = currentSearchQuery.length == 0;
+	const commandsToShow = showAllAvailableCommands ? registry.allAvailableCommands : searchResults;
 
 	// Handle keyboard navigation
 	useEffect(() => {
@@ -54,7 +59,7 @@ export function CommandPalette() {
 				{/* Command List */}
 				<ScrollArea className="flex-1">
 					<div className="p-2">
-						{noCommandsFound && (
+						{showNowCommandsFound && (
 							<div className="text-center py-8 text-muted-foreground">
 								<CommandIcon className="mx-auto h-8 w-8 mb-2 opacity-50" />
 								<p className="text-sm">No commands found</p>
@@ -62,12 +67,12 @@ export function CommandPalette() {
 							</div>
 						)}
 
-						{!noCommandsFound && (
+						{commandsToShow.length > 0 && (
 							<div className="space-y-1">
-								{searchResults.map((result, index) => (
+								{commandsToShow.map((command, index) => (
 									<CommandPaletteItem
-										key={result.command.id}
-										command={result.command}
+										key={command.id}
+										command={command}
 										isSelected={true}
 									/>
 								))}

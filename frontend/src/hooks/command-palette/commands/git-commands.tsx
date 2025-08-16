@@ -127,11 +127,11 @@ const gitStatus: CommandDefinition = {
 
 // Register all git commands
 export function useRegisterGitCommands() {
-	const commandRegistry = useCommandRegistry(undefined, undefined);
+	const commandRegistry = useCommandRegistry(undefined);
 
 	const gitCommands = [gitCheckoutBranch, gitCreateBranch, gitCommit, gitPull, gitStatus];
 
 	useEffect(() => {
-		gitCommands.forEach((command) => commandRegistry.registerCommand(command));
+		commandRegistry.registerCommands(gitCommands);
 	}, []);
 }
