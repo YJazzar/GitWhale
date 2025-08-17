@@ -158,11 +158,22 @@ export function useCommandPaletteSelectionManager(autoSelectCommandOnChange: boo
 		}
 	};
 
+	const onSelectCommand = (commandID: string) => { 
+		// Double check that the commandID is for a valid one
+		const newCommandToSelectIndex = registry.allAvailableCommands.findIndex(command => command.id === commandID)
+		if (newCommandToSelectIndex === -1) { 
+			return
+		}
+
+		_setSelectedCommandID(commandID)
+	}
+
 	return {
 		showNoCommandsFound,
 		commandsToShow,
 		onChangeSelectionFromArrow,
-		selectedCommand: selectedCommand,
+		selectedCommand,
+		onSelectCommand
 	};
 }
 

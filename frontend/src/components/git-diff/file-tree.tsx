@@ -63,18 +63,23 @@ function TreeNode({ directory, onFileClick, depth }: TreeNodeProps) {
 	const handleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
 		if (event.key === 'ArrowUp') {
 			event.preventDefault();
+			event.stopPropagation()
 			moveFocus(-1);
 		} else if (event.key === 'ArrowDown') {
 			event.preventDefault();
+			event.stopPropagation()
 			moveFocus(1);
 		} else if (event.key === 'ArrowLeft') {
 			event.preventDefault();
+			event.stopPropagation()
 			setIsOpen(false);
 		} else if (event.key === 'ArrowRight') {
 			event.preventDefault();
+			event.stopPropagation()
 			setIsOpen(true);
 		} else if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
+			event.stopPropagation()
 			toggleCollapse();
 		}
 	};

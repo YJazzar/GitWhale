@@ -10,13 +10,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCommandPaletteExecutor } from '@/hooks/command-palette/use-command-palette-state';
 import { cn } from '@/lib/utils';
-import { CommandParameter } from '@/types/command-palette';
+import { CommandParameter, SelectCommandParameter } from '@/types/command-palette';
 import { CheckCircle, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { EmptyState } from '../empty-state';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { CommandPaletteTerminalShell } from './CommandPaletteTerminalShell';
+import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
 
 export function CommandPaletteExecutor() {
 	const commandExecutor = useCommandPaletteExecutor();
@@ -60,17 +61,9 @@ export function CommandPaletteExecutor() {
 	}, [commandAction.shouldRunImmediately, commandAction.runAction]);
 
 	// Handle Enter key for form submission
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === 'Enter') {
-				e.preventDefault();
-				commandAction.runAction();
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [commandAction.runAction]);
+	useKeyboardShortcut('Enter', () => {
+		commandAction.runAction();
+	});
 
 	// Show the terminal command as it's executing
 	if (inProgressCommand.action.type === 'terminalCommand') {
@@ -79,7 +72,7 @@ export function CommandPaletteExecutor() {
 			commandAction.runActionState === 'finishedExecutingWithError' ||
 			commandAction.runActionState === 'finishedExecutingSuccessfully'
 		) {
-			return <CommandPaletteTerminalShell />
+			return <CommandPaletteTerminalShell />;
 		}
 	}
 
@@ -127,15 +120,21 @@ export function CommandPaletteExecutor() {
 			</div>
 
 			<div className="space-y-3">
-				{allParameters.map((parameter) => {
-					return <CommandPaletteParameter key={parameter.id} parameter={parameter} />;
+				{allParameters.map((parameter, index) => {
+					return (
+						<CommandPaletteParameter
+							key={parameter.id}
+							parameter={parameter}
+							focusOnMount={index === 0}
+						/>
+					);
 				})}
 			</div>
 
 			<div className="pt-4 border-t">
 				<div className="flex items-center justify-between">
 					<div className="text-xs text-muted-foreground">
-						Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Enter</kbd> to execute
+						Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + Enter</kbd> to execute
 					</div>
 					<Button
 						onClick={() => {
@@ -157,11 +156,12 @@ export function CommandPaletteExecutor() {
 	);
 }
 
-function CommandPaletteParameter<T>(props: { parameter: CommandParameter<T> }) {
+function CommandPaletteParameter<T>(props: { parameter: CommandParameter<T>; focusOnMount: boolean }) {
 	const commandExecutor = useCommandPaletteExecutor();
 	const { setParameterValue, getParameterValue } = commandExecutor.commandParameters;
-	const { parameter } = props;
+	const { parameter, focusOnMount } = props;
 
+	const inputRef = useRef<HTMLInputElement | HTMLButtonElement>(null);
 	const paramValue = getParameterValue(parameter.id);
 	const hasError = paramValue?.validationError;
 
@@ -169,6 +169,7 @@ function CommandPaletteParameter<T>(props: { parameter: CommandParameter<T> }) {
 	if (parameter.type === 'string') {
 		inputElement = (
 			<Input
+				ref={inputRef as React.RefObject<HTMLInputElement>}
 				placeholder={parameter.placeholder}
 				value={paramValue?.value || ''}
 				onChange={(e) => setParameterValue(parameter.id, e.target.value)}
@@ -176,7 +177,13 @@ function CommandPaletteParameter<T>(props: { parameter: CommandParameter<T> }) {
 			/>
 		);
 	} else if (parameter.type === 'select') {
-		inputElement = <CommandPaletteSelectParameterInput parameter={parameter} />;
+		inputElement = (
+			<CommandPaletteSelectParameterInput
+				ref={inputRef as React.RefObject<HTMLButtonElement>}
+				parameter={parameter}
+				focusOnMount={focusOnMount}
+			/>
+		);
 	} else {
 		inputElement = (
 			<h1>
@@ -185,6 +192,12 @@ function CommandPaletteParameter<T>(props: { parameter: CommandParameter<T> }) {
 			</h1>
 		);
 	}
+
+	useEffect(() => {
+		if (inputRef.current && focusOnMount) {
+			inputRef.current.focus();
+		}
+	}, [focusOnMount]);
 
 	return (
 		<div key={parameter.id} className="space-y-1">
@@ -204,7 +217,10 @@ function CommandPaletteParameter<T>(props: { parameter: CommandParameter<T> }) {
 	);
 }
 
-function CommandPaletteSelectParameterInput<T>(props: { parameter: CommandParameter<T> }) {
+const CommandPaletteSelectParameterInput = forwardRef<
+	HTMLButtonElement,
+	{ parameter: SelectCommandParameter<never>; focusOnMount: boolean }
+>((props, ref) => {
 	const commandExecutor = useCommandPaletteExecutor();
 	const { setParameterValue, getParameterValue } = commandExecutor.commandParameters;
 	const { parameter } = props;
@@ -225,6 +241,7 @@ function CommandPaletteSelectParameterInput<T>(props: { parameter: CommandParame
 			<Popover open={isSelectPopupOpen} onOpenChange={setIsSelectPopupOpen} modal={true}>
 				<PopoverTrigger asChild>
 					<Button
+						ref={ref}
 						variant="outline"
 						role="combobox"
 						aria-expanded={isSelectPopupOpen}
@@ -287,4 +304,4 @@ function CommandPaletteSelectParameterInput<T>(props: { parameter: CommandParame
 			</Popover>
 		</TooltipProvider>
 	);
-}
+});

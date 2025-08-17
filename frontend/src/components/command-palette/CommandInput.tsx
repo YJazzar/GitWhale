@@ -34,9 +34,11 @@ export function CommandInput() {
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'Enter') {
 			e.preventDefault();
+			e.stopPropagation()
 			handleSubmit();
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
+			e.stopPropagation()
 			commandPaletteState.isActive.set(false);
 		}
 	};

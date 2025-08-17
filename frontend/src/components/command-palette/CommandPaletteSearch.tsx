@@ -1,11 +1,13 @@
-import { useCommandPaletteState, useCommandPaletteSelectionManager } from "@/hooks/command-palette/use-command-palette-state";
-import { CommandIcon } from "lucide-react";
-import { useEffect } from "react";
-import { CommandPaletteItem } from "./CommandItem";
-
+import {
+	useCommandPaletteState,
+	useCommandPaletteSelectionManager,
+} from '@/hooks/command-palette/use-command-palette-state';
+import { CommandIcon } from 'lucide-react';
+import { useEffect } from 'react';
+import { CommandPaletteItem } from './CommandItem';
 
 export function CommandPaletteSearch() {
-	const { isActive } = useCommandPaletteState();
+	const { isActive, invokeCommand } = useCommandPaletteState();
 	const selectionManager = useCommandPaletteSelectionManager(false);
 
 	const commandsToShow = selectionManager.commandsToShow;
@@ -55,6 +57,12 @@ export function CommandPaletteSearch() {
 							key={command.id}
 							command={command}
 							isSelected={selectionManager.selectedCommand?.id === command.id}
+							onSelect={() => {
+								selectionManager.onSelectCommand(command.id);
+							}}
+							onExecute={() => {
+								invokeCommand(command);
+							}}
 						/>
 					))}
 				</div>

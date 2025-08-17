@@ -6,9 +6,11 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 interface CommandPaletteItemProps {
 	command: CommandDefinition<unknown>;
 	isSelected: boolean;
+	onSelect: () => void
+	onExecute: () => void
 }
 
-export function CommandPaletteItem({ command, isSelected }: CommandPaletteItemProps) {
+export function CommandPaletteItem({ command, isSelected, onSelect, onExecute }: CommandPaletteItemProps) {
 	const hasDescription = command.description && command.description.length > 0;
 	const titleAndDescription = hasDescription ? `${command.title} - ${command.description}` : command.title;
 
@@ -21,6 +23,8 @@ export function CommandPaletteItem({ command, isSelected }: CommandPaletteItemPr
 							'bg-accent text-accent-foreground': isSelected,
 							'hover:bg-accent/50': !isSelected,
 						})}
+						onClick={onSelect}
+						onDoubleClick={onExecute}
 					>
 						{/* Icon */}
 						<div className="flex-shrink-0 text-muted-foreground">
