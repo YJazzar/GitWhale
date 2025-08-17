@@ -21,19 +21,19 @@ export function CommandPalette() {
 	const isExecutingCommand = commandPaletteState.currentState === 'executingCommand';
 
 	return (
-		<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
-			<DialogContent
-				hideCloseIcon
-				className="sm:max-w-[600px] p-0 gap-0 h-[400px] flex flex-col"
-				onEscapeKeyDown={(e) => {
-					e.preventDefault();
-				}}
-			>
+			<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
+				<DialogContent
+					hideCloseIcon
+					className="sm:max-w-[600px] p-0 gap-0 h-[400px] flex flex-col"
+					onEscapeKeyDown={(e) => {
+						e.preventDefault();
+					}}
+				>
 				{/* UI to show when the user has not chosen a command yet */}
 				{isSearchingForCommand && (
 					<>
 						{/* Search Input */}
-						<div className="p-4 border-b">
+						<div className="p-2 border-b">
 							<CommandInput />
 						</div>
 
