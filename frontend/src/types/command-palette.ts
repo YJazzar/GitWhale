@@ -35,7 +35,7 @@ export type CommandDefinition<ReqHooks> = {
 
 // Command action type that preserves the relationship between requestedHooks and action
 export type CommandAction<ReqHooks> = {
-	requestedHooks: () => ReqHooks;
+	requestedHooks: (context: CommandPaletteContextData | undefined) => ReqHooks;
 	runAction: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => Promise<void>;
 };
 
@@ -51,7 +51,7 @@ type BaseCommandParameter<ReqHooks> = {
 		value: string,
 		context: CommandPaletteContextData,
 		providedHooks: ReqHooks
-	) => string | undefined; // undefined = valid, string = error message
+	) => Promise<string | undefined>; // undefined = valid, string = error message
 };
 
 export type SelectOptionGroup = {

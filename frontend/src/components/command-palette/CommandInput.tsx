@@ -57,17 +57,17 @@ export function CommandInput() {
 					className="pl-10 text-sm"
 					onKeyDown={handleKeyDown}
 				/>
+			</div>
+			{!!repoContextData && (
+				<div className="mt-2 flex items-center gap-2">
+					<Badge variant="secondary" className="text-xs">
+						Repository: {repoContextData.repoPath.split('/').pop()}
+					</Badge>
+				</div>
+			)}
 
-				{!!repoContextData && (
-					<div className="mt-2 flex items-center gap-2">
-						<Badge variant="secondary" className="text-xs">
-							Repository: {repoContextData.repoPath.split('/').pop()}
-						</Badge>
-					</div>
-				)}
-
-				{/* Collected Parameters Display */}
-				{/* {Object.keys(collectedParams).length > 0 && (
+			{/* Collected Parameters Display */}
+			{/* {Object.keys(collectedParams).length > 0 && (
 					<div className="pt-4 border-t">
 						<h4 className="text-xs font-medium text-muted-foreground mb-2">
 							Collected Parameters:
@@ -81,7 +81,6 @@ export function CommandInput() {
 						</div>
 					</div>
 				)} */}
-			</div>
 		</div>
 	);
 }

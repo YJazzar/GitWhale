@@ -3,9 +3,8 @@ import { CommandDefinition, CommandPaletteContextKey } from '@/types/command-pal
 import { FileText, FolderOpen, Home, Settings } from 'lucide-react';
 import { useEffect } from 'react';
 
-import { useCommandRegistry } from '../use-command-registry';
-import { useAppLogState } from '@/hooks/state/use-app-log-state';
 import { UseAppState } from '@/hooks/state/use-app-state';
+import { useCommandRegistry } from '../use-command-registry';
 
 // Navigate to Home
 const navigateHome: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
@@ -111,7 +110,7 @@ const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks
 				
 				return options;
 			},
-			validation: (value, context) => {
+			validation: async (value, context) => {
 				if (!value.trim()) return 'Repository path is required';
 				// In a real implementation, you might validate the path exists
 				return undefined;

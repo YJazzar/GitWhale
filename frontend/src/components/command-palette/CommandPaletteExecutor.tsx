@@ -18,7 +18,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
 export function CommandPaletteExecutor() {
-	const commandExecutor = useCommandPaletteExecutor(true);
+	const commandExecutor = useCommandPaletteExecutor();
 	const inProgressCommand = commandExecutor._inProgressCommand.value;
 
 	if (!inProgressCommand) {

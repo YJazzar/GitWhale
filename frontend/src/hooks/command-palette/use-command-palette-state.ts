@@ -168,35 +168,39 @@ export type RunActionExecutionState =
 	| 'finishedExecutingSuccessfully'
 	| 'finishedExecutingWithError';
 
-const parameterValuesAtom = atom(new Map<string, ParameterData>())
-const runActionStateAtom = atom<RunActionExecutionState>('notExecuted')
+const parameterValuesAtom = atom(new Map<string, ParameterData>());
+const runActionStateAtom = atom<RunActionExecutionState>('notExecuted');
 
-export function useCommandPaletteExecutor(print?: boolean) {
+export function useCommandPaletteExecutor() {
 	const [_isCommandPaletteOpen, _setIsCommandPaletteOpen] = useAtom(isCommandPaletteOpenAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
-	const requestedHooks = _inProgressCommand?.action.requestedHooks();
+
+	const contextData = !!_inProgressCommand?.context
+		? _availableContexts.get(_inProgressCommand.context)
+		: undefined;
+	const requestedHooks = _inProgressCommand?.action.requestedHooks(contextData);
 
 	// Extract the parameter state, and set up state to track their values
 	const requestedParameters = _inProgressCommand?.parameters ?? [];
 	const requestedParametersMap = new Map(requestedParameters.map((param) => [param.id, param]));
 	const [_parameterValues, _setParameterValues] = useAtom(parameterValuesAtom);
-	const [_runActionState, _setRunActionState] = useAtom(runActionStateAtom)
+	const [_runActionState, _setRunActionState] = useAtom(runActionStateAtom);
 
-	useEffect(() => { 
-		if (!_isCommandPaletteOpen) { 
+	useEffect(() => {
+		if (!_isCommandPaletteOpen) {
 			// Cleanup whenever the command palette closes
-			_setParameterValues(new Map())
-			_setRunActionState('notExecuted')
+			_setParameterValues(new Map());
+			_setRunActionState('notExecuted');
 		}
-	}, [_isCommandPaletteOpen, _setParameterValues, _setRunActionState])
+	}, [_isCommandPaletteOpen, _setParameterValues, _setRunActionState]);
 
 	const getParameterValue = (parameterID: string) => {
 		return _parameterValues.get(parameterID);
 	};
 
 	// Updates parameter values and re-runs validation for them
-	const setParameterValue = (parameterID: string, newValue: string) => {
+	const setParameterValue = async (parameterID: string, newValue: string) => {
 		const paramDefinition = requestedParametersMap.get(parameterID);
 		if (!paramDefinition || !_inProgressCommand) {
 			return;
@@ -208,6 +212,12 @@ export function useCommandPaletteExecutor(print?: boolean) {
 			return;
 		}
 
+		const validationError = await paramDefinition.validation?.(
+			newValue,
+			requestedContext,
+			requestedHooks
+		);
+
 		// Update the values
 		_setParameterValues((oldParamValues) => {
 			const newParamValues = new Map(oldParamValues);
@@ -215,7 +225,7 @@ export function useCommandPaletteExecutor(print?: boolean) {
 				id: parameterID,
 				type: paramDefinition.type,
 				value: newValue,
-				validationError: paramDefinition.validation?.(newValue, requestedContext, requestedHooks),
+				validationError: validationError,
 			});
 			return newParamValues;
 		});
@@ -238,9 +248,6 @@ export function useCommandPaletteExecutor(print?: boolean) {
 		return hasAllRequiredParameters;
 	}, [_parameterValues, requestedParameters]);
 
-	if (print) {
-		console.log('can exec? ' + canExecuteAction);
-	}
 	const executeAction = useCallback(async () => {
 		if (!_inProgressCommand || !canExecuteAction || _runActionState !== 'notExecuted') {
 			return;
@@ -260,7 +267,16 @@ export function useCommandPaletteExecutor(print?: boolean) {
 			console.error('Command execution failed:', error);
 			_setRunActionState('finishedExecutingWithError');
 		}
-	}, [_inProgressCommand, canExecuteAction, _runActionState, _availableContexts, requestedHooks, _parameterValues, _setRunActionState, _setIsCommandPaletteOpen]);
+	}, [
+		_inProgressCommand,
+		canExecuteAction,
+		_runActionState,
+		_availableContexts,
+		requestedHooks,
+		_parameterValues,
+		_setRunActionState,
+		_setIsCommandPaletteOpen,
+	]);
 
 	const optionsToShowInSelect = (parameterID: string) => {
 		const paramDefinition = requestedParametersMap.get(parameterID);
@@ -271,28 +287,40 @@ export function useCommandPaletteExecutor(print?: boolean) {
 		return paramDefinition.options(requestedHooks, _parameterValues);
 	};
 
-	const commandAction = useMemo(() => ({
-		canExecuteAction,
-		shouldRunImmediately: canExecuteAction && requestedParameters.length === 0,
-		runAction: executeAction,
-		runActionState: _runActionState,
-	}), [canExecuteAction, requestedParameters.length, executeAction, _runActionState]);
+	const commandAction = useMemo(
+		() => ({
+			canExecuteAction,
+			shouldRunImmediately: canExecuteAction && requestedParameters.length === 0,
+			runAction: executeAction,
+			runActionState: _runActionState,
+		}),
+		[canExecuteAction, requestedParameters.length, executeAction, _runActionState]
+	);
 
-	const commandParameters = useMemo(() => ({
-		setParameterValue,
-		getParameterValue,
-		getParameterSelectOptions: optionsToShowInSelect,
-		allParameters: requestedParameters,
-	}), [setParameterValue, getParameterValue, optionsToShowInSelect, requestedParameters]);
+	const commandParameters = useMemo(
+		() => ({
+			setParameterValue,
+			getParameterValue,
+			getParameterSelectOptions: optionsToShowInSelect,
+			allParameters: requestedParameters,
+		}),
+		[setParameterValue, getParameterValue, optionsToShowInSelect, requestedParameters]
+	);
 
-	const inProgressCommand = useMemo(() => ({
-		value: _inProgressCommand,
-		cancelInProgressCommand: () => _setInProgressCommand(undefined),
-	}), [_inProgressCommand, _setInProgressCommand]);
+	const inProgressCommand = useMemo(
+		() => ({
+			value: _inProgressCommand,
+			cancelInProgressCommand: () => _setInProgressCommand(undefined),
+		}),
+		[_inProgressCommand, _setInProgressCommand]
+	);
 
-	return useMemo(() => ({
-		_inProgressCommand: inProgressCommand,
-		commandParameters,
-		commandAction,
-	}), [inProgressCommand, commandParameters, commandAction]);
+	return useMemo(
+		() => ({
+			_inProgressCommand: inProgressCommand,
+			commandParameters,
+			commandAction,
+		}),
+		[inProgressCommand, commandParameters, commandAction]
+	);
 }

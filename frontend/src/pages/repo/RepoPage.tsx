@@ -1,9 +1,12 @@
 import { Sidebar } from '@/components/sidebar';
+import { useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
 import { SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
 import RepoHomeView from '@/pages/repo/RepoHomeView';
 import RepoLogView from '@/pages/repo/RepoLogView';
 import RepoTerminalView from '@/pages/repo/RepoTerminalView';
+import { CommandPaletteContextKey } from '@/types/command-palette';
 import { GitGraph, House, Terminal } from 'lucide-react';
+import { useEffect } from 'react';
 
 export type RepoViewType = 'home' | 'log' | 'diff' | 'terminal';
 
@@ -13,6 +16,8 @@ interface RepoViewTabsProps {
 }
 
 export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
+	const commandPaletteState = useCommandPaletteState();
+
 	// Static sidebar items that are always available
 	const staticItems: SidebarItemProps[] = [
 		{
@@ -37,6 +42,17 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 			preventClose: true,
 		},
 	];
+
+	useEffect(() => {
+		commandPaletteState.availableContexts.addContext({
+			contextKey: CommandPaletteContextKey.Repo,
+			repoPath: repoPath,
+		});
+
+		return () => {
+			commandPaletteState.availableContexts.removeContext(CommandPaletteContextKey.Repo);
+		};
+	}, []);
 
 	// Handler for wh
 	return (
