@@ -3,20 +3,17 @@ import clsx from 'clsx';
 import { CommandIcon, ChevronRight } from 'lucide-react';
 
 interface CommandPaletteItemProps {
-	command: CommandDefinition
+	command: CommandDefinition<unknown>;
 	isSelected: boolean;
 }
 
 export function CommandPaletteItem({ command, isSelected }: CommandPaletteItemProps) {
 	return (
 		<div
-			className={clsx(
-				'flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer',
-				{
-					'bg-accent text-accent-foreground': isSelected,
-					'hover:bg-accent/50': !isSelected,
-				}
-			)}
+			className={clsx('flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer', {
+				'bg-accent text-accent-foreground': isSelected,
+				'hover:bg-accent/50': !isSelected,
+			})}
 		>
 			{/* Icon */}
 			<div className="flex-shrink-0 text-muted-foreground">

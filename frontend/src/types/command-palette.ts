@@ -1,70 +1,56 @@
 import { CommandPaletteContextKey } from '@/hooks/command-palette/use-command-palette-state';
 import { ReactNode } from 'react';
 
-export interface RootContext {
-	type: 'root';
+interface GenericCommandPaletteContextData {
+	contextKey: CommandPaletteContextKey;
 }
 
-export interface RepoContext {
-	type: 'repo';
+export interface RepoCommandPaletteContextData {
+	contextKey: CommandPaletteContextKey.Repo;
 	repoPath: string;
 }
 
-export type CommandContext = RootContext | RepoContext;
+export type CommandPaletteContextData = RepoCommandPaletteContextData | GenericCommandPaletteContextData;
 
 // Parameter types for multi-step commands
 export type ParameterType = 'text' | 'string' | 'selection' | 'branch' | 'commit' | 'file' | 'path';
 
-export interface CommandParameter {
+export type ParameterData = {
+	type: ParameterType;
+	id: string;
+	value: string;
+	validationError: string | undefined;
+};
+
+export interface CommandParameter<ReqHooks> {
 	id: string;
 	type: ParameterType;
 	prompt: string;
 	placeholder?: string;
 	description?: string;
 	required?: boolean;
-	validation?: (value: string, context: CommandContext) => string | null; // null = valid, string = error message
-	suggestions?: (query: string, context: CommandContext) => Promise<string[]>;
+	validation?: (value: string, context: CommandPaletteContextData, providedHooks: ReqHooks) => string | undefined; // null = valid, string = error message
+	suggestions?: (query: string, context: CommandPaletteContextData) => Promise<string[]>;
 }
 
-// Command actions
-export interface TerminalAction {
-	type: 'terminal';
-	command: string;
+// Command action type that preserves the relationship between requestedHooks and action
+export type CommandAction<ReqHooks> = {
 	sideEffects: CommandActionSideEffects[];
-}
+	requestedHooks: () => ReqHooks;
+	action: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => void;
+};
 
-export interface FunctionAction {
-	type: 'function';
-	handler: (params: Record<string, string>, context: CommandContext) => Promise<any>;
-	sideEffects: CommandActionSideEffects[];
-}
-
-export enum CommandNavigationDestination {
-	applicationHome,
-	applicationLogs,
-	applicationSettings,
-	repoHome,
-}
-
-export interface NavigationAction {
-	type: 'navigation';
-	destination: CommandNavigationDestination;
-	sideEffects: CommandActionSideEffects[];
-}
-
-export type CommandAction = TerminalAction | FunctionAction | NavigationAction;
-
-// Command definition
-export interface CommandDefinition {
+// Command definition with inferred hooks type
+export type CommandDefinition<ReqHooks> = {
 	id: string;
 	title: string;
 	description?: string;
 	icon?: ReactNode;
 	keywords?: string[]; // Additional search keywords
 	context: CommandPaletteContextKey; // Which contexts this command is available in
-	parameters?: CommandParameter[]; // Parameters required for execution
-	action: CommandAction;
-}
+	parameters?: CommandParameter<ReqHooks>[]; // Parameters required for execution
+	action: CommandAction<ReqHooks>;
+};
 
 export enum CommandActionSideEffects {
 	refreshGitLog,
@@ -72,7 +58,7 @@ export enum CommandActionSideEffects {
 
 // Search and filtering
 export interface CommandSearchResult {
-	command: CommandDefinition;
+	command: CommandDefinition<unknown>;
 	score: number;
 	matchedFields: string[];
 }

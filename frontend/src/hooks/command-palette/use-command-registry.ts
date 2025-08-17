@@ -5,7 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { CommandPaletteContextKey, useCommandPaletteAvailableContexts } from './use-command-palette-state';
 
 // Global command registry - we'll populate this with commands
-const registeredCommandsAtom = atom<Map<string, CommandDefinition>>(new Map());
+const registeredCommandsAtom = atom<Map<string, CommandDefinition<unknown>>>(new Map());
 
 /**
  * Hook that provides access to the command registry
@@ -58,17 +58,17 @@ export function useCommandRegistry(searchQuery: string | undefined) {
 		return results.map((result) => result.item);
 	}, [availableContexts, searchQuery, _registeredCommands]);
 
-	const registerCommands = (commands: CommandDefinition[]) => {
-		_setRegisteredCommands(() => {
-			let newRegisteredCommands = new Map(_registeredCommands);
+	const registerCommands = (commands: CommandDefinition<any>[]) => {
+		_setRegisteredCommands((oldRegisteredCommands) => {
+			let newRegisteredCommands = new Map(oldRegisteredCommands);
 			commands.forEach((command) => newRegisteredCommands.set(command.id, command));
 			return newRegisteredCommands;
 		});
 	};
 
 	const unregisterCommands = (commandIDs: string[]) => {
-		_setRegisteredCommands(() => {
-			let newRegisteredCommands = new Map(_registeredCommands);
+		_setRegisteredCommands((oldRegisteredCommands) => {
+			let newRegisteredCommands = new Map(oldRegisteredCommands);
 			commandIDs.forEach((commandID) => newRegisteredCommands.delete(commandID));
 			return newRegisteredCommands;
 		});

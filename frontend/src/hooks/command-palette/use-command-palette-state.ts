@@ -1,4 +1,7 @@
+import { CommandDefinition, CommandPaletteContextData, ParameterData } from '@/types/command-palette';
 import { atom, useAtom, useAtomValue } from 'jotai';
+import { useCommandRegistry } from './use-command-registry';
+import { useEffect, useState } from 'react';
 
 // Helper types: TODO: move to a different file if they get too long
 export enum CommandPaletteContextKey {
@@ -8,27 +11,21 @@ export enum CommandPaletteContextKey {
 	Repo,
 }
 
-interface GenericCommandPaletteContextData {
-	contextKey: CommandPaletteContextKey;
-}
-
-export interface RepoCommandPaletteContextData {
-	contextKey: CommandPaletteContextKey.Repo;
-	repoPath: string;
-}
-
-export type CommandPaletteContextData = RepoCommandPaletteContextData | GenericCommandPaletteContextData;
-
 // Atoms for command palette state
 const isCommandPaletteOpenAtom = atom(false);
 const searchQueryAtom = atom('');
-const availableCommandPaletteContextsAtom = atom<Map<CommandPaletteContextKey, CommandPaletteContextData>>(new Map());
+const availableCommandPaletteContextsAtom = atom<Map<CommandPaletteContextKey, CommandPaletteContextData>>(
+	new Map()
+);
+const inProgressCommandAtom = atom<CommandDefinition<unknown> | undefined>(undefined);
 
-// Simple hook for smaller components to see what contexts are available 
-export function useCommandPaletteAvailableContexts() { 
-	const availableContexts = useAtomValue(availableCommandPaletteContextsAtom)
-	return availableContexts
+// Simple hook for smaller components to see what contexts are available
+export function useCommandPaletteAvailableContexts() {
+	const availableContexts = useAtomValue(availableCommandPaletteContextsAtom);
+	return availableContexts;
 }
+
+type CommandPaletteCurrentState = 'executingCommand' | 'searchingForCommand';
 
 /**
  * Hook for managing command palette visibility
@@ -37,6 +34,7 @@ export function useCommandPaletteState() {
 	const [_isOpen, _setIsOpen] = useAtom(isCommandPaletteOpenAtom);
 	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
+	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
 
 	const _onCommandPalletteClose = () => {
 		_setSearchQuery('');
@@ -65,6 +63,22 @@ export function useCommandPaletteState() {
 		_setAvailableContexts(newContextMap);
 	};
 
+	const invokeCommand = (command: CommandDefinition<any>) => {
+		if (!!_inProgressCommand) {
+			return;
+		}
+
+		_setInProgressCommand(command);
+	};
+
+	const calculateCurrentState = (): CommandPaletteCurrentState => {
+		if (!!_inProgressCommand) {
+			return 'executingCommand';
+		}
+
+		return 'searchingForCommand';
+	};
+
 	return {
 		isActive: {
 			get: () => _isOpen,
@@ -84,5 +98,137 @@ export function useCommandPaletteState() {
 			addContext: addContext,
 			removeContext: removeContext,
 		},
+
+		invokeCommand,
+
+		currentState: calculateCurrentState(),
+	};
+}
+
+const selectedCommandInSearchDialogAtom = atom('');
+
+export function useCommandPaletteSelectionManager(autoSelectCommandOnChange: boolean) {
+	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
+	const [_isOpen, _setIsOpen] = useAtom(isCommandPaletteOpenAtom);
+	const [_selectedCommandID, _setSelectedCommandID] = useAtom(selectedCommandInSearchDialogAtom);
+
+	const registry = useCommandRegistry(_searchQuery);
+	const searchResults = registry.matchedCommands;
+
+	// Decides if we should show the empty state
+	const showNoCommandsFound = searchResults.length == 0 && _searchQuery.length > 0;
+
+	// Decides which list of commands to show
+	const showAllAvailableCommands = _searchQuery.length == 0;
+	const commandsToShow = showAllAvailableCommands ? registry.allAvailableCommands : searchResults;
+
+	// State variables related to the item selection
+	const selectedCommandIndex = commandsToShow.findIndex((command) => command.id == _selectedCommandID);
+	const selectedCommand = commandsToShow[selectedCommandIndex];
+
+	// Auto select a new row when we can't maintain the same focus
+	useEffect(() => {
+		if (!autoSelectCommandOnChange) {
+			return; // The component calling this hook isn't the "main" caller of the hook
+		}
+
+		if (selectedCommandIndex !== -1) {
+			return; // no need to change the user's selection for them
+		}
+
+		_setSelectedCommandID(commandsToShow?.[0]?.id ?? '');
+	}, [commandsToShow, selectedCommandIndex, _selectedCommandID, _setSelectedCommandID]);
+
+	const onChangeSelectionFromArrow = (direction: 'next' | 'prev') => {
+		const delta = direction === 'next' ? 1 : -1;
+		const indexToSelect = selectedCommandIndex + delta;
+
+		if (indexToSelect < 0) {
+			_setSelectedCommandID(commandsToShow[commandsToShow.length - 1].id);
+		} else if (indexToSelect >= commandsToShow.length) {
+			_setSelectedCommandID(commandsToShow[0].id);
+		} else {
+			_setSelectedCommandID(commandsToShow[indexToSelect].id);
+		}
+	};
+
+	return {
+		showNoCommandsFound,
+		commandsToShow,
+		onChangeSelectionFromArrow,
+		selectedCommand: selectedCommand,
+	};
+}
+
+export function useCommandPaletteExecutor() {
+	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
+	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
+	const requestedHooks = _inProgressCommand?.action.requestedHooks();
+
+	// Extract the parameter state, and set up state to track their values
+	const requestedParameters = _inProgressCommand?.parameters ?? [];
+	const requestedParametersMap = new Map(requestedParameters.map((param) => [param.id, param]));
+	const [_parameterValues, _setParameterValues] = useState(new Map<string, ParameterData>());
+
+	const getParameterValue = (parameterID: string) => {
+		return _parameterValues.get(parameterID);
+	};
+
+	// Updates parameter values and re-runs validation for them
+	const setParameterValue = (parameterID: string, newValue: string) => {
+		const paramDefinition = requestedParametersMap.get(parameterID);
+		if (!paramDefinition || !_inProgressCommand) {
+			return;
+		}
+
+		// Fetch the context information that's needed for the parameter
+		const requestedContext = _availableContexts.get(_inProgressCommand.context);
+		if (!requestedContext) {
+			return;
+		}
+
+		// Update the values
+		_setParameterValues((oldParamValues) => {
+			const newParamValues = new Map(oldParamValues);
+			newParamValues.set(parameterID, {
+				id: parameterID,
+				type: paramDefinition.type,
+				value: newValue,
+				validationError: paramDefinition.validation?.(newValue, requestedContext, requestedHooks),
+			});
+			return newParamValues;
+		});
+	};
+
+	const canExecuteAction = (() => {
+		const hasValidationErrors = _parameterValues
+			.values()
+			.some((param) => !!param.validationError && param.validationError !== '');
+		if (hasValidationErrors) {
+			return false;
+		}
+
+		const hasAllRequiredParameters = requestedParametersMap
+			.values()
+			.filter((param) => param.required === true)
+			.every((reqParam) => {
+				_parameterValues.has(reqParam.id);
+			});
+		return hasAllRequiredParameters
+	})();
+
+	return {
+		_inProgressCommand: {
+			value: _inProgressCommand,
+			onFinishedExecuting: () => _setInProgressCommand(undefined),
+		},
+
+		commandParameters: {
+			setParameterValue,
+			getParameterValue,
+		},
+
+		canExecuteAction,
+		shouldImmediatelyExecuteAction: canExecuteAction && requestedParameters.length > 0
 	};
 }

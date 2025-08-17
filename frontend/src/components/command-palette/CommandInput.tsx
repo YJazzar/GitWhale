@@ -2,14 +2,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
 	CommandPaletteContextKey,
-	RepoCommandPaletteContextData,
+	useCommandPaletteSelectionManager,
 	useCommandPaletteState,
 } from '@/hooks/command-palette/use-command-palette-state';
+import { RepoCommandPaletteContextData } from '@/types/command-palette';
 import { CommandIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 export function CommandInput() {
 	const commandPaletteState = useCommandPaletteState();
+	const selectionManager = useCommandPaletteSelectionManager(false);
 
 	const searchQuery = commandPaletteState.searchQuery;
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +23,14 @@ export function CommandInput() {
 		}
 	}, []);
 
-	const handleSubmit = async () => {};
+	const handleSubmit = () => {
+		const selectedCommand = selectionManager.selectedCommand;
+		if (!selectedCommand) {
+			return;
+		}
+
+		commandPaletteState.invokeCommand(selectedCommand);
+	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'Enter') {
