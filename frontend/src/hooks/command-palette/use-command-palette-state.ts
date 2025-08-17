@@ -4,7 +4,7 @@ import {
 	CommandPaletteContextKey,
 	ParameterData,
 } from '@/types/command-palette';
-import { atom, useAtom, useAtomValue } from 'jotai';
+import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCommandRegistry } from './use-command-registry';
 import { useEffect, useState } from 'react';
 
@@ -33,16 +33,21 @@ export function useCommandPaletteState() {
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
 
-	const _onCommandPalletteClose = () => {
-		_setSearchQuery('');
-	};
-
 	const setIsOpenWrapper = (newValue: boolean) => {
 		_setIsOpen(newValue);
-		if (!newValue) {
+	};
+
+	const _onCommandPalletteClose = () => {
+		_setSearchQuery('');
+		_setInProgressCommand(undefined);
+	};
+
+	// Run logic whenever the dialog is closed
+	useEffect(() => {
+		if (!_isOpen) {
 			_onCommandPalletteClose();
 		}
-	};
+	});
 
 	const getByContextKey = (contextKey: CommandPaletteContextKey) => {
 		return _availableContexts.get(contextKey);
@@ -157,9 +162,14 @@ export function useCommandPaletteSelectionManager(autoSelectCommandOnChange: boo
 	};
 }
 
-export type RunActionExecutionState = 'notExecuted' | 'executing' | 'finishedExecutingSuccessfully' | 'finishedExecutingWithError'
+export type RunActionExecutionState =
+	| 'notExecuted'
+	| 'executing'
+	| 'finishedExecutingSuccessfully'
+	| 'finishedExecutingWithError';
 
 export function useCommandPaletteExecutor() {
+	const _setIsCommandPaletteOpen = useSetAtom(isCommandPaletteOpenAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
 	const requestedHooks = _inProgressCommand?.action.requestedHooks();
@@ -169,7 +179,7 @@ export function useCommandPaletteExecutor() {
 	const requestedParametersMap = new Map(requestedParameters.map((param) => [param.id, param]));
 	const [_parameterValues, _setParameterValues] = useState(new Map<string, ParameterData>());
 
-	const [_runActionState, _setRunActionState] = useState<RunActionExecutionState>('notExecuted')
+	const [_runActionState, _setRunActionState] = useState<RunActionExecutionState>('notExecuted');
 
 	const getParameterValue = (parameterID: string) => {
 		return _parameterValues.get(parameterID);
@@ -229,12 +239,13 @@ export function useCommandPaletteExecutor() {
 		}
 
 		try {
-			_setRunActionState('executing')
+			_setRunActionState('executing');
 			await _inProgressCommand.action.runAction(requestedHooks, _parameterValues);
-			_setRunActionState('finishedExecutingSuccessfully')
+			_setRunActionState('finishedExecutingSuccessfully');
+			_setIsCommandPaletteOpen(false);
 		} catch (error) {
 			console.error('Command execution failed:', error);
-			_setRunActionState('finishedExecutingWithError')
+			_setRunActionState('finishedExecutingWithError');
 		}
 	};
 
@@ -254,7 +265,7 @@ export function useCommandPaletteExecutor() {
 			canExecuteAction,
 			shouldRunImmediately: canExecuteAction && requestedParameters.length === 0,
 			runAction: executeAction,
-			runActionState: _runActionState
+			runActionState: _runActionState,
 		},
 	};
 }
