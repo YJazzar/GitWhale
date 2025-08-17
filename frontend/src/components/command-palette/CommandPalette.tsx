@@ -23,47 +23,41 @@ export function CommandPalette() {
 	const onChangeSelectionFromArrow = selectionManager.onChangeSelectionFromArrow;
 	const commandsToShow = selectionManager.commandsToShow;
 
-	// Handle keyboard navigation
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (!isActive.get()) return;
-
-			switch (e.key) {
-				case 'ArrowDown':
-					e.preventDefault();
-					onChangeSelectionFromArrow('next');
-					break;
-				case 'ArrowUp':
-					e.preventDefault();
-					onChangeSelectionFromArrow('prev');
-					break;
-				case 'Escape':
-					e.preventDefault();
-					isActive.set(false);
-					break;
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [isActive.get(), isActive.set, onChangeSelectionFromArrow]);
-
 	const isSearchingForCommand = commandPaletteState.currentState === 'searchingForCommand';
 	const isExecutingCommand = commandPaletteState.currentState === 'executingCommand';
 
 	return (
 		<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
-			<DialogContent hideCloseIcon className="sm:max-w-[600px] p-0 gap-0 h-[400px] flex flex-col">
-				{/* Search Input */}
-				<div className="p-4 border-b">
-					<CommandInput />
-				</div>
+			<DialogContent
+				hideCloseIcon
+				className="sm:max-w-[600px] p-0 gap-0 h-[400px] flex flex-col"
+				onEscapeKeyDown={(e) => {
+					e.preventDefault();
+				}}
+			>
+				{/* UI to show when the user has not chosen a command yet */}
+				{isSearchingForCommand && (
+					<>
+						{/* Search Input */}
+						<div className="p-4 border-b">
+							<CommandInput />
+						</div>
 
-				{/* Command List */}
-				<ScrollArea className="flex-1">
-					{isSearchingForCommand && <CommandPaletteSearch />}
-					{isExecutingCommand && <CommandPaletteExecutor />}
-				</ScrollArea>
+						{/* Command List */}
+						<ScrollArea className="flex-1">
+							<CommandPaletteSearch />
+						</ScrollArea>
+					</>
+				)}
+
+				{/* UI to show when we're in the process of executing a specific command */}
+				{isExecutingCommand && (
+					<>
+						<ScrollArea className="flex-1">
+							<CommandPaletteExecutor />
+						</ScrollArea>
+					</>
+				)}
 
 				{/* Footer */}
 				<div className="p-3 border-t bg-muted/30">
@@ -85,8 +79,38 @@ export function CommandPalette() {
 }
 
 function CommandPaletteSearch() {
+	const { isActive } = useCommandPaletteState();
 	const selectionManager = useCommandPaletteSelectionManager(false);
+
 	const commandsToShow = selectionManager.commandsToShow;
+	const onChangeSelectionFromArrow = selectionManager.onChangeSelectionFromArrow;
+
+	// Handle keyboard navigation
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (!isActive.get()) {
+				return;
+			}
+
+			switch (e.key) {
+				case 'ArrowDown':
+					e.preventDefault();
+					onChangeSelectionFromArrow('next');
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					onChangeSelectionFromArrow('prev');
+					break;
+				case 'Escape':
+					e.preventDefault();
+					isActive.set(false);
+					break;
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [isActive.get(), isActive.set, onChangeSelectionFromArrow]);
 
 	return (
 		<div className="p-2">
@@ -131,6 +155,21 @@ function CommandPaletteExecutor() {
 
 	const { allParameters, setParameterValue, getParameterValue } = commandExecutor.commandParameters;
 	const commandAction = commandExecutor.commandAction;
+
+	// Allows the user to back up to the initial menu
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			switch (e.key) {
+				case 'Escape':
+					e.preventDefault();
+					commandExecutor._inProgressCommand.cancelInProgressCommand();
+					break;
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [commandExecutor._inProgressCommand.cancelInProgressCommand]);
 
 	// Handle immediate execution for commands without parameters
 	useEffect(() => {

@@ -69,7 +69,6 @@ const openRepository: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs
 			type: 'path',
 			prompt: 'Repository path',
 			placeholder: '/path/to/repository',
-			description: 'Enter the path to the repository',
 			required: true,
 			validation: (value, context) => {
 				if (!value.trim()) return 'Repository path is required';

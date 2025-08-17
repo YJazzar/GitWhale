@@ -24,10 +24,6 @@ export function useCommandRegistry(searchQuery: string | undefined) {
 
 	const allAvailableCommands = _getAvailableCommands();
 
-	useEffect(() => {
-		console.debug({ _registeredCommands, availableContexts });
-	}, [_registeredCommands, availableContexts]);
-
 	const matchedCommands = useMemo(() => {
 		if (!searchQuery || searchQuery === '') {
 			// The hook caller isn't actually interested in getting a matching list of commands

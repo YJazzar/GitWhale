@@ -252,7 +252,7 @@ export function useCommandPaletteExecutor() {
 	return {
 		_inProgressCommand: {
 			value: _inProgressCommand,
-			onFinishedExecuting: () => _setInProgressCommand(undefined),
+			cancelInProgressCommand: () => _setInProgressCommand(undefined),
 		},
 
 		commandParameters: {
