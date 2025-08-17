@@ -4,7 +4,7 @@ import {
 } from '@/hooks/command-palette/use-command-palette-state';
 import { CommandIcon } from 'lucide-react';
 import { useEffect } from 'react';
-import { CommandPaletteItem } from './CommandItem';
+import { CommandPaletteItem } from './CommandPaletteItem';
 
 export function CommandPaletteSearch() {
 	const { isActive, invokeCommand } = useCommandPaletteState();

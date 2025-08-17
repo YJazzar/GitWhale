@@ -4,7 +4,7 @@ import {
 	useCommandPaletteSelectionManager,
 	useCommandPaletteState
 } from '@/hooks/command-palette/use-command-palette-state';
-import { CommandInput } from './CommandInput';
+import { CommandPaletteInput } from './CommandPaletteInput';
 import { CommandPaletteExecutor } from './CommandPaletteExecutor';
 import { CommandPaletteSearch } from './CommandPaletteSearch';
 
@@ -34,7 +34,7 @@ export function CommandPalette() {
 					<>
 						{/* Search Input */}
 						<div className="p-2 border-b">
-							<CommandInput />
+							<CommandPaletteInput />
 						</div>
 
 						{/* Command List */}

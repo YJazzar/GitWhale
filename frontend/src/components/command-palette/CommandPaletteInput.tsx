@@ -8,7 +8,7 @@ import { CommandPaletteContextKey, RepoCommandPaletteContextData } from '@/types
 import { CommandIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-export function CommandInput() {
+export function CommandPaletteInput() {
 	const commandPaletteState = useCommandPaletteState();
 	const selectionManager = useCommandPaletteSelectionManager(false);
 
@@ -67,22 +67,6 @@ export function CommandInput() {
 					</Badge>
 				</div>
 			)}
-
-			{/* Collected Parameters Display */}
-			{/* {Object.keys(collectedParams).length > 0 && (
-					<div className="pt-4 border-t">
-						<h4 className="text-xs font-medium text-muted-foreground mb-2">
-							Collected Parameters:
-						</h4>
-						<div className="flex flex-wrap gap-2">
-							{Object.entries(collectedParams).map(([key, value]) => (
-								<Badge key={key} variant="secondary" className="text-xs">
-									{key}: {value}
-								</Badge>
-							))}
-						</div>
-					</div>
-				)} */}
 		</div>
 	);
 }
