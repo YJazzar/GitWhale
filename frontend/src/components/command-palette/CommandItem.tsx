@@ -19,7 +19,7 @@ export function CommandPaletteItem({ command, isSelected, onSelect, onExecute }:
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<div
-						className={clsx('flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer', {
+						className={clsx('flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer select-none', {
 							'bg-accent text-accent-foreground': isSelected,
 							'hover:bg-accent/50': !isSelected,
 						})}

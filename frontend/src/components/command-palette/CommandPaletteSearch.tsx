@@ -51,7 +51,7 @@ export function CommandPaletteSearch() {
 			)}
 
 			{commandsToShow.length > 0 && (
-				<div className="space-y-1">
+				<div className="space-y-1 select-none">
 					{commandsToShow.map((command) => (
 						<CommandPaletteItem
 							key={command.id}

@@ -96,7 +96,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 			<div
 				key={file.tabKey}
 				className={clsx([
-					'group relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 border-r border-border/50 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-0 max-w-48 cursor-pointer',
+					'group relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 border-r border-border/50 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-0 max-w-48 cursor-pointer select-none',
 					{
 						'bg-background border-t-2 border-t-primary text-foreground shadow-sm':
 							isCurrentFileOpen,

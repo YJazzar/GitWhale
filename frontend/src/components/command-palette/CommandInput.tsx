@@ -50,7 +50,7 @@ export function CommandInput() {
 	return (
 		<div className="flex flex-col h-full">
 			<div className="relative">
-				<CommandIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+				<CommandIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 select-none" />
 				<Input
 					ref={inputRef}
 					value={searchQuery.get()}

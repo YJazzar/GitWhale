@@ -50,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
 					{/* Header with mode toggle */}
 					<div className="flex items-center justify-between p-2 border-b border-sidebar-border">
 						{!isCompactMode && (
-							<div className="flex-1 text-sm font-medium text-sidebar-foreground truncate">
+							<div className="flex-1 text-sm font-medium text-sidebar-foreground truncate select-none">
 								Navigation
 							</div>
 						)}
@@ -169,7 +169,7 @@ const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
 		<button
 			onClick={handleClick}
 			className={clsx(
-				'w-full flex items-center gap-2 p-2 rounded-md transition-all duration-200 group relative',
+				'w-full flex items-center gap-2 p-2 rounded-md transition-all duration-200 group relative select-none',
 				'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
 				'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
 				{
