@@ -191,7 +191,6 @@ export function useCommandPaletteExecutor() {
 	const requestedParametersMap = new Map(requestedParameters.map((param) => [param.id, param]));
 	const [_parameterValues, _setParameterValues] = useAtom(parameterValuesAtom);
 	const [_runActionState, _setRunActionState] = useAtom(runActionStateAtom);
-	const terminalCommandExecutor = useCommandPaletteTerminalCommandExecutor();
 
 	useEffect(() => {
 		if (!_isCommandPaletteOpen) {
@@ -200,6 +199,13 @@ export function useCommandPaletteExecutor() {
 			_setRunActionState('notExecuted');
 		}
 	}, [_isCommandPaletteOpen, _setParameterValues, _setRunActionState]);
+
+	const onCancelInProgressCommand = () => {
+		_setInProgressCommand(undefined);
+		shellExecutor.cancelCommand();
+		_setParameterValues(new Map());
+		_setRunActionState('notExecuted');
+	};
 
 	const getParameterValue = (parameterID: string) => {
 		return _parameterValues.get(parameterID);
@@ -267,7 +273,6 @@ export function useCommandPaletteExecutor() {
 		let terminalCommandWasExecuted = false;
 		const shellExecutorWrapper = async (shellCommand: string, workingDir: string) => {
 			terminalCommandWasExecuted = true;
-			debugger;
 			return shellExecutor.executeShellCommand(shellCommand, workingDir);
 		};
 
@@ -298,10 +303,7 @@ export function useCommandPaletteExecutor() {
 	return {
 		_inProgressCommand: {
 			value: _inProgressCommand,
-			cancelInProgressCommand: () => {
-				_setInProgressCommand(undefined);
-				terminalCommandExecutor.cancelCommand();
-			},
+			cancelInProgressCommand: onCancelInProgressCommand,
 		},
 		commandParameters: {
 			setParameterValue,
