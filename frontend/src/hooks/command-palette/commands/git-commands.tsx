@@ -21,7 +21,11 @@ function commandWithRepoStateRequestedHooks(contextData: CommandPaletteContextDa
 
 	const repoContextData = contextData as RepoCommandPaletteContextData;
 	const repoSideBar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoContextData.repoPath));
-	return { repoSideBar, repoState: useRepoState(repoContextData.repoPath) };
+	return {
+		repoPath: repoContextData.repoPath,
+		repoSideBar,
+		repoState: useRepoState(repoContextData.repoPath),
+	};
 }
 
 // Git: Checkout Branch
@@ -103,9 +107,12 @@ const gitCheckoutBranch: CommandDefinitionWithRepoState = {
 			if (!branchName) {
 				throw 'Need to provide a branchName';
 			}
+			if (!providedHooks?.repoPath) { 
+				throw 'Need to always have a repo path'
+			}
 
 			const command = `git checkout ${branchName}`;
-			await commandExecutor(command);
+			await commandExecutor(command, providedHooks.repoPath);
 			providedHooks?.repoSideBar.setActiveItem('log');
 			providedHooks?.repoState?.logState.refreshLogAndRefs();
 		},

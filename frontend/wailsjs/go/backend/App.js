@@ -18,6 +18,10 @@ export function EndDiffSession(arg1) {
   return window['go']['backend']['App']['EndDiffSession'](arg1);
 }
 
+export function ExecuteShellCommand(arg1, arg2, arg3) {
+  return window['go']['backend']['App']['ExecuteShellCommand'](arg1, arg2, arg3);
+}
+
 export function GetAllRefs(arg1) {
   return window['go']['backend']['App']['GetAllRefs'](arg1);
 }

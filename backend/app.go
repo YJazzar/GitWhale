@@ -274,3 +274,8 @@ func (app *App) GetApplicationLogHistory() []logger.LogEntry {
 func (app *App) ClearApplicationLogHistory() {
 	logger.Log.ClearLogEntries()
 }
+
+// Returns the "topic" the user can subscribe to and send messages to
+func (app *App) ExecuteShellCommand(command string, workingDir, broadcastToTopic string) {
+	command_utils.StartRunningAndStreamCommand(app.ctx, command, workingDir, broadcastToTopic)
+}

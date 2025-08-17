@@ -48,7 +48,7 @@ export type TerminalCommandAction<ReqHooks> = {
 	runAction: (
 		providedHooks: ReqHooks,
 		parameters: Map<string, ParameterData>,
-		commandExecutor: (command: string) => void
+		commandExecutor: (command: string, workingDir: string) => void
 	) => Promise<void>;
 };
 
@@ -95,4 +95,19 @@ export type ParameterData = {
 	id: string;
 	value: string;
 	validationError: string | undefined;
+};
+
+///////////////////////////////////////
+// MARK: Terminal Command Execution Types
+///////////////////////////////////////
+
+export type TerminalCommandExecutionState = 'started' | 'output' | 'completed' | 'error' | 'cancelled';
+
+export type StreamedCommandEvent = {
+	state: TerminalCommandExecutionState;
+	output?: string;
+	duration?: string;
+	exitCode?: number;
+	error?: string;
+	timestamp: string; // ISO string since Go time.Time serializes to string
 };

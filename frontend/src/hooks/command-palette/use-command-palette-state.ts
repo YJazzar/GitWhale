@@ -3,10 +3,14 @@ import {
 	CommandPaletteContextData,
 	CommandPaletteContextKey,
 	ParameterData,
+	StreamedCommandEvent,
+	TerminalCommandExecutionState,
 } from '@/types/command-palette';
 import { atom, useAtom, useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useCommandRegistry } from './use-command-registry';
+import { ExecuteShellCommand } from '../../../wailsjs/go/backend/App';
+import { EventsOn, EventsEmit, EventsOff } from '../../../wailsjs/runtime/runtime';
 
 // Atoms for command palette state
 const isCommandPaletteOpenAtom = atom(false);
@@ -249,7 +253,7 @@ export function useCommandPaletteExecutor() {
 		return hasAllRequiredParameters;
 	}, [_parameterValues, requestedParameters]);
 
-	const executeAction = useCallback(async () => {
+	const executeAction = async () => {
 		if (!_inProgressCommand || !canExecuteAction || _runActionState !== 'notExecuted') {
 			return;
 		}
@@ -259,25 +263,26 @@ export function useCommandPaletteExecutor() {
 			return;
 		}
 
+		let terminalCommandWasExecuted = false;
+		const shellExecutorWrapper = async (shellCommand: string, workingDir: string) => {
+			terminalCommandWasExecuted = true;
+			return shellExecutor(shellCommand, workingDir);
+		};
+
 		try {
 			_setRunActionState('executing');
-			await _inProgressCommand.action.runAction(requestedHooks, _parameterValues, shellExecutor);
+			await _inProgressCommand.action.runAction(requestedHooks, _parameterValues, shellExecutorWrapper);
 			_setRunActionState('finishedExecutingSuccessfully');
-			_setIsCommandPaletteOpen(false);
+
+			// Only close dialog if there was no command ran
+			if (!terminalCommandWasExecuted) {
+				_setIsCommandPaletteOpen(false);
+			}
 		} catch (error) {
 			console.error('Command execution failed:', error);
 			_setRunActionState('finishedExecutingWithError');
 		}
-	}, [
-		_inProgressCommand,
-		canExecuteAction,
-		_runActionState,
-		_availableContexts,
-		requestedHooks,
-		_parameterValues,
-		_setRunActionState,
-		_setIsCommandPaletteOpen,
-	]);
+	};
 
 	const optionsToShowInSelect = (parameterID: string) => {
 		const paramDefinition = requestedParametersMap.get(parameterID);
@@ -327,29 +332,153 @@ export function useCommandPaletteExecutor() {
 }
 
 const terminalCommandOutputAtom = atom('');
-const terminalCommandStateAtom = atom<'notStarted' | 'executing' | 'completed'>('notStarted');
+const terminalCommandStateAtom = atom<{
+	status: 'notStarted' | 'started' | 'completed' | 'error';
+	commandDuration?: string;
+	exitCode?: number;
+	error?: string;
+	activeTopic?: string;
+	terminalCommandPromise?: { resolve: (value: string) => void; reject: (value: string) => void };
+}>({ status: 'notStarted' });
 
 function useCommandPaletteTerminalCommandExecutor() {
 	const _inProgressCommand = useAtomValue(inProgressCommandAtom);
-	const [_terminalCommandOutput, _setTerminalCommandOutputAtom] = useAtom(terminalCommandOutputAtom);
+	const [_terminalCommandOutput, _setTerminalCommandOutput] = useAtom(terminalCommandOutputAtom);
 	const [_terminalCommandState, _setTerminalCommandState] = useAtom(terminalCommandStateAtom);
 
-	const executeShellCommand = async (shellCommand: string) => {
-		_setTerminalCommandState('executing');
+	const generateUniqueTopic = useCallback(() => {
+		return `terminal-command-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+	}, []);
+
+	const executeShellCommand = async (shellCommand: string, workingDir: string) => {
+		let resolveCallback: ((value: string) => void) | undefined = undefined;
+		let rejectCallback: ((value: string) => void) | undefined = undefined;
+		const terminalCommandPromise = new Promise((resolve, reject) => {
+			resolveCallback = resolve;
+			rejectCallback = reject;
+		});
+
+		if (!resolveCallback || !rejectCallback) {
+			throw 'Why are the promise callbacks null?';
+			return;
+		}
+
+		// Generate unique topic for this command
+		const topic = generateUniqueTopic();
+
+		// Reset state
+		_setTerminalCommandOutput('');
+		_setTerminalCommandState({
+			status: 'started',
+			activeTopic: topic,
+			commandDuration: undefined,
+			exitCode: undefined,
+			error: undefined,
+			terminalCommandPromise: {
+				resolve: resolveCallback,
+				reject: rejectCallback,
+			},
+		});
+
+		// Set up event listener for this command
+		EventsOn(topic, (event: StreamedCommandEvent) => {
+			handleCommandEvent(event, resolveCallback as any, rejectCallback as any);
+		});
+
+		try {
+			// Execute the command
+			await ExecuteShellCommand(shellCommand, workingDir, topic);
+		} catch (error) {
+			console.error('Failed to execute shell command:', error);
+			_setTerminalCommandState({
+				status: 'error',
+				activeTopic: topic,
+				commandDuration: undefined,
+				exitCode: undefined,
+				error: error instanceof Error ? error.message : `${error}`,
+			});
+
+			(rejectCallback as any)?.(error);
+		}
+		return terminalCommandPromise
 	};
 
-	const onForceCancelCommand = () => {
-		if (_terminalCommandState === 'executing') {
-			_setTerminalCommandState('notStarted');
+	const handleCommandEvent = (
+		event: StreamedCommandEvent,
+		resolve: (value: unknown) => void,
+		reject: (value: unknown) => void
+	) => {
+		switch (event.state) {
+			case 'started':
+				_setTerminalCommandState({
+					..._terminalCommandState,
+					status: 'started',
+				});
+				break;
+
+			case 'output':
+				if (event.output) {
+					_setTerminalCommandOutput((prev) => prev + event.output + '\n');
+				}
+				break;
+
+			case 'completed':
+				_setTerminalCommandState({
+					..._terminalCommandState,
+					status: 'completed',
+					commandDuration: event.duration,
+					exitCode: event.exitCode,
+				});
+
+				resolve('completed');
+				break;
+
+			case 'error':
+				_setTerminalCommandState({
+					..._terminalCommandState,
+					status: 'error',
+					commandDuration: event.duration,
+					exitCode: event.exitCode,
+				});
+
+				reject(event.error);
+				break;
+
+			case 'cancelled':
+				// _setTerminalCommandState('cancelled');
+				resolve('cancelled');
+				break;
 		}
 	};
+
+	const cancelCommand = useCallback(() => {
+		if (_terminalCommandState.activeTopic && _terminalCommandState.status === 'started') {
+			// Send cancel event to the backend
+			EventsEmit(_terminalCommandState.activeTopic, 'cancel');
+			EventsOff(_terminalCommandState.activeTopic);
+		}
+	}, [_terminalCommandState.activeTopic, _terminalCommandState.status, _setTerminalCommandState]);
+
+	const onForceCancelCommand = useCallback(() => {
+		cancelCommand();
+
+		_setTerminalCommandOutput('');
+		_setTerminalCommandState({
+			status: 'notStarted',
+			activeTopic: undefined,
+			commandDuration: undefined,
+			exitCode: undefined,
+			error: undefined,
+			terminalCommandPromise: undefined,
+		});
+	}, [_terminalCommandState, cancelCommand]);
 
 	// Listen for when the in progress command is cancelled
 	useEffect(() => {
 		if (!_inProgressCommand) {
 			onForceCancelCommand();
 		}
-	}, []);
+	}, [_inProgressCommand, onForceCancelCommand]);
 
 	return executeShellCommand;
 }

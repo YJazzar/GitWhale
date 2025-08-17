@@ -14,6 +14,8 @@ export function CloseRepo(arg1:string):Promise<backend.App>;
 
 export function EndDiffSession(arg1:string):Promise<void>;
 
+export function ExecuteShellCommand(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function GetAllRefs(arg1:string):Promise<Array<git_operations.GitRef>>;
 
 export function GetAppState():Promise<backend.App>;
