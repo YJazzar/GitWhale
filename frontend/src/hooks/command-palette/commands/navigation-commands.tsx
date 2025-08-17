@@ -87,18 +87,29 @@ const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks
 					});
 				};
 
-				return [
-					{
+				// Separate starred and non-starred repos for display
+				const starredRepos = providedHooks.appState?.appConfig?.starredGitRepos ?? [];
+				const recentRepos = providedHooks.appState?.appConfig?.recentGitRepos ?? [];
+				const nonStarredRecentRepos = recentRepos.filter((repo) => !starredRepos.includes(repo));
+
+				const options = [];
+				if (starredRepos.length > 0) {
+					options.push({
 						groupKey: 'starredRepos',
 						groupName: 'Starred Repos',
-						options: convertStringsToOptions(providedHooks.appState?.appConfig?.starredGitRepos),
-					},
-					{
+						options: convertStringsToOptions(starredRepos),
+					});
+				}
+
+				if (nonStarredRecentRepos.length > 0) {
+					options.push({
 						groupKey: 'recentRepos',
 						groupName: 'Recent Repos',
-						options: convertStringsToOptions(providedHooks.appState?.appConfig?.recentGitRepos),
-					},
-				];
+						options: convertStringsToOptions(nonStarredRecentRepos),
+					});
+				}
+				
+				return options;
 			},
 			validation: (value, context) => {
 				if (!value.trim()) return 'Repository path is required';

@@ -18,7 +18,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
 export function CommandPaletteExecutor() {
-	const commandExecutor = useCommandPaletteExecutor();
+	const commandExecutor = useCommandPaletteExecutor(true);
 	const inProgressCommand = commandExecutor._inProgressCommand.value;
 
 	if (!inProgressCommand) {
@@ -35,8 +35,7 @@ export function CommandPaletteExecutor() {
 
 	const { allParameters } = commandExecutor.commandParameters;
 	const commandAction = commandExecutor.commandAction;
-	const {canExecuteAction} = commandAction
-	console.log(canExecuteAction)
+	console.log(commandExecutor.commandAction.canExecuteAction)
 
 	// Allows the user to back up to the initial menu
 	useEffect(() => {
