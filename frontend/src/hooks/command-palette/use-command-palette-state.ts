@@ -191,6 +191,7 @@ export function useCommandPaletteExecutor() {
 	const requestedParametersMap = new Map(requestedParameters.map((param) => [param.id, param]));
 	const [_parameterValues, _setParameterValues] = useAtom(parameterValuesAtom);
 	const [_runActionState, _setRunActionState] = useAtom(runActionStateAtom);
+	const terminalCommandExecutor = useCommandPaletteTerminalCommandExecutor();
 
 	useEffect(() => {
 		if (!_isCommandPaletteOpen) {
@@ -266,7 +267,8 @@ export function useCommandPaletteExecutor() {
 		let terminalCommandWasExecuted = false;
 		const shellExecutorWrapper = async (shellCommand: string, workingDir: string) => {
 			terminalCommandWasExecuted = true;
-			return shellExecutor(shellCommand, workingDir);
+			debugger;
+			return shellExecutor.executeShellCommand(shellCommand, workingDir);
 		};
 
 		try {
@@ -293,46 +295,38 @@ export function useCommandPaletteExecutor() {
 		return paramDefinition.options(requestedHooks, _parameterValues);
 	};
 
-	const commandAction = useMemo(
-		() => ({
-			canExecuteAction,
-			shouldRunImmediately: canExecuteAction && requestedParameters.length === 0,
-			runAction: executeAction,
-			runActionState: _runActionState,
-		}),
-		[canExecuteAction, requestedParameters.length, executeAction, _runActionState]
-	);
-
-	const commandParameters = useMemo(
-		() => ({
+	return {
+		_inProgressCommand: {
+			value: _inProgressCommand,
+			cancelInProgressCommand: () => {
+				_setInProgressCommand(undefined);
+				terminalCommandExecutor.cancelCommand();
+			},
+		},
+		commandParameters: {
 			setParameterValue,
 			getParameterValue,
 			getParameterSelectOptions: optionsToShowInSelect,
 			allParameters: requestedParameters,
-		}),
-		[setParameterValue, getParameterValue, optionsToShowInSelect, requestedParameters]
-	);
-
-	const inProgressCommand = useMemo(
-		() => ({
-			value: _inProgressCommand,
-			cancelInProgressCommand: () => _setInProgressCommand(undefined),
-		}),
-		[_inProgressCommand, _setInProgressCommand]
-	);
-
-	return useMemo(
-		() => ({
-			_inProgressCommand: inProgressCommand,
-			commandParameters,
-			commandAction,
-		}),
-		[inProgressCommand, commandParameters, commandAction]
-	);
+		},
+		commandAction: {
+			canExecuteAction,
+			shouldRunImmediately: canExecuteAction && requestedParameters.length === 0,
+			runAction: executeAction,
+			runActionState: _runActionState,
+		},
+		terminalCommandState: {
+			...shellExecutor.terminalCommandState,
+			terminalOutput: shellExecutor.terminalCommandOutput,
+			cancelTerminalCommand: shellExecutor.cancelCommand,
+		},
+	};
 }
 
 const terminalCommandOutputAtom = atom('');
 const terminalCommandStateAtom = atom<{
+	commandArgs?: string;
+	commandWorkingDir?: string;
 	status: 'notStarted' | 'started' | 'completed' | 'error';
 	commandDuration?: string;
 	exitCode?: number;
@@ -342,7 +336,6 @@ const terminalCommandStateAtom = atom<{
 }>({ status: 'notStarted' });
 
 function useCommandPaletteTerminalCommandExecutor() {
-	const _inProgressCommand = useAtomValue(inProgressCommandAtom);
 	const [_terminalCommandOutput, _setTerminalCommandOutput] = useAtom(terminalCommandOutputAtom);
 	const [_terminalCommandState, _setTerminalCommandState] = useAtom(terminalCommandStateAtom);
 
@@ -360,7 +353,6 @@ function useCommandPaletteTerminalCommandExecutor() {
 
 		if (!resolveCallback || !rejectCallback) {
 			throw 'Why are the promise callbacks null?';
-			return;
 		}
 
 		// Generate unique topic for this command
@@ -369,6 +361,8 @@ function useCommandPaletteTerminalCommandExecutor() {
 		// Reset state
 		_setTerminalCommandOutput('');
 		_setTerminalCommandState({
+			commandArgs: shellCommand,
+			commandWorkingDir: workingDir,
 			status: 'started',
 			activeTopic: topic,
 			commandDuration: undefined,
@@ -400,7 +394,7 @@ function useCommandPaletteTerminalCommandExecutor() {
 
 			(rejectCallback as any)?.(error);
 		}
-		return terminalCommandPromise
+		return terminalCommandPromise;
 	};
 
 	const handleCommandEvent = (
@@ -457,13 +451,15 @@ function useCommandPaletteTerminalCommandExecutor() {
 			EventsEmit(_terminalCommandState.activeTopic, 'cancel');
 			EventsOff(_terminalCommandState.activeTopic);
 		}
-	}, [_terminalCommandState.activeTopic, _terminalCommandState.status, _setTerminalCommandState]);
+	}, [_terminalCommandState.activeTopic, _terminalCommandState.status]);
 
 	const onForceCancelCommand = useCallback(() => {
 		cancelCommand();
 
 		_setTerminalCommandOutput('');
 		_setTerminalCommandState({
+			commandArgs: undefined,
+			commandWorkingDir: undefined,
 			status: 'notStarted',
 			activeTopic: undefined,
 			commandDuration: undefined,
@@ -471,14 +467,12 @@ function useCommandPaletteTerminalCommandExecutor() {
 			error: undefined,
 			terminalCommandPromise: undefined,
 		});
-	}, [_terminalCommandState, cancelCommand]);
+	}, [cancelCommand, _setTerminalCommandOutput, _setTerminalCommandState]);
 
-	// Listen for when the in progress command is cancelled
-	useEffect(() => {
-		if (!_inProgressCommand) {
-			onForceCancelCommand();
-		}
-	}, [_inProgressCommand, onForceCancelCommand]);
-
-	return executeShellCommand;
+	return {
+		executeShellCommand,
+		terminalCommandState: _terminalCommandState,
+		terminalCommandOutput: _terminalCommandOutput,
+		cancelCommand: onForceCancelCommand,
+	};
 }

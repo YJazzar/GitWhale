@@ -24,7 +24,7 @@ export function CommandPalette() {
 			<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
 				<DialogContent
 					hideCloseIcon
-					className="sm:max-w-[600px] p-0 gap-0 h-[400px] flex flex-col"
+					className="sm:max-w-[800px] p-0 gap-0 h-[500px] flex flex-col"
 					onEscapeKeyDown={(e) => {
 						e.preventDefault();
 					}}

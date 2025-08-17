@@ -104,14 +104,14 @@ const gitCheckoutBranch: CommandDefinitionWithRepoState = {
 		requestedHooks: commandWithRepoStateRequestedHooks,
 		runAction: async (providedHooks, parameters, commandExecutor) => {
 			const branchName = parameters.get('branchName');
-			if (!branchName) {
+			if (!branchName?.value) {
 				throw 'Need to provide a branchName';
 			}
 			if (!providedHooks?.repoPath) { 
 				throw 'Need to always have a repo path'
 			}
 
-			const command = `git checkout ${branchName}`;
+			const command = `git checkout ${branchName.value}`;
 			await commandExecutor(command, providedHooks.repoPath);
 			providedHooks?.repoSideBar.setActiveItem('log');
 			providedHooks?.repoState?.logState.refreshLogAndRefs();

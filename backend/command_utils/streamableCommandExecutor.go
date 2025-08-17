@@ -202,12 +202,7 @@ func streamPipe(ctx context.Context, pipe io.ReadCloser, pipeType, broadcastToTo
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line != "" {
-			// Prefix stderr output to distinguish it
 			output := line
-			if pipeType == "stderr" {
-				output = "[stderr] " + line
-			}
-
 			emitEvent(ctx, broadcastToTopic, StreamedCommandEvent{
 				State:     StateOutput,
 				Output:    output,
