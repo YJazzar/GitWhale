@@ -27,13 +27,12 @@ export default function SettingsPage() {
 	const { appState } = UseAppState();
 	const { settings, isLoading, updateSettings, resetSettings } = useSettings();
 	const { theme, setTheme } = useTheme();
-	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 	const [defaultShellCommand, setDefaultShellCommand] = useState('');
 
 	useEffect(() => {
-		GetDefaultShellCommand().then(setDefaultShellCommand).catch(error => 
-			Logger.error(`Failed to get default shell command: ${error}`, 'SettingsPage')
-		);
+		GetDefaultShellCommand()
+			.then(setDefaultShellCommand)
+			.catch((error) => Logger.error(`Failed to get default shell command: ${error}`, 'SettingsPage'));
 	}, []);
 
 	if (isLoading) {
@@ -53,7 +52,6 @@ export default function SettingsPage() {
 				[key]: value,
 			},
 		});
-		setHasUnsavedChanges(false); // Changes are auto-saved
 	};
 
 	const handleTerminalSettingsChange = (key: string, value: any) => {
@@ -63,7 +61,6 @@ export default function SettingsPage() {
 				[key]: value,
 			},
 		});
-		setHasUnsavedChanges(false); // Changes are auto-saved
 	};
 
 	const handleUISettingsChange = (key: string, value: any) => {
@@ -73,12 +70,10 @@ export default function SettingsPage() {
 				[key]: value,
 			},
 		});
-		setHasUnsavedChanges(false); // Changes are auto-saved
 	};
 
 	const handleReset = () => {
 		resetSettings();
-		setHasUnsavedChanges(false);
 	};
 
 	return (
@@ -99,10 +94,16 @@ export default function SettingsPage() {
 					</CardHeader>
 					<CardContent className="space-y-3">
 						<div>
-							<Label htmlFor="commits-to-load" className="text-sm font-medium">Commits to Load</Label>
+							<Label htmlFor="commits-to-load" className="text-sm font-medium">
+								Commits to Load
+							</Label>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-full justify-between mt-1"
+									>
 										{COMMITS_LOAD_OPTIONS.find(
 											(opt) => opt.value === settings.git.commitsToLoad
 										)?.label || `${settings.git.commitsToLoad} commits`}
@@ -166,11 +167,13 @@ export default function SettingsPage() {
 					</CardHeader>
 					<CardContent className="space-y-3">
 						<div>
-							<Label htmlFor="terminal-command" className="text-sm font-medium">Default Command</Label>
+							<Label htmlFor="terminal-command" className="text-sm font-medium">
+								Default Command
+							</Label>
 							<Input
 								id="terminal-command"
 								className="mt-1"
-								placeholder={defaultShellCommand || "System default shell"}
+								placeholder={defaultShellCommand || 'System default shell'}
 								value={settings.terminal.defaultCommand}
 								onChange={(e) =>
 									handleTerminalSettingsChange('defaultCommand', e.target.value)
@@ -183,7 +186,11 @@ export default function SettingsPage() {
 								<Label className="text-sm font-medium">Font Size</Label>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+										<Button
+											variant="outline"
+											size="sm"
+											className="w-full justify-between mt-1"
+										>
 											{FONT_SIZE_OPTIONS.find(
 												(opt) => opt.value === settings.terminal.fontSize
 											)?.label || `${settings.terminal.fontSize}px`}
@@ -213,7 +220,11 @@ export default function SettingsPage() {
 								<Label className="text-sm font-medium">Cursor Style</Label>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+										<Button
+											variant="outline"
+											size="sm"
+											className="w-full justify-between mt-1"
+										>
 											{TERMINAL_CURSOR_STYLES.find(
 												(opt) => opt.value === settings.terminal.cursorStyle
 											)?.label || settings.terminal.cursorStyle}
@@ -244,7 +255,11 @@ export default function SettingsPage() {
 							<Label className="text-sm font-medium">Color Scheme</Label>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-full justify-between mt-1"
+									>
 										{TERMINAL_COLOR_SCHEMES.find(
 											(opt) => opt.value === settings.terminal.colorScheme
 										)?.label || settings.terminal.colorScheme}
@@ -285,7 +300,11 @@ export default function SettingsPage() {
 							<Label className="text-sm font-medium">Theme</Label>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-full justify-between mt-1"
+									>
 										{theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'}
 										<ChevronDown className="h-4 w-4 opacity-50" />
 									</Button>
