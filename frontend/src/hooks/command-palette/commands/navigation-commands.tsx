@@ -14,6 +14,7 @@ const navigateHome: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>>
 	keywords: ['home', 'navigate', 'main'],
 	context: CommandPaletteContextKey.Root,
 	action: {
+		type: 'function',
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
@@ -31,6 +32,7 @@ const navigateSettings: CommandDefinition<ReturnType<typeof useNavigateRootFilTa
 	keywords: ['settings', 'preferences', 'config'],
 	context: CommandPaletteContextKey.Root,
 	action: {
+		type: 'function',
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
@@ -48,6 +50,7 @@ const navigateApplicationLogs: CommandDefinition<ReturnType<typeof useNavigateRo
 	keywords: ['logs', 'debug', 'application'],
 	context: CommandPaletteContextKey.Root,
 	action: {
+		type: 'function',
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
@@ -118,6 +121,7 @@ const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks
 		},
 	],
 	action: {
+		type: 'function',
 		requestedHooks: useOpenRepositoryHooks,
 		runAction: async (providedHooks, parameters) => {
 			const repoPath = parameters.get('repoPath');

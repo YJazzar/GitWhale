@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { EmptyState } from '../empty-state';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { CommandPaletteTerminalShell } from './CommandPaletteTerminalShell';
 
 export function CommandPaletteExecutor() {
 	const commandExecutor = useCommandPaletteExecutor();
@@ -35,7 +36,6 @@ export function CommandPaletteExecutor() {
 
 	const { allParameters } = commandExecutor.commandParameters;
 	const commandAction = commandExecutor.commandAction;
-	console.log(commandExecutor.commandAction.canExecuteAction)
 
 	// Allows the user to back up to the initial menu
 	useEffect(() => {
@@ -71,6 +71,17 @@ export function CommandPaletteExecutor() {
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [commandAction.runAction]);
+
+	// Show the terminal command as it's executing
+	if (inProgressCommand.action.type === 'terminalCommand') {
+		if (
+			commandAction.runActionState === 'executing' ||
+			commandAction.runActionState === 'finishedExecutingWithError' ||
+			commandAction.runActionState === 'finishedExecutingSuccessfully'
+		) {
+			return <CommandPaletteTerminalShell />
+		}
+	}
 
 	// Show completion state
 	if (commandAction.runActionState === 'finishedExecutingSuccessfully') {
@@ -138,7 +149,7 @@ export function CommandPaletteExecutor() {
 						{commandAction.runActionState === 'executing' && (
 							<Loader2 className="w-4 h-4 mr-2 animate-spin" />
 						)}
-						Execute Command {JSON.stringify({canExe: commandAction.canExecuteAction},null, 3 )}
+						Execute Command
 					</Button>
 				</div>
 			</div>

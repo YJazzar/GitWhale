@@ -180,6 +180,7 @@ export function useCommandPaletteExecutor() {
 		? _availableContexts.get(_inProgressCommand.context)
 		: undefined;
 	const requestedHooks = _inProgressCommand?.action.requestedHooks(contextData);
+	const shellExecutor = useCommandPaletteTerminalCommandExecutor();
 
 	// Extract the parameter state, and set up state to track their values
 	const requestedParameters = _inProgressCommand?.parameters ?? [];
@@ -260,7 +261,7 @@ export function useCommandPaletteExecutor() {
 
 		try {
 			_setRunActionState('executing');
-			await _inProgressCommand.action.runAction(requestedHooks, _parameterValues);
+			await _inProgressCommand.action.runAction(requestedHooks, _parameterValues, shellExecutor);
 			_setRunActionState('finishedExecutingSuccessfully');
 			_setIsCommandPaletteOpen(false);
 		} catch (error) {
@@ -323,4 +324,32 @@ export function useCommandPaletteExecutor() {
 		}),
 		[inProgressCommand, commandParameters, commandAction]
 	);
+}
+
+const terminalCommandOutputAtom = atom('');
+const terminalCommandStateAtom = atom<'notStarted' | 'executing' | 'completed'>('notStarted');
+
+function useCommandPaletteTerminalCommandExecutor() {
+	const _inProgressCommand = useAtomValue(inProgressCommandAtom);
+	const [_terminalCommandOutput, _setTerminalCommandOutputAtom] = useAtom(terminalCommandOutputAtom);
+	const [_terminalCommandState, _setTerminalCommandState] = useAtom(terminalCommandStateAtom);
+
+	const executeShellCommand = async (shellCommand: string) => {
+		_setTerminalCommandState('executing');
+	};
+
+	const onForceCancelCommand = () => {
+		if (_terminalCommandState === 'executing') {
+			_setTerminalCommandState('notStarted');
+		}
+	};
+
+	// Listen for when the in progress command is cancelled
+	useEffect(() => {
+		if (!_inProgressCommand) {
+			onForceCancelCommand();
+		}
+	}, []);
+
+	return executeShellCommand;
 }

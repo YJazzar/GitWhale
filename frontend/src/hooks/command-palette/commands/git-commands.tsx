@@ -9,15 +9,19 @@ import {
 } from '@/types/command-palette';
 import { GitBranch, GitCommit, GitPullRequest } from 'lucide-react';
 import { ValidateRef } from '../../../../wailsjs/go/backend/App';
+import { SidebarSessionKeyGenerator, useSidebarHandlers } from '@/hooks/state/useSidebarHandlers';
 
-type CommandDefinitionWithRepoState = CommandDefinition<ReturnType<typeof useRepoState> | undefined>;
+type CommandDefinitionWithRepoState = CommandDefinition<
+	ReturnType<typeof commandWithRepoStateRequestedHooks> | undefined
+>;
 function commandWithRepoStateRequestedHooks(contextData: CommandPaletteContextData | undefined) {
 	if (!contextData || contextData.contextKey !== CommandPaletteContextKey.Repo) {
 		return;
 	}
 
 	const repoContextData = contextData as RepoCommandPaletteContextData;
-	return useRepoState(repoContextData.repoPath);
+	const repoSideBar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoContextData.repoPath));
+	return { repoSideBar, repoState: useRepoState(repoContextData.repoPath) };
 }
 
 // Git: Checkout Branch
@@ -40,7 +44,7 @@ const gitCheckoutBranch: CommandDefinitionWithRepoState = {
 				if (!refToValidate.trim()) return 'A ref is required';
 				if (refToValidate.includes(' ')) return 'Ref names cannot contain spaces';
 
-				if (providedHooks?.logState.refs?.some((ref) => ref.name === refToValidate)) {
+				if (providedHooks?.repoState?.logState.refs?.some((ref) => ref.name === refToValidate)) {
 					return undefined;
 				}
 
@@ -73,7 +77,7 @@ const gitCheckoutBranch: CommandDefinitionWithRepoState = {
 					}
 				};
 
-				const { logState } = providedHooks;
+				const { logState } = providedHooks.repoState;
 				const allRefs = logState.refs ?? [];
 				return ['commit', 'localBranch', 'remoteBranch', 'tag'].map((type) => {
 					const refsOfType = allRefs.filter((ref) => ref.type === type);
@@ -92,128 +96,136 @@ const gitCheckoutBranch: CommandDefinitionWithRepoState = {
 		},
 	],
 	action: {
-		// command: 'git checkout {{branchName}}',
+		type: 'terminalCommand',
 		requestedHooks: commandWithRepoStateRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
-			// TODO: fill in with the right thing once terminal is supported
-			providedHooks?.logState.refreshLogAndRefs();
+		runAction: async (providedHooks, parameters, commandExecutor) => {
+			const branchName = parameters.get('branchName');
+			if (!branchName) {
+				throw 'Need to provide a branchName';
+			}
+
+			const command = `git checkout ${branchName}`;
+			await commandExecutor(command);
+			providedHooks?.repoSideBar.setActiveItem('log');
+			providedHooks?.repoState?.logState.refreshLogAndRefs();
 		},
 	},
 };
 
-// Git: Create Branch
-const gitCreateBranch: CommandDefinitionWithRepoState = {
-	id: 'repo.git.create.branch',
-	title: 'Git: Create Branch',
-	description: 'Create and checkout a new branch',
-	icon: <GitBranch className="h-4 w-4" />,
-	keywords: ['git', 'create', 'branch', 'new'],
-	context: CommandPaletteContextKey.Repo,
-	parameters: [
-		{
-			id: 'branchName',
-			type: 'string',
-			prompt: 'New branch name',
-			placeholder: 'feature/my-feature',
-			description: 'Enter the name for the new branch',
-			required: true,
-			validation: async (value, context, providedHooks) => {
-				if (!value.trim()) return 'Branch name is required';
-				if (value.includes(' ')) return 'Branch names cannot contain spaces';
-				if (value.startsWith('-')) return 'Branch names cannot start with -';
+// // Git: Create Branch
+// const gitCreateBranch: CommandDefinitionWithRepoState = {
+// 	id: 'repo.git.create.branch',
+// 	title: 'Git: Create Branch',
+// 	description: 'Create and checkout a new branch',
+// 	icon: <GitBranch className="h-4 w-4" />,
+// 	keywords: ['git', 'create', 'branch', 'new'],
+// 	context: CommandPaletteContextKey.Repo,
+// 	parameters: [
+// 		{
+// 			id: 'branchName',
+// 			type: 'string',
+// 			prompt: 'New branch name',
+// 			placeholder: 'feature/my-feature',
+// 			description: 'Enter the name for the new branch',
+// 			required: true,
+// 			validation: async (value, context, providedHooks) => {
+// 				if (!value.trim()) return 'Branch name is required';
+// 				if (value.includes(' ')) return 'Branch names cannot contain spaces';
+// 				if (value.startsWith('-')) return 'Branch names cannot start with -';
 
-				if (providedHooks?.logState.refs?.some((ref) => ref.name === value)) {
-					return 'Branch name already in use';
-				}
+// 				if (providedHooks?.repoState?.logState.refs?.some((ref) => ref.name === value)) {
+// 					return 'Branch name already in use';
+// 				}
 
-				return undefined;
-			},
-		},
-	],
-	action: {
-		// command: 'git checkout -b {{branchName}}',
-		requestedHooks: commandWithRepoStateRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
-			// TODO: fill in with the right thing once terminal is supported
-			providedHooks?.logState.refreshLogAndRefs();
-		},
-	},
-};
+// 				return undefined;
+// 			},
+// 		},
+// 	],
+// 	action: {
+// 		// command: 'git checkout -b {{branchName}}',
+// 		requestedHooks: commandWithRepoStateRequestedHooks,
+// 		runAction: async (providedHooks, parameters) => {
+// 			// TODO: fill in with the right thing once terminal is supported
+// 			providedHooks?.repoState?.logState.refreshLogAndRefs();
+// 		},
+// 	},
+// };
 
-// Git: Commit Changes
-const gitCommit: CommandDefinitionWithRepoState = {
-	id: 'repo.git.commit',
-	title: 'Git: Commit Changes',
-	description: 'Commit staged changes with a message',
-	icon: <GitCommit className="h-4 w-4" />,
-	keywords: ['git', 'commit', 'message'],
-	context: CommandPaletteContextKey.Repo,
-	parameters: [
-		{
-			id: 'message',
-			type: 'string',
-			prompt: 'Commit message',
-			placeholder: 'Add new feature or fix bug',
-			description: 'Enter a descriptive commit message',
-			required: true,
-			validation: async (value, context, providedHooks) => {
-				if (!value.trim()) return 'Commit message is required';
-				if (value.length < 3) return 'Commit message should be at least 3 characters';
-				return undefined;
-			},
-		},
-	],
-	action: {
-		// command: 'git commit -m "{{message}}"',
-		requestedHooks: commandWithRepoStateRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
-			// TODO: fill in with the right thing once terminal is supported
-			providedHooks?.logState.refreshLogAndRefs();
-		},
-	},
-};
+// // Git: Commit Changes
+// const gitCommit: CommandDefinitionWithRepoState = {
+// 	id: 'repo.git.commit',
+// 	title: 'Git: Commit Changes',
+// 	description: 'Commit staged changes with a message',
+// 	icon: <GitCommit className="h-4 w-4" />,
+// 	keywords: ['git', 'commit', 'message'],
+// 	context: CommandPaletteContextKey.Repo,
+// 	parameters: [
+// 		{
+// 			id: 'message',
+// 			type: 'string',
+// 			prompt: 'Commit message',
+// 			placeholder: 'Add new feature or fix bug',
+// 			description: 'Enter a descriptive commit message',
+// 			required: true,
+// 			validation: async (value, context, providedHooks) => {
+// 				if (!value.trim()) return 'Commit message is required';
+// 				if (value.length < 3) return 'Commit message should be at least 3 characters';
+// 				return undefined;
+// 			},
+// 		},
+// 	],
+// 	action: {
+// 		// command: 'git commit -m "{{message}}"',
+// 		requestedHooks: commandWithRepoStateRequestedHooks,
+// 		runAction: async (providedHooks, parameters) => {
+// 			// TODO: fill in with the right thing once terminal is supported
+// 			providedHooks?.logState.refreshLogAndRefs();
+// 		},
+// 	},
+// };
 
-// Git: Pull Latest
-const gitPull: CommandDefinitionWithRepoState = {
-	id: 'git.pull',
-	title: 'Git: Pull Latest',
-	description: 'Pull the latest changes from remote',
-	icon: <GitPullRequest className="h-4 w-4" />,
-	keywords: ['git', 'pull', 'fetch', 'remote'],
-	context: CommandPaletteContextKey.Repo,
-	action: {
-		// command: 'git pull',
-		requestedHooks: commandWithRepoStateRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
-			// TODO: fill in with the right thing once terminal is supported
-			providedHooks?.logState.refreshLogAndRefs();
-		},
-	},
-};
+// // Git: Pull Latest
+// const gitPull: CommandDefinitionWithRepoState = {
+// 	id: 'git.pull',
+// 	title: 'Git: Pull Latest',
+// 	description: 'Pull the latest changes from remote',
+// 	icon: <GitPullRequest className="h-4 w-4" />,
+// 	keywords: ['git', 'pull', 'fetch', 'remote'],
+// 	context: CommandPaletteContextKey.Repo,
+// 	action: {
+// 		// command: 'git pull',
+// 		requestedHooks: commandWithRepoStateRequestedHooks,
+// 		runAction: async (providedHooks, parameters) => {
+// 			// TODO: fill in with the right thing once terminal is supported
+// 			providedHooks?.logState.refreshLogAndRefs();
+// 		},
+// 	},
+// };
 
-// Git: Status
-const gitStatus: CommandDefinitionWithRepoState = {
-	id: 'git.status',
-	title: 'Git: Status',
-	description: 'Show working tree status',
-	icon: <GitBranch className="h-4 w-4" />,
-	keywords: ['git', 'status', 'changes'],
-	context: CommandPaletteContextKey.Repo,
-	action: {
-		// command: 'git status',
-		requestedHooks: commandWithRepoStateRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
-			// TODO: fill in with the right thing once terminal is supported
-			providedHooks?.logState.refreshLogAndRefs();
-		},
-	},
-};
+// // Git: Status
+// const gitStatus: CommandDefinitionWithRepoState = {
+// 	id: 'git.status',
+// 	title: 'Git: Status',
+// 	description: 'Show working tree status',
+// 	icon: <GitBranch className="h-4 w-4" />,
+// 	keywords: ['git', 'status', 'changes'],
+// 	context: CommandPaletteContextKey.Repo,
+// 	action: {
+// 		// command: 'git status',
+// 		requestedHooks: commandWithRepoStateRequestedHooks,
+// 		runAction: async (providedHooks, parameters) => {
+// 			// TODO: fill in with the right thing once terminal is supported
+// 			providedHooks?.logState.refreshLogAndRefs();
+// 		},
+// 	},
+// };
 
 // Register all git commands
 export function useRegisterGitCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
-	const gitCommands = [gitCheckoutBranch, gitCreateBranch, gitCommit, gitPull, gitStatus];
+	const gitCommands = [gitCheckoutBranch];
+	// const gitCommands = [gitCheckoutBranch, gitCreateBranch, gitCommit, gitPull, gitStatus];
 
 	useEffect(() => {
 		commandRegistry.registerCommands(gitCommands);

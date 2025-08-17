@@ -19,7 +19,9 @@ export interface RepoCommandPaletteContextData {
 
 export type CommandPaletteContextData = RepoCommandPaletteContextData | GenericCommandPaletteContextData;
 
+///////////////////////////////////////
 // MARK: Command definition
+///////////////////////////////////////
 
 // Command definition with inferred hooks type
 export type CommandDefinition<ReqHooks> = {
@@ -30,16 +32,29 @@ export type CommandDefinition<ReqHooks> = {
 	keywords?: string[]; // Additional search keywords
 	context: CommandPaletteContextKey; // Which contexts this command is available in
 	parameters?: CommandParameter<ReqHooks>[]; // Parameters required for execution
-	action: CommandAction<ReqHooks>;
+	action: FunctionCommandAction<ReqHooks> | TerminalCommandAction<ReqHooks>;
 };
 
 // Command action type that preserves the relationship between requestedHooks and action
-export type CommandAction<ReqHooks> = {
+export type FunctionCommandAction<ReqHooks> = {
+	type: 'function';
 	requestedHooks: (context: CommandPaletteContextData | undefined) => ReqHooks;
 	runAction: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => Promise<void>;
 };
 
+export type TerminalCommandAction<ReqHooks> = {
+	type: 'terminalCommand';
+	requestedHooks: (context: CommandPaletteContextData | undefined) => ReqHooks;
+	runAction: (
+		providedHooks: ReqHooks,
+		parameters: Map<string, ParameterData>,
+		commandExecutor: (command: string) => void
+	) => Promise<void>;
+};
+
+///////////////////////////////////////
 // MARK: Parameter definition
+///////////////////////////////////////
 
 type BaseCommandParameter<ReqHooks> = {
 	id: string;
@@ -71,7 +86,9 @@ export type StringCommandParameter<ReqHooks> = BaseCommandParameter<ReqHooks> & 
 
 export type CommandParameter<ReqHooks> = StringCommandParameter<ReqHooks> | SelectCommandParameter<ReqHooks>;
 
+///////////////////////////////////////
 // MARK: Collected Parameter Data definition
+///////////////////////////////////////
 
 export type ParameterData = {
 	type: CommandParameter<unknown>['type'];
