@@ -43,24 +43,11 @@ export const FileTabs: React.FC<FileTabManagerProps> = (props) => {
 
 			{/* The tab contents - direct component rendering */}
 			<div className="flex-1 overflow-hidden relative">
-				{handlers.openTabs.map((tab) => {
-					const isActive = tab.tabKey === handlers.activeTabKey;
-
-					return (
-						<div
-							key={tab.tabKey}
-							className={clsx('absolute inset-0', {
-								'opacity-100 z-10': isActive,
-								'opacity-0 z-0 pointer-events-none': !isActive,
-							})}
-							style={{
-								visibility: isActive ? 'visible' : 'hidden',
-							}}
-						>
-							<div className="w-full h-full overflow-auto">{tab.component}</div>
-						</div>
-					);
-				})}
+				{handlers.activeTab && (
+					<div className={clsx('absolute inset-0')}>
+						<div className="w-full h-full overflow-auto">{handlers.activeTab.component}</div>
+					</div>
+				)}
 
 				{/* Show empty state if no tabs */}
 				{handlers.openTabs.length === 0 && (
