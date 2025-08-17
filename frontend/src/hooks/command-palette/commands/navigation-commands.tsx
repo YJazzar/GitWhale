@@ -4,6 +4,8 @@ import { FileText, FolderOpen, Home, Settings } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { useCommandRegistry } from '../use-command-registry';
+import { useAppLogState } from '@/hooks/state/use-app-log-state';
+import { UseAppState } from '@/hooks/state/use-app-state';
 
 // Navigate to Home
 const navigateHome: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
@@ -56,8 +58,15 @@ const navigateApplicationLogs: CommandDefinition<ReturnType<typeof useNavigateRo
 	},
 };
 
+function useOpenRepositoryHooks() {
+	return {
+		rootNavigation: useNavigateRootFilTabs(),
+		appState: UseAppState().appState,
+	};
+}
+
 // Open Repository
-const openRepository: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
+const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks>> = {
 	id: 'navigate.open.repo',
 	title: 'Open Repository',
 	icon: <FolderOpen className="h-4 w-4" />,
@@ -66,10 +75,31 @@ const openRepository: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs
 	parameters: [
 		{
 			id: 'repoPath',
-			type: 'path',
+			type: 'select',
 			prompt: 'Repository path',
 			placeholder: '/path/to/repository',
 			required: true,
+			allowCustomInput: true,
+			options: (providedHooks, parameters) => {
+				const convertStringsToOptions = (arrayOfStrings: string[] | undefined) => {
+					return (arrayOfStrings ?? []).map((str) => {
+						return { optionKey: str, optionValue: str };
+					});
+				};
+
+				return [
+					{
+						groupKey: 'starredRepos',
+						groupName: 'Starred Repos',
+						options: convertStringsToOptions(providedHooks.appState?.appConfig?.starredGitRepos),
+					},
+					{
+						groupKey: 'recentRepos',
+						groupName: 'Recent Repos',
+						options: convertStringsToOptions(providedHooks.appState?.appConfig?.recentGitRepos),
+					},
+				];
+			},
 			validation: (value, context) => {
 				if (!value.trim()) return 'Repository path is required';
 				// In a real implementation, you might validate the path exists
@@ -78,12 +108,10 @@ const openRepository: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs
 		},
 	],
 	action: {
-		requestedHooks: () => {
-			return useNavigateRootFilTabs();
-		},
+		requestedHooks: useOpenRepositoryHooks,
 		runAction: async (providedHooks, parameters) => {
-			const repoPath = parameters.get('repoPath')
-			providedHooks.onOpenRepoWithPath(repoPath?.value ?? '');
+			const repoPath = parameters.get('repoPath');
+			providedHooks.rootNavigation.onOpenRepoWithPath(repoPath?.value ?? '');
 		},
 	},
 };

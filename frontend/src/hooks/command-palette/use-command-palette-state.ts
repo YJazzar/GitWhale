@@ -6,7 +6,7 @@ import {
 } from '@/types/command-palette';
 import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCommandRegistry } from './use-command-registry';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // Atoms for command palette state
 const isCommandPaletteOpenAtom = atom(false);
@@ -211,7 +211,7 @@ export function useCommandPaletteExecutor() {
 		});
 	};
 
-	const canExecuteAction = (() => {
+	const canExecuteAction = useMemo(() => {
 		const hasValidationErrors = _parameterValues
 			.values()
 			.some((param) => !!param.validationError && param.validationError !== '');
@@ -226,7 +226,9 @@ export function useCommandPaletteExecutor() {
 				return paramValue && paramValue.value.trim() !== '';
 			});
 		return hasAllRequiredParameters;
-	})();
+	}, [_parameterValues, requestedParameters]);
+
+	console.log("can exec? " + canExecuteAction)
 
 	const executeAction = async () => {
 		if (!_inProgressCommand || !canExecuteAction || _runActionState !== 'notExecuted') {
@@ -249,6 +251,15 @@ export function useCommandPaletteExecutor() {
 		}
 	};
 
+	const optionsToShowInSelect = (parameterID: string) => {
+		const paramDefinition = requestedParametersMap.get(parameterID);
+		if (!paramDefinition || paramDefinition.type !== 'select') {
+			return ;
+		}
+
+		return paramDefinition.options(requestedHooks, _parameterValues)
+	}
+
 	return {
 		_inProgressCommand: {
 			value: _inProgressCommand,
@@ -258,6 +269,7 @@ export function useCommandPaletteExecutor() {
 		commandParameters: {
 			setParameterValue,
 			getParameterValue,
+			getParameterSelectOptions: optionsToShowInSelect,
 			allParameters: requestedParameters,
 		},
 

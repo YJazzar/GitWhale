@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 
+// MARK: Context and associated context-data definitions
 export enum CommandPaletteContextKey {
 	Root,
 	ApplicationLogs,
@@ -18,32 +19,7 @@ export interface RepoCommandPaletteContextData {
 
 export type CommandPaletteContextData = RepoCommandPaletteContextData | GenericCommandPaletteContextData;
 
-// Parameter types for multi-step commands
-export type ParameterType = 'text' | 'string' | 'selection' | 'branch' | 'commit' | 'file' | 'path';
-
-export type ParameterData = {
-	type: ParameterType;
-	id: string;
-	value: string;
-	validationError: string | undefined;
-};
-
-export interface CommandParameter<ReqHooks> {
-	id: string;
-	type: ParameterType;
-	prompt: string;
-	placeholder?: string;
-	description?: string;
-	required?: boolean;
-	validation?: (value: string, context: CommandPaletteContextData, providedHooks: ReqHooks) => string | undefined; // null = valid, string = error message
-	suggestions?: (query: string, context: CommandPaletteContextData) => Promise<string[]>;
-}
-
-// Command action type that preserves the relationship between requestedHooks and action
-export type CommandAction<ReqHooks> = {
-	requestedHooks: () => ReqHooks;
-	runAction: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => Promise<void>;
-};
+// MARK: Command definition
 
 // Command definition with inferred hooks type
 export type CommandDefinition<ReqHooks> = {
@@ -57,9 +33,49 @@ export type CommandDefinition<ReqHooks> = {
 	action: CommandAction<ReqHooks>;
 };
 
-// Search and filtering
-export interface CommandSearchResult {
-	command: CommandDefinition<unknown>;
-	score: number;
-	matchedFields: string[];
-}
+// Command action type that preserves the relationship between requestedHooks and action
+export type CommandAction<ReqHooks> = {
+	requestedHooks: () => ReqHooks;
+	runAction: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => Promise<void>;
+};
+
+// MARK: Parameter definition
+
+type BaseCommandParameter<ReqHooks> = {
+	id: string;
+	prompt: string;
+	required?: boolean;
+	description?: string;
+	placeholder?: string;
+	validation?: (
+		value: string,
+		context: CommandPaletteContextData,
+		providedHooks: ReqHooks
+	) => string | undefined; // undefined = valid, string = error message
+};
+
+export type SelectOptionGroup = {
+	groupKey: string;
+	groupName: string;
+	options: { optionKey: string; optionValue: string }[];
+};
+export type SelectCommandParameter<ReqHooks> = BaseCommandParameter<ReqHooks> & {
+	type: 'select';
+	allowCustomInput: boolean;
+	options: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => SelectOptionGroup[];
+};
+
+export type StringCommandParameter<ReqHooks> = BaseCommandParameter<ReqHooks> & {
+	type: 'string';
+};
+
+export type CommandParameter<ReqHooks> = StringCommandParameter<ReqHooks> | SelectCommandParameter<ReqHooks>;
+
+// MARK: Collected Parameter Data definition
+
+export type ParameterData = {
+	type: CommandParameter<unknown>['type'];
+	id: string;
+	value: string;
+	validationError: string | undefined;
+};
