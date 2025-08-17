@@ -41,7 +41,6 @@ export interface CommandParameter<ReqHooks> {
 
 // Command action type that preserves the relationship between requestedHooks and action
 export type CommandAction<ReqHooks> = {
-	sideEffects: CommandActionSideEffects[];
 	requestedHooks: () => ReqHooks;
 	runAction: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => Promise<void>;
 };
@@ -57,10 +56,6 @@ export type CommandDefinition<ReqHooks> = {
 	parameters?: CommandParameter<ReqHooks>[]; // Parameters required for execution
 	action: CommandAction<ReqHooks>;
 };
-
-export enum CommandActionSideEffects {
-	refreshGitLog,
-}
 
 // Search and filtering
 export interface CommandSearchResult {

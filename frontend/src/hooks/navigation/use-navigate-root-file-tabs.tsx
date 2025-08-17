@@ -57,5 +57,9 @@ export function useNavigateRootFilTabs() {
 		});
 	};
 
-	return { onOpenNewRepo, onOpenRepoWithPath, onOpenSettings, onOpenApplicationLogs };
+	const onOpenHomePage = () => {
+		fileTabs.switchToTab('$$home$$');
+	};
+
+	return { onOpenHomePage, onOpenNewRepo, onOpenRepoWithPath, onOpenSettings, onOpenApplicationLogs };
 }

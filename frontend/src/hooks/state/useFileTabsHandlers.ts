@@ -60,6 +60,17 @@ export function useFileTabsHandlers(
 		}
 	};
 
+	/*
+	 * Switches to a tab using just the tab key. Assumes the tab is already open
+	 */
+	const switchToTab = (newTabKey: string): void => { 
+		// Make sure the tab exists first, then set it as the active tab
+		if (state.openTabs.some((tab) => tab.tabKey === newTabKey)) {
+			state.setActiveTabKey(newTabKey);
+			return;
+		}
+	}
+
 	/**
 	 * Open a new tab or switch to an existing tab with the same key
 	 */
@@ -115,6 +126,7 @@ export function useFileTabsHandlers(
 		// Actions
 		closeTab,
 		openTab,
+		switchToTab,
 		setTabPermaOpen,
 		getActiveTab,
 		getTabProps,
