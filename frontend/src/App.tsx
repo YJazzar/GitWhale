@@ -1,4 +1,5 @@
 import { House } from 'lucide-react';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import './App.css';
 import { CommandPalette } from './components/command-palette/CommandPalette';
@@ -6,18 +7,15 @@ import { FileTabs } from './components/file-tabs/file-tabs';
 import LoadingSpinner from './components/loading-spinner';
 import { ThemeProvider } from './components/theme-provider';
 import { Toaster } from './components/ui/toaster';
-import {
-	CommandPaletteContextKey,
-	useCommandPaletteState,
-} from './hooks/command-palette/use-command-palette-state';
+import { useRegisterGitCommands } from './hooks/command-palette/commands/git-commands';
+import { useRegisterNavigationCommands } from './hooks/command-palette/commands/navigation-commands';
+import { useCommandPaletteState } from './hooks/command-palette/use-command-palette-state';
 import { FileTabsSessionKeyGenerator, TabProps } from './hooks/state/useFileTabsHandlers';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
 import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
-import { useRegisterGitCommands } from './hooks/command-palette/commands/git-commands';
-import { useRegisterNavigationCommands } from './hooks/command-palette/commands/navigation-commands';
-import { useEffect } from 'react';
+import { CommandPaletteContextKey } from './types/command-palette';
 
 // Create a client
 const queryClient = new QueryClient({

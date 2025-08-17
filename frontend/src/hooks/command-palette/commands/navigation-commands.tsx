@@ -1,8 +1,8 @@
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
-import { CommandDefinition } from '@/types/command-palette';
+import { CommandDefinition, CommandPaletteContextKey } from '@/types/command-palette';
 import { Settings } from 'lucide-react';
 import { useEffect } from 'react';
-import { CommandPaletteContextKey } from '../use-command-palette-state';
+
 import { useCommandRegistry } from '../use-command-registry';
 
 // Navigate to Home
@@ -30,7 +30,7 @@ const navigateSettings: CommandDefinition<ReturnType<typeof useNavigateRootFilTa
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
-		action(providedHooks, parameters) {
+		runAction: async (providedHooks, parameters) => {
 			providedHooks.onOpenSettings();
 		},
 	},

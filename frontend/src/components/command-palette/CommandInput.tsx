@@ -1,11 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
-	CommandPaletteContextKey,
 	useCommandPaletteSelectionManager,
 	useCommandPaletteState,
 } from '@/hooks/command-palette/use-command-palette-state';
-import { RepoCommandPaletteContextData } from '@/types/command-palette';
+import { CommandPaletteContextKey, RepoCommandPaletteContextData } from '@/types/command-palette';
 import { CommandIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 

@@ -2,7 +2,7 @@ import { CommandDefinition } from '@/types/command-palette';
 import Fuse from 'fuse.js';
 import { atom, useAtom } from 'jotai';
 import { useEffect, useMemo } from 'react';
-import { CommandPaletteContextKey, useCommandPaletteAvailableContexts } from './use-command-palette-state';
+import { useCommandPaletteAvailableContexts } from './use-command-palette-state';
 
 // Global command registry - we'll populate this with commands
 const registeredCommandsAtom = atom<Map<string, CommandDefinition<unknown>>>(new Map());

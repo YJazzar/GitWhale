@@ -1,5 +1,11 @@
-import { CommandPaletteContextKey } from '@/hooks/command-palette/use-command-palette-state';
 import { ReactNode } from 'react';
+
+export enum CommandPaletteContextKey {
+	Root,
+	ApplicationLogs,
+	Settings,
+	Repo,
+}
 
 interface GenericCommandPaletteContextData {
 	contextKey: CommandPaletteContextKey;
@@ -37,7 +43,7 @@ export interface CommandParameter<ReqHooks> {
 export type CommandAction<ReqHooks> = {
 	sideEffects: CommandActionSideEffects[];
 	requestedHooks: () => ReqHooks;
-	action: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => void;
+	runAction: (providedHooks: ReqHooks, parameters: Map<string, ParameterData>) => Promise<void>;
 };
 
 // Command definition with inferred hooks type
