@@ -271,6 +271,10 @@ export function getLogState(repoPath: string) {
 			setNeedsToReload(true);
 		},
 
+		refreshRefs: () => {
+			loadAllRefsInner()
+		},
+
 		loadMoreCommits,
 
 		refetchRepo,
