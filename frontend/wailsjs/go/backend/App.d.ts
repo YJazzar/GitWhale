@@ -12,6 +12,8 @@ export function ClearApplicationLogHistory():Promise<void>;
 
 export function CloseRepo(arg1:string):Promise<backend.App>;
 
+export function DeleteCustomCommand(arg1:string):Promise<void>;
+
 export function EndDiffSession(arg1:string):Promise<void>;
 
 export function ExecuteShellCommand(arg1:string,arg2:string,arg3:string):Promise<void>;
@@ -21,6 +23,8 @@ export function GetAllRefs(arg1:string):Promise<Array<git_operations.GitRef>>;
 export function GetAppState():Promise<backend.App>;
 
 export function GetApplicationLogHistory():Promise<Array<logger.LogEntry>>;
+
+export function GetCustomCommands():Promise<Array<backend.UserDefinedCommandDefinition>>;
 
 export function GetDefaultShellCommand():Promise<string>;
 
@@ -48,11 +52,15 @@ export function ReadFile(arg1:string):Promise<string>;
 
 export function RunGitLog(arg1:string,arg2:git_operations.GitLogOptions):Promise<Array<git_operations.GitLogCommitInfo>>;
 
+export function SaveCustomCommand(arg1:backend.UserDefinedCommandDefinition):Promise<void>;
+
 export function StartDiffSession(arg1:git_operations.DiffOptions):Promise<git_operations.DiffSession>;
 
 export function Startup(arg1:context.Context,arg2:backend.StartupState):Promise<void>;
 
 export function ToggleStarRepo(arg1:string):Promise<boolean>;
+
+export function UpdateCustomCommands(arg1:Array<backend.UserDefinedCommandDefinition>):Promise<void>;
 
 export function UpdateSettings(arg1:backend.AppSettings):Promise<void>;
 

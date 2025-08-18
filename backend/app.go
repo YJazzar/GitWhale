@@ -279,3 +279,49 @@ func (app *App) ClearApplicationLogHistory() {
 func (app *App) ExecuteShellCommand(command string, workingDir, broadcastToTopic string) {
 	command_utils.StartRunningAndStreamCommand(app.ctx, command, workingDir, broadcastToTopic)
 }
+
+// Custom Commands CRUD operations
+
+func (app *App) GetCustomCommands() []UserDefinedCommandDefinition {
+	return app.AppConfig.Settings.CustomCommands
+}
+
+func (app *App) SaveCustomCommand(command UserDefinedCommandDefinition) error {
+	// Check if command with this ID already exists
+	existingIndex := -1
+	for i, existingCommand := range app.AppConfig.Settings.CustomCommands {
+		if existingCommand.ID == command.ID {
+			existingIndex = i
+			break
+		}
+	}
+
+	if existingIndex >= 0 {
+		// Update existing command
+		app.AppConfig.Settings.CustomCommands[existingIndex] = command
+	} else {
+		// Add new command
+		app.AppConfig.Settings.CustomCommands = append(app.AppConfig.Settings.CustomCommands, command)
+	}
+
+	return app.AppConfig.SaveAppConfig()
+}
+
+func (app *App) DeleteCustomCommand(commandId string) error {
+	// Find and remove the command
+	for i, command := range app.AppConfig.Settings.CustomCommands {
+		if command.ID == commandId {
+			app.AppConfig.Settings.CustomCommands = append(
+				app.AppConfig.Settings.CustomCommands[:i],
+				app.AppConfig.Settings.CustomCommands[i+1:]...,
+			)
+			return app.AppConfig.SaveAppConfig()
+		}
+	}
+	return fmt.Errorf("custom command with ID %s not found", commandId)
+}
+
+func (app *App) UpdateCustomCommands(commands []UserDefinedCommandDefinition) error {
+	app.AppConfig.Settings.CustomCommands = commands
+	return app.AppConfig.SaveAppConfig()
+}

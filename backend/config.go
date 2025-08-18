@@ -26,9 +26,10 @@ type AppConfig struct {
 }
 
 type AppSettings struct {
-	Git      GitSettings                    `json:"git"`
-	Terminal command_utils.TerminalSettings `json:"terminal"`
-	UI       UISettings                     `json:"ui"`
+	Git           GitSettings                    `json:"git"`
+	Terminal      command_utils.TerminalSettings `json:"terminal"`
+	UI            UISettings                     `json:"ui"`
+	CustomCommands []UserDefinedCommandDefinition `json:"customCommands"`
 }
 
 type UISettings struct {
@@ -37,6 +38,31 @@ type UISettings struct {
 
 type GitSettings struct {
 	CommitsToLoad int `json:"commitsToLoad"`
+}
+
+type UserDefinedCommandDefinition struct {
+	ID          string                    `json:"id"`
+	Title       string                    `json:"title"`
+	Description *string                   `json:"description,omitempty"`
+	Keywords    []string                  `json:"keywords,omitempty"`
+	Context     string                    `json:"context"`
+	Parameters  []UserDefinedParameter    `json:"parameters,omitempty"`
+	Action      UserDefinedCommandAction  `json:"action"`
+}
+
+type UserDefinedParameter struct {
+	ID               string   `json:"id"`
+	Type             string   `json:"type"` // "string" or "select"
+	Prompt           string   `json:"prompt"`
+	Description      *string  `json:"description,omitempty"`
+	Placeholder      *string  `json:"placeholder,omitempty"`
+	Required         *bool    `json:"required,omitempty"`
+	AllowCustomInput *bool    `json:"allowCustomInput,omitempty"` // for select type
+	Options          []string `json:"options,omitempty"`          // for select type
+}
+
+type UserDefinedCommandAction struct {
+	CommandString string `json:"commandString"`
 }
 
 func LoadAppConfig() (*AppConfig, error) {
@@ -63,6 +89,7 @@ func LoadAppConfig() (*AppConfig, error) {
 				UI: UISettings{
 					AutoShowCommitDetails: true, // Default to true for existing behavior
 				},
+				CustomCommands: []UserDefinedCommandDefinition{},
 			},
 			GitReposMap:     make(map[string]RepoContext),
 			RecentGitRepos:  []string{},
@@ -82,6 +109,9 @@ func LoadAppConfig() (*AppConfig, error) {
 	}
 	if config.Settings.Terminal.CursorStyle == "" {
 		config.Settings.Terminal.CursorStyle = "block"
+	}
+	if config.Settings.CustomCommands == nil {
+		config.Settings.CustomCommands = []UserDefinedCommandDefinition{}
 	}
 
 	return config, err

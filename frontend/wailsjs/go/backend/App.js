@@ -14,6 +14,10 @@ export function CloseRepo(arg1) {
   return window['go']['backend']['App']['CloseRepo'](arg1);
 }
 
+export function DeleteCustomCommand(arg1) {
+  return window['go']['backend']['App']['DeleteCustomCommand'](arg1);
+}
+
 export function EndDiffSession(arg1) {
   return window['go']['backend']['App']['EndDiffSession'](arg1);
 }
@@ -32,6 +36,10 @@ export function GetAppState() {
 
 export function GetApplicationLogHistory() {
   return window['go']['backend']['App']['GetApplicationLogHistory']();
+}
+
+export function GetCustomCommands() {
+  return window['go']['backend']['App']['GetCustomCommands']();
 }
 
 export function GetDefaultShellCommand() {
@@ -86,6 +94,10 @@ export function RunGitLog(arg1, arg2) {
   return window['go']['backend']['App']['RunGitLog'](arg1, arg2);
 }
 
+export function SaveCustomCommand(arg1) {
+  return window['go']['backend']['App']['SaveCustomCommand'](arg1);
+}
+
 export function StartDiffSession(arg1) {
   return window['go']['backend']['App']['StartDiffSession'](arg1);
 }
@@ -96,6 +108,10 @@ export function Startup(arg1, arg2) {
 
 export function ToggleStarRepo(arg1) {
   return window['go']['backend']['App']['ToggleStarRepo'](arg1);
+}
+
+export function UpdateCustomCommands(arg1) {
+  return window['go']['backend']['App']['UpdateCustomCommands'](arg1);
 }
 
 export function UpdateSettings(arg1) {

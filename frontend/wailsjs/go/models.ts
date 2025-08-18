@@ -12,6 +12,86 @@ export namespace backend {
 	        this.currentBranchName = source["currentBranchName"];
 	    }
 	}
+	export class UserDefinedCommandAction {
+	    commandString: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UserDefinedCommandAction(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commandString = source["commandString"];
+	    }
+	}
+	export class UserDefinedParameter {
+	    id: string;
+	    type: string;
+	    prompt: string;
+	    description?: string;
+	    placeholder?: string;
+	    required?: boolean;
+	    allowCustomInput?: boolean;
+	    options?: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new UserDefinedParameter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.type = source["type"];
+	        this.prompt = source["prompt"];
+	        this.description = source["description"];
+	        this.placeholder = source["placeholder"];
+	        this.required = source["required"];
+	        this.allowCustomInput = source["allowCustomInput"];
+	        this.options = source["options"];
+	    }
+	}
+	export class UserDefinedCommandDefinition {
+	    id: string;
+	    title: string;
+	    description?: string;
+	    keywords?: string[];
+	    context: string;
+	    parameters?: UserDefinedParameter[];
+	    action: UserDefinedCommandAction;
+	
+	    static createFrom(source: any = {}) {
+	        return new UserDefinedCommandDefinition(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.title = source["title"];
+	        this.description = source["description"];
+	        this.keywords = source["keywords"];
+	        this.context = source["context"];
+	        this.parameters = this.convertValues(source["parameters"], UserDefinedParameter);
+	        this.action = this.convertValues(source["action"], UserDefinedCommandAction);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class UISettings {
 	    autoShowCommitDetails: boolean;
 	
@@ -40,6 +120,7 @@ export namespace backend {
 	    git: GitSettings;
 	    terminal: command_utils.TerminalSettings;
 	    ui: UISettings;
+	    customCommands: UserDefinedCommandDefinition[];
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -50,6 +131,7 @@ export namespace backend {
 	        this.git = this.convertValues(source["git"], GitSettings);
 	        this.terminal = this.convertValues(source["terminal"], command_utils.TerminalSettings);
 	        this.ui = this.convertValues(source["ui"], UISettings);
+	        this.customCommands = this.convertValues(source["customCommands"], UserDefinedCommandDefinition);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -194,6 +276,9 @@ export namespace backend {
 		    return a;
 		}
 	}
+	
+	
+	
 	
 	
 	
