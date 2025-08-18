@@ -19,7 +19,7 @@ export const FileTabs: React.FC<FileTabManagerProps> = (props) => {
 	useKeyboardShortcut('w', () => {
 		let currentTab = handlers.activeTab;
 		if (currentTab) {
-			handlers.closeTab(currentTab);
+			handlers.closeTab(currentTab.tabKey);
 		}
 	});
 
@@ -75,7 +75,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 	const onCloseClick: React.MouseEventHandler<HTMLButtonElement> = (event) => {
 		event.preventDefault();
 		event.stopPropagation();
-		handlers.closeTab(file);
+		handlers.closeTab(file.tabKey);
 	};
 
 	const onOpenFileClick: React.MouseEventHandler<HTMLDivElement> = (event) => {

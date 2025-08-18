@@ -65,15 +65,27 @@ export function useNavigateRootFilTabs() {
 	// Callback to open custom command editor tab
 	const onOpenCustomCommandEditor = (commandId?: string) => {
 		const tabKey = commandId ? `$$custom-command-editor-${commandId}$$` : '$$custom-command-editor-new$$';
-		const title = commandId ? 'Edit Command' : 'New Command';
+		
+		let title = 'New Command';
+		if (commandId) {
+			// Try to get the command title from app state
+			const customCommands = appState.appState?.appConfig?.settings?.customCommands || [];
+			const command = customCommands.find(cmd => cmd.id === commandId);
+			title = command?.title ? command.title : `Edit Command`;
+		}
 		
 		fileTabs.openTab({
 			tabKey,
 			titleRender: () => <>{title}</>,
-			component: <CustomCommandEditor commandId={commandId} />,
+			component: <CustomCommandEditor originalCommandId={commandId} />,
 			isPermanentlyOpen: true,
 		});
 	};
 
-	return { onOpenHomePage, onOpenNewRepo, onOpenRepoWithPath, onOpenSettings, onOpenApplicationLogs, onOpenCustomCommandEditor };
+	const onCloseCustomCommandEditor = (commandId?: string) => { 
+		const tabKey = commandId ? `$$custom-command-editor-${commandId}$$` : '$$custom-command-editor-new$$';
+		fileTabs.closeTab(tabKey)
+	}
+
+	return { onOpenHomePage, onOpenNewRepo, onOpenRepoWithPath, onOpenSettings, onOpenApplicationLogs, onOpenCustomCommandEditor, onCloseCustomCommandEditor};
 }

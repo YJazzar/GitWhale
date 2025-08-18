@@ -27,11 +27,16 @@ export function useFileTabsHandlers(
 	/**
 	 * Close the specified tab
 	 */
-	const closeTab = (tabToClose: TabProps): void => {
+	const closeTab = (tabKeyToClose: string): void => {
 		const activeTabKey = state.activeTabKey;
 
 		let prevActiveIndex = state.openTabs.findIndex((file) => file.tabKey === activeTabKey);
-		if (tabToClose.tabKey === activeTabKey) {
+		if (prevActiveIndex === -1) {
+			return;
+		}
+
+		const tabPropsToClose = state.openTabs[prevActiveIndex];
+		if (tabKeyToClose === activeTabKey) {
 			prevActiveIndex += 1;
 		}
 
@@ -39,7 +44,7 @@ export function useFileTabsHandlers(
 			if (openFile.preventUserClose) {
 				return true; // don't close things the user isn't allowed to close
 			}
-			if (openFile.tabKey === tabToClose.tabKey) {
+			if (openFile.tabKey === tabKeyToClose) {
 				return false; // close the tab
 			}
 			return true;
@@ -56,20 +61,20 @@ export function useFileTabsHandlers(
 
 		const actuallyClosingFile = newAvailableTabs.length !== state.openTabs.length;
 		if (actuallyClosingFile) {
-			tabToClose.onTabClose?.();
+			tabPropsToClose.onTabClose?.();
 		}
 	};
 
 	/*
 	 * Switches to a tab using just the tab key. Assumes the tab is already open
 	 */
-	const switchToTab = (newTabKey: string): void => { 
+	const switchToTab = (newTabKey: string): void => {
 		// Make sure the tab exists first, then set it as the active tab
 		if (state.openTabs.some((tab) => tab.tabKey === newTabKey)) {
 			state.setActiveTabKey(newTabKey);
 			return;
 		}
-	}
+	};
 
 	/**
 	 * Open a new tab or switch to an existing tab with the same key
