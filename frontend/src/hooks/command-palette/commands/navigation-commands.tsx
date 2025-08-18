@@ -1,6 +1,6 @@
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { CommandDefinition, CommandPaletteContextKey } from '@/types/command-palette';
-import { FileText, FolderOpen, Home, Settings } from 'lucide-react';
+import { FileText, FolderOpen, Home, Settings, Terminal } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { UseAppState } from '@/hooks/state/use-app-state';
@@ -60,7 +60,71 @@ const navigateApplicationLogs: CommandDefinition<ReturnType<typeof useNavigateRo
 	},
 };
 
-function useOpenRepositoryHooks() {
+// Open a command editor
+const navigateNewCommand: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
+	id: 'navigate.new.customCommand',
+	title: 'New Custom Command',
+	icon: <Terminal className="h-4 w-4" />,
+	keywords: ['new', 'custom', 'command'],
+	context: CommandPaletteContextKey.Root,
+	action: {
+		type: 'function',
+		requestedHooks: () => {
+			return useNavigateRootFilTabs();
+		},
+		runAction: async (providedHooks, parameters) => {
+			providedHooks.onOpenCustomCommandEditor();
+		},
+	},
+};
+
+const editCommand: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
+	id: 'navigate.edit.customCommand',
+	title: 'Edit Custom Command',
+	icon: <Terminal className="h-4 w-4" />,
+	keywords: ['edit', 'custom', 'command'],
+	context: CommandPaletteContextKey.Root,
+	parameters: [
+		{
+			id: 'commandID',
+			type: 'select',
+			prompt: 'Command to edit',
+			required: true,
+			allowCustomInput: false,
+			options: (providedHooks) => {
+				return [
+					{
+						groupKey: 'custom commands',
+						groupName: '',
+						options:
+							providedHooks.appState?.appConfig?.settings?.customCommands?.map(
+								(customCommand) => {
+									return {
+										optionKey: customCommand.id,
+										optionValue: customCommand.title,
+									};
+								}
+							) ?? [],
+					},
+				];
+			},
+		},
+	],
+	action: {
+		type: 'function',
+		requestedHooks: useAppLevelHooks,
+		runAction: async (providedHooks, parameters) => {
+			const commandID = parameters.get('commandID');
+			if (!commandID?.value || commandID.value === '') {
+				throw 'No command was provided';
+			}
+
+			providedHooks.rootNavigation.onOpenCustomCommandEditor(commandID.value);
+		},
+	},
+};
+
+function useAppLevelHooks() {
 	return {
 		rootNavigation: useNavigateRootFilTabs(),
 		appState: UseAppState().appState,
@@ -68,7 +132,7 @@ function useOpenRepositoryHooks() {
 }
 
 // Open Repository
-const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks>> = {
+const openRepository: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
 	id: 'navigate.open.repo',
 	title: 'Open Repository',
 	icon: <FolderOpen className="h-4 w-4" />,
@@ -110,7 +174,7 @@ const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks
 						options: convertStringsToOptions(nonStarredRecentRepos),
 					});
 				}
-				
+
 				return options;
 			},
 			validation: async (value, context) => {
@@ -122,7 +186,7 @@ const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks
 	],
 	action: {
 		type: 'function',
-		requestedHooks: useOpenRepositoryHooks,
+		requestedHooks: useAppLevelHooks,
 		runAction: async (providedHooks, parameters) => {
 			const repoPath = parameters.get('repoPath');
 			providedHooks.rootNavigation.onOpenRepoWithPath(repoPath?.value ?? '');
@@ -134,7 +198,14 @@ const openRepository: CommandDefinition<ReturnType<typeof useOpenRepositoryHooks
 export function useRegisterNavigationCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
-	const gitCommands = [navigateHome, navigateSettings, navigateApplicationLogs, openRepository];
+	const gitCommands = [
+		navigateHome,
+		navigateSettings,
+		navigateApplicationLogs,
+		openRepository,
+		navigateNewCommand,
+		editCommand,
+	];
 
 	useEffect(() => {
 		commandRegistry.registerCommands(gitCommands);

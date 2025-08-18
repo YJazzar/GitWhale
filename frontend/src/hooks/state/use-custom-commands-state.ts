@@ -35,7 +35,7 @@ export function useCustomCommandsState() {
 			setIsLoading(true);
 			setError(null);
 			const backendCommands = await GetCustomCommands();
-			const frontendCommands = backendCommands.map(convertFromBackendType);
+			const frontendCommands = backendCommands?.map(convertFromBackendType) ?? [];
 			setCustomCommands(frontendCommands);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to load custom commands: ' + err);

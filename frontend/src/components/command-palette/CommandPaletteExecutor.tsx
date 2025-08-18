@@ -10,9 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCommandPaletteExecutor } from '@/hooks/command-palette/use-command-palette-state';
 import { cn } from '@/lib/utils';
-import { CommandParameter, SelectCommandParameter } from '@/types/command-palette';
+import { CommandParameter, SelectCommandParameter, SelectOptionGroup } from '@/types/command-palette';
 import { CheckCircle, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { EmptyState } from '../empty-state';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -134,7 +134,8 @@ export function CommandPaletteExecutor() {
 			<div className="pt-4 border-t">
 				<div className="flex items-center justify-between">
 					<div className="text-xs text-muted-foreground">
-						Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + Enter</kbd> to execute
+						Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + Enter</kbd> to
+						execute
 					</div>
 					<Button
 						onClick={() => {
@@ -236,6 +237,17 @@ const CommandPaletteSelectParameterInput = forwardRef<
 		setIsSelectPopupOpen(false);
 	};
 
+	const allOptionsMap = useMemo(() => {
+		const optionMap = new Map<string, SelectOptionGroup['options'][0]>();
+
+		optionGroups.forEach((group) => {
+			group.options.forEach((option) => {
+				optionMap.set(option.optionKey, option);
+			});
+		});
+		return optionMap;
+	}, [optionGroups]);
+
 	return (
 		<TooltipProvider>
 			<Popover open={isSelectPopupOpen} onOpenChange={setIsSelectPopupOpen} modal={true}>
@@ -249,7 +261,7 @@ const CommandPaletteSelectParameterInput = forwardRef<
 					>
 						{/* The name of the ref */}
 						<div className="flex w-full gap-1 min-w-0">
-							<span className={cn('truncate')}>{paramValue?.value}</span>
+							<span className={cn('truncate')}>{allOptionsMap.get(paramValue?.value ?? '')?.optionValue}</span>
 						</div>
 
 						<ChevronsUpDown className="w-4 h-4 shrink-0 opacity-50" />
@@ -261,7 +273,7 @@ const CommandPaletteSelectParameterInput = forwardRef<
 							placeholder="Search references or enter custom..."
 							className="h-9"
 							value={paramValue?.value}
-							onValueChange={(newValue) => setParameterValue(parameter.id, newValue)}
+							onValueChange={(newOptionKey) => setParameterValue(parameter.id, newOptionKey)}
 						/>
 						<CommandList>
 							<CommandEmpty>No references found.</CommandEmpty>
@@ -272,7 +284,7 @@ const CommandPaletteSelectParameterInput = forwardRef<
 										{optionGroup.options.map((option) => (
 											<CommandItem
 												key={option.optionKey}
-												value={option.optionValue}
+												value={option.optionKey}
 												onSelect={onParamValueChange}
 												className="flex items-center justify-between"
 											>
