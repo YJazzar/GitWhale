@@ -152,7 +152,7 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 
 	const addParameter = useCallback(() => {
 		const newParam: UserDefinedParameter = {
-			id: `param-${Date.now()}`,
+			id: ``,
 			type: 'string',
 			prompt: '',
 			required: false,
@@ -214,7 +214,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 							<Label htmlFor="context">Context *</Label>
 
 							<Select>
-								<SelectTrigger className="w-full">
+								<SelectTrigger
+									className={'w-full ' + (errors.context ? 'border-destructive' : '')}
+								>
 									<SelectValue
 										onChange={(newValue) => updateFormField('context', newValue)}
 										placeholder="Command context"
@@ -278,7 +280,7 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 							</div>
 						)}
 						<div className="text-sm text-muted-foreground mt-1">
-							Use {`{{parameterName}}`} to reference parameters
+							Use {`{{parameterID}}`} to reference parameters
 						</div>
 					</div>
 
@@ -318,16 +320,34 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 
 											<div>
 												<Label>Type</Label>
-												<select
-													value={param.type}
-													onChange={(e) =>
-														updateParameter(index, 'type', e.target.value)
-													}
-													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-												>
-													<option value="string">String</option>
-													<option value="select">Select</option>
-												</select>
+												
+
+												<Select>
+													<SelectTrigger
+														className={
+															'w-full ' +
+															(false ? 'border-destructive' : '')
+														}
+													>
+														<SelectValue
+															onChange={(newValue) =>
+																updateParameter(index, 'type', newValue)
+															}
+															placeholder="Param type"
+														/>
+													</SelectTrigger>
+													<SelectContent>
+														<SelectGroup>
+															<SelectItem value={'string'}>
+																String
+															</SelectItem>
+
+															<SelectItem value={'select'}>
+																Select
+															</SelectItem>
+														</SelectGroup>
+													</SelectContent>
+												</Select>
 											</div>
 
 											<div>
@@ -442,10 +462,7 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 					<div className="flex justify-between">
 						<div>
 							{commandId && (
-								<ConfirmDeleteButton
-									onDelete={handleDelete}
-									disabled={isLoading}
-								>
+								<ConfirmDeleteButton onDelete={handleDelete} disabled={isLoading}>
 									<Trash2 className="h-4 w-4 mr-2" />
 									Delete Command
 								</ConfirmDeleteButton>

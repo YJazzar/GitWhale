@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
 	DropdownMenu,
@@ -6,7 +5,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Trash2, ChevronDown } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import * as React from 'react';
 
 interface ConfirmDeleteButtonProps {
 	onDelete: () => void | Promise<void>;
@@ -41,8 +41,6 @@ export const ConfirmDeleteButton = React.forwardRef<HTMLButtonElement, ConfirmDe
 								Delete
 							</>
 						)}
-						{size !== 'sm' && <ChevronDown className="h-3 w-3 ml-1" />}
-						{size === 'sm' && children && <ChevronDown className="h-2 w-2 ml-0.5" />}
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-48">
