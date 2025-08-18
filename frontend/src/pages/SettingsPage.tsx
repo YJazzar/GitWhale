@@ -4,6 +4,7 @@ import {
 	TerminalSettings,
 	AppearanceSettings,
 	ApplicationInfo,
+	CustomCommands,
 	SettingsHeader,
 	SettingsLoading
 } from '@/components/settings';
@@ -23,6 +24,7 @@ export default function SettingsPage() {
 				<GitSettings />
 				<TerminalSettings />
 				<AppearanceSettings />
+				<CustomCommands />
 				<ApplicationInfo />
 			</div>
 		</div>

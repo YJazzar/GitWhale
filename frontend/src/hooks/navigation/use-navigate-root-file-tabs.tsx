@@ -4,6 +4,7 @@ import RepoFileTab from '@/components/repo-file-tab';
 import ApplicationLogsPage from '@/pages/ApplicationLogsPage';
 import RepoPage from '@/pages/repo/RepoPage';
 import SettingsPage from '@/pages/SettingsPage';
+import CustomCommandEditor from '@/pages/CustomCommandEditor';
 import { useCallback } from 'react';
 import { OpenNewRepo, OpenRepoWithPath } from '../../../wailsjs/go/backend/App';
 import { UseAppState } from '../state/use-app-state';
@@ -61,5 +62,18 @@ export function useNavigateRootFilTabs() {
 		fileTabs.switchToTab('$$home$$');
 	};
 
-	return { onOpenHomePage, onOpenNewRepo, onOpenRepoWithPath, onOpenSettings, onOpenApplicationLogs };
+	// Callback to open custom command editor tab
+	const onOpenCustomCommandEditor = (commandId?: string) => {
+		const tabKey = commandId ? `$$custom-command-editor-${commandId}$$` : '$$custom-command-editor-new$$';
+		const title = commandId ? 'Edit Command' : 'New Command';
+		
+		fileTabs.openTab({
+			tabKey,
+			titleRender: () => <>{title}</>,
+			component: <CustomCommandEditor commandId={commandId} />,
+			isPermanentlyOpen: true,
+		});
+	};
+
+	return { onOpenHomePage, onOpenNewRepo, onOpenRepoWithPath, onOpenSettings, onOpenApplicationLogs, onOpenCustomCommandEditor };
 }

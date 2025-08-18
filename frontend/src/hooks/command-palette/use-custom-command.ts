@@ -102,7 +102,7 @@ export function useCustomCommand(
 					parameters.forEach((paramData, key) => {
 						if (!!paramData.value && paramData.value !== '') {
 							const replaceMarker = `{{${paramData.id}}}`;
-							constructedCommandString.replaceAll(replaceMarker, paramData.value);
+							constructedCommandString = constructedCommandString.replaceAll(replaceMarker, paramData.value);
 						}
 					});
 
