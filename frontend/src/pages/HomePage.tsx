@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { UseAppState } from '@/hooks/state/use-app-state';
-import { Star, Settings, FolderOpen, FolderGit2, FileText } from 'lucide-react';
-import { backend } from 'wailsjs/go/models';
-import { OpenNewRepo, ToggleStarRepo } from '../../wailsjs/go/backend/App';
-import { useEffect, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
+import { UseAppState } from '@/hooks/state/use-app-state';
+import { FileText, FolderOpen, Lightbulb, Settings, Star } from 'lucide-react';
+import { memo } from 'react';
+import { ToggleStarRepo } from '../../wailsjs/go/backend/App';
 
 export default function HomePage() {
 	const { appState, refreshAppState } = UseAppState();
@@ -44,8 +43,12 @@ export default function HomePage() {
 	const recentRepos = appState?.appConfig?.recentGitRepos ?? [];
 	const nonStarredRecentRepos = recentRepos.filter((repo) => !starredRepos.includes(repo));
 
+	// Detect platform for keyboard shortcut
+	const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+	const shortcutKey = isMac ? '⌘' : 'Ctrl';
+
 	return (
-		<div className="h-full flex items-center justify-center p-8">
+		<div className="h-full flex flex-col items-center justify-center p-8">
 			<div className="grid grid-cols-2 gap-6 max-w-xl w-full">
 				{/* Column 1: actions */}
 				<div className="flex flex-col items-center justify-center">
@@ -98,6 +101,24 @@ export default function HomePage() {
 								</div>
 							</div>
 						)}
+					</div>
+				</div>
+			</div>
+
+			{/* Command Palette Tip */}
+			<div className="mt-8 max-w-xl w-full">
+				<div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+					<div className="flex items-center gap-2 text-primary">
+						<Lightbulb className="h-5 w-5" />
+						<span className="text-sm font-medium">Tip:</span>
+					</div>
+					<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						<span>Press</span>
+						<kbd className="inline-flex items-center gap-1 px-1.5 bg-muted border border-border rounded font-mono">
+						
+							{shortcutKey} + P
+						</kbd>
+						<span>to open the command palette</span>
 					</div>
 				</div>
 			</div>
