@@ -49,11 +49,19 @@ export function CustomCommands() {
 		return (
 			<Card>
 				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<Terminal className="h-5 w-5" />
-						Custom Commands
-					</CardTitle>
-					<CardDescription>Create and manage your custom commands</CardDescription>
+					<div className="flex items-center justify-between">
+						<div>
+							<CardTitle className="flex items-center gap-2">
+								<Terminal className="h-5 w-5" />
+								Custom Commands
+							</CardTitle>
+							<CardDescription>Create and manage your custom commands</CardDescription>
+						</div>
+						<Button onClick={handleCreateNew} size="sm" className="select-none" disabled>
+							<Plus className="h-4 w-4 mr-2" />
+							Add Command
+						</Button>
+					</div>
 				</CardHeader>
 				<CardContent>
 					<div className="text-center text-muted-foreground py-8">Loading custom commands...</div>
@@ -65,28 +73,26 @@ export function CustomCommands() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
-					<Terminal className="h-5 w-5" />
-					Custom Commands
-				</CardTitle>
-				<CardDescription>
-					Create and manage your custom commands for the command palette
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="space-y-4">
-				{error && (
-					<div className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</div>
-				)}
-
-				<div className="flex justify-between items-center">
-					<div className="text-sm text-muted-foreground">
-						{customCommands.length} custom {customCommands.length === 1 ? 'command' : 'commands'}
+				<div className="flex items-center justify-between">
+					<div>
+						<CardTitle className="flex items-center gap-2">
+							<Terminal className="h-5 w-5" />
+							Custom Commands
+						</CardTitle>
+						<CardDescription>
+							Create and manage your custom commands for the command palette
+						</CardDescription>
 					</div>
 					<Button onClick={handleCreateNew} size="sm" className="select-none">
 						<Plus className="h-4 w-4 mr-2" />
 						Add Command
 					</Button>
 				</div>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				{error && (
+					<div className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</div>
+				)}
 
 				{customCommands.length === 0 ? (
 					<div className="text-center py-8 text-muted-foreground">
@@ -99,40 +105,51 @@ export function CustomCommands() {
 						{customCommands.map((command) => (
 							<div
 								key={command.id}
-								className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors select-none"
+								className="group relative px-3 py-2.5 border border-border/50 rounded-lg hover:border-border hover:bg-muted/30 transition-all duration-200 select-none"
 							>
-								<div className="flex-1 min-w-0">
-									<div className="flex items-center gap-2">
-										<div className="font-medium truncate">{command.title}</div>
-										<span className="text-xs px-2 py-0.5 bg-muted rounded-full">
-											{getContextLabel(command.context)}
-										</span>
-									</div>
-									{command.description && (
-										<div className="text-sm text-muted-foreground truncate mt-1">
-											{command.description}
+								<div className="flex items-center justify-between gap-4">
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center gap-2 mb-1">
+											<h4 className="font-medium text-foreground truncate">
+												{command.title}
+											</h4>
+											<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+												{getContextLabel(command.context)}
+											</span>
 										</div>
-									)}
-									<div className="text-xs text-muted-foreground mt-1">
-										{command.action.commandString}
+										
+										<div className="flex items-center gap-3 text-xs text-muted-foreground">
+											{command.description && (
+												<span className="truncate">
+													{command.description}
+												</span>
+											)}
+											<div className="flex items-center gap-1.5 shrink-0">
+												<Terminal className="h-3 w-3" />
+												<code className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">
+													{command.action.commandString}
+												</code>
+											</div>
+										</div>
 									</div>
-								</div>
-								<div className="flex items-center gap-1 ml-4">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => handleEdit(command.id)}
-										className="h-8 w-8 p-0 select-none"
-									>
-										<Edit className="h-4 w-4" />
-									</Button>
-									<ConfirmDeleteButton
-										onDelete={() => handleDelete(command.id)}
-										size="sm"
-										className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-									>
-										<Trash2 className="h-4 w-4" />
-									</ConfirmDeleteButton>
+									
+									<div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => handleEdit(command.id)}
+											className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary select-none"
+										>
+											<Edit className="h-3.5 w-3.5" />
+										</Button>
+										<ConfirmDeleteButton
+											onDelete={() => handleDelete(command.id)}
+											size="sm"
+											className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive select-none"
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+										</ConfirmDeleteButton>
+									</div>
 								</div>
 							</div>
 						))}

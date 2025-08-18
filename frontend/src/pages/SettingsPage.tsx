@@ -24,7 +24,9 @@ export default function SettingsPage() {
 				<GitSettings />
 				<TerminalSettings />
 				<AppearanceSettings />
-				<CustomCommands />
+				<div className="lg:col-span-2">
+					<CustomCommands />
+				</div>
 				<ApplicationInfo />
 			</div>
 		</div>
