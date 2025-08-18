@@ -136,7 +136,9 @@ export function CommandPaletteTerminalShell() {
 							<div className="text-muted-foreground/60 italic text-xs">
 								{status === 'notStarted'
 									? 'No command output yet...'
-									: 'Waiting for command output...'}
+									: status === 'started'
+									? 'Waiting for command output...'
+									: 'No output recorded'}
 							</div>
 						)}
 						<div ref={bottomRef} />

@@ -6,7 +6,7 @@ import {
 	CommandPaletteContextKey,
 	RepoCommandPaletteContextData,
 } from '@/types/command-palette';
-import { GitBranch } from 'lucide-react';
+import { Download, DownloadCloud, GitBranch } from 'lucide-react';
 import { useEffect } from 'react';
 import { ValidateRef } from '../../../../wailsjs/go/backend/App';
 import { useCommandRegistry } from '../use-command-registry';
@@ -217,29 +217,57 @@ const gitCheckoutBranch: CommandDefinitionWithRepoState = {
 // 	},
 // };
 
-// // Git: Status
-// const gitStatus: CommandDefinitionWithRepoState = {
-// 	id: 'git.status',
-// 	title: 'Git: Status',
-// 	description: 'Show working tree status',
-// 	icon: <GitBranch className="h-4 w-4" />,
-// 	keywords: ['git', 'status', 'changes'],
-// 	context: CommandPaletteContextKey.Repo,
-// 	action: {
-// 		// command: 'git status',
-// 		requestedHooks: commandWithRepoStateRequestedHooks,
-// 		runAction: async (providedHooks, parameters) => {
-// 			// TODO: fill in with the right thing once terminal is supported
-// 			providedHooks?.logState.refreshLogAndRefs();
-// 		},
-// 	},
-// };
+// Git: Status
+const gitStatus: CommandDefinitionWithRepoState = {
+	id: 'git.status',
+	title: 'Git: Status',
+	icon: <GitBranch className="h-4 w-4" />,
+	keywords: ['git', 'status', 'changes'],
+	context: CommandPaletteContextKey.Repo,
+	parameters: [],
+	action: {
+		type: 'terminalCommand',
+		requestedHooks: commandWithRepoStateRequestedHooks,
+		runAction: async (providedHooks, parameters, commandExecutor) => {
+			if (!providedHooks?.repoPath) {
+				throw 'Need to always have a repo path';
+			}
+
+			const command = `git status`;
+			await commandExecutor(command, providedHooks.repoPath);
+		},
+	},
+};
+
+// Git: Status
+const gitFetch: CommandDefinitionWithRepoState = {
+	id: 'git.fetch',
+	title: 'Git: Fetch',
+	icon: <DownloadCloud className="h-4 w-4" />,
+	keywords: ['git', 'status', 'changes'],
+	context: CommandPaletteContextKey.Repo,
+	parameters: [],
+	action: {
+		type: 'terminalCommand',
+		requestedHooks: commandWithRepoStateRequestedHooks,
+		runAction: async (providedHooks, parameters, commandExecutor) => {
+			if (!providedHooks?.repoPath) {
+				throw 'Need to always have a repo path';
+			}
+
+			const command = `git fetch`;
+			await commandExecutor(command, providedHooks.repoPath);
+			// providedHooks?.repoSideBar.setActiveItem('log');
+			// providedHooks?.repoState?.logState.refreshLogAndRefs();
+		},
+	},
+};
 
 // Register all git commands
 export function useRegisterGitCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
-	const gitCommands = [gitCheckoutBranch];
+	const gitCommands = [gitCheckoutBranch, gitStatus, gitFetch];
 	// const gitCommands = [gitCheckoutBranch, gitCreateBranch, gitCommit, gitPull, gitStatus];
 
 	useEffect(() => {
