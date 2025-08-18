@@ -1,15 +1,15 @@
-import { useEffect } from 'react';
-import { useCommandRegistry } from '../use-command-registry';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { SidebarSessionKeyGenerator, useSidebarHandlers } from '@/hooks/state/useSidebarHandlers';
 import {
 	CommandDefinition,
 	CommandPaletteContextData,
 	CommandPaletteContextKey,
 	RepoCommandPaletteContextData,
 } from '@/types/command-palette';
-import { GitBranch, GitCommit, GitPullRequest } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
+import { useEffect } from 'react';
 import { ValidateRef } from '../../../../wailsjs/go/backend/App';
-import { SidebarSessionKeyGenerator, useSidebarHandlers } from '@/hooks/state/useSidebarHandlers';
+import { useCommandRegistry } from '../use-command-registry';
 
 type CommandDefinitionWithRepoState = CommandDefinition<
 	ReturnType<typeof commandWithRepoStateRequestedHooks> | undefined
