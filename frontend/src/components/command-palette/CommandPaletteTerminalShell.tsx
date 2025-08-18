@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCommandPaletteExecutor } from '@/hooks/command-palette/use-command-palette-state';
-import { AlertCircle, CheckCircle, Clock, Square, Terminal, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Square, Terminal, XCircle, StopCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 export function CommandPaletteTerminalShell() {
@@ -38,6 +38,8 @@ export function CommandPaletteTerminalShell() {
 				return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
 			case 'completed':
 				return <CheckCircle className="h-4 w-4 text-green-500" />;
+			case 'cancelled':
+				return <StopCircle className="h-4 w-4 text-orange-500" />;
 			case 'error':
 				return <XCircle className="h-4 w-4 text-red-500" />;
 			default:
@@ -61,6 +63,12 @@ export function CommandPaletteTerminalShell() {
 						Completed
 					</Badge>
 				);
+			case 'cancelled':
+				return (
+					<Badge variant="default" className="bg-orange-500">
+						Cancelled
+					</Badge>
+				);
 			case 'error':
 				return <Badge variant="destructive">Error</Badge>;
 			default:
@@ -74,7 +82,7 @@ export function CommandPaletteTerminalShell() {
 
 	const isRunning = status === 'started';
 	const hasOutput = terminalOutput && terminalOutput.length > 0;
-	const isComplete = status === 'completed' || status === 'error';
+	const isComplete = status === 'completed' || status === 'error' || status === 'cancelled';
 
 	return (
 		<div className="flex flex-col h-full p-4">
@@ -118,14 +126,6 @@ export function CommandPaletteTerminalShell() {
 				</div>
 			)}
 
-			{/* Progress bar for running commands */}
-			{isRunning && (
-				<div className="mb-3">
-					<Progress value={undefined} className="h-1.5" />
-					<p className="text-xs text-muted-foreground mt-1">Command is running...</p>
-				</div>
-			)}
-
 			{/* Terminal output */}
 			<div className="flex-1 border rounded-md bg-black/95 text-green-400 font-mono text-[10px]">
 				<ScrollArea ref={scrollAreaRef} className="h-full">
@@ -137,7 +137,9 @@ export function CommandPaletteTerminalShell() {
 								{status === 'notStarted'
 									? 'No command output yet...'
 									: status === 'started'
-									? 'Waiting for command output...'
+									? 'Command running - waiting for output...'
+									: status === 'cancelled'
+									? 'Command was cancelled'
 									: 'No output recorded'}
 							</div>
 						)}
@@ -176,13 +178,27 @@ export function CommandPaletteTerminalShell() {
 			)}
 
 			{/* Completion message */}
-			{isComplete && !error && (
+			{isComplete && !error && status !== 'cancelled' && (
 				<div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 rounded-md">
 					<div className="flex items-center gap-2 text-green-600 text-sm">
 						<CheckCircle className="h-4 w-4" />
 						<span>Command completed successfully</span>
 						{commandDuration && (
 							<span className="text-muted-foreground">in {commandDuration}</span>
+						)}
+					</div>
+					<p className="text-xs text-muted-foreground mt-1">Press Escape to close this dialog</p>
+				</div>
+			)}
+
+			{/* Cancellation message */}
+			{status === 'cancelled' && (
+				<div className="mt-2 p-2 bg-orange-500/10 border border-orange-500/20 rounded-md">
+					<div className="flex items-center gap-2 text-orange-600 text-sm">
+						<StopCircle className="h-4 w-4" />
+						<span>Command was cancelled</span>
+						{commandDuration && (
+							<span className="text-muted-foreground">after {commandDuration}</span>
 						)}
 					</div>
 					<p className="text-xs text-muted-foreground mt-1">Press Escape to close this dialog</p>

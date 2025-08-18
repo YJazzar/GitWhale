@@ -115,7 +115,6 @@ const selectedCommandInSearchDialogAtom = atom('');
 
 export function useCommandPaletteSelectionManager(autoSelectCommandOnChange: boolean) {
 	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
-	const [_isOpen, _setIsOpen] = useAtom(isCommandPaletteOpenAtom);
 	const [_selectedCommandID, _setSelectedCommandID] = useAtom(selectedCommandInSearchDialogAtom);
 
 	const registry = useCommandRegistry(_searchQuery);
@@ -212,6 +211,10 @@ export function useCommandPaletteExecutor() {
 	}, [_isCommandPaletteOpen, _setParameterValues, _setRunActionState]);
 
 	const onCancelInProgressCommand = () => {
+		if (_runActionState === 'executing') { 
+			return 
+		}
+
 		_setInProgressCommand(undefined);
 		shellExecutor.cancelCommand();
 		_setParameterValues(new Map());
@@ -340,7 +343,7 @@ const terminalCommandOutputAtom = atom('');
 const terminalCommandStateAtom = atom<{
 	commandArgs?: string;
 	commandWorkingDir?: string;
-	status: 'notStarted' | 'started' | 'completed' | 'error';
+	status: 'notStarted' | 'started' | 'completed' | 'error' | 'cancelled';
 	commandDuration?: string;
 	exitCode?: number;
 	error?: string;
@@ -452,7 +455,12 @@ function useCommandPaletteTerminalCommandExecutor() {
 				break;
 
 			case 'cancelled':
-				// _setTerminalCommandState('cancelled');
+				_setTerminalCommandState({
+					..._terminalCommandState,
+					status: 'cancelled',
+					commandDuration: event.duration,
+					exitCode: event.exitCode,
+				});
 				resolve('cancelled');
 				break;
 		}
@@ -473,7 +481,7 @@ function useCommandPaletteTerminalCommandExecutor() {
 		_setTerminalCommandState({
 			commandArgs: undefined,
 			commandWorkingDir: undefined,
-			status: 'notStarted',
+			status: 'cancelled',
 			activeTopic: undefined,
 			commandDuration: undefined,
 			exitCode: undefined,
