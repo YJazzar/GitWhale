@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { TagInput } from '@/components/ui/tag-input';
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button';
 import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
 import { Plus, Trash2, Save, Terminal } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -441,16 +442,13 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 					<div className="flex justify-between">
 						<div>
 							{commandId && (
-								<Button
-									type="button"
-									variant="destructive"
-									onClick={handleDelete}
+								<ConfirmDeleteButton
+									onDelete={handleDelete}
 									disabled={isLoading}
-									className="select-none"
 								>
 									<Trash2 className="h-4 w-4 mr-2" />
 									Delete Command
-								</Button>
+								</ConfirmDeleteButton>
 							)}
 						</div>
 

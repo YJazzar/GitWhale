@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button';
 import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { Edit, Plus, Trash2, Terminal } from 'lucide-react';
@@ -125,14 +126,13 @@ export function CustomCommands() {
 									>
 										<Edit className="h-4 w-4" />
 									</Button>
-									<Button
-										variant="ghost"
+									<ConfirmDeleteButton
+										onDelete={() => handleDelete(command.id)}
 										size="sm"
-										onClick={() => handleDelete(command.id)}
-										className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive select-none"
+										className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
 									>
 										<Trash2 className="h-4 w-4" />
-									</Button>
+									</ConfirmDeleteButton>
 								</div>
 							</div>
 						))}
