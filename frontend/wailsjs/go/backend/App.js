@@ -110,10 +110,6 @@ export function ToggleStarRepo(arg1) {
   return window['go']['backend']['App']['ToggleStarRepo'](arg1);
 }
 
-export function UpdateCustomCommands(arg1) {
-  return window['go']['backend']['App']['UpdateCustomCommands'](arg1);
-}
-
 export function UpdateSettings(arg1) {
   return window['go']['backend']['App']['UpdateSettings'](arg1);
 }

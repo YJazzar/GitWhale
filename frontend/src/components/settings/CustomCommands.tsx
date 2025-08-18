@@ -4,6 +4,7 @@ import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state'
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { Edit, Plus, Trash2, Terminal } from 'lucide-react';
 import { useCallback } from 'react';
+import { CommandPaletteContextKey } from '@/types/command-palette';
 
 export function CustomCommands() {
 	const { customCommands, isLoading, error, deleteCustomCommand } = useCustomCommandsState();
@@ -13,26 +14,30 @@ export function CustomCommands() {
 		onOpenCustomCommandEditor();
 	}, [onOpenCustomCommandEditor]);
 
-	const handleEdit = useCallback((commandId: string) => {
-		onOpenCustomCommandEditor(commandId);
-	}, [onOpenCustomCommandEditor]);
+	const handleEdit = useCallback(
+		(commandId: string) => {
+			onOpenCustomCommandEditor(commandId);
+		},
+		[onOpenCustomCommandEditor]
+	);
 
-	const handleDelete = useCallback(async (commandId: string) => {
-		if (confirm('Are you sure you want to delete this custom command?')) {
+	const handleDelete = useCallback(
+		async (commandId: string) => {
 			try {
 				await deleteCustomCommand(commandId);
 			} catch (err) {
 				// Error is handled by the hook
 				console.error('Failed to delete command:', err);
 			}
-		}
-	}, [deleteCustomCommand]);
+		},
+		[deleteCustomCommand]
+	);
 
-	const getContextLabel = (context: string) => {
+	const getContextLabel = (context: CommandPaletteContextKey) => {
 		switch (context) {
-			case 'global':
-				return 'Global';
-			case 'repo':
+			case CommandPaletteContextKey.Root:
+				return 'Root';
+			case CommandPaletteContextKey.Repo:
 				return 'Repository';
 			default:
 				return context;
@@ -47,14 +52,10 @@ export function CustomCommands() {
 						<Terminal className="h-5 w-5" />
 						Custom Commands
 					</CardTitle>
-					<CardDescription>
-						Create and manage your custom commands
-					</CardDescription>
+					<CardDescription>Create and manage your custom commands</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="text-center text-muted-foreground py-8">
-						Loading custom commands...
-					</div>
+					<div className="text-center text-muted-foreground py-8">Loading custom commands...</div>
 				</CardContent>
 			</Card>
 		);
@@ -73,9 +74,7 @@ export function CustomCommands() {
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{error && (
-					<div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
-						{error}
-					</div>
+					<div className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</div>
 				)}
 
 				<div className="flex justify-between items-center">

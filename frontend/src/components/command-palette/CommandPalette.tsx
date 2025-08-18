@@ -2,11 +2,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
 	useCommandPaletteSelectionManager,
-	useCommandPaletteState
+	useCommandPaletteState,
 } from '@/hooks/command-palette/use-command-palette-state';
 import { CommandPaletteInput } from './CommandPaletteInput';
 import { CommandPaletteExecutor } from './CommandPaletteExecutor';
 import { CommandPaletteSearch } from './CommandPaletteSearch';
+import { DialogTitle } from '@radix-ui/react-dialog';
 
 export function CommandPalette() {
 	const commandPaletteState = useCommandPaletteState();
@@ -21,14 +22,15 @@ export function CommandPalette() {
 	const isExecutingCommand = commandPaletteState.currentState === 'executingCommand';
 
 	return (
-			<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
-				<DialogContent
-					hideCloseIcon
-					className="sm:max-w-[800px] p-0 gap-0 h-[500px] flex flex-col"
-					onEscapeKeyDown={(e) => {
-						e.preventDefault();
-					}}
-				>
+		<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
+			<DialogTitle></DialogTitle>
+			<DialogContent
+				hideCloseIcon
+				className="sm:max-w-[800px] p-0 gap-0 h-[500px] flex flex-col"
+				onEscapeKeyDown={(e) => {
+					e.preventDefault();
+				}}
+			>
 				{/* UI to show when the user has not chosen a command yet */}
 				{isSearchingForCommand && (
 					<>
@@ -71,4 +73,3 @@ export function CommandPalette() {
 		</Dialog>
 	);
 }
-

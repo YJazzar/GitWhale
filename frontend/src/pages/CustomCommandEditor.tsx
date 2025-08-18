@@ -3,11 +3,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useCustomCommandsState, UserDefinedCommandDefinition, UserDefinedParameter } from '@/hooks/state/use-custom-commands-state';
+import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
 import { ArrowLeft, Plus, Trash2, Save, Terminal } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { z } from 'zod';
+import {
+	UserDefinedCommandDefinition,
+	UserDefinedParameter,
+} from '@/hooks/command-palette/use-custom-command';
+import { CommandPaletteContextKey } from '@/types/command-palette';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 
 // Zod validation schema
 const parameterSchema = z.object({
@@ -26,7 +40,7 @@ const commandSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
 	description: z.string().optional(),
 	keywords: z.array(z.string()).optional(),
-	context: z.enum(['global', 'repo'], { message: 'Context must be either global or repo' }),
+	context: z.enum(CommandPaletteContextKey, { message: 'Context must be either global or repo' }),
 	parameters: z.array(parameterSchema).optional(),
 	action: z.object({
 		commandString: z.string().min(1, 'Command string is required'),
@@ -40,13 +54,13 @@ interface CustomCommandEditorProps {
 export default function CustomCommandEditor({ commandId }: CustomCommandEditorProps) {
 	const { getCustomCommand, saveCustomCommand, deleteCustomCommand } = useCustomCommandsState();
 	const { onOpenSettings } = useNavigateRootFilTabs();
-	
+
 	const [formData, setFormData] = useState<UserDefinedCommandDefinition>({
 		id: '',
 		title: '',
 		description: '',
 		keywords: [],
-		context: 'global',
+		context: CommandPaletteContextKey.Root,
 		parameters: [],
 		action: {
 			commandString: '',
@@ -69,7 +83,7 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 			}
 		} else {
 			// Generate a unique ID for new commands
-			setFormData(prev => ({
+			setFormData((prev) => ({
 				...prev,
 				id: `custom-${Date.now()}`,
 			}));
@@ -84,7 +98,7 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 		} catch (error) {
 			if (error instanceof z.ZodError) {
 				const newErrors: Record<string, string> = {};
-				error.errors.forEach((err) => {
+				error.issues.forEach((err) => {
 					const path = err.path.join('.');
 					newErrors[path] = err.message;
 				});
@@ -131,16 +145,22 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 	}, [onOpenSettings]);
 
 	const updateFormField = useCallback((field: string, value: any) => {
-		setFormData(prev => ({
+		setFormData((prev) => ({
 			...prev,
 			[field]: value,
 		}));
 	}, []);
 
-	const updateKeywords = useCallback((keywords: string) => {
-		const keywordArray = keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
-		updateFormField('keywords', keywordArray);
-	}, [updateFormField]);
+	const updateKeywords = useCallback(
+		(keywords: string) => {
+			const keywordArray = keywords
+				.split(',')
+				.map((k) => k.trim())
+				.filter((k) => k.length > 0);
+			updateFormField('keywords', keywordArray);
+		},
+		[updateFormField]
+	);
 
 	const addParameter = useCallback(() => {
 		const newParam: UserDefinedParameter = {
@@ -149,52 +169,47 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 			prompt: '',
 			required: false,
 		};
-		
-		setFormData(prev => ({
+
+		setFormData((prev) => ({
 			...prev,
 			parameters: [...(prev.parameters || []), newParam],
 		}));
 	}, []);
 
 	const updateParameter = useCallback((index: number, field: string, value: any) => {
-		setFormData(prev => ({
+		setFormData((prev) => ({
 			...prev,
-			parameters: prev.parameters?.map((param, i) => 
-				i === index ? { ...param, [field]: value } : param
-			) || [],
+			parameters:
+				prev.parameters?.map((param, i) => (i === index ? { ...param, [field]: value } : param)) ||
+				[],
 		}));
 	}, []);
 
 	const removeParameter = useCallback((index: number) => {
-		setFormData(prev => ({
+		setFormData((prev) => ({
 			...prev,
 			parameters: prev.parameters?.filter((_, i) => i !== index) || [],
 		}));
 	}, []);
 
-	const updateParameterOptions = useCallback((index: number, options: string) => {
-		const optionArray = options.split(',').map(o => o.trim()).filter(o => o.length > 0);
-		updateParameter(index, 'options', optionArray);
-	}, [updateParameter]);
+	const updateParameterOptions = useCallback(
+		(index: number, options: string) => {
+			const optionArray = options
+				.split(',')
+				.map((o) => o.trim())
+				.filter((o) => o.length > 0);
+			updateParameter(index, 'options', optionArray);
+		},
+		[updateParameter]
+	);
 
 	return (
-		<div className="container mx-auto p-4 max-w-4xl">
-			<div className="mb-6">
-				<Button 
-					variant="ghost" 
-					onClick={handleCancel}
-					className="mb-4 select-none"
-				>
-					<ArrowLeft className="h-4 w-4 mr-2" />
-					Back to Settings
-				</Button>
-				
-				<div className="flex items-center gap-3">
-					<Terminal className="h-6 w-6" />
-					<h1 className="text-2xl font-bold">
-						{commandId ? 'Edit Custom Command' : 'Create Custom Command'}
-					</h1>
-				</div>
+		<div className="container mx-auto max-w-4xl">
+			<div className="flex items-center gap-3 p-4">
+				<Terminal className="h-6 w-6" />
+				<h1 className="text-2xl font-bold">
+					{commandId ? 'Edit Custom Command' : 'Create Custom Command'}
+				</h1>
 			</div>
 
 			<Card>
@@ -213,21 +228,42 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 								placeholder="Git: My Custom Command"
 								className={errors.title ? 'border-destructive' : ''}
 							/>
-							{errors.title && <div className="text-sm text-destructive mt-1">{errors.title}</div>}
+							{errors.title && (
+								<div className="text-sm text-destructive mt-1">{errors.title}</div>
+							)}
 						</div>
 
 						<div>
 							<Label htmlFor="context">Context *</Label>
-							<select
-								id="context"
-								value={formData.context}
-								onChange={(e) => updateFormField('context', e.target.value)}
-								className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-							>
-								<option value="global">Global</option>
-								<option value="repo">Repository</option>
-							</select>
-							{errors.context && <div className="text-sm text-destructive mt-1">{errors.context}</div>}
+
+							<Select>
+								<SelectTrigger className="w-full">
+									<SelectValue
+										onChange={(newValue) => updateFormField('context', newValue)}
+										placeholder="Command context"
+									/>
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										{[
+											CommandPaletteContextKey.Root,
+											CommandPaletteContextKey.Repo,
+											CommandPaletteContextKey.ApplicationLogs,
+											CommandPaletteContextKey.Settings,
+										].map((contextType) => {
+											return (
+												<SelectItem key={contextType} value={contextType}>
+													{contextType}
+												</SelectItem>
+											);
+										})}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+
+							{errors.context && (
+								<div className="text-sm text-destructive mt-1">{errors.context}</div>
+							)}
 						</div>
 					</div>
 
@@ -260,7 +296,11 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 							placeholder="git status --porcelain"
 							className={errors['action.commandString'] ? 'border-destructive' : ''}
 						/>
-						{errors['action.commandString'] && <div className="text-sm text-destructive mt-1">{errors['action.commandString']}</div>}
+						{errors['action.commandString'] && (
+							<div className="text-sm text-destructive mt-1">
+								{errors['action.commandString']}
+							</div>
+						)}
 						<div className="text-sm text-muted-foreground mt-1">
 							Use {`{{parameterName}}`} to reference parameters
 						</div>
@@ -293,7 +333,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 												<Label>Parameter ID *</Label>
 												<Input
 													value={param.id}
-													onChange={(e) => updateParameter(index, 'id', e.target.value)}
+													onChange={(e) =>
+														updateParameter(index, 'id', e.target.value)
+													}
 													placeholder="branchName"
 												/>
 											</div>
@@ -302,7 +344,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 												<Label>Type</Label>
 												<select
 													value={param.type}
-													onChange={(e) => updateParameter(index, 'type', e.target.value)}
+													onChange={(e) =>
+														updateParameter(index, 'type', e.target.value)
+													}
 													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 												>
 													<option value="string">String</option>
@@ -314,7 +358,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 												<Label>Prompt *</Label>
 												<Input
 													value={param.prompt}
-													onChange={(e) => updateParameter(index, 'prompt', e.target.value)}
+													onChange={(e) =>
+														updateParameter(index, 'prompt', e.target.value)
+													}
 													placeholder="Branch name"
 												/>
 											</div>
@@ -323,7 +369,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 												<Label>Placeholder</Label>
 												<Input
 													value={param.placeholder || ''}
-													onChange={(e) => updateParameter(index, 'placeholder', e.target.value)}
+													onChange={(e) =>
+														updateParameter(index, 'placeholder', e.target.value)
+													}
 													placeholder="main, develop, feature/..."
 												/>
 											</div>
@@ -332,7 +380,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 												<Label>Description</Label>
 												<Input
 													value={param.description || ''}
-													onChange={(e) => updateParameter(index, 'description', e.target.value)}
+													onChange={(e) =>
+														updateParameter(index, 'description', e.target.value)
+													}
 													placeholder="Choose the branch to checkout"
 												/>
 											</div>
@@ -342,7 +392,13 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 													<input
 														type="checkbox"
 														checked={param.required || false}
-														onChange={(e) => updateParameter(index, 'required', e.target.checked)}
+														onChange={(e) =>
+															updateParameter(
+																index,
+																'required',
+																e.target.checked
+															)
+														}
 													/>
 													Required
 												</label>
@@ -352,7 +408,13 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 														<input
 															type="checkbox"
 															checked={param.allowCustomInput || false}
-															onChange={(e) => updateParameter(index, 'allowCustomInput', e.target.checked)}
+															onChange={(e) =>
+																updateParameter(
+																	index,
+																	'allowCustomInput',
+																	e.target.checked
+																)
+															}
 														/>
 														Allow custom input
 													</label>
@@ -364,7 +426,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 													<Label>Options (comma-separated)</Label>
 													<Input
 														value={param.options?.join(', ') || ''}
-														onChange={(e) => updateParameterOptions(index, e.target.value)}
+														onChange={(e) =>
+															updateParameterOptions(index, e.target.value)
+														}
 														placeholder="main, develop, staging"
 													/>
 												</div>
@@ -389,7 +453,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 						) : (
 							<div className="text-center py-8 text-muted-foreground">
 								<div className="text-sm">No parameters defined</div>
-								<div className="text-xs">Parameters allow users to provide input to your command</div>
+								<div className="text-xs">
+									Parameters allow users to provide input to your command
+								</div>
 							</div>
 						)}
 					</div>
@@ -423,11 +489,7 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 							>
 								Cancel
 							</Button>
-							<Button
-								onClick={handleSave}
-								disabled={isLoading}
-								className="select-none"
-							>
+							<Button onClick={handleSave} disabled={isLoading} className="select-none">
 								<Save className="h-4 w-4 mr-2" />
 								{isLoading ? 'Saving...' : 'Save Command'}
 							</Button>

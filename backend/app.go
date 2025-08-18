@@ -320,8 +320,3 @@ func (app *App) DeleteCustomCommand(commandId string) error {
 	}
 	return fmt.Errorf("custom command with ID %s not found", commandId)
 }
-
-func (app *App) UpdateCustomCommands(commands []UserDefinedCommandDefinition) error {
-	app.AppConfig.Settings.CustomCommands = commands
-	return app.AppConfig.SaveAppConfig()
-}

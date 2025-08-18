@@ -2,10 +2,10 @@ import { ReactNode } from 'react';
 
 // MARK: Context and associated context-data definitions
 export enum CommandPaletteContextKey {
-	Root,
-	ApplicationLogs,
-	Settings,
-	Repo,
+	Root = 'root',
+	ApplicationLogs = 'applicationLogs',
+	Settings = 'settings',
+	Repo = 'repo',
 }
 
 interface GenericCommandPaletteContextData {
