@@ -127,16 +127,14 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 	const handleDelete = useCallback(async () => {
 		if (!commandId) return;
 
-		if (confirm('Are you sure you want to delete this command?')) {
-			try {
-				setIsLoading(true);
-				await deleteCustomCommand(commandId);
-				onOpenSettings();
-			} catch (error) {
-				console.error('Failed to delete command:', error);
-			} finally {
-				setIsLoading(false);
-			}
+		try {
+			setIsLoading(true);
+			await deleteCustomCommand(commandId);
+			onOpenSettings();
+		} catch (error) {
+			console.error('Failed to delete command:', error);
+		} finally {
+			setIsLoading(false);
 		}
 	}, [commandId, deleteCustomCommand, onOpenSettings]);
 
@@ -150,7 +148,6 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 			[field]: value,
 		}));
 	}, []);
-
 
 	const addParameter = useCallback(() => {
 		const newParam: UserDefinedParameter = {
@@ -182,9 +179,8 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 		}));
 	}, []);
 
-
 	return (
-		<div className="container mx-auto max-w-4xl">
+		<div className="container mx-auto max-w-4xl pb-4">
 			<div className="flex items-center gap-3 p-4">
 				<Terminal className="h-6 w-6" />
 				<h1 className="text-2xl font-bold">
@@ -405,7 +401,9 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 													<Label>Options</Label>
 													<TagInput
 														value={param.options || []}
-														onChange={(options) => updateParameter(index, 'options', options)}
+														onChange={(options) =>
+															updateParameter(index, 'options', options)
+														}
 														placeholder="main, develop, staging"
 													/>
 												</div>
