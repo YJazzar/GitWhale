@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { TagInput } from '@/components/ui/tag-input';
 import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
-import { ArrowLeft, Plus, Trash2, Save, Terminal } from 'lucide-react';
+import { Plus, Trash2, Save, Terminal } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { z } from 'zod';
@@ -18,7 +19,6 @@ import {
 	SelectContent,
 	SelectGroup,
 	SelectItem,
-	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
@@ -151,16 +151,6 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 		}));
 	}, []);
 
-	const updateKeywords = useCallback(
-		(keywords: string) => {
-			const keywordArray = keywords
-				.split(',')
-				.map((k) => k.trim())
-				.filter((k) => k.length > 0);
-			updateFormField('keywords', keywordArray);
-		},
-		[updateFormField]
-	);
 
 	const addParameter = useCallback(() => {
 		const newParam: UserDefinedParameter = {
@@ -192,16 +182,6 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 		}));
 	}, []);
 
-	const updateParameterOptions = useCallback(
-		(index: number, options: string) => {
-			const optionArray = options
-				.split(',')
-				.map((o) => o.trim())
-				.filter((o) => o.length > 0);
-			updateParameter(index, 'options', optionArray);
-		},
-		[updateParameter]
-	);
 
 	return (
 		<div className="container mx-auto max-w-4xl">
@@ -278,11 +258,10 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 					</div>
 
 					<div>
-						<Label htmlFor="keywords">Keywords (comma-separated)</Label>
-						<Input
-							id="keywords"
-							value={formData.keywords?.join(', ') || ''}
-							onChange={(e) => updateKeywords(e.target.value)}
+						<Label htmlFor="keywords">Keywords</Label>
+						<TagInput
+							value={formData.keywords || []}
+							onChange={(keywords) => updateFormField('keywords', keywords)}
 							placeholder="git, status, branch"
 						/>
 					</div>
@@ -423,12 +402,10 @@ export default function CustomCommandEditor({ commandId }: CustomCommandEditorPr
 
 											{param.type === 'select' && (
 												<div className="md:col-span-2">
-													<Label>Options (comma-separated)</Label>
-													<Input
-														value={param.options?.join(', ') || ''}
-														onChange={(e) =>
-															updateParameterOptions(index, e.target.value)
-														}
+													<Label>Options</Label>
+													<TagInput
+														value={param.options || []}
+														onChange={(options) => updateParameter(index, 'options', options)}
 														placeholder="main, develop, staging"
 													/>
 												</div>

@@ -4,7 +4,6 @@ import { backend } from '../../../wailsjs/go/models';
 import { useEffect } from 'react';
 import { useCommandRegistry } from '../command-palette/use-command-registry';
 import { useCustomCommand, UserDefinedCommandDefinition } from '../command-palette/use-custom-command';
-import { CommandPaletteContextKey } from '@/types/command-palette';
 
 const appStateAtom = atom<backend.App | undefined>(undefined);
 
