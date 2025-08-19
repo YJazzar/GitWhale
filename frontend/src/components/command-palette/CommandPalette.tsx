@@ -2,12 +2,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
 	useCommandPaletteSelectionManager,
-	useCommandPaletteState,
+	useCommandPaletteState
 } from '@/hooks/command-palette/use-command-palette-state';
-import { CommandPaletteInput } from './CommandPaletteInput';
-import { CommandPaletteExecutor } from './CommandPaletteExecutor';
-import { CommandPaletteSearch } from './CommandPaletteSearch';
 import { DialogTitle } from '@radix-ui/react-dialog';
+import { CommandPaletteExecutor } from './CommandPaletteExecutor';
+import { CommandPaletteInput } from './CommandPaletteInput';
+import { CommandPaletteSearch } from './CommandPaletteSearch';
 
 export function CommandPalette() {
 	const commandPaletteState = useCommandPaletteState();
@@ -15,14 +15,20 @@ export function CommandPalette() {
 
 	// Helpful aliases
 	const isActive = commandPaletteState.isActive;
-	const onChangeSelectionFromArrow = selectionManager.onChangeSelectionFromArrow;
 	const commandsToShow = selectionManager.commandsToShow;
 
 	const isSearchingForCommand = commandPaletteState.currentState === 'searchingForCommand';
 	const isExecutingCommand = commandPaletteState.currentState === 'executingCommand';
 
+	const onDialogOpenChange = (newValue: boolean) => {
+		if (isExecutingCommand) { 
+			return
+		}
+		isActive.set(newValue)
+	}
+
 	return (
-		<Dialog open={isActive.get()} onOpenChange={isActive.set} modal>
+		<Dialog open={isActive.get()} onOpenChange={onDialogOpenChange} modal>
 			<DialogTitle></DialogTitle>
 			<DialogContent
 				hideCloseIcon
