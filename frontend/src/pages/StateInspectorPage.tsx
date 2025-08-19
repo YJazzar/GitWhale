@@ -4,27 +4,29 @@ import { Separator } from '@/components/ui/separator';
 import { useStateInspectorValues } from '@/hooks/state/use-state-inspector-values';
 import {
 	Bug,
+	ChevronDown,
+	ChevronRight,
 	Copy,
 	Database,
 	Palette,
 	Search,
 	Sidebar,
-	Terminal
+	Terminal,
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
 function formatGroupTitle(groupKey: string): string {
 	return groupKey
 		.replace(/([A-Z])/g, ' $1')
-		.replace(/^./, str => str.toUpperCase())
-		// .replace(/Atoms$/, '')
+		.replace(/^./, (str) => str.toUpperCase())
+		.replace(/Atoms$/, '')
 		.trim();
 }
 
 function formatAtomLabel(atomKey: string): string {
 	return atomKey
 		.replace(/([A-Z])/g, ' $1')
-		.replace(/^./, str => str.toUpperCase())
+		.replace(/^./, (str) => str.toUpperCase())
 		.trim();
 }
 
@@ -41,7 +43,7 @@ function getGroupIcon(groupKey: string): React.ReactNode {
 		gitHomeStateAtoms: <Database className="w-4 h-4" />,
 		gitLogStateAtoms: <Terminal className="w-4 h-4" />,
 	};
-	
+
 	return iconMap[groupKey] || <Bug className="w-4 h-4" />;
 }
 
@@ -86,82 +88,62 @@ export default function StateInspectorPage() {
 		};
 	}, [allStateValues, searchQuery]);
 
+	// Check if group has any data to show
+	const hasDataToShow = useCallback((valuesGroup: Record<string, any>) => {
+		return Object.values(valuesGroup).some(
+			(value) => value !== null && value !== undefined && value !== ''
+		);
+	}, []);
+
 	return (
-		<div className="h-full flex flex-col">
-			{/* Toolbar */}
-			<div className="border-b bg-muted/20 p-4">
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-					<div className="flex items-center gap-3">
-						<div className="p-2 rounded-lg bg-primary/10 text-primary">
-							<Bug className="w-5 h-5" />
-						</div>
-						<div>
-							<h1 className="font-semibold text-lg">State Inspector</h1>
-							<p className="text-sm text-muted-foreground">
-								Debug and monitor application state
-							</p>
-						</div>
+		<div className="h-full flex flex-col bg-background">
+			{/* Compact Toolbar */}
+			<div className="bg-muted/10 px-3 py-2 shadow-sm">
+				<div className="flex items-center justify-between gap-3">
+					<div className="flex items-center gap-2">
+						<Bug className="w-4 h-4 text-primary" />
+						<h1 className="font-medium text-sm">State Inspector</h1>
+						<span className="text-xs text-muted-foreground">
+							{stateStats.total} variables ({stateStats.filtered} shown)
+						</span>
 					</div>
-					<div className="flex flex-wrap items-center gap-2">
-						{/* Search */}
+					<div className="flex items-center gap-2">
 						<div className="relative">
-							<Search className="w-4 h-4 text-muted-foreground absolute left-2 top-1/2 transform -translate-y-1/2" />
+							<Search className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 transform -translate-y-1/2" />
 							<Input
-								placeholder="Search state variables..."
+								placeholder="Search..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								className="pl-8 w-64 sm:w-48 lg:w-64"
+								className="pl-6 pr-2 py-1 h-7 text-xs w-48"
 							/>
 						</div>
-						<Separator orientation="vertical" className="h-6 mx-2" />
-
 						<Button
 							onClick={handleCopyAll}
 							variant="outline"
 							size="sm"
+							className="h-7 px-2 text-xs"
 							title="Copy all state to clipboard"
 						>
-							<Copy className="w-3 h-3 mr-1" />
-							Copy All
+							<Copy className="w-3 h-3" />
 						</Button>
 					</div>
 				</div>
 			</div>
 
-			{/* Main Content */}
-			<div className="flex-1 min-h-0 p-4 overflow-auto">
-				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-w-none">
+			{/* Main Content - Limited to 2 columns max */}
+			<div className="flex-1 overflow-auto p-2">
+				<div className="columns-1 lg:columns-2 gap-4 space-y-2">
 					{Object.entries(allStateValues).map(([groupKey, valuesGroup]) => (
 						<StateSection
 							key={groupKey}
+							groupKey={groupKey}
 							title={formatGroupTitle(groupKey)}
 							icon={getGroupIcon(groupKey)}
 							searchQuery={searchQuery}
-						>
-							<div className="space-y-3">
-								{Object.entries(valuesGroup).map(([atomKey, value]) => (
-									<StateDisplay
-										key={atomKey}
-										label={formatAtomLabel(atomKey)}
-										value={value}
-										searchQuery={searchQuery}
-									/>
-								))}
-							</div>
-						</StateSection>
+							hasData={hasDataToShow(valuesGroup)}
+							valuesGroup={valuesGroup}
+						/>
 					))}
-				</div>
-			</div>
-
-			{/* Status Bar */}
-			<div className="border-t bg-muted/10 px-4 py-2">
-				<div className="flex items-center justify-between text-xs text-muted-foreground">
-					<span>
-						State variables loaded: {stateStats.total} | Filtered: {stateStats.filtered}
-					</span>
-					<div className="flex items-center gap-4">
-						<span>Data size: {'<placeholder>'}</span>
-					</div>
 				</div>
 			</div>
 		</div>
@@ -169,55 +151,84 @@ export default function StateInspectorPage() {
 }
 
 interface StateSectionProps {
+	groupKey: string;
 	title: string;
 	icon: React.ReactNode;
-	children: React.ReactNode;
 	searchQuery: string;
+	hasData: boolean;
+	valuesGroup: Record<string, any>;
 }
 
-function StateSection({ title, icon, children, searchQuery }: StateSectionProps) {
-	const [isCollapsed, setIsCollapsed] = useState(false);
+function StateSection({ groupKey, title, icon, searchQuery, hasData, valuesGroup }: StateSectionProps) {
+	const [isCollapsed, setIsCollapsed] = useState(!hasData);
 
 	// Filter section content based on search query
 	const shouldShowSection = useMemo(() => {
 		if (!searchQuery) return true;
-		return title.toLowerCase().includes(searchQuery.toLowerCase());
-	}, [title, searchQuery]);
+		return (
+			title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			Object.keys(valuesGroup).some((key) => key.toLowerCase().includes(searchQuery.toLowerCase()))
+		);
+	}, [title, searchQuery, valuesGroup]);
 
 	if (!shouldShowSection) {
 		return null;
 	}
 
+	const itemCount = Object.keys(valuesGroup).length;
+	const dataCount = Object.values(valuesGroup).filter(
+		(v) => v !== null && v !== undefined && v !== ''
+	).length;
+
 	return (
-		<div className="border rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow">
+		<div className="break-inside-avoid mb-2 border rounded bg-card/50 shadow-sm">
 			<div
-				className="p-4 border-b cursor-pointer hover:bg-muted/50 flex items-center justify-between group transition-colors"
+				className="px-3 py-2 cursor-pointer hover:bg-muted/40 flex items-center justify-between group transition-colors bg-muted/15"
 				onClick={() => setIsCollapsed(!isCollapsed)}
 			>
-				<div className="flex items-center gap-3">
-					<div className="p-1 rounded-md bg-primary/10 text-primary">{icon}</div>
-					<span className="font-semibold text-foreground">{title}</span>
+				<div className="flex items-center gap-2 min-w-0 flex-1">
+					<div className="p-1 rounded text-primary shrink-0">{icon}</div>
+					<div className="min-w-0 flex-1">
+						<div className="font-semibold text-sm text-foreground truncate">{title}</div>
+						<div className="text-xs text-muted-foreground/70 font-mono truncate">{groupKey}</div>
+					</div>
 				</div>
-				<div className="flex items-center gap-2">
-					<span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-						{isCollapsed ? '▶' : '▼'}
+				<div className="flex items-center gap-1 shrink-0">
+					<span className="text-xs text-muted-foreground">
+						{dataCount}/{itemCount}
 					</span>
+					{isCollapsed ? (
+						<ChevronRight className="w-3 h-3 text-muted-foreground" />
+					) : (
+						<ChevronDown className="w-3 h-3 text-muted-foreground" />
+					)}
 				</div>
 			</div>
-			{!isCollapsed && <div className="p-4">{children}</div>}
+			{!isCollapsed && (
+				<div className="p-1 space-y-1">
+					{Object.entries(valuesGroup).map(([atomKey, value]) => (
+						<StateDisplay
+							key={atomKey}
+							atomKey={atomKey}
+							label={formatAtomLabel(atomKey)}
+							value={value}
+							searchQuery={searchQuery}
+						/>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
 
 interface StateDisplayProps {
+	atomKey: string;
 	label: string;
 	value: unknown;
 	searchQuery?: string;
 }
 
-function StateDisplay({ label, value, searchQuery }: StateDisplayProps) {
-	const [isExpanded, setIsExpanded] = useState(false);
-
+function StateDisplay({ atomKey, label, value, searchQuery }: StateDisplayProps) {
 	const formatValue = (val: unknown): string => {
 		if (val === null) return 'null';
 		if (val === undefined) return 'undefined';
@@ -225,77 +236,113 @@ function StateDisplay({ label, value, searchQuery }: StateDisplayProps) {
 		if (typeof val === 'number' || typeof val === 'boolean') return String(val);
 		if (typeof val === 'object') {
 			try {
-				return JSON.stringify(val, null, isExpanded ? 2 : 0);
+				return JSON.stringify(val, null, 2);
 			} catch {
-				return '[Object] (threw exception while stringify-ing)';
+				return '[Object Error]';
 			}
 		}
 		return String(val);
 	};
 
-	const isComplexValue = typeof value === 'object' && value !== null;
 	const displayValue = formatValue(value);
+	const hasValue = value !== null && value !== undefined && value !== '';
 
 	// Check if this item matches the search query
 	const matchesSearch = useMemo(() => {
 		if (!searchQuery) return true;
 		const query = searchQuery.toLowerCase();
-		return label.toLowerCase().includes(query) || displayValue.toLowerCase().includes(query);
-	}, [label, displayValue, searchQuery]);
+		return (
+			label.toLowerCase().includes(query) ||
+			atomKey.toLowerCase().includes(query) ||
+			displayValue.toLowerCase().includes(query)
+		);
+	}, [label, atomKey, displayValue, searchQuery]);
 
 	// Don't render if doesn't match search
 	if (!matchesSearch) {
 		return null;
 	}
 
-	// Get value color based on type
-	const getValueColor = (val: unknown): string => {
-		if (val === null || val === undefined) return 'text-muted-foreground';
-		if (typeof val === 'boolean') return val ? 'text-green-600' : 'text-red-600';
-		if (typeof val === 'number') return 'text-blue-600';
-		if (typeof val === 'string') return 'text-purple-600';
-		return 'text-foreground';
+	// Get value color and type indicator (dark mode friendly)
+	const getValueStyle = (val: unknown) => {
+		if (val === null || val === undefined)
+			return {
+				color: 'text-muted-foreground/60',
+				type: 'null',
+				bg: 'bg-muted/20 dark:bg-muted/10',
+				badgeColor: 'bg-muted text-muted-foreground',
+			};
+		if (typeof val === 'boolean')
+			return {
+				color: val ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
+				type: 'bool',
+				bg: val ? 'bg-emerald-50/50 dark:bg-emerald-950/20' : 'bg-red-50/50 dark:bg-red-950/20',
+				badgeColor: val
+					? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+					: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+			};
+		if (typeof val === 'number')
+			return {
+				color: 'text-blue-600 dark:text-blue-400',
+				type: 'num',
+				bg: 'bg-blue-50/50 dark:bg-blue-950/20',
+				badgeColor: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+			};
+		if (typeof val === 'string')
+			return {
+				color: 'text-purple-600 dark:text-purple-400',
+				type: 'str',
+				bg: 'bg-purple-50/50 dark:bg-purple-950/20',
+				badgeColor: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+			};
+		if (typeof val === 'object')
+			return {
+				color: 'text-orange-600 dark:text-orange-400',
+				type: 'obj',
+				bg: 'bg-orange-50/50 dark:bg-orange-950/20',
+				badgeColor: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300',
+			};
+		return {
+			color: 'text-foreground',
+			type: '?',
+			bg: 'bg-muted/20 dark:bg-muted/10',
+			badgeColor: 'bg-muted text-muted-foreground',
+		};
 	};
 
+	const style = getValueStyle(value);
+
 	return (
-		<div className="border rounded p-3 bg-background hover:bg-muted/30 transition-colors">
-			<div className="flex items-start justify-between gap-2">
-				<span className="text-sm font-medium text-muted-foreground min-w-0 flex-1">{label}:</span>
-				<div className="flex items-center gap-1 shrink-0">
-					<span
-						className={`text-xs px-1.5 py-0.5 rounded-full border ${getValueColor(
-							value
-						)} bg-muted/50`}
-					>
-						{typeof value}
-					</span>
-					{isComplexValue && (
+		<div
+			className={`rounded text-xs transition-colors ${
+				hasValue ? 'bg-background hover:bg-muted/20' : 'bg-muted/10 hover:bg-muted/20'
+			} ${!hasValue ? 'opacity-60' : ''}`}
+		>
+			<div className="px-2 py-1">
+				<div className="flex items-center justify-between gap-2 mb-1">
+					<div className="flex items-center gap-1 flex-1">
+						<span className="font-medium text-foreground truncate">{label}</span>
+						<span className="text-muted-foreground/60 font-mono text-xs shrink-0">
+							({atomKey})
+						</span>
+					</div>
+					<div className="flex items-center gap-1 shrink-0">
+						<span className={`text-xs px-1 py-0.5 rounded font-mono ${style.badgeColor}`}>
+							{style.type}
+						</span>
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={() => setIsExpanded(!isExpanded)}
-							className="h-6 w-6 p-0 hover:bg-muted"
-							title={isExpanded ? 'Collapse' : 'Expand'}
+							onClick={() => navigator.clipboard.writeText(String(value))}
+							className="h-4 w-4 p-0 hover:bg-muted"
+							title="Copy value"
 						>
-							{isExpanded ? '−' : '+'}
+							<Copy className="w-2.5 h-2.5" />
 						</Button>
-					)}
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => navigator.clipboard.writeText(displayValue)}
-						className="h-6 w-6 p-0 hover:bg-muted"
-						title="Copy value"
-					>
-						<Copy className="w-3 h-3" />
-					</Button>
+					</div>
 				</div>
-			</div>
-			<div className="mt-2">
 				<div
-					className={`text-xs ${getValueColor(value)} ${
-						isExpanded ? 'whitespace-pre-wrap' : 'line-clamp-3'
-					} font-mono bg-muted/20 p-2 rounded border-l-2 border-primary/20 overflow-hidden`}
+					className={`${style.color} font-mono text-xs p-1.5 rounded ${style.bg} whitespace-pre-wrap overflow-auto max-h-96`}
 				>
 					{displayValue}
 				</div>
