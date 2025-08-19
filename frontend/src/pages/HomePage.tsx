@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { FileText, FolderOpen, Lightbulb, Settings, Star } from 'lucide-react';
-import { memo } from 'react';
 import { ToggleStarRepo } from '../../wailsjs/go/backend/App';
 
 export default function HomePage() {
@@ -156,7 +155,7 @@ function RepoEntry(props: RepoEntryProps) {
 				className="flex-1 justify-start"
 				title={repoPath}
 			>
-				{repoPath} hi
+				{repoPath}
 			</Button>
 		</div>
 	);
