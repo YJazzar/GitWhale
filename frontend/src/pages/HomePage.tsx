@@ -38,7 +38,7 @@ export default function HomePage() {
 								onClick={rootNavigation.onOpenNewRepo}
 								className="justify-start p-0"
 							>
-								<FolderOpen />
+								<FolderOpen className="h-4 w-4 mr-2" />
 								Open Repository
 							</Button>
 						</li>
@@ -68,7 +68,7 @@ export default function HomePage() {
 								onClick={rootNavigation.onOpenStateInspector}
 								className="justify-start p-0"
 							>
-								<Bug className="h-4 w-4" />
+								<Bug className="h-4 w-4 mr-2" />
 								State Inspector
 							</Button>
 						</li>
