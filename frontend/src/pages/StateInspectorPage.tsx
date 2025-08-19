@@ -13,16 +13,48 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
+function formatGroupTitle(groupKey: string): string {
+	return groupKey
+		.replace(/([A-Z])/g, ' $1')
+		.replace(/^./, str => str.toUpperCase())
+		// .replace(/Atoms$/, '')
+		.trim();
+}
+
+function formatAtomLabel(atomKey: string): string {
+	return atomKey
+		.replace(/([A-Z])/g, ' $1')
+		.replace(/^./, str => str.toUpperCase())
+		.trim();
+}
+
+function getGroupIcon(groupKey: string): React.ReactNode {
+	const iconMap: Record<string, React.ReactNode> = {
+		appStateAtoms: <Database className="w-4 h-4" />,
+		applicationLogsStateAtoms: <Terminal className="w-4 h-4" />,
+		commandPaletteStateAtoms: <Palette className="w-4 h-4" />,
+		commandRegistryStateAtoms: <Terminal className="w-4 h-4" />,
+		customCommandStateAtoms: <Terminal className="w-4 h-4" />,
+		fileTabsStateAtoms: <Bug className="w-4 h-4" />,
+		sidebarStateAtoms: <Sidebar className="w-4 h-4" />,
+		gitDiffStateAtoms: <Search className="w-4 h-4" />,
+		gitHomeStateAtoms: <Database className="w-4 h-4" />,
+		gitLogStateAtoms: <Terminal className="w-4 h-4" />,
+	};
+	
+	return iconMap[groupKey] || <Bug className="w-4 h-4" />;
+}
+
 export default function StateInspectorPage() {
 	const [searchQuery, setSearchQuery] = useState('');
 
 	// Get all state values
-	const stateValues = useStateInspectorValues();
+	const allStateValues = useStateInspectorValues();
 
 	const handleCopyAll = useCallback(() => {
-		const allStateJson = JSON.stringify(stateValues, null, 2);
+		const allStateJson = JSON.stringify(allStateValues, null, 2);
 		navigator.clipboard.writeText(allStateJson);
-	}, [stateValues]);
+	}, [allStateValues]);
 
 	// Calculate state statistics
 	const stateStats = useMemo(() => {
@@ -39,7 +71,7 @@ export default function StateInspectorPage() {
 			return result;
 		};
 
-		const flatStates = flatten(stateValues);
+		const flatStates = flatten(allStateValues);
 		const filteredStates = searchQuery
 			? flatStates.filter(
 					(state) =>
@@ -52,7 +84,7 @@ export default function StateInspectorPage() {
 			total: flatStates.length,
 			filtered: filteredStates.length,
 		};
-	}, [stateValues, searchQuery]);
+	}, [allStateValues, searchQuery]);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -99,140 +131,25 @@ export default function StateInspectorPage() {
 			{/* Main Content */}
 			<div className="flex-1 min-h-0 p-4 overflow-auto">
 				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-w-none">
-					{/* Core Application State Section */}
-					<StateSection
-						title="Core Application State"
-						icon={<Database className="w-4 h-4" />}
-						searchQuery={searchQuery}
-					>
-						<div className="space-y-3">
-							<StateDisplay
-								label="App Config Loaded"
-								value={stateValues.coreState.appConfigLoaded}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="App Config"
-								value={stateValues.coreState.appConfig}
-								searchQuery={searchQuery}
-							/>
-						</div>
-					</StateSection>
-
-					{/* Command Palette State Section */}
-					<StateSection
-						title="Command Palette State"
-						icon={<Palette className="w-4 h-4" />}
-						searchQuery={searchQuery}
-					>
-						<div className="space-y-3">
-							<StateDisplay
-								label="Dialog Visual State"
-								value={stateValues.commandPaletteState.dialogVisualState}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Search Query"
-								value={stateValues.commandPaletteState.searchQuery}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Current State"
-								value={stateValues.commandPaletteState.currentState}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Available Context Keys"
-								value={stateValues.commandPaletteState.availableContextKeys}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Available Contexts Map"
-								value={stateValues.commandPaletteState.availableContextsMap}
-								searchQuery={searchQuery}
-							/>
-						</div>
-					</StateSection>
-
-					{/* Sidebar State Section */}
-					<StateSection
-						title="Sidebar State"
-						icon={<Sidebar className="w-4 h-4" />}
-						searchQuery={searchQuery}
-					>
-						<div className="space-y-3">
-							<StateDisplay
-								label="Current Repo Path"
-								value={stateValues.sidebarState.currentRepoPath}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Sidebar Selection"
-								value={stateValues.sidebarState.sidebarSelection}
-								searchQuery={searchQuery}
-							/>
-						</div>
-					</StateSection>
-
-					{/* Logging State Section */}
-					<StateSection
-						title="Logging State"
-						icon={<Terminal className="w-4 h-4" />}
-						searchQuery={searchQuery}
-					>
-						<div className="space-y-3">
-							<StateDisplay
-								label="Filter Level"
-								value={stateValues.logState.filterLevel}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Is Loading"
-								value={stateValues.logState.isLoading}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Has Terminal Instance"
-								value={stateValues.logState.terminalInstance}
-								searchQuery={searchQuery}
-							/>
-						</div>
-					</StateSection>
-
-					{/* Custom Commands State Section */}
-					<StateSection
-						title="Custom Commands State"
-						icon={<Terminal className="w-4 h-4" />}
-						searchQuery={searchQuery}
-					>
-						<div className="space-y-3">
-							<StateDisplay
-								label="Commands"
-								value={stateValues.customCommandsState.commands}
-								searchQuery={searchQuery}
-							/>
-							<StateDisplay
-								label="Selected Command ID"
-								value={stateValues.customCommandsState.selectedCommandId}
-								searchQuery={searchQuery}
-							/>
-						</div>
-					</StateSection>
-
-					{/* File Tabs State Section */}
-					<StateSection
-						title="File Tabs State"
-						icon={<Bug className="w-4 h-4" />}
-						searchQuery={searchQuery}
-					>
-						<div className="space-y-3">
-							<StateDisplay
-								label="Note"
-								value="File tabs state is session-based and requires specific session keys to display"
-								searchQuery={searchQuery}
-							/>
-						</div>
-					</StateSection>
+					{Object.entries(allStateValues).map(([groupKey, valuesGroup]) => (
+						<StateSection
+							key={groupKey}
+							title={formatGroupTitle(groupKey)}
+							icon={getGroupIcon(groupKey)}
+							searchQuery={searchQuery}
+						>
+							<div className="space-y-3">
+								{Object.entries(valuesGroup).map(([atomKey, value]) => (
+									<StateDisplay
+										key={atomKey}
+										label={formatAtomLabel(atomKey)}
+										value={value}
+										searchQuery={searchQuery}
+									/>
+								))}
+							</div>
+						</StateSection>
+					))}
 				</div>
 			</div>
 
