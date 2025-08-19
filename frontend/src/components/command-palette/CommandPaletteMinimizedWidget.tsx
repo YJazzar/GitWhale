@@ -8,11 +8,11 @@ export function CommandPaletteMinimizedWidget() {
 	const commandPaletteState = useCommandPaletteState();
 	const executorState = useCommandPaletteExecutor();
 
-	const { status, commandArgs, cancelTerminalCommand } = executorState.terminalCommandState;
+	const { status, cancelTerminalCommand } = executorState.terminalCommandState;
 	const inProgressCommand = executorState._inProgressCommand.value;
 
 	const handleRestore = () => {
-		commandPaletteState.isMinimized.set(false);
+		commandPaletteState.isActive.set(true);
 	};
 
 	const handleCancel = () => {
@@ -107,13 +107,6 @@ export function CommandPaletteMinimizedWidget() {
 					</Button>
 				</div>
 			</div>
-
-			{/* Progress indicator for running commands */}
-			{isRunning && (
-				<div className="px-3 pb-2">
-					<Progress value={undefined} className="h-1" />
-				</div>
-			)}
 		</div>
 	);
 }

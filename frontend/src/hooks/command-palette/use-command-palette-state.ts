@@ -38,9 +38,42 @@ export function useCommandPaletteState() {
 	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
+	const _terminalCommandState = useAtomValue(terminalCommandStateAtom);
+
+	const calculateCurrentState = (): CommandPaletteCurrentState => {
+		if (!!_inProgressCommand) {
+			return 'executingCommand';
+		}
+
+		return 'searchingForCommand';
+	};
 
 	const setIsOpenWrapper = (newValue: boolean) => {
-		_setIsOpen(newValue);
+		if (!_isOpen && !_isMinimized) {
+			// User wants to open the command window. always allow it
+			_setIsOpen(true);
+			return;
+		}
+
+		if (_isOpen && _isMinimized) {
+			// Currently minimized and user wants to open it, so un-minimize it
+			_setIsMinimized(false);
+			return;
+		}
+
+		// Otherwise, window isOpen, and it is not minimized
+
+		// Check if a terminal command is currently executing
+		const isTerminalCommandRunning = _terminalCommandState.status === 'started';
+		const isExecutingCommand = calculateCurrentState() === 'executingCommand';
+
+		if (isExecutingCommand && isTerminalCommandRunning) {
+			// Minimize instead of closing when terminal command is running
+			_setIsMinimized(true);
+		} else {
+			// Normal close behavior for other states
+			_setIsOpen(false);
+		}
 	};
 
 	const _onCommandPalletteClose = () => {
@@ -80,14 +113,6 @@ export function useCommandPaletteState() {
 		_setInProgressCommand(command);
 	};
 
-	const calculateCurrentState = (): CommandPaletteCurrentState => {
-		if (!!_inProgressCommand) {
-			return 'executingCommand';
-		}
-
-		return 'searchingForCommand';
-	};
-
 	return {
 		isActive: {
 			get: () => _isOpen,
@@ -97,7 +122,6 @@ export function useCommandPaletteState() {
 
 		isMinimized: {
 			get: () => _isMinimized,
-			set: _setIsMinimized,
 		},
 
 		searchQuery: {
@@ -165,22 +189,24 @@ export function useCommandPaletteSelectionManager(autoSelectCommandOnChange: boo
 		}
 	};
 
-	const onSelectCommand = (commandID: string) => { 
+	const onSelectCommand = (commandID: string) => {
 		// Double check that the commandID is for a valid one
-		const newCommandToSelectIndex = registry.allAvailableCommands.findIndex(command => command.id === commandID)
-		if (newCommandToSelectIndex === -1) { 
-			return
+		const newCommandToSelectIndex = registry.allAvailableCommands.findIndex(
+			(command) => command.id === commandID
+		);
+		if (newCommandToSelectIndex === -1) {
+			return;
 		}
 
-		_setSelectedCommandID(commandID)
-	}
+		_setSelectedCommandID(commandID);
+	};
 
 	return {
 		showNoCommandsFound,
 		commandsToShow,
 		onChangeSelectionFromArrow,
 		selectedCommand,
-		onSelectCommand
+		onSelectCommand,
 	};
 }
 
@@ -219,8 +245,8 @@ export function useCommandPaletteExecutor() {
 	}, [_isCommandPaletteOpen, _setParameterValues, _setRunActionState]);
 
 	const onCancelInProgressCommand = () => {
-		if (_runActionState === 'executing') { 
-			return 
+		if (_runActionState === 'executing') {
+			return;
 		}
 
 		_setInProgressCommand(undefined);
