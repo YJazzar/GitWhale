@@ -67,17 +67,8 @@ export function CommandPalette() {
 
 					{/* Footer */}
 					<div className="p-3 border-t bg-muted/30">
-						<div className="flex items-center justify-between text-xs text-muted-foreground">
-							<div className="flex items-center gap-4">
-								<span>↑↓ to navigate</span>
-								<span>↵ to select</span>
-								<span>Esc to close</span>
-							</div>
-							<div>
-								{commandsToShow.length} command
-								{commandsToShow.length !== 1 ? 's' : ''}
-							</div>
-						</div>
+						{isSearchingForCommand && <CommandPaletteSearchFooter />}
+						{isExecutingCommand && <CommandPaletteExecutorFooter />}
 					</div>
 				</DialogContent>
 			</Dialog>
@@ -93,5 +84,41 @@ export function CommandPalette() {
 				</div>
 			)}
 		</>
+	);
+}
+
+function CommandPaletteSearchFooter() {
+	const selectionManager = useCommandPaletteSelectionManager(false);
+	const commandsToShow = selectionManager.commandsToShow;
+
+	return (
+		<div className="flex items-center justify-between text-xs text-muted-foreground">
+			<div className="flex items-center gap-4">
+				<span>↑↓ to navigate</span>
+				<span>↵ to select</span>
+				<span>Esc to close</span>
+			</div>
+			<div>
+				{commandsToShow.length} command
+				{commandsToShow.length !== 1 ? 's' : ''}
+			</div>
+		</div>
+	);
+}
+
+function CommandPaletteExecutorFooter() {
+	return (
+		<div className="flex items-center justify-between text-xs text-muted-foreground">
+			<div className="flex items-center gap-4">
+				<span>
+					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + P</kbd> to minimize/close
+				</span>
+			</div>
+			<div>
+				<span>
+					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + Enter</kbd> to execute
+				</span>
+			</div>
+		</div>
 	);
 }

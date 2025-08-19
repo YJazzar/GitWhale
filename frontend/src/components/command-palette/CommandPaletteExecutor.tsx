@@ -131,12 +131,9 @@ export function CommandPaletteExecutor() {
 				})}
 			</div>
 
-			<div className="pt-4 border-t">
+			<div className="pt-4">
 				<div className="flex items-center justify-between">
-					<div className="text-xs text-muted-foreground">
-						Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + Enter</kbd> to
-						execute
-					</div>
+					<div></div>
 					<Button
 						onClick={() => {
 							commandAction.runAction();

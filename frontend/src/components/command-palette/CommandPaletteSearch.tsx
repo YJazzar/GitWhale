@@ -31,7 +31,7 @@ export function CommandPaletteSearch() {
 					break;
 				case 'Escape':
 					e.preventDefault();
-					dialogVisualState.set('closed')
+					dialogVisualState.set('closed');
 					break;
 			}
 		};
