@@ -14,6 +14,7 @@ import { EventsOn, EventsEmit, EventsOff } from '../../../wailsjs/runtime/runtim
 
 // Atoms for command palette state
 const isCommandPaletteOpenAtom = atom(false);
+const isCommandPaletteMinimizedAtom = atom(false);
 const searchQueryAtom = atom('');
 const availableCommandPaletteContextsAtom = atom<Map<CommandPaletteContextKey, CommandPaletteContextData>>(
 	new Map()
@@ -33,6 +34,7 @@ type CommandPaletteCurrentState = 'executingCommand' | 'searchingForCommand';
  */
 export function useCommandPaletteState() {
 	const [_isOpen, _setIsOpen] = useAtom(isCommandPaletteOpenAtom);
+	const [_isMinimized, _setIsMinimized] = useAtom(isCommandPaletteMinimizedAtom);
 	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
@@ -44,6 +46,7 @@ export function useCommandPaletteState() {
 	const _onCommandPalletteClose = () => {
 		_setSearchQuery('');
 		_setInProgressCommand(undefined);
+		_setIsMinimized(false);
 	};
 
 	// Run logic whenever the dialog is closed
@@ -90,6 +93,11 @@ export function useCommandPaletteState() {
 			get: () => _isOpen,
 			set: setIsOpenWrapper,
 			toggle: () => setIsOpenWrapper(!_isOpen),
+		},
+
+		isMinimized: {
+			get: () => _isMinimized,
+			set: _setIsMinimized,
 		},
 
 		searchQuery: {

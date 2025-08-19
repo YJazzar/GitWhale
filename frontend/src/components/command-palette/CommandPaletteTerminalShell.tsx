@@ -2,12 +2,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCommandPaletteExecutor } from '@/hooks/command-palette/use-command-palette-state';
-import { AlertCircle, CheckCircle, Clock, Square, Terminal, XCircle, StopCircle } from 'lucide-react';
+import { useCommandPaletteExecutor, useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
+import { AlertCircle, CheckCircle, Clock, Square, Terminal, XCircle, StopCircle, Minimize2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 export function CommandPaletteTerminalShell() {
-	const commandPaletteState = useCommandPaletteExecutor();
+	const commandPaletteExecutor = useCommandPaletteExecutor();
+	const commandPaletteState = useCommandPaletteState();
 	const {
 		commandArgs,
 		commandWorkingDir,
@@ -18,7 +19,7 @@ export function CommandPaletteTerminalShell() {
 		error,
 		exitCode,
 		cancelTerminalCommand,
-	} = commandPaletteState.terminalCommandState;
+	} = commandPaletteExecutor.terminalCommandState;
 
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,10 @@ export function CommandPaletteTerminalShell() {
 		cancelTerminalCommand();
 	};
 
+	const handleMinimize = () => {
+		commandPaletteState.isMinimized.set(true);
+	};
+
 	const isRunning = status === 'started';
 	const hasOutput = terminalOutput && terminalOutput.length > 0;
 	const isComplete = status === 'completed' || status === 'error' || status === 'cancelled';
@@ -94,12 +99,27 @@ export function CommandPaletteTerminalShell() {
 					{getStatusBadge()}
 				</div>
 
-				{isRunning && (
-					<Button variant="outline" size="sm" onClick={handleCancel} className="h-7">
-						<Square className="h-3 w-3 mr-1" />
-						Cancel
-					</Button>
-				)}
+				<div className="flex items-center gap-1">
+					{/* Show minimize button only during command execution */}
+					{(isRunning || isComplete) && (
+						<Button 
+							variant="ghost" 
+							size="sm" 
+							onClick={handleMinimize} 
+							className="h-7 w-7 p-0 hover:bg-muted"
+							title="Minimize"
+						>
+							<Minimize2 className="h-3 w-3" />
+						</Button>
+					)}
+					
+					{isRunning && (
+						<Button variant="outline" size="sm" onClick={handleCancel} className="h-7">
+							<Square className="h-3 w-3 mr-1" />
+							Cancel
+						</Button>
+					)}
+				</div>
 			</div>
 
 			{/* Command Information */}
