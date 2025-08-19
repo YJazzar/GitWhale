@@ -110,7 +110,7 @@ export default function HomePage() {
 			</div>
 
 			{/* Command Palette Tip */}
-			<div className="mt-8 max-w-xl w-full">
+			<div className="mt-8">
 				<div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
 					<div className="flex items-center gap-2 text-primary">
 						<Lightbulb className="h-5 w-5" />
