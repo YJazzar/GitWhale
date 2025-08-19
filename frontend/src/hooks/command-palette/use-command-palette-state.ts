@@ -7,7 +7,7 @@ import {
 	TerminalCommandExecutionState,
 } from '@/types/command-palette';
 import { atom, useAtom, useAtomValue } from 'jotai';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useDebugValue, useEffect, useMemo } from 'react';
 import { useCommandRegistry } from './use-command-registry';
 import { ExecuteShellCommand } from '../../../wailsjs/go/backend/App';
 import { EventsOn, EventsEmit, EventsOff } from '../../../wailsjs/runtime/runtime';
@@ -38,7 +38,7 @@ export function useCommandPaletteState() {
 	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
-	const _terminalCommandState = useAtomValue(terminalCommandStateAtom);
+	const [_terminalCommandState, _setTerminalCommandState] = useAtom(terminalCommandStateAtom);
 
 	const calculateCurrentState = (): CommandPaletteCurrentState => {
 		if (!!_inProgressCommand) {
@@ -75,10 +75,6 @@ export function useCommandPaletteState() {
 			_setPaletteIsOpen('closed');
 		}
 	};
-
-	useEffect(() => {
-		console.log(_isPaletteOpen)
-	}, [_isPaletteOpen])
 
 	const _onCommandPalletteClose = () => {
 		_setSearchQuery('');
@@ -122,7 +118,7 @@ export function useCommandPaletteState() {
 			get: () => _isPaletteOpen,
 			set: setIsPaletteOpen,
 		},
-		
+
 		searchQuery: {
 			get: () => _searchQuery,
 			set: _setSearchQuery,
@@ -236,7 +232,7 @@ export function useCommandPaletteExecutor() {
 	const [_runActionState, _setRunActionState] = useAtom(runActionStateAtom);
 
 	useEffect(() => {
-		if (!_isCommandPaletteOpen) {
+		if (_isCommandPaletteOpen === 'closed') {
 			// Cleanup whenever the command palette closes
 			_setParameterValues(new Map());
 			_setRunActionState('notExecuted');
