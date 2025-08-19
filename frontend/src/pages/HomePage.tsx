@@ -7,36 +7,16 @@ import { ToggleStarRepo } from '../../wailsjs/go/backend/App';
 
 export default function HomePage() {
 	const { appState, refreshAppState } = UseAppState();
-	const rootNavigation = useNavigateRootFilTabs()
+	const rootNavigation = useNavigateRootFilTabs();
 
 	const onToggleStar = async (repoPath: string) => {
 		await ToggleStarRepo(repoPath);
 		await refreshAppState();
 	};
 
-	// Memoized RepoEntry component to prevent unnecessary re-renders
-	const RepoEntry = memo(({ repoPath, isStarred }: { repoPath: string; isStarred: boolean }) => (
-		<div className="flex items-center">
-			{/* Star button */}
-			<Button variant="ghost" size="sm" onClick={() => onToggleStar(repoPath)} className="h-4 w-4">
-				{isStarred ? (
-					<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-				) : (
-					<Star className="h-4 w-4" />
-				)}
-			</Button>
-
-			{/* Repo open link */}
-			<Button
-				variant="link"
-				onClick={() => rootNavigation.onOpenRepoWithPath(repoPath)}
-				className="flex-1 justify-start"
-				title={repoPath}
-			>
-				{repoPath}
-			</Button>
-		</div>
-	));
+	const onOpenRepo = (repoPath: string) => {
+		rootNavigation.onOpenRepoWithPath(repoPath);
+	};
 
 	// Separate starred and non-starred repos for display
 	const starredRepos = appState?.appConfig?.starredGitRepos ?? [];
@@ -54,19 +34,31 @@ export default function HomePage() {
 				<div className="flex flex-col items-center justify-center">
 					<ul className="space-y-2">
 						<li>
-							<Button variant="link" onClick={rootNavigation.onOpenNewRepo} className="justify-start p-0">
+							<Button
+								variant="link"
+								onClick={rootNavigation.onOpenNewRepo}
+								className="justify-start p-0"
+							>
 								<FolderOpen />
 								Open Repository
 							</Button>
 						</li>
 						<li>
-							<Button variant="link" onClick={rootNavigation.onOpenSettings} className="justify-start p-0">
+							<Button
+								variant="link"
+								onClick={rootNavigation.onOpenSettings}
+								className="justify-start p-0"
+							>
 								<Settings className="h-4 w-4 mr-2" />
 								Settings
 							</Button>
 						</li>
 						<li>
-							<Button variant="link" onClick={rootNavigation.onOpenApplicationLogs} className="justify-start p-0">
+							<Button
+								variant="link"
+								onClick={rootNavigation.onOpenApplicationLogs}
+								className="justify-start p-0"
+							>
 								<FileText className="h-4 w-4 mr-2" />
 								Application Logs
 							</Button>
@@ -85,7 +77,13 @@ export default function HomePage() {
 								<h2 className="text-xl font-semibold mb-4">Starred:</h2>
 								<div className="space-y-2">
 									{starredRepos.map((repoPath) => (
-										<RepoEntry key={repoPath} repoPath={repoPath} isStarred />
+										<RepoEntry
+											key={repoPath}
+											repoPath={repoPath}
+											isStarred
+											onOpenRepo={onOpenRepo}
+											onToggleStar={onToggleStar}
+										/>
 									))}
 								</div>
 							</div>
@@ -96,7 +94,13 @@ export default function HomePage() {
 								<h2 className="text-xl font-semibold mb-4">Recent:</h2>
 								<div className="space-y-2">
 									{nonStarredRecentRepos.map((repoPath) => (
-										<RepoEntry key={repoPath} repoPath={repoPath} isStarred={false} />
+										<RepoEntry
+											key={repoPath}
+											repoPath={repoPath}
+											isStarred={false}
+											onOpenRepo={onOpenRepo}
+											onToggleStar={onToggleStar}
+										/>
 									))}
 								</div>
 							</div>
@@ -115,13 +119,45 @@ export default function HomePage() {
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<span>Press</span>
 						<kbd className="inline-flex items-center gap-1 px-1.5 bg-muted border border-border rounded font-mono">
-						
 							{shortcutKey} + P
 						</kbd>
 						<span>to open the command palette</span>
 					</div>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+interface RepoEntryProps {
+	repoPath: string;
+	isStarred: boolean;
+	onToggleStar: (repoPath: string) => void;
+	onOpenRepo: (repoPath: string) => void;
+}
+
+function RepoEntry(props: RepoEntryProps) {
+	const { repoPath, isStarred, onToggleStar, onOpenRepo } = props;
+	return (
+		<div className="flex items-center">
+			{/* Star button */}
+			<Button variant="ghost" size="sm" onClick={() => onToggleStar(repoPath)} className="h-4 w-4">
+				{isStarred ? (
+					<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+				) : (
+					<Star className="h-4 w-4" />
+				)}
+			</Button>
+
+			{/* Repo open link */}
+			<Button
+				variant="link"
+				onClick={() => onOpenRepo(repoPath)}
+				className="flex-1 justify-start"
+				title={repoPath}
+			>
+				{repoPath} hi
+			</Button>
 		</div>
 	);
 }
