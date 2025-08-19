@@ -449,10 +449,10 @@ function useCommandPaletteTerminalCommandExecutor() {
 	) => {
 		switch (event.state) {
 			case 'started':
-				_setTerminalCommandState({
-					..._terminalCommandState,
+				_setTerminalCommandState((prevState) => ({
+					...prevState,
 					status: 'started',
-				});
+				}));
 				break;
 
 			case 'output':
@@ -462,34 +462,33 @@ function useCommandPaletteTerminalCommandExecutor() {
 				break;
 
 			case 'completed':
-				_setTerminalCommandState({
-					..._terminalCommandState,
+				_setTerminalCommandState((prevState) => ({
+					...prevState,
 					status: 'completed',
 					commandDuration: event.duration,
 					exitCode: event.exitCode,
-				});
-
+				}));
 				resolve('completed');
 				break;
 
 			case 'error':
-				_setTerminalCommandState({
-					..._terminalCommandState,
+				_setTerminalCommandState((prevState) => ({
+					...prevState,
 					status: 'error',
 					commandDuration: event.duration,
 					exitCode: event.exitCode,
-				});
+				}));
 
 				reject(event.error);
 				break;
 
 			case 'cancelled':
-				_setTerminalCommandState({
-					..._terminalCommandState,
+				_setTerminalCommandState((prevState) => ({
+					...prevState,
 					status: 'cancelled',
 					commandDuration: event.duration,
 					exitCode: event.exitCode,
-				});
+				}));
 				resolve('cancelled');
 				break;
 		}
