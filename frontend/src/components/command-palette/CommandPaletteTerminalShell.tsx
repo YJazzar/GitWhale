@@ -1,9 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCommandPaletteExecutor, useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
-import { AlertCircle, CheckCircle, Clock, Square, Terminal, XCircle, StopCircle, Minimize2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Minimize2, Square, StopCircle, Terminal, XCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 export function CommandPaletteTerminalShell() {

@@ -5,6 +5,7 @@ import ApplicationLogsPage from '@/pages/ApplicationLogsPage';
 import RepoPage from '@/pages/repo/RepoPage';
 import SettingsPage from '@/pages/SettingsPage';
 import CustomCommandEditor from '@/pages/CustomCommandEditor';
+import StateInspectorPage from '@/pages/StateInspectorPage';
 import { useCallback } from 'react';
 import { OpenNewRepo, OpenRepoWithPath } from '../../../wailsjs/go/backend/App';
 import { UseAppState } from '../state/use-app-state';
@@ -58,6 +59,16 @@ export function useNavigateRootFilTabs() {
 		});
 	};
 
+	// Callback to open state inspector tab
+	const onOpenStateInspector = () => {
+		fileTabs.openTab({
+			tabKey: '$$state-inspector$$',
+			titleRender: () => <>State Inspector</>,
+			component: <StateInspectorPage />,
+			isPermanentlyOpen: true,
+		});
+	};
+
 	const onOpenHomePage = () => {
 		fileTabs.switchToTab('$$home$$');
 	};
@@ -93,6 +104,7 @@ export function useNavigateRootFilTabs() {
 		onOpenRepoWithPath,
 		onOpenSettings,
 		onOpenApplicationLogs,
+		onOpenStateInspector,
 		onOpenCustomCommandEditor,
 		onCloseCustomCommandEditor,
 	};

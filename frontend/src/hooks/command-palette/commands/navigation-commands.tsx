@@ -1,6 +1,6 @@
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { CommandDefinition, CommandPaletteContextKey } from '@/types/command-palette';
-import { FileText, FolderOpen, Home, Settings, Terminal } from 'lucide-react';
+import { Bug, FileText, FolderOpen, Home, Settings, Terminal } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { UseAppState } from '@/hooks/state/use-app-state';
@@ -56,6 +56,24 @@ const navigateApplicationLogs: CommandDefinition<ReturnType<typeof useNavigateRo
 		},
 		runAction: async (providedHooks, parameters) => {
 			providedHooks.onOpenApplicationLogs();
+		},
+	},
+};
+
+// Navigate to State Inspector
+const navigateStateInspector: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
+	id: 'navigate.state-inspector',
+	title: 'Go to: State Inspector',
+	icon: <Bug className="h-4 w-4" />,
+	keywords: ['state', 'debug', 'inspector', 'atoms'],
+	context: CommandPaletteContextKey.Root,
+	action: {
+		type: 'function',
+		requestedHooks: () => {
+			return useNavigateRootFilTabs();
+		},
+		runAction: async (providedHooks, parameters) => {
+			providedHooks.onOpenStateInspector();
 		},
 	},
 };
@@ -202,6 +220,7 @@ export function useRegisterNavigationCommands() {
 		navigateHome,
 		navigateSettings,
 		navigateApplicationLogs,
+		navigateStateInspector,
 		openRepository,
 		navigateNewCommand,
 		editCommand,
