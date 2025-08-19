@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { useStateInspectorValues } from '@/hooks/state/use-state-inspector-values';
 import {
 	Bug,
@@ -14,6 +13,200 @@ import {
 	Terminal,
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
+
+// Helper function to determine if a value should be considered as "having data"
+function hasDataValue(value: unknown): boolean {
+	if (value === null || value === undefined) return false;
+	if (typeof value === 'string') return value !== '';
+	if (typeof value === 'number' || typeof value === 'boolean') return true;
+	if (typeof value === 'function') return true;
+	if (Array.isArray(value) || typeof value === 'object') return true;
+	return false;
+}
+
+// Serialization helper for copying data to clipboard
+function serializeValue(val: unknown, seen = new WeakSet()): any {
+	if (val === null || val === undefined) return val;
+	if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') return val;
+	
+	// Handle functions
+	if (typeof val === 'function') {
+		return `[Function: ${val.name || 'anonymous'}]`;
+	}
+	
+	// Handle circular references for objects only
+	if (typeof val === 'object' && seen.has(val)) {
+		return '[Circular Reference]';
+	}
+	
+	if (typeof val === 'object') {
+		seen.add(val);
+		
+		try {
+			if (val instanceof Map) {
+				const result = {
+					__type: 'Map',
+					size: val.size,
+					entries: Array.from(val.entries()).map(([k, v]) => [k, serializeValue(v, seen)])
+				};
+				seen.delete(val);
+				return result;
+			}
+			if (val instanceof Set) {
+				const result = {
+					__type: 'Set',
+					size: val.size,
+					values: Array.from(val).map(v => serializeValue(v, seen))
+				};
+				seen.delete(val);
+				return result;
+			}
+			if (Array.isArray(val)) {
+				const result = val.map(v => serializeValue(v, seen));
+				seen.delete(val);
+				return result;
+			}
+			// Regular objects
+			const result: any = {};
+			for (const [key, value] of Object.entries(val)) {
+				result[key] = serializeValue(value, seen);
+			}
+			seen.delete(val);
+			return result;
+		} catch (error) {
+			seen.delete(val);
+			return '[Serialization Error]';
+		}
+	}
+	return val;
+}
+
+// Helper to properly indent nested JSON values
+function indentNestedJson(jsonValue: string): string {
+	return jsonValue.split('\n').map((line, index) => 
+		index === 0 ? line : `  ${line}`
+	).join('\n');
+}
+
+// Main value formatting function
+function formatDisplayValue(val: unknown, seen = new WeakSet()): string {
+	if (val === null) return 'null';
+	if (val === undefined) return 'undefined';
+	if (typeof val === 'string') return `"${val}"`;
+	if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+	
+	// Handle functions
+	if (typeof val === 'function') {
+		return `[Function: ${val.name || 'anonymous'}]`;
+	}
+	
+	if (typeof val === 'object') {
+		// Handle circular references
+		if (seen.has(val)) {
+			return '[Circular Reference]';
+		}
+		seen.add(val);
+		
+		try {
+			// Handle Map objects specially
+			if (val instanceof Map) {
+				if (val.size === 0) {
+					seen.delete(val);
+					return 'Map(0) {}';
+				}
+				const entries = Array.from(val.entries());
+				const formattedEntries = entries.map(([key, value]) => {
+					const keyStr = typeof key === 'string' ? `"${key}"` : String(key);
+					let valueStr: string;
+					if (typeof value === 'string') {
+						valueStr = `"${value}"`;
+					} else {
+						try {
+							const jsonValue = JSON.stringify(value, null, 2);
+							valueStr = indentNestedJson(jsonValue);
+						} catch {
+							valueStr = formatDisplayValue(value, seen);
+						}
+					}
+					return `  ${keyStr} => ${valueStr}`;
+				}).join(',\n');
+				seen.delete(val);
+				return `Map(${val.size}) {\n${formattedEntries}\n}`;
+			}
+			
+			// Handle Set objects specially
+			if (val instanceof Set) {
+				if (val.size === 0) {
+					seen.delete(val);
+					return 'Set(0) {}';
+				}
+				const values = Array.from(val);
+				const formattedValues = values.map(v => {
+					if (typeof v === 'string') {
+						return `"${v}"`;
+					} else {
+						try {
+							const jsonValue = JSON.stringify(v, null, 2);
+							return indentNestedJson(jsonValue);
+						} catch {
+							return formatDisplayValue(v, seen);
+						}
+					}
+				}).join(',\n  ');
+				seen.delete(val);
+				return `Set(${val.size}) {\n  ${formattedValues}\n}`;
+			}
+			
+			// Handle Arrays specially
+			if (Array.isArray(val)) {
+				if (val.length === 0) {
+					seen.delete(val);
+					return 'Array(0) []';
+				}
+				const formattedItems = val.map(item => {
+					if (typeof item === 'string') {
+						return `"${item}"`;
+					} else {
+						try {
+							const jsonValue = JSON.stringify(item, null, 2);
+							return indentNestedJson(jsonValue);
+						} catch {
+							return formatDisplayValue(item, seen);
+						}
+					}
+				});
+				
+				// For simple arrays (strings, numbers, booleans), show on one line if short
+				const isSimpleArray = val.every(item => 
+					typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+				);
+				
+				seen.delete(val);
+				if (isSimpleArray && val.length <= 5) {
+					return `Array(${val.length}) [${formattedItems.join(', ')}]`;
+				} else {
+					return `Array(${val.length}) [\n  ${formattedItems.join(',\n  ')}\n]`;
+				}
+			}
+			
+			// Handle regular objects
+			const result = JSON.stringify(val, null, 2);
+			seen.delete(val);
+			return result;
+		} catch {
+			seen.delete(val);
+			// Fallback for objects that can't be JSON stringified
+			if (val && typeof val === 'object') {
+				if (val.constructor && val.constructor.name !== 'Object') {
+					return `[${val.constructor.name} Object]`;
+				}
+				return '[Object Error]';
+			}
+			return '[Object Error]';
+		}
+	}
+	return String(val);
+}
 
 function formatGroupTitle(groupKey: string): string {
 	return groupKey
@@ -54,7 +247,8 @@ export default function StateInspectorPage() {
 	const allStateValues = useStateInspectorValues();
 
 	const handleCopyAll = useCallback(() => {
-		const allStateJson = JSON.stringify(allStateValues, null, 2);
+		const serializedState = serializeValue(allStateValues);
+		const allStateJson = JSON.stringify(serializedState, null, 2);
 		navigator.clipboard.writeText(allStateJson);
 	}, [allStateValues]);
 
@@ -90,9 +284,7 @@ export default function StateInspectorPage() {
 
 	// Check if group has any data to show
 	const hasDataToShow = useCallback((valuesGroup: Record<string, any>) => {
-		return Object.values(valuesGroup).some(
-			(value) => value !== null && value !== undefined && value !== ''
-		);
+		return Object.values(valuesGroup).some(hasDataValue);
 	}, []);
 
 	return (
@@ -176,9 +368,7 @@ function StateSection({ groupKey, title, icon, searchQuery, hasData, valuesGroup
 	}
 
 	const itemCount = Object.keys(valuesGroup).length;
-	const dataCount = Object.values(valuesGroup).filter(
-		(v) => v !== null && v !== undefined && v !== ''
-	).length;
+	const dataCount = Object.values(valuesGroup).filter(hasDataValue).length;
 
 	return (
 		<div className="break-inside-avoid mb-2 border rounded bg-card/50 shadow-sm">
@@ -229,23 +419,8 @@ interface StateDisplayProps {
 }
 
 function StateDisplay({ atomKey, label, value, searchQuery }: StateDisplayProps) {
-	const formatValue = (val: unknown): string => {
-		if (val === null) return 'null';
-		if (val === undefined) return 'undefined';
-		if (typeof val === 'string') return `"${val}"`;
-		if (typeof val === 'number' || typeof val === 'boolean') return String(val);
-		if (typeof val === 'object') {
-			try {
-				return JSON.stringify(val, null, 2);
-			} catch {
-				return '[Object Error]';
-			}
-		}
-		return String(val);
-	};
-
-	const displayValue = formatValue(value);
-	const hasValue = value !== null && value !== undefined && value !== '';
+	const displayValue = formatDisplayValue(value);
+	const hasValue = hasDataValue(value);
 
 	// Check if this item matches the search query
 	const matchesSearch = useMemo(() => {

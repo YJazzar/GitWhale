@@ -4,7 +4,6 @@ import { GetCustomCommands, SaveCustomCommand, DeleteCustomCommand } from '../..
 import { backend } from '../../../wailsjs/go/models';
 import { UserDefinedCommandDefinition } from '../command-palette/use-custom-command';
 
-
 // Atoms for state management
 const customCommandsAtom = atom<UserDefinedCommandDefinition[]>([]);
 const customCommandsLoadingAtom = atom<boolean>(false);
@@ -28,6 +27,10 @@ export function useCustomCommandsState() {
 	const [customCommands, setCustomCommands] = useAtom(customCommandsAtom);
 	const [isLoading, setIsLoading] = useAtom(customCommandsLoadingAtom);
 	const [error, setError] = useAtom(customCommandsErrorAtom);
+
+	useEffect(() => {
+		console.log({ customCommands });
+	}, [customCommands]);
 
 	// Load custom commands from backend
 	const loadCustomCommands = useCallback(async () => {
@@ -116,10 +119,10 @@ export function useCustomCommandsState() {
 	};
 }
 
-export function useCustomCommandStateAtoms() { 
+export function useCustomCommandStateAtoms() {
 	return {
-		customCommandsAtom, 
-		customCommandsLoadingAtom, 
-		customCommandsErrorAtom
-	}
+		customCommandsAtom,
+		customCommandsLoadingAtom,
+		customCommandsErrorAtom,
+	};
 }
