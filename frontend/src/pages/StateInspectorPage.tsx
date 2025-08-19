@@ -24,181 +24,152 @@ function hasDataValue(value: unknown): boolean {
 	return false;
 }
 
-// Serialization helper for copying data to clipboard
-function serializeValue(val: unknown, depth = 0, maxDepth = 20): any {
-	// Prevent infinite recursion with depth limit
-	if (depth > maxDepth) {
-		return '[Max Depth Reached]';
-	}
-	
-	if (val === null || val === undefined) return val;
-	if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') return val;
-	
-	// Handle functions
-	if (typeof val === 'function') {
-		return `[Function: ${val.name || 'anonymous'}]`;
-	}
-	
-	if (typeof val === 'object') {
-		try {
-			if (val instanceof Map) {
-				if (val.size === 0) return { __type: 'Map', size: 0, entries: [] };
-				const entries = Array.from(val.entries()).slice(0, 100); // Limit entries
-				return {
-					__type: 'Map',
-					size: val.size,
-					entries: entries.map(([k, v]) => [k, serializeValue(v, depth + 1, maxDepth)])
-				};
-			}
-			if (val instanceof Set) {
-				if (val.size === 0) return { __type: 'Set', size: 0, values: [] };
-				const values = Array.from(val).slice(0, 100); // Limit values
-				return {
-					__type: 'Set',
-					size: val.size,
-					values: values.map(v => serializeValue(v, depth + 1, maxDepth))
-				};
-			}
-			if (Array.isArray(val)) {
-				if (val.length === 0) return [];
-				const limitedArray = val.slice(0, 100); // Limit array size
-				return limitedArray.map(v => serializeValue(v, depth + 1, maxDepth));
-			}
-			
-			// Regular objects - limit properties
-			const entries = Object.entries(val).slice(0, 50); // Limit object properties
-			const result: any = {};
-			for (const [key, value] of entries) {
-				result[key] = serializeValue(value, depth + 1, maxDepth);
-			}
-			if (Object.keys(val).length > 50) {
-				result['__truncated'] = `${Object.keys(val).length - 50} more properties...`;
-			}
-			return result;
-		} catch (error) {
-			return '[Serialization Error]';
-		}
-	}
-	return String(val);
+// Serialization helper for copying data to clipboard using serialize-javascript
+function serializeStateForClipboard(val: unknown): string {
+	// todo
+	return ''
 }
 
-// Helper to properly indent nested JSON values
-function indentNestedJson(jsonValue: string): string {
-	return jsonValue.split('\n').map((line, index) => 
-		index === 0 ? line : `  ${line}`
-	).join('\n');
-}
+// Main value formatting function using serialize-javascript for better display
+function formatDisplayValue(val: unknown): string {
+	return serializeStateForClipboard(val)
+	// if (val === null) return 'null';
+	// if (val === undefined) return 'undefined';
+	// if (typeof val === 'string') return `"${val}"`;
+	// if (typeof val === 'number' || typeof val === 'boolean') return String(val);
 
-// Main value formatting function
-function formatDisplayValue(val: unknown, depth = 0, maxDepth = 5): string {
-	// Prevent infinite recursion with depth limit
-	if (depth > maxDepth) {
-		return '[Max Depth Reached]';
-	}
-	if (val === null) return 'null';
-	if (val === undefined) return 'undefined';
-	if (typeof val === 'string') return `"${val}"`;
-	if (typeof val === 'number' || typeof val === 'boolean') return String(val);
-	
-	// Handle functions
-	if (typeof val === 'function') {
-		return `[Function: ${val.name || 'anonymous'}]`;
-	}
-	
-	if (typeof val === 'object') {
-		
-		try {
-			// Handle Map objects specially
-			if (val instanceof Map) {
-				if (val.size === 0) return 'Map(0) {}';
-				
-				// Limit entries to prevent memory issues
-				const entries = Array.from(val.entries()).slice(0, 20);
-				const formattedEntries = entries.map(([key, value]) => {
-					const keyStr = typeof key === 'string' ? `"${key}"` : String(key);
-					let valueStr: string;
-					if (typeof value === 'string') {
-						valueStr = `"${value}"`;
-					} else if (typeof value === 'number' || typeof value === 'boolean') {
-						valueStr = String(value);
-					} else {
-						valueStr = formatDisplayValue(value, depth + 1, maxDepth);
-					}
-					return `  ${keyStr} => ${valueStr}`;
-				}).join(',\n');
-				
-				const truncated = val.size > 20 ? `\n  ... ${val.size - 20} more entries` : '';
-				return `Map(${val.size}) {\n${formattedEntries}${truncated}\n}`;
-			}
-			
-			// Handle Set objects specially
-			if (val instanceof Set) {
-				if (val.size === 0) return 'Set(0) {}';
-				
-				const values = Array.from(val).slice(0, 20);
-				const formattedValues = values.map(v => {
-					if (typeof v === 'string') {
-						return `"${v}"`;
-					} else if (typeof v === 'number' || typeof v === 'boolean') {
-						return String(v);
-					} else {
-						return formatDisplayValue(v, depth + 1, maxDepth);
-					}
-				}).join(',\n  ');
-				
-				const truncated = val.size > 20 ? `\n  ... ${val.size - 20} more values` : '';
-				return `Set(${val.size}) {\n  ${formattedValues}${truncated}\n}`;
-			}
-			
-			// Handle Arrays specially
-			if (Array.isArray(val)) {
-				if (val.length === 0) return 'Array(0) []';
-				
-				// Limit array display
-				const items = val.slice(0, 10);
-				const formattedItems = items.map(item => {
-					if (typeof item === 'string') {
-						return `"${item}"`;
-					} else if (typeof item === 'number' || typeof item === 'boolean') {
-						return String(item);
-					} else {
-						return formatDisplayValue(item, depth + 1, maxDepth);
-					}
-				});
-				
-				// For simple arrays (strings, numbers, booleans), show on one line if short
-				const isSimpleArray = items.every(item => 
-					typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
-				);
-				
-				const truncated = val.length > 10 ? `, ... ${val.length - 10} more` : '';
-				
-				if (isSimpleArray && val.length <= 5) {
-					return `Array(${val.length}) [${formattedItems.join(', ')}]`;
-				} else {
-					return `Array(${val.length}) [\n  ${formattedItems.join(',\n  ')}${truncated}\n]`;
-				}
-			}
-			
-			// Handle regular objects - use simple JSON stringify with replacer
-			return JSON.stringify(val, (key, value) => {
-				if (typeof value === 'function') {
-					return `[Function: ${value.name || 'anonymous'}]`;
-				}
-				return value;
-			}, 2);
-		} catch (error) {
-			// Fallback for objects that can't be JSON stringified
-			if (val && typeof val === 'object') {
-				if (val.constructor && val.constructor.name !== 'Object') {
-					return `[${val.constructor.name} Object]`;
-				}
-				return '[Object Error]';
-			}
-			return '[Object Error]';
-		}
-	}
-	return String(val);
+	// // Handle functions
+	// if (typeof val === 'function') {
+	// 	return `[Function: ${val.name || 'anonymous'}]`;
+	// }
+
+	// // Handle Date objects
+	// if (val instanceof Date) {
+	// 	return `Date(${val.toISOString()})`;
+	// }
+
+	// // Handle RegExp objects
+	// if (val instanceof RegExp) {
+	// 	return `RegExp(${val.toString()})`;
+	// }
+
+	// // Handle URL objects
+	// if (val instanceof URL) {
+	// 	return `URL(${val.toString()})`;
+	// }
+
+	// // Handle BigInt
+	// if (typeof val === 'bigint') {
+	// 	return `BigInt(${val.toString()})`;
+	// }
+
+	// if (typeof val === 'object') {
+	// 	try {
+	// 		// Handle Map objects specially
+	// 		if (val instanceof Map) {
+	// 			if (val.size === 0) return 'Map(0) {}';
+
+	// 			// Limit entries to prevent memory issues
+	// 			const entries = Array.from(val.entries()).slice(0, 20);
+	// 			const formattedEntries = entries
+	// 				.map(([key, value]) => {
+	// 					const keyStr = typeof key === 'string' ? `"${key}"` : String(key);
+	// 					const valueStr =
+	// 						typeof value === 'string'
+	// 							? `"${value}"`
+	// 							: typeof value === 'number' || typeof value === 'boolean'
+	// 							? String(value)
+	// 							: '[Object]';
+	// 					return `  ${keyStr} => ${valueStr}`;
+	// 				})
+	// 				.join(',\n');
+
+	// 			const truncated = val.size > 20 ? `\n  ... ${val.size - 20} more entries` : '';
+	// 			return `Map(${val.size}) {\n${formattedEntries}${truncated}\n}`;
+	// 		}
+
+	// 		// Handle Set objects specially
+	// 		if (val instanceof Set) {
+	// 			if (val.size === 0) return 'Set(0) {}';
+
+	// 			const values = Array.from(val).slice(0, 20);
+	// 			const formattedValues = values
+	// 				.map((v) => {
+	// 					return typeof v === 'string'
+	// 						? `"${v}"`
+	// 						: typeof v === 'number' || typeof v === 'boolean'
+	// 						? String(v)
+	// 						: '[Object]';
+	// 				})
+	// 				.join(',\n  ');
+
+	// 			const truncated = val.size > 20 ? `\n  ... ${val.size - 20} more values` : '';
+	// 			return `Set(${val.size}) {\n  ${formattedValues}${truncated}\n}`;
+	// 		}
+
+	// 		// Handle Arrays specially
+	// 		if (Array.isArray(val)) {
+	// 			if (val.length === 0) return 'Array(0) []';
+
+	// 			// Limit array display
+	// 			const items = val.slice(0, 10);
+	// 			const formattedItems = items.map((item) => {
+	// 				return typeof item === 'string'
+	// 					? `"${item}"`
+	// 					: typeof item === 'number' || typeof item === 'boolean'
+	// 					? String(item)
+	// 					: '[Object]';
+	// 			});
+
+	// 			// For simple arrays, show on one line if short
+	// 			const isSimpleArray = items.every(
+	// 				(item) =>
+	// 					typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+	// 			);
+
+	// 			const truncated = val.length > 10 ? `, ... ${val.length - 10} more` : '';
+
+	// 			if (isSimpleArray && val.length <= 5) {
+	// 				return `Array(${val.length}) [${formattedItems.join(', ')}]`;
+	// 			} else {
+	// 				return `Array(${val.length}) [\n  ${formattedItems.join(',\n  ')}${truncated}\n]`;
+	// 			}
+	// 		}
+
+	// 		// Handle regular objects using serialize-javascript for better formatting
+	// 		try {
+	// 			// Use serialize-javascript for complex objects
+	// 			const serialized = serialize(val, { space: 2 });
+	// 			// If the serialized result is too long, truncate it
+	// 			if (serialized.length > 1000) {
+	// 				return serialized.substring(0, 1000) + '\n... [truncated]';
+	// 			}
+	// 			return serialized;
+	// 		} catch {
+	// 			// Fallback to JSON.stringify with function replacement
+	// 			return JSON.stringify(
+	// 				val,
+	// 				(_, value) => {
+	// 					if (typeof value === 'function') {
+	// 						return `[Function: ${value.name || 'anonymous'}]`;
+	// 					}
+	// 					return value;
+	// 				},
+	// 				2
+	// 			);
+	// 		}
+	// 	} catch (error) {
+	// 		// Fallback for objects that can't be processed
+	// 		if (val && typeof val === 'object') {
+	// 			if (val.constructor && val.constructor.name !== 'Object') {
+	// 				return `[${val.constructor.name} Object]`;
+	// 			}
+	// 			return '[Object Error]';
+	// 		}
+	// 		return '[Object Error]';
+	// 	}
+	// }
+	// return String(val);
 }
 
 function formatGroupTitle(groupKey: string): string {
@@ -240,9 +211,8 @@ export default function StateInspectorPage() {
 	const allStateValues = useStateInspectorValues();
 
 	const handleCopyAll = useCallback(() => {
-		const serializedState = serializeValue(allStateValues);
-		const allStateJson = JSON.stringify(serializedState, null, 2);
-		navigator.clipboard.writeText(allStateJson);
+		const serializedState = serializeStateForClipboard(allStateValues);
+		navigator.clipboard.writeText(serializedState);
 	}, [allStateValues]);
 
 	// Calculate state statistics
@@ -501,7 +471,15 @@ function StateDisplay({ atomKey, label, value, searchQuery }: StateDisplayProps)
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={() => navigator.clipboard.writeText(String(value))}
+							onClick={() => {
+								try {
+									const serialized = serializeStateForClipboard(value);
+									navigator.clipboard.writeText(serialized);
+								} catch {
+									// Fallback to string conversion
+									navigator.clipboard.writeText(String(value));
+								}
+							}}
 							className="h-4 w-4 p-0 hover:bg-muted"
 							title="Copy value"
 						>
