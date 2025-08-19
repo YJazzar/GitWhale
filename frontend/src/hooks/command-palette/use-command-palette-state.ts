@@ -4,13 +4,12 @@ import {
 	CommandPaletteContextKey,
 	ParameterData,
 	StreamedCommandEvent,
-	TerminalCommandExecutionState,
 } from '@/types/command-palette';
 import { atom, useAtom, useAtomValue } from 'jotai';
-import { useCallback, useDebugValue, useEffect, useMemo } from 'react';
-import { useCommandRegistry } from './use-command-registry';
+import { useCallback, useEffect, useMemo } from 'react';
 import { ExecuteShellCommand } from '../../../wailsjs/go/backend/App';
-import { EventsOn, EventsEmit, EventsOff } from '../../../wailsjs/runtime/runtime';
+import { EventsEmit, EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
+import { useCommandRegistry } from './use-command-registry';
 
 // Atoms for command palette state
 const isCommandPaletteOpenAtom = atom<'closed' | 'opened' | 'minimized'>('closed');
@@ -50,9 +49,9 @@ export function useCommandPaletteState() {
 
 	const setIsPaletteOpen = (newDesiredState: typeof _isPaletteOpen) => {
 		// User wants to open or minimize the window, always allow it
-		if (newDesiredState === 'opened' || newDesiredState === 'minimized') { 
-			_setPaletteIsOpen(newDesiredState)
-			return
+		if (newDesiredState === 'opened' || newDesiredState === 'minimized') {
+			_setPaletteIsOpen(newDesiredState);
+			return;
 		}
 
 		// Currently minimized, so the next state is to always un-minimize it
@@ -523,5 +522,20 @@ function useCommandPaletteTerminalCommandExecutor() {
 		terminalCommandState: _terminalCommandState,
 		terminalCommandOutput: _terminalCommandOutput,
 		cancelCommand: onForceCancelCommand,
+	};
+}
+
+export function useCommandPaletteStateAtoms() {
+	return {
+		isCommandPaletteOpenAtom,
+		isCommandPaletteMinimizedAtom,
+		searchQueryAtom,
+		availableCommandPaletteContextsAtom,
+		inProgressCommandAtom,
+		selectedCommandInSearchDialogAtom,
+		parameterValuesAtom,
+		runActionStateAtom,
+		terminalCommandOutputAtom,
+		terminalCommandStateAtom,
 	};
 }

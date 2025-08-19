@@ -101,3 +101,11 @@ export function getHomeState(repoPath: string) {
 		},
 	};
 }
+
+export function useGitHomeStateAtoms() { 
+	return {
+		worktreesAtom, 
+		recentCommitsAtom,
+		hasInitialLoadedAtom
+	}
+}

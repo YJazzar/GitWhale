@@ -109,3 +109,7 @@ export function useSidebarState(
 		},
 	};
 }
+
+export function useSidebarStateAtoms() {
+	return { activeItemAtom, staticItemsAtom, dynamicItemsAtom, sidebarModeAtom };
+}

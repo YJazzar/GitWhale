@@ -115,3 +115,11 @@ export function useCustomCommandsState() {
 		getCustomCommand,
 	};
 }
+
+export function useCustomCommandStateAtoms() { 
+	return {
+		customCommandsAtom, 
+		customCommandsLoadingAtom, 
+		customCommandsErrorAtom
+	}
+}

@@ -77,3 +77,9 @@ export function useCommandRegistry(searchQuery: string | undefined) {
 		unregisterCommands,
 	};
 }
+
+export function useCommandRegistryStateAtoms() {
+	return {
+		registeredCommandsAtom,
+	};
+}

@@ -138,21 +138,21 @@ export function getLogState(repoPath: string) {
 			// Append new commits, filtering out duplicates
 			const existingLogs = _gitLogDataPrim.value;
 			const existingCommitSet = _gitLogCommitSetPrim.value || new Set<string>();
-			
-			const uniqueNewLogs = newLogs.filter(commit => !existingCommitSet.has(commit.commitHash));
+
+			const uniqueNewLogs = newLogs.filter((commit) => !existingCommitSet.has(commit.commitHash));
 			const combinedLogs = [...existingLogs, ...uniqueNewLogs];
-			
+
 			// Update both the array and set
 			_gitLogDataPrim.set(combinedLogs);
-			
+
 			const updatedCommitSet = new Set(existingCommitSet);
-			uniqueNewLogs.forEach(commit => updatedCommitSet.add(commit.commitHash));
+			uniqueNewLogs.forEach((commit) => updatedCommitSet.add(commit.commitHash));
 			_gitLogCommitSetPrim.set(updatedCommitSet);
 		} else {
 			// Replace existing commits (initial load or refresh)
 			_gitLogDataPrim.set(newLogs);
-			
-			const commitSet = new Set(newLogs.map(commit => commit.commitHash));
+
+			const commitSet = new Set(newLogs.map((commit) => commit.commitHash));
 			_gitLogCommitSetPrim.set(commitSet);
 		}
 
@@ -193,17 +193,17 @@ export function getLogState(repoPath: string) {
 		// Start from the end (most recent commits in topological order) and work backwards
 		for (let i = loadedCommits.length - 2; i >= 0; i--) {
 			const commit = loadedCommits[i];
-			
+
 			// Check if any parent commits are not loaded
 			const hasUnloadedParents = commit.parentCommitHashes.some(
-				parentHash => !loadedCommitSet.has(parentHash)
+				(parentHash) => !loadedCommitSet.has(parentHash)
 			);
-			
+
 			if (hasUnloadedParents) {
 				return commit.commitHash;
 			}
 		}
-		
+
 		// If all loaded commits have their parents loaded, use the last commit
 		return loadedCommits.length > 0 ? loadedCommits[loadedCommits.length - 1].commitHash : null;
 	};
@@ -212,7 +212,13 @@ export function getLogState(repoPath: string) {
 		// Prevent multiple simultaneous requests
 		const prevLogs = _gitLogDataPrim.value;
 		const loadedCommitSet = _gitLogCommitSetPrim.value;
-		if (!prevLogs || !loadedCommitSet || _isLoadingMorePrim.value || _isLoadingPrim.value || !_hasMoreCommitsPrim.value) {
+		if (
+			!prevLogs ||
+			!loadedCommitSet ||
+			_isLoadingMorePrim.value ||
+			_isLoadingPrim.value ||
+			!_hasMoreCommitsPrim.value
+		) {
 			return;
 		}
 
@@ -272,7 +278,7 @@ export function getLogState(repoPath: string) {
 		},
 
 		refreshRefs: () => {
-			loadAllRefsInner()
+			loadAllRefsInner();
 		},
 
 		loadMoreCommits,
@@ -313,5 +319,19 @@ export function getLogState(repoPath: string) {
 			_isLoadingMorePrim.kill();
 			_hasMoreCommitsPrim.kill();
 		},
+	};
+}
+
+export function useGitLogStateAtoms() {
+	return {
+		gitLogDataAtom,
+		gitLogCommitSetAtom,
+		isLoadingGitDataAtom,
+		selectedCommitAtom,
+		gitLogOptionsAtom,
+		gitRefsAtom,
+		commitDetailsPaneStateAtom,
+		isLoadingMoreCommitsAtom, 
+		hasMoreCommitsAtom,
 	};
 }

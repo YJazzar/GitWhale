@@ -242,3 +242,10 @@ export const useAppLogState = () => {
 		fitTerminal,
 	};
 };
+
+export function useAppLogStateAtoms() {
+	return {
+		filterLevelAtom, 
+		isLoadingAtom,
+	}
+}

@@ -87,3 +87,10 @@ export function getDiffState(repoPath: string) {
 		},
 	};
 }
+
+export function useGitDiffStateAtoms() {
+	return {
+		diffSessionsAtom,
+		isLoadingDiffAtom,
+	};
+}

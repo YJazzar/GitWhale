@@ -54,3 +54,9 @@ export const UseAppState = () => {
 
 	return { appState: state, refreshAppState, executeAndRefreshState };
 };
+
+export function useAppStateAtoms() { 
+	return {
+		appStateAtom
+	}
+}

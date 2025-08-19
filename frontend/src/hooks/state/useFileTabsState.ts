@@ -118,3 +118,10 @@ export function useFileManagerStatesCleanup(fileTabManageSessionKeys: FileTabSes
 		},
 	};
 }
+
+export function useFileTabsStateAtoms() { 
+	return {
+		activeTabKeyAtom, 
+		openTabsAtom
+	}
+}

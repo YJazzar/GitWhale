@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { FileText, FolderOpen, Lightbulb, Settings, Star } from 'lucide-react';
+import { Bug, FileText, FolderOpen, Lightbulb, Settings, Star } from 'lucide-react';
 import { ToggleStarRepo } from '../../wailsjs/go/backend/App';
 
 export default function HomePage() {
@@ -60,6 +60,16 @@ export default function HomePage() {
 							>
 								<FileText className="h-4 w-4 mr-2" />
 								Application Logs
+							</Button>
+						</li>
+						<li>
+							<Button
+								variant="link"
+								onClick={rootNavigation.onOpenStateInspector}
+								className="justify-start p-0"
+							>
+								<Bug className="h-4 w-4" />
+								State Inspector
 							</Button>
 						</li>
 					</ul>
