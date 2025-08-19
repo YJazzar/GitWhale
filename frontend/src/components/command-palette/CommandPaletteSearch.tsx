@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { CommandPaletteItem } from './CommandPaletteItem';
 
 export function CommandPaletteSearch() {
-	const { isActive, invokeCommand } = useCommandPaletteState();
+	const { dialogVisualState, invokeCommand } = useCommandPaletteState();
 	const selectionManager = useCommandPaletteSelectionManager(false);
 
 	const commandsToShow = selectionManager.commandsToShow;
@@ -16,7 +16,7 @@ export function CommandPaletteSearch() {
 	// Handle keyboard navigation
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (!isActive.get()) {
+			if (dialogVisualState.get() !== 'opened') {
 				return;
 			}
 
@@ -31,14 +31,14 @@ export function CommandPaletteSearch() {
 					break;
 				case 'Escape':
 					e.preventDefault();
-					isActive.set(false);
+					dialogVisualState.set('closed')
 					break;
 			}
 		};
 
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [isActive.get(), isActive.set, onChangeSelectionFromArrow]);
+	}, [dialogVisualState.get(), dialogVisualState.set, onChangeSelectionFromArrow]);
 
 	return (
 		<div className="p-2">

@@ -39,7 +39,7 @@ export function CommandPaletteInput() {
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			e.stopPropagation()
-			commandPaletteState.isActive.set(false);
+			commandPaletteState.dialogVisualState.set('closed');
 		}
 	};
 

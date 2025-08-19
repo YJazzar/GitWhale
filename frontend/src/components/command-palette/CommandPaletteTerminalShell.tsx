@@ -82,7 +82,7 @@ export function CommandPaletteTerminalShell() {
 	};
 
 	const handleMinimize = () => {
-		commandPaletteState.isMinimized.set(true);
+		commandPaletteState.dialogVisualState.set('minimized');
 	};
 
 	const isRunning = status === 'started';

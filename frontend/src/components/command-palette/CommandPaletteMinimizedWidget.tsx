@@ -12,7 +12,7 @@ export function CommandPaletteMinimizedWidget() {
 	const inProgressCommand = executorState._inProgressCommand.value;
 
 	const handleRestore = () => {
-		commandPaletteState.isActive.set(true);
+		commandPaletteState.dialogVisualState.set('opened');
 	};
 
 	const handleCancel = () => {

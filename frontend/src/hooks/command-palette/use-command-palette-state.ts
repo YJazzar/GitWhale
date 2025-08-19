@@ -13,7 +13,7 @@ import { ExecuteShellCommand } from '../../../wailsjs/go/backend/App';
 import { EventsOn, EventsEmit, EventsOff } from '../../../wailsjs/runtime/runtime';
 
 // Atoms for command palette state
-const isCommandPaletteOpenAtom = atom(false);
+const isCommandPaletteOpenAtom = atom<'closed' | 'opened' | 'minimized'>('closed');
 const isCommandPaletteMinimizedAtom = atom(false);
 const searchQueryAtom = atom('');
 const availableCommandPaletteContextsAtom = atom<Map<CommandPaletteContextKey, CommandPaletteContextData>>(
@@ -33,7 +33,7 @@ type CommandPaletteCurrentState = 'executingCommand' | 'searchingForCommand';
  * Hook for managing command palette visibility
  */
 export function useCommandPaletteState() {
-	const [_isOpen, _setIsOpen] = useAtom(isCommandPaletteOpenAtom);
+	const [_isPaletteOpen, _setPaletteIsOpen] = useAtom(isCommandPaletteOpenAtom);
 	const [_isMinimized, _setIsMinimized] = useAtom(isCommandPaletteMinimizedAtom);
 	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
@@ -48,20 +48,20 @@ export function useCommandPaletteState() {
 		return 'searchingForCommand';
 	};
 
-	const setIsOpenWrapper = (newValue: boolean) => {
-		if (!_isOpen && !_isMinimized) {
-			// User wants to open the command window. always allow it
-			_setIsOpen(true);
+	const setIsPaletteOpen = (newDesiredState: typeof _isPaletteOpen) => {
+		// User wants to open or minimize the window, always allow it
+		if (newDesiredState === 'opened' || newDesiredState === 'minimized') { 
+			_setPaletteIsOpen(newDesiredState)
+			return
+		}
+
+		// Currently minimized, so the next state is to always un-minimize it
+		if (_isPaletteOpen === 'minimized') {
+			_setPaletteIsOpen('opened');
 			return;
 		}
 
-		if (_isOpen && _isMinimized) {
-			// Currently minimized and user wants to open it, so un-minimize it
-			_setIsMinimized(false);
-			return;
-		}
-
-		// Otherwise, window isOpen, and it is not minimized
+		// Otherwise, window is open, and it is not minimized
 
 		// Check if a terminal command is currently executing
 		const isTerminalCommandRunning = _terminalCommandState.status === 'started';
@@ -69,12 +69,16 @@ export function useCommandPaletteState() {
 
 		if (isExecutingCommand && isTerminalCommandRunning) {
 			// Minimize instead of closing when terminal command is running
-			_setIsMinimized(true);
+			_setPaletteIsOpen('minimized');
 		} else {
 			// Normal close behavior for other states
-			_setIsOpen(false);
+			_setPaletteIsOpen('closed');
 		}
 	};
+
+	useEffect(() => {
+		console.log(_isPaletteOpen)
+	}, [_isPaletteOpen])
 
 	const _onCommandPalletteClose = () => {
 		_setSearchQuery('');
@@ -84,7 +88,7 @@ export function useCommandPaletteState() {
 
 	// Run logic whenever the dialog is closed
 	useEffect(() => {
-		if (!_isOpen) {
+		if (_isPaletteOpen === 'closed') {
 			_onCommandPalletteClose();
 		}
 	});
@@ -114,16 +118,11 @@ export function useCommandPaletteState() {
 	};
 
 	return {
-		isActive: {
-			get: () => _isOpen,
-			set: setIsOpenWrapper,
-			toggle: () => setIsOpenWrapper(!_isOpen),
+		dialogVisualState: {
+			get: () => _isPaletteOpen,
+			set: setIsPaletteOpen,
 		},
-
-		isMinimized: {
-			get: () => _isMinimized,
-		},
-
+		
 		searchQuery: {
 			get: () => _searchQuery,
 			set: _setSearchQuery,
@@ -331,7 +330,7 @@ export function useCommandPaletteExecutor() {
 
 			// Only close dialog if there was no command ran
 			if (!terminalCommandWasExecuted) {
-				_setIsCommandPaletteOpen(false);
+				_setIsCommandPaletteOpen('closed');
 			}
 		} catch (error) {
 			console.error('Command execution failed:', error);

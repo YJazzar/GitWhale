@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
 	useCommandPaletteSelectionManager,
-	useCommandPaletteState
+	useCommandPaletteState,
 } from '@/hooks/command-palette/use-command-palette-state';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { CommandPaletteExecutor } from './CommandPaletteExecutor';
@@ -15,24 +15,19 @@ export function CommandPalette() {
 	const selectionManager = useCommandPaletteSelectionManager(true);
 
 	// Helpful aliases
-	const isActive = commandPaletteState.isActive;
-	const isMinimized = commandPaletteState.isMinimized;
+	const dialogVisualState = commandPaletteState.dialogVisualState;
 	const commandsToShow = selectionManager.commandsToShow;
 
 	const isSearchingForCommand = commandPaletteState.currentState === 'searchingForCommand';
 	const isExecutingCommand = commandPaletteState.currentState === 'executingCommand';
 
 	const onDialogOpenChange = (newValue: boolean) => {
-		if (isExecutingCommand) { 
-			return
-		}
-		isActive.set(newValue)
-	}
+		dialogVisualState.set(newValue ? 'opened' : 'closed');
+	};
 
-	// Show dialog content when active and not minimized
-	const showDialogContent = isActive.get() && !isMinimized.get();
-	// Show minimized widget when active but minimized
-	const showMinimizedWidget = isActive.get() && isMinimized.get();
+	// Show dialog content when opened, and the widget when minimized
+	const showDialogContent = dialogVisualState.get() === 'opened';
+	const showMinimizedWidget = dialogVisualState.get() === 'minimized';
 
 	return (
 		<>

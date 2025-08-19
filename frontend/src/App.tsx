@@ -47,7 +47,8 @@ function App() {
 	useRegisterNavigationCommands();
 
 	useKeyboardShortcut('p', () => {
-		commandPaletteState.isActive.toggle();
+		const dialogCurrentState = commandPaletteState.dialogVisualState.get() === 'opened';
+		commandPaletteState.dialogVisualState.set(dialogCurrentState ? 'closed' : 'opened');
 	});
 
 	useEffect(() => {
