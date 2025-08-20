@@ -1,12 +1,12 @@
 import { Sidebar } from '@/components/sidebar';
 import { useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
 import { SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
+import RepoActiveDiffPage from '@/pages/repo/RepoActiveDiffPage';
 import RepoHomeView from '@/pages/repo/RepoHomeView';
 import RepoLogView from '@/pages/repo/RepoLogView';
 import RepoTerminalView from '@/pages/repo/RepoTerminalView';
-import RepoActiveDiffPage from '@/pages/repo/RepoActiveDiffPage';
 import { CommandPaletteContextKey } from '@/types/command-palette';
-import { GitGraph, House, Terminal, GitAdd } from 'lucide-react';
+import { FolderGit, GitGraph, House, Terminal } from 'lucide-react';
 import { useEffect } from 'react';
 
 export type RepoViewType = 'home' | 'log' | 'diff' | 'terminal' | 'staging';
@@ -31,7 +31,7 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 		{
 			id: 'staging',
 			title: 'Staging',
-			icon: <GitAdd className="h-4 w-4" />,
+			icon: <FolderGit className="h-4 w-4" />,
 			component: <RepoActiveDiffPage repoPath={repoPath} />,
 			preventClose: true,
 		},
@@ -52,7 +52,7 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 	];
 
 	useEffect(() => {
-		commandPaletteState.availableContexts.addContext({
+		commandPaletteState.availableContexts.addContext({ 
 			contextKey: CommandPaletteContextKey.Repo,
 			repoPath: repoPath,
 		});
