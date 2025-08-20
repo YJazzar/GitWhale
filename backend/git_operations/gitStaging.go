@@ -268,34 +268,39 @@ func CreateStagingDiffSession(repoPath, filePath string, fileType string) (*Stag
 	// Determine what to compare based on file type
 	var leftContent, rightContent string
 	var leftLabel, rightLabel string
-	var err error
+	var err1, err2 error
 
 	switch fileType {
 	case "staged":
 		// Compare HEAD vs staged
-		leftContent, err1 := GetFileContentFromRef(repoPath, filePath, "HEAD")
-		rightContent, err = GetFileContentFromRef(repoPath, filePath, "staged")
+		leftContent, err1 = GetFileContentFromRef(repoPath, filePath, "HEAD")
+		rightContent, err2 = GetFileContentFromRef(repoPath, filePath, "staged")
 		leftLabel = "HEAD"
 		rightLabel = "Staged"
 	case "unstaged":
 		// Compare staged vs working directory
-		leftContent, _ = GetFileContentFromRef(repoPath, filePath, "staged")
-		rightContent, err = GetWorkingDirectoryFileContent(repoPath, filePath)
+		leftContent, err1 = GetFileContentFromRef(repoPath, filePath, "staged")
+		rightContent, err2 = GetWorkingDirectoryFileContent(repoPath, filePath)
 		leftLabel = "Staged"
 		rightLabel = "Working"
 	case "untracked":
 		// Compare empty vs working directory
 		leftContent = ""
-		rightContent, err = GetWorkingDirectoryFileContent(repoPath, filePath)
+		rightContent, err1 = GetWorkingDirectoryFileContent(repoPath, filePath)
 		leftLabel = "Empty"
 		rightLabel = "Working"
 	default:
 		return nil, fmt.Errorf("unsupported file type for diff: %s", fileType)
 	}
 
-	if err != nil {
+	if err1 != nil {
 		os.RemoveAll(sessionDir)
-		return nil, fmt.Errorf("failed to get file content: %v", err)
+		return nil, fmt.Errorf("failed to get file content: %v", err1)
+	}
+
+	if err2 != nil {
+		os.RemoveAll(sessionDir)
+		return nil, fmt.Errorf("failed to get file content: %v", err2)
 	}
 
 	// Write temporary files

@@ -50,27 +50,6 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 		stagingState.refreshGitStatus();
 	};
 
-	// Show empty state if no changes
-	if (!stagingState.isLoading && !stagingState.hasChanges) {
-		return (
-			<div className="w-full h-full flex items-center justify-center">
-				<div className="text-center space-y-4">
-					<div className="flex items-center justify-center gap-2 text-muted-foreground">
-						<GitBranch className="w-8 h-8" />
-						<h2 className="text-xl font-semibold">No Changes</h2>
-					</div>
-					<p className="text-muted-foreground">
-						Your working directory is clean. All files are up to date.
-					</p>
-					<Button onClick={handleRefresh} variant="outline" size="sm">
-						<RefreshCw className="w-4 h-4 mr-2" />
-						Refresh
-					</Button>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div className="w-full h-full flex flex-row min-h-0">
 			<ResizablePanelGroup direction="horizontal" onLayout={handleLayoutChange}>
@@ -92,11 +71,29 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 				{/* Right pane: Diff viewer */}
 				<ResizablePanel id="diff-content-panel" defaultSize={panelSizes[1]}>
 					<div className="grow h-full flex flex-col min-h-0">
-						<FileTabs
+						{!stagingState.hasChanges && (
+							<div className="w-full h-full flex items-center justify-center">
+								<div className="text-center space-y-4">
+									<div className="flex items-center justify-center gap-2 text-muted-foreground">
+										<GitBranch className="w-8 h-8" />
+										<h2 className="text-xl font-semibold">No Changes</h2>
+									</div>
+									<p className="text-muted-foreground">
+										Your working directory is clean. All files are up to date.
+									</p>
+									<Button onClick={handleRefresh} variant="outline" size="sm">
+										<RefreshCw className="w-4 h-4 mr-2" />
+										Refresh
+									</Button>
+								</div>
+							</div>
+						)}
+
+						{stagingState.hasChanges && (<FileTabs
 							key={`staging-${repoPath}`}
 							initialTabs={[]}
 							fileTabManageSessionKey={FileTabsSessionKeyGenerator.stagingArea(repoPath)}
-						/>
+						/>)}
 					</div>
 				</ResizablePanel>
 			</ResizablePanelGroup>
@@ -342,10 +339,10 @@ function FileListSection({
 	const openFileInDiff = async (file: git_operations.GitStatusFile, fileType: string) => {
 		try {
 			Logger.info(`Creating staging diff session for: ${file.path} (${fileType})`, 'StagingPage');
-			
+
 			// Create staging diff session
 			const diffInfo = await CreateStagingDiffSession(repoPath, file.path, fileType);
-			
+
 			// Create FileInfo for the diff viewer with the temporary file paths
 			const fileInfo: git_operations.FileInfo = {
 				Name: file.path.split('/').pop() || file.path,
@@ -362,7 +359,9 @@ function FileListSection({
 					<span className="flex items-center gap-1.5">
 						{getStatusBadge(file)}
 						{fileInfo.Name}
-						<span className="text-xs text-muted-foreground">({diffInfo.leftLabel} → {diffInfo.rightLabel})</span>
+						<span className="text-xs text-muted-foreground">
+							({diffInfo.leftLabel} → {diffInfo.rightLabel})
+						</span>
 					</span>
 				),
 				component: <FileDiffView file={fileInfo} />,
@@ -421,7 +420,6 @@ function FileListSection({
 							className="group flex items-center gap-1.5 py-1 px-1 rounded hover:bg-accent/60 cursor-pointer transition-colors border border-transparent hover:border-border/40"
 							onClick={() => openFileInDiff(file, fileType)}
 						>
-
 							{getStatusBadge(file)}
 
 							<div className="flex-1 min-w-0 flex items-center gap-1.5">
