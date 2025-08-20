@@ -61,7 +61,7 @@ function useMonacoDiffModel(file: git_operations.FileInfo) {
 
 				modifiedModel: monaco.editor.createModel(
 					data.modifiedFile,
-					language
+					language, 
 					// monaco.Uri.file(data.originalFilePath)
 				),
 
@@ -135,7 +135,9 @@ export default function FileDiffView(props: FileDiffViewProps) {
 			renderSideBySide: true,
 			automaticLayout: true,
 			theme: 'vs-dark',
+			readOnly: true,
 		});
+		
 
 		setEditor(myEditor);
 
