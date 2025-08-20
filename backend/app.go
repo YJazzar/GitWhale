@@ -352,3 +352,13 @@ func (app *App) UnstageAllFiles(repoPath string) error {
 func (app *App) CommitChanges(repoPath, message string) error {
 	return git_operations.CommitChanges(repoPath, message)
 }
+
+// CreateStagingDiffSession creates a staging diff session for viewing file diffs
+func (app *App) CreateStagingDiffSession(repoPath, filePath, fileType string) (*git_operations.StagingDiffInfo, error) {
+	return git_operations.CreateStagingDiffSession(repoPath, filePath, fileType)
+}
+
+// CleanupStagingDiffSession cleans up a staging diff session
+func (app *App) CleanupStagingDiffSession(sessionId string) error {
+	return git_operations.CleanupStagingDiffSession(sessionId)
+}

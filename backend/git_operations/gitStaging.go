@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"gitwhale/backend/command_utils"
 	"gitwhale/backend/logger"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 // GitStatusFile represents a file in the Git status output
@@ -23,6 +26,18 @@ type GitStatus struct {
 	UnstagedFiles  []GitStatusFile `json:"unstagedFiles"`
 	UntrackedFiles []GitStatusFile `json:"untrackedFiles"`
 	HasChanges     bool            `json:"hasChanges"`
+}
+
+// StagingDiffInfo represents information about a staging area diff session
+type StagingDiffInfo struct {
+	SessionId  string    `json:"sessionId"`
+	FilePath   string    `json:"filePath"`
+	FileType   string    `json:"fileType"`
+	LeftPath   string    `json:"leftPath"`
+	RightPath  string    `json:"rightPath"`
+	LeftLabel  string    `json:"leftLabel"`
+	RightLabel string    `json:"rightLabel"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 // GetGitStatus retrieves the current Git status for a repository
@@ -48,7 +63,7 @@ func GetGitStatus(repoPath string) (*GitStatus, error) {
 
 	// Parse null-separated output
 	entries := strings.Split(strings.TrimSuffix(output, "\x00"), "\x00")
-	
+
 	for _, entry := range entries {
 		if len(entry) < 3 {
 			continue
@@ -56,7 +71,7 @@ func GetGitStatus(repoPath string) (*GitStatus, error) {
 
 		statusChars := entry[:2]
 		filePath := entry[3:]
-		
+
 		stagedStatus := string(statusChars[0])
 		workingStatus := string(statusChars[1])
 
@@ -84,12 +99,12 @@ func GetGitStatus(repoPath string) (*GitStatus, error) {
 			// File has staged changes
 			status.StagedFiles = append(status.StagedFiles, gitFile)
 		}
-		
+
 		if workingStatus != " " && workingStatus != "?" {
 			// File has unstaged changes
 			status.UnstagedFiles = append(status.UnstagedFiles, gitFile)
 		}
-		
+
 		if statusChars == "??" {
 			// Untracked file
 			status.UntrackedFiles = append(status.UntrackedFiles, gitFile)
@@ -98,7 +113,7 @@ func GetGitStatus(repoPath string) (*GitStatus, error) {
 
 	status.HasChanges = len(status.StagedFiles) > 0 || len(status.UnstagedFiles) > 0 || len(status.UntrackedFiles) > 0
 
-	logger.Log.Info("Git status retrieved: %d staged, %d unstaged, %d untracked files", 
+	logger.Log.Info("Git status retrieved: %d staged, %d unstaged, %d untracked files",
 		len(status.StagedFiles), len(status.UnstagedFiles), len(status.UntrackedFiles))
 
 	return status, nil
@@ -180,5 +195,149 @@ func CommitChanges(repoPath, message string) error {
 	}
 
 	logger.Log.Info("Successfully committed changes: %s", strings.TrimSpace(output))
+	return nil
+}
+
+// GetFileContentFromRef gets the content of a file from a specific Git ref (HEAD, staged index, etc.)
+func GetFileContentFromRef(repoPath, filePath, ref string) (string, error) {
+	logger.Log.Debug("Getting file content for %s from ref %s in repo %s", filePath, ref, repoPath)
+
+	var cmd *exec.Cmd
+	if ref == "HEAD" {
+		// Get file content from HEAD
+		cmd = exec.Command("git", "show", fmt.Sprintf("HEAD:%s", filePath))
+	} else if ref == "index" || ref == "staged" {
+		// Get file content from staging area
+		cmd = exec.Command("git", "show", fmt.Sprintf(":%s", filePath))
+	} else {
+		// Get file content from specific ref
+		cmd = exec.Command("git", "show", fmt.Sprintf("%s:%s", ref, filePath))
+	}
+
+	cmd.Dir = repoPath
+	output, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		// If file doesn't exist in this ref, return empty content
+		if strings.Contains(output, "does not exist") || strings.Contains(output, "Path '"+filePath+"' does not exist") {
+			logger.Log.Debug("File %s does not exist in ref %s", filePath, ref)
+			return output, nil
+		}
+		return "", fmt.Errorf("failed to get file content from %s: %v", ref, err)
+	}
+
+	return output, nil
+}
+
+// GetWorkingDirectoryFileContent gets the current working directory content of a file
+func GetWorkingDirectoryFileContent(repoPath, filePath string) (string, error) {
+	logger.Log.Debug("Getting working directory content for %s in repo %s", filePath, repoPath)
+
+	fullPath := filepath.Join(repoPath, filePath)
+	content, err := os.ReadFile(fullPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			logger.Log.Debug("File %s does not exist in working directory", filePath)
+			return fmt.Sprintf("File %s does not exist in working directory", filePath), nil
+		}
+		return "", fmt.Errorf("failed to read working directory file %s: %v", filePath, err)
+	}
+
+	return string(content), nil
+}
+
+// CreateStagingDiffSession creates temporary files for staging area diff viewing
+func CreateStagingDiffSession(repoPath, filePath string, fileType string) (*StagingDiffInfo, error) {
+	logger.Log.Info("Creating staging diff session for %s (type: %s) in repo %s", filePath, fileType, repoPath)
+
+	// Create session ID and temp directories
+	sessionId := fmt.Sprintf("staging_%d", time.Now().UnixNano())
+	tempDir := os.TempDir()
+	sessionDir := filepath.Join(tempDir, "gitwhale-staging", sessionId)
+
+	leftPath := filepath.Join(sessionDir, "left")
+	rightPath := filepath.Join(sessionDir, "right")
+
+	if err := os.MkdirAll(leftPath, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create left directory: %v", err)
+	}
+
+	if err := os.MkdirAll(rightPath, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create right directory: %v", err)
+	}
+
+	// Determine what to compare based on file type
+	var leftContent, rightContent string
+	var leftLabel, rightLabel string
+	var err error
+
+	switch fileType {
+	case "staged":
+		// Compare HEAD vs staged
+		leftContent, err1 := GetFileContentFromRef(repoPath, filePath, "HEAD")
+		rightContent, err = GetFileContentFromRef(repoPath, filePath, "staged")
+		leftLabel = "HEAD"
+		rightLabel = "Staged"
+	case "unstaged":
+		// Compare staged vs working directory
+		leftContent, _ = GetFileContentFromRef(repoPath, filePath, "staged")
+		rightContent, err = GetWorkingDirectoryFileContent(repoPath, filePath)
+		leftLabel = "Staged"
+		rightLabel = "Working"
+	case "untracked":
+		// Compare empty vs working directory
+		leftContent = ""
+		rightContent, err = GetWorkingDirectoryFileContent(repoPath, filePath)
+		leftLabel = "Empty"
+		rightLabel = "Working"
+	default:
+		return nil, fmt.Errorf("unsupported file type for diff: %s", fileType)
+	}
+
+	if err != nil {
+		os.RemoveAll(sessionDir)
+		return nil, fmt.Errorf("failed to get file content: %v", err)
+	}
+
+	// Write temporary files
+	fileName := filepath.Base(filePath)
+	leftFilePath := filepath.Join(leftPath, fileName)
+	rightFilePath := filepath.Join(rightPath, fileName)
+
+	if err := os.WriteFile(leftFilePath, []byte(leftContent), 0644); err != nil {
+		os.RemoveAll(sessionDir)
+		return nil, fmt.Errorf("failed to write left file: %v", err)
+	}
+
+	if err := os.WriteFile(rightFilePath, []byte(rightContent), 0644); err != nil {
+		os.RemoveAll(sessionDir)
+		return nil, fmt.Errorf("failed to write right file: %v", err)
+	}
+
+	diffInfo := &StagingDiffInfo{
+		SessionId:  sessionId,
+		FilePath:   filePath,
+		FileType:   fileType,
+		LeftPath:   leftFilePath,
+		RightPath:  rightFilePath,
+		LeftLabel:  leftLabel,
+		RightLabel: rightLabel,
+		CreatedAt:  time.Now(),
+	}
+
+	logger.Log.Info("Created staging diff session: %s", sessionId)
+	return diffInfo, nil
+}
+
+// CleanupStagingDiffSession cleans up temporary files for a staging diff session
+func CleanupStagingDiffSession(sessionId string) error {
+	tempDir := os.TempDir()
+	sessionDir := filepath.Join(tempDir, "gitwhale-staging", sessionId)
+
+	logger.Log.Info("Cleaning up staging diff session: %s", sessionId)
+	err := os.RemoveAll(sessionDir)
+	if err != nil {
+		logger.Log.Error("Failed to cleanup staging diff session %s: %v", sessionId, err)
+		return err
+	}
 	return nil
 }

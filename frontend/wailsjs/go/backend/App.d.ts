@@ -6,6 +6,8 @@ import {logger} from '../models';
 import {command_utils} from '../models';
 import {context} from '../models';
 
+export function CleanupStagingDiffSession(arg1:string):Promise<void>;
+
 export function CleanupTerminalSession(arg1:string):Promise<void>;
 
 export function ClearApplicationLogHistory():Promise<void>;
@@ -13,6 +15,8 @@ export function ClearApplicationLogHistory():Promise<void>;
 export function CloseRepo(arg1:string):Promise<backend.App>;
 
 export function CommitChanges(arg1:string,arg2:string):Promise<void>;
+
+export function CreateStagingDiffSession(arg1:string,arg2:string,arg3:string):Promise<git_operations.StagingDiffInfo>;
 
 export function DeleteCustomCommand(arg1:string):Promise<void>;
 

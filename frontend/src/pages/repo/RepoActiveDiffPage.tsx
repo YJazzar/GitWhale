@@ -16,7 +16,6 @@ import Logger from '@/utils/logger';
 import {
 	AlertCircle,
 	CheckCircle2,
-	File,
 	FileText,
 	GitBranch,
 	GitCommit,
@@ -26,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { git_operations } from '../../../wailsjs/go/models';
+import { CreateStagingDiffSession, CleanupStagingDiffSession } from '../../../wailsjs/go/backend/App';
 
 interface RepoActiveDiffPageProps {
 	repoPath: string;
@@ -233,6 +233,7 @@ function StagedFilesList({ repoPath }: { repoPath: string }) {
 			title="Staged Changes"
 			icon={<CheckCircle2 className="w-4 h-4 text-green-600" />}
 			files={files}
+			fileType="staged"
 			action="unstage"
 			onFileAction={stagingState.unstageFile}
 			onBulkAction={stagingState.unstageAllFiles}
@@ -252,6 +253,7 @@ function UnstagedFilesList({ repoPath }: { repoPath: string }) {
 			title="Changes"
 			icon={<AlertCircle className="w-4 h-4 text-amber-600" />}
 			files={files}
+			fileType="unstaged"
 			action="stage"
 			onFileAction={stagingState.stageFile}
 			onBulkAction={stagingState.stageAllFiles}
@@ -278,6 +280,7 @@ function UntrackedFilesList({ repoPath }: { repoPath: string }) {
 			title="Untracked Files"
 			icon={<FileText className="w-4 h-4 text-blue-600" />}
 			files={files}
+			fileType="untracked"
 			action="stage"
 			onFileAction={stagingState.stageFile}
 			onBulkAction={handleStageAll}
@@ -292,6 +295,7 @@ interface FileListSectionProps {
 	title: string;
 	icon: React.ReactNode;
 	files: git_operations.GitStatusFile[];
+	fileType: 'staged' | 'unstaged' | 'untracked';
 	action: 'stage' | 'unstage';
 	onFileAction: (filePath: string) => Promise<void>;
 	onBulkAction: () => Promise<void>;
@@ -303,6 +307,7 @@ function FileListSection({
 	title,
 	icon,
 	files,
+	fileType,
 	action,
 	onFileAction,
 	onBulkAction,
@@ -334,31 +339,47 @@ function FileListSection({
 		);
 	};
 
-	const openFileInDiff = (file: git_operations.GitStatusFile) => {
-		// Create a mock FileInfo for the diff viewer
-		const fileInfo: git_operations.FileInfo = {
-			Name: file.path.split('/').pop() || file.path,
-			Path: file.path,
-			Extension: file.path.split('.').pop() || '',
-			LeftDirAbsPath: '',
-			RightDirAbsPath: '',
-		};
+	const openFileInDiff = async (file: git_operations.GitStatusFile, fileType: string) => {
+		try {
+			Logger.info(`Creating staging diff session for: ${file.path} (${fileType})`, 'StagingPage');
+			
+			// Create staging diff session
+			const diffInfo = await CreateStagingDiffSession(repoPath, file.path, fileType);
+			
+			// Create FileInfo for the diff viewer with the temporary file paths
+			const fileInfo: git_operations.FileInfo = {
+				Name: file.path.split('/').pop() || file.path,
+				Path: file.path,
+				Extension: file.path.split('.').pop() || '',
+				LeftDirAbsPath: diffInfo.leftPath,
+				RightDirAbsPath: diffInfo.rightPath,
+			};
 
-		const tabKey = `staging-${file.path}`;
-		const tab: TabProps = {
-			tabKey,
-			titleRender: () => (
-				<span className="flex items-center gap-1.5">
-					{getStatusBadge(file)}
-					{fileInfo.Name}
-				</span>
-			),
-			component: <FileDiffView file={fileInfo} />,
-			isPermanentlyOpen: false,
-		};
+			const tabKey = `staging-${fileType}-${file.path}`;
+			const tab: TabProps = {
+				tabKey,
+				titleRender: () => (
+					<span className="flex items-center gap-1.5">
+						{getStatusBadge(file)}
+						{fileInfo.Name}
+						<span className="text-xs text-muted-foreground">({diffInfo.leftLabel} → {diffInfo.rightLabel})</span>
+					</span>
+				),
+				component: <FileDiffView file={fileInfo} />,
+				isPermanentlyOpen: false,
+				onTabClose: () => {
+					// Cleanup staging diff session when tab is closed
+					CleanupStagingDiffSession(diffInfo.sessionId).catch((error) => {
+						Logger.error(`Failed to cleanup staging diff session: ${error}`, 'StagingPage');
+					});
+				},
+			};
 
-		fileTabsHandlers.openTab(tab);
-		Logger.info(`Opened file diff for: ${file.path}`, 'StagingPage');
+			fileTabsHandlers.openTab(tab);
+			Logger.info(`Opened staging diff for: ${file.path}`, 'StagingPage');
+		} catch (error) {
+			Logger.error(`Failed to open staging diff for ${file.path}: ${error}`, 'StagingPage');
+		}
 	};
 
 	return (
@@ -398,7 +419,7 @@ function FileListSection({
 						<div
 							key={file.path}
 							className="group flex items-center gap-1.5 py-1 px-1 rounded hover:bg-accent/60 cursor-pointer transition-colors border border-transparent hover:border-border/40"
-							onClick={() => openFileInDiff(file)}
+							onClick={() => openFileInDiff(file, fileType)}
 						>
 
 							{getStatusBadge(file)}

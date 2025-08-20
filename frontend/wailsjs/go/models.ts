@@ -672,6 +672,51 @@ export namespace git_operations {
 		}
 	}
 	
+	export class StagingDiffInfo {
+	    sessionId: string;
+	    filePath: string;
+	    fileType: string;
+	    leftPath: string;
+	    rightPath: string;
+	    leftLabel: string;
+	    rightLabel: string;
+	    // Go type: time
+	    createdAt: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new StagingDiffInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionId = source["sessionId"];
+	        this.filePath = source["filePath"];
+	        this.fileType = source["fileType"];
+	        this.leftPath = source["leftPath"];
+	        this.rightPath = source["rightPath"];
+	        this.leftLabel = source["leftLabel"];
+	        this.rightLabel = source["rightLabel"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class WorktreeInfo {
 	    path: string;
 	    branch: string;
