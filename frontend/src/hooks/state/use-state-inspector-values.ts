@@ -8,6 +8,7 @@ import { useAppStateAtoms } from './use-app-state';
 import { useCustomCommandStateAtoms } from './use-custom-commands-state';
 import { useFileTabsStateAtoms } from './useFileTabsState';
 import { useSidebarStateAtoms } from './useSidebarState';
+import { useMemo } from 'react';
 
 // Hook to get all application state values for debugging
 export function useStateInspectorValues() {
@@ -45,5 +46,8 @@ export function useStateInspectorValues() {
 		return acc;
 	}, {} as Record<string, Record<string, any>>);
 
-	return allStateValues;
+	return useMemo(() => {
+		console.log(allStateValues)
+		return allStateValues
+	}, [allStateValues]);
 }

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useStateInspectorValues } from '@/hooks/state/use-state-inspector-values';
-import { AdvancedSerializer, serializeForClipboard, serializeForDisplay } from '@/utils/serializer';
+import { serialize } from '@/utils/serializer';
 import {
 	Bug,
 	ChevronDown,
@@ -14,17 +14,6 @@ import {
 	Terminal,
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
-
-// Helper function to determine if a value should be considered as "having data"
-function hasDataValue(value: unknown): boolean {
-	if (value === null || value === undefined) return false;
-	if (typeof value === 'string') return value !== '';
-	if (typeof value === 'number' || typeof value === 'boolean') return true;
-	if (typeof value === 'function') return true;
-	if (Array.isArray(value) || typeof value === 'object') return true;
-	return false;
-}
-
 
 function formatGroupTitle(groupKey: string): string {
 	return groupKey
@@ -63,48 +52,11 @@ export default function StateInspectorPage() {
 
 	// Get all state values
 	const allStateValues = useStateInspectorValues();
-
+	debugger;
 	const handleCopyAll = useCallback(() => {
-		debugger;
-		const serializedState = serializeForDisplay(allStateValues);
-		// const serializedState = serializeForClipboard(allStateValues);
-		// navigator.clipboard.writeText(serializedState || "Something went wrong with serialization");
+		const serializedState = serialize(allStateValues);
+		navigator.clipboard.writeText(serializedState || 'Something went wrong with serialization');
 	}, [allStateValues]);
-
-	// Calculate state statistics
-	const stateStats = useMemo(() => {
-		const flatten = (obj: any, prefix = ''): Array<{ key: string; value: any }> => {
-			let result: Array<{ key: string; value: any }> = [];
-			for (const [key, value] of Object.entries(obj)) {
-				const fullKey = prefix ? `${prefix}.${key}` : key;
-				if (value && typeof value === 'object' && !Array.isArray(value)) {
-					result = result.concat(flatten(value, fullKey));
-				} else {
-					result.push({ key: fullKey, value });
-				}
-			}
-			return result;
-		};
-
-		const flatStates = flatten(allStateValues);
-		const filteredStates = searchQuery
-			? flatStates.filter(
-					(state) =>
-						state.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-						String(state.value).toLowerCase().includes(searchQuery.toLowerCase())
-			  )
-			: flatStates;
-
-		return {
-			total: flatStates.length,
-			filtered: filteredStates.length,
-		};
-	}, [allStateValues, searchQuery]);
-
-	// Check if group has any data to show
-	const hasDataToShow = useCallback((valuesGroup: Record<string, any>) => {
-		return Object.values(valuesGroup).some(hasDataValue);
-	}, []);
 
 	return (
 		<div className="h-full flex flex-col bg-background">
@@ -114,9 +66,6 @@ export default function StateInspectorPage() {
 					<div className="flex items-center gap-2">
 						<Bug className="w-4 h-4 text-primary" />
 						<h1 className="font-medium text-sm">State Inspector</h1>
-						<span className="text-xs text-muted-foreground">
-							{stateStats.total} variables ({stateStats.filtered} shown)
-						</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<div className="relative">
@@ -143,6 +92,7 @@ export default function StateInspectorPage() {
 
 			{/* Main Content - Limited to 2 columns max */}
 			<div className="flex-1 overflow-auto p-2">
+				{/* <ReactJson src={allStateValues} theme={'apathy:inverted'} /> */}
 				<div className="columns-1 lg:columns-2 gap-4 space-y-2">
 					{Object.entries(allStateValues).map(([groupKey, valuesGroup]) => (
 						<StateSection
@@ -151,7 +101,6 @@ export default function StateInspectorPage() {
 							title={formatGroupTitle(groupKey)}
 							icon={getGroupIcon(groupKey)}
 							searchQuery={searchQuery}
-							hasData={hasDataToShow(valuesGroup)}
 							valuesGroup={valuesGroup}
 						/>
 					))}
@@ -166,19 +115,19 @@ interface StateSectionProps {
 	title: string;
 	icon: React.ReactNode;
 	searchQuery: string;
-	hasData: boolean;
 	valuesGroup: Record<string, any>;
 }
 
-function StateSection({ groupKey, title, icon, searchQuery, hasData, valuesGroup }: StateSectionProps) {
-	const [isCollapsed, setIsCollapsed] = useState(!hasData);
+function StateSection({ groupKey, title, icon, searchQuery, valuesGroup }: StateSectionProps) {
+	const [isCollapsed, setIsCollapsed] = useState(false);
 
 	// Filter section content based on search query
 	const shouldShowSection = useMemo(() => {
 		if (!searchQuery) return true;
 		return (
-			title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			Object.keys(valuesGroup).some((key) => key.toLowerCase().includes(searchQuery.toLowerCase()))
+			title.toLowerCase().includes(searchQuery.toLowerCase()) 
+			|| Object.keys(valuesGroup).some((key) => key.toLowerCase().includes(searchQuery.toLowerCase()))
+			|| serialize(valuesGroup).toLowerCase().includes(searchQuery.toLowerCase())
 		);
 	}, [title, searchQuery, valuesGroup]);
 
@@ -187,7 +136,7 @@ function StateSection({ groupKey, title, icon, searchQuery, hasData, valuesGroup
 	}
 
 	const itemCount = Object.keys(valuesGroup).length;
-	const dataCount = Object.values(valuesGroup).filter(hasDataValue).length;
+	const dataCount = Object.values(valuesGroup).length;
 
 	return (
 		<div className="break-inside-avoid mb-2 border rounded bg-card/50 shadow-sm">
@@ -238,8 +187,7 @@ interface StateDisplayProps {
 }
 
 function StateDisplay({ atomKey, label, value, searchQuery }: StateDisplayProps) {
-	const displayValue = serializeForDisplay(value);
-	const hasValue = hasDataValue(value);
+	const displayValue = serialize(value);
 
 	// Check if this item matches the search query
 	const matchesSearch = useMemo(() => {
@@ -307,11 +255,7 @@ function StateDisplay({ atomKey, label, value, searchQuery }: StateDisplayProps)
 	const style = getValueStyle(value);
 
 	return (
-		<div
-			className={`rounded text-xs transition-colors ${
-				hasValue ? 'bg-background hover:bg-muted/20' : 'bg-muted/10 hover:bg-muted/20'
-			} ${!hasValue ? 'opacity-60' : ''}`}
-		>
+		<div className={`rounded text-xs transition-colors bg-background hover:bg-muted/20`}>
 			<div className="px-2 py-1">
 				<div className="flex items-center justify-between gap-2 mb-1">
 					<div className="flex items-center gap-1 flex-1">
@@ -329,7 +273,7 @@ function StateDisplay({ atomKey, label, value, searchQuery }: StateDisplayProps)
 							size="sm"
 							onClick={() => {
 								try {
-									const serialized = serializeForClipboard(value);
+									const serialized = serialize(value);
 									navigator.clipboard.writeText(serialized);
 								} catch {
 									// Fallback to string conversion
