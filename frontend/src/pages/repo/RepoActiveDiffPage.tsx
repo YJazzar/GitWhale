@@ -1,9 +1,10 @@
 import FileDiffView from '@/components/file-diff-view';
 import { FileTabs } from '@/components/file-tabs/file-tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { CommitTextarea } from '@/components/ui/commit-textarea';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import {
 	FileTabsSessionKeyGenerator,
@@ -19,6 +20,7 @@ import {
 	FileText,
 	GitBranch,
 	GitCommit,
+	Info,
 	Minus,
 	Plus,
 	RefreshCw,
@@ -89,11 +91,13 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 							</div>
 						)}
 
-						{stagingState.hasChanges && (<FileTabs
-							key={`staging-${repoPath}`}
-							initialTabs={[]}
-							fileTabManageSessionKey={FileTabsSessionKeyGenerator.stagingArea(repoPath)}
-						/>)}
+						{stagingState.hasChanges && (
+							<FileTabs
+								key={`staging-${repoPath}`}
+								initialTabs={[]}
+								fileTabManageSessionKey={FileTabsSessionKeyGenerator.stagingArea(repoPath)}
+							/>
+						)}
 					</div>
 				</ResizablePanel>
 			</ResizablePanelGroup>
@@ -167,25 +171,32 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 			<div className="space-y-3">
 				<div>
 					<div className="flex justify-between items-center mb-2">
-						<label htmlFor="commit-message" className="text-sm font-medium">
-							Commit Message
-						</label>
+						<div className="flex items-center gap-1">
+							<label htmlFor="commit-message" className="text-sm font-medium">
+								Commit Message
+							</label>
+							<TooltipProvider>
+								<Tooltip delayDuration={100} >
+									<TooltipTrigger asChild >
+										<Info className="w-3 h-3 text-muted-foreground cursor-help" />
+									</TooltipTrigger>
+									<TooltipContent side='right'>
+										<p>Ctrl+T to rewrap • Cmd/Ctrl+Enter to commit</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						</div>
 						{stagingState.hasStagedChanges && (
 							<span className="text-xs text-muted-foreground">
 								{stagingState.gitStatus.value?.stagedFiles?.length ?? 0} staged
 							</span>
 						)}
 					</div>
-					<Input
+					<CommitTextarea
 						id="commit-message"
 						placeholder="Enter commit message..."
 						value={commitMessage}
 						onChange={(e) => setCommitMessage(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-								handleCommit();
-							}
-						}}
 						disabled={isCommitting || !stagingState.hasStagedChanges}
 						className="mb-3"
 					/>
