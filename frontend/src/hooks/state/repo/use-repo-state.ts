@@ -3,6 +3,7 @@ import { getDiffState } from './use-git-diff-state';
 import { getHomeState } from './use-git-home-state';
 import { getLogState } from './use-git-log-state';
 import { getTerminalState } from './use-repo-terminal';
+import { getStagingState } from './use-git-staging-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '../useSidebarHandlers';
 
 export const useRepoState = (repoPath: string) => {
@@ -13,6 +14,7 @@ export const useRepoState = (repoPath: string) => {
 		homeState: getHomeState(repoPath),
 		diffState: getDiffState(repoPath),
 		logState: getLogState(repoPath),
+		stagingState: getStagingState(repoPath),
 	};
 
 	const onCloseRepo = () => {
@@ -21,6 +23,7 @@ export const useRepoState = (repoPath: string) => {
 		stateObjects.diffState.disposeSessions();
 		stateObjects.logState.disposeLogState();
 		stateObjects.homeState.disposeHomeState();
+		stateObjects.stagingState.disposeStagingState();
 		sidebar.cleanup();
 	};
 

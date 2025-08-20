@@ -4,11 +4,12 @@ import { SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
 import RepoHomeView from '@/pages/repo/RepoHomeView';
 import RepoLogView from '@/pages/repo/RepoLogView';
 import RepoTerminalView from '@/pages/repo/RepoTerminalView';
+import RepoActiveDiffPage from '@/pages/repo/RepoActiveDiffPage';
 import { CommandPaletteContextKey } from '@/types/command-palette';
-import { GitGraph, House, Terminal } from 'lucide-react';
+import { GitGraph, House, Terminal, GitAdd } from 'lucide-react';
 import { useEffect } from 'react';
 
-export type RepoViewType = 'home' | 'log' | 'diff' | 'terminal';
+export type RepoViewType = 'home' | 'log' | 'diff' | 'terminal' | 'staging';
 
 interface RepoViewTabsProps {
 	repoPath: string;
@@ -25,6 +26,13 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 			title: 'Home',
 			icon: <House className="h-4 w-4" />,
 			component: <RepoHomeView repoPath={repoPath} />,
+			preventClose: true,
+		},
+		{
+			id: 'staging',
+			title: 'Staging',
+			icon: <GitAdd className="h-4 w-4" />,
+			component: <RepoActiveDiffPage repoPath={repoPath} />,
 			preventClose: true,
 		},
 		{

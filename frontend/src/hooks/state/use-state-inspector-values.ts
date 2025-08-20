@@ -3,6 +3,7 @@ import { useCommandPaletteStateAtoms } from '../command-palette/use-command-pale
 import { useGitDiffStateAtoms } from './repo/use-git-diff-state';
 import { useGitHomeStateAtoms } from './repo/use-git-home-state';
 import { useGitLogStateAtoms } from './repo/use-git-log-state';
+import { useGitStagingStateAtoms } from './repo/use-git-staging-state';
 import { useAppLogStateAtoms } from './use-app-log-state';
 import { useAppStateAtoms } from './use-app-state';
 import { useCustomCommandStateAtoms } from './use-custom-commands-state';
@@ -22,6 +23,7 @@ export function useStateInspectorValues() {
 	const gitDiffStateAtoms = useGitDiffStateAtoms();
 	const gitHomeStateAtoms = useGitHomeStateAtoms();
 	const gitLogStateAtoms = useGitLogStateAtoms();
+	const gitStagingStateAtoms = useGitStagingStateAtoms();
 
 	const allStateAtoms = {
 		appStateAtoms,
@@ -34,6 +36,7 @@ export function useStateInspectorValues() {
 		gitDiffStateAtoms,
 		gitHomeStateAtoms,
 		gitLogStateAtoms,
+		gitStagingStateAtoms,
 	};
 
 	const allStateValues = Object.keys(allStateAtoms).reduce((acc, key) => {

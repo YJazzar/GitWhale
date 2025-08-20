@@ -14,6 +14,10 @@ export function CloseRepo(arg1) {
   return window['go']['backend']['App']['CloseRepo'](arg1);
 }
 
+export function CommitChanges(arg1, arg2) {
+  return window['go']['backend']['App']['CommitChanges'](arg1, arg2);
+}
+
 export function DeleteCustomCommand(arg1) {
   return window['go']['backend']['App']['DeleteCustomCommand'](arg1);
 }
@@ -52,6 +56,10 @@ export function GetDetailedCommitInfo(arg1, arg2) {
 
 export function GetDiffSession(arg1) {
   return window['go']['backend']['App']['GetDiffSession'](arg1);
+}
+
+export function GetGitStatus(arg1) {
+  return window['go']['backend']['App']['GetGitStatus'](arg1);
 }
 
 export function GetStartupDirDiffDirectory() {
@@ -98,6 +106,14 @@ export function SaveCustomCommand(arg1) {
   return window['go']['backend']['App']['SaveCustomCommand'](arg1);
 }
 
+export function StageAllFiles(arg1) {
+  return window['go']['backend']['App']['StageAllFiles'](arg1);
+}
+
+export function StageFile(arg1, arg2) {
+  return window['go']['backend']['App']['StageFile'](arg1, arg2);
+}
+
 export function StartDiffSession(arg1) {
   return window['go']['backend']['App']['StartDiffSession'](arg1);
 }
@@ -108,6 +124,14 @@ export function Startup(arg1, arg2) {
 
 export function ToggleStarRepo(arg1) {
   return window['go']['backend']['App']['ToggleStarRepo'](arg1);
+}
+
+export function UnstageAllFiles(arg1) {
+  return window['go']['backend']['App']['UnstageAllFiles'](arg1);
+}
+
+export function UnstageFile(arg1, arg2) {
+  return window['go']['backend']['App']['UnstageFile'](arg1, arg2);
 }
 
 export function UpdateSettings(arg1) {

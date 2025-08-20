@@ -615,6 +615,63 @@ export namespace git_operations {
 	        this.hash = source["hash"];
 	    }
 	}
+	export class GitStatusFile {
+	    path: string;
+	    status: string;
+	    stagedStatus: string;
+	    workingStatus: string;
+	    oldPath: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GitStatusFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.status = source["status"];
+	        this.stagedStatus = source["stagedStatus"];
+	        this.workingStatus = source["workingStatus"];
+	        this.oldPath = source["oldPath"];
+	    }
+	}
+	export class GitStatus {
+	    stagedFiles: GitStatusFile[];
+	    unstagedFiles: GitStatusFile[];
+	    untrackedFiles: GitStatusFile[];
+	    hasChanges: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new GitStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.stagedFiles = this.convertValues(source["stagedFiles"], GitStatusFile);
+	        this.unstagedFiles = this.convertValues(source["unstagedFiles"], GitStatusFile);
+	        this.untrackedFiles = this.convertValues(source["untrackedFiles"], GitStatusFile);
+	        this.hasChanges = source["hasChanges"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class WorktreeInfo {
 	    path: string;
 	    branch: string;

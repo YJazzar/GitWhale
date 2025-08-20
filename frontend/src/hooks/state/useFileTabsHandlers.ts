@@ -13,6 +13,9 @@ export const FileTabsSessionKeyGenerator = {
 	diffSession: (diffSessionID: string) => {
 		return `diff-session-${diffSessionID}`;
 	},
+	stagingArea: (repoPath: string) => {
+		return `staging-area-${repoPath}`;
+	},
 };
 
 export function useFileTabsHandlers(

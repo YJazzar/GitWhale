@@ -320,3 +320,35 @@ func (app *App) DeleteCustomCommand(commandId string) error {
 	}
 	return fmt.Errorf("custom command with ID %s not found", commandId)
 }
+
+// Git staging operations
+
+// GetGitStatus retrieves the current Git status for a repository
+func (app *App) GetGitStatus(repoPath string) (*git_operations.GitStatus, error) {
+	return git_operations.GetGitStatus(repoPath)
+}
+
+// StageFile stages a specific file
+func (app *App) StageFile(repoPath, filePath string) error {
+	return git_operations.StageFile(repoPath, filePath)
+}
+
+// UnstageFile unstages a specific file
+func (app *App) UnstageFile(repoPath, filePath string) error {
+	return git_operations.UnstageFile(repoPath, filePath)
+}
+
+// StageAllFiles stages all unstaged and untracked files
+func (app *App) StageAllFiles(repoPath string) error {
+	return git_operations.StageAllFiles(repoPath)
+}
+
+// UnstageAllFiles unstages all staged files
+func (app *App) UnstageAllFiles(repoPath string) error {
+	return git_operations.UnstageAllFiles(repoPath)
+}
+
+// CommitChanges commits the staged changes with the provided message
+func (app *App) CommitChanges(repoPath, message string) error {
+	return git_operations.CommitChanges(repoPath, message)
+}
