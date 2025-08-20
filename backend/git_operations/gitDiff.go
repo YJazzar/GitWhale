@@ -16,17 +16,17 @@ import (
 )
 
 type DiffSession struct {
-	SessionId         string              `json:"sessionId"`
-	RepoPath          string              `json:"repoPath"`
-	FromRef           string              `json:"fromRef"`
-	ToRef             string              `json:"toRef"`
-	LeftPath          string              `json:"leftPath"`
-	RightPath         string              `json:"rightPath"`
-	CreatedAt         time.Time           `json:"createdAt"`
-	LastAccessed      time.Time           `json:"lastAccessed"`
-	Title             string              `json:"title"`
-	DirectoryData     *Directory          `json:"directoryData"`
-	HasDiffData       bool                `json:"hasDiffData"`
+	SessionId         string            `json:"sessionId"`
+	RepoPath          string            `json:"repoPath"`
+	FromRef           string            `json:"fromRef"`
+	ToRef             string            `json:"toRef"`
+	LeftPath          string            `json:"leftPath"`
+	RightPath         string            `json:"rightPath"`
+	CreatedAt         time.Time         `json:"createdAt"`
+	LastAccessed      time.Time         `json:"lastAccessed"`
+	Title             string            `json:"title"`
+	DirectoryData     *Directory        `json:"directoryData"`
+	HasDiffData       bool              `json:"hasDiffData"`
 	CommitInformation *GitLogCommitInfo `json:"commitInformation"`
 }
 
@@ -301,7 +301,7 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) (bo
 	if toRef == "" {
 		cmdArgs = []string{"difftool", "-d", "--tool=" + toolName, "--no-prompt", fromRef}
 	} else {
-		cmdArgs = []string{"difftool", "-d", "--tool=" + toolName, "--no-prompt", fromRef, toRef}
+		cmdArgs = []string{"difftool", "-d", "--tool=" + toolName, "--no-prompt", toRef, fromRef}
 	}
 
 	// Execute git difftool with environment variables
