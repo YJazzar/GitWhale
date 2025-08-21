@@ -172,8 +172,8 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 
 	return (
 		<div className="p-4 border-t bg-muted/20">
-			<div className="space-y-3">
-				<div>
+
+				<div className='pb-2'>
 					<div className="flex justify-between items-center mb-2">
 						<div className="flex items-center gap-1">
 							<label htmlFor="commit-message" className="text-sm font-medium">
@@ -202,7 +202,7 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 						placeholder="Enter commit message..."
 						value={commitMessage}
 						onChange={onCommitMessageChange}
-						disabled={isCommitting || !stagingState.hasStagedChanges}
+						className='h-fit'
 					/>
 				</div>
 
@@ -230,7 +230,7 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 						<RefreshCw className={cn('w-4 h-4', stagingState.isLoading && 'animate-spin')} />
 					</Button>
 				</div>
-			</div>
+
 		</div>
 	);
 }
@@ -438,7 +438,7 @@ function FileListSection({
 							{getStatusBadge(file)}
 
 							<div className="flex-1 min-w-0 flex items-center gap-1.5">
-								<span className="text-sm font-medium" title={file.path}>
+								<span className="text-sm font-medium whitespace-nowrap" title={file.path}>
 									{fileName}
 								</span>
 								{dirPath && (
