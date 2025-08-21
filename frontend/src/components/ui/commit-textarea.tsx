@@ -14,16 +14,17 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 		useImperativeHandle(ref, () => textareaRef.current!);
 
 		useEffect(() => {
-			if (!selectionStart) { return }
-
-			const textarea = textareaRef.current
-			if (textarea) { 
-				textarea.selectionStart = selectionStart
-				textarea.selectionEnd = selectionStart
+			if (!selectionStart) {
+				return;
 			}
-			setSelectionStart(undefined)
 
-		}, [selectionStart, setSelectionStart])
+			const textarea = textareaRef.current;
+			if (textarea) {
+				textarea.selectionStart = selectionStart;
+				textarea.selectionEnd = selectionStart;
+			}
+			setSelectionStart(undefined);
+		}, [selectionStart, setSelectionStart]);
 
 		const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 			const newValue = e.target.value;

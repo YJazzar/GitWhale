@@ -106,6 +106,8 @@ export namespace backend {
 	}
 	export class GitSettings {
 	    commitsToLoad: number;
+	    commitMessageTabWidth: number;
+	    commitMessageWrapLimitCol: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new GitSettings(source);
@@ -114,6 +116,8 @@ export namespace backend {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.commitsToLoad = source["commitsToLoad"];
+	        this.commitMessageTabWidth = source["commitMessageTabWidth"];
+	        this.commitMessageWrapLimitCol = source["commitMessageWrapLimitCol"];
 	    }
 	}
 	export class AppSettings {

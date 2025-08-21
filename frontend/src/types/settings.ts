@@ -49,19 +49,6 @@ export const TERMINAL_CURSOR_STYLES = [
   { value: 'bar', label: 'Bar' },
 ] as const;
 
-export const COMMITS_LOAD_OPTIONS = [
-  { value: 5, label: '5 commits' },
-  { value: 10, label: '10 commits' },
-  { value: 15, label: '15 commits' },
-  { value: 25, label: '25 commits' },
-  { value: 40, label: '40 commits' },
-  { value: 50, label: '50 commits' },
-  { value: 100, label: '100 commits' },
-  { value: 200, label: '200 commits' },
-  { value: 500, label: '500 commits' },
-  { value: 1000, label: '1000 commits' },
-] as const;
-
 export const FONT_SIZE_OPTIONS = [
   { value: 10, label: '10px' },
   { value: 12, label: '12px' },

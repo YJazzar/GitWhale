@@ -26,9 +26,9 @@ type AppConfig struct {
 }
 
 type AppSettings struct {
-	Git           GitSettings                    `json:"git"`
-	Terminal      command_utils.TerminalSettings `json:"terminal"`
-	UI            UISettings                     `json:"ui"`
+	Git            GitSettings                    `json:"git"`
+	Terminal       command_utils.TerminalSettings `json:"terminal"`
+	UI             UISettings                     `json:"ui"`
 	CustomCommands []UserDefinedCommandDefinition `json:"customCommands"`
 }
 
@@ -37,17 +37,19 @@ type UISettings struct {
 }
 
 type GitSettings struct {
-	CommitsToLoad int `json:"commitsToLoad"`
+	CommitsToLoad             int `json:"commitsToLoad"`
+	CommitMessageTabWidth     int `json:"commitMessageTabWidth"`
+	CommitMessageWrapLimitCol int `json:"commitMessageWrapLimitCol"`
 }
 
 type UserDefinedCommandDefinition struct {
-	ID          string                    `json:"id"`
-	Title       string                    `json:"title"`
-	Description *string                   `json:"description,omitempty"`
-	Keywords    []string                  `json:"keywords,omitempty"`
-	Context     string                    `json:"context"`
-	Parameters  []UserDefinedParameter    `json:"parameters,omitempty"`
-	Action      UserDefinedCommandAction  `json:"action"`
+	ID          string                   `json:"id"`
+	Title       string                   `json:"title"`
+	Description *string                  `json:"description,omitempty"`
+	Keywords    []string                 `json:"keywords,omitempty"`
+	Context     string                   `json:"context"`
+	Parameters  []UserDefinedParameter   `json:"parameters,omitempty"`
+	Action      UserDefinedCommandAction `json:"action"`
 }
 
 type UserDefinedParameter struct {
@@ -78,7 +80,9 @@ func LoadAppConfig() (*AppConfig, error) {
 			FilePath: appConfigFile,
 			Settings: AppSettings{
 				Git: GitSettings{
-					CommitsToLoad: 25,
+					CommitsToLoad:             25,
+					CommitMessageTabWidth:     4,
+					CommitMessageWrapLimitCol: 72,
 				},
 				Terminal: command_utils.TerminalSettings{
 					DefaultCommand: "",
@@ -100,6 +104,12 @@ func LoadAppConfig() (*AppConfig, error) {
 	// Ensure settings have default values if they're missing
 	if config.Settings.Git.CommitsToLoad == 0 {
 		config.Settings.Git.CommitsToLoad = 100
+	}
+	if config.Settings.Git.CommitMessageTabWidth == 0 {
+		config.Settings.Git.CommitMessageTabWidth = 4
+	}
+	if config.Settings.Git.CommitMessageWrapLimitCol == 0 {
+		config.Settings.Git.CommitMessageWrapLimitCol = 70
 	}
 	if config.Settings.Terminal.FontSize == 0 {
 		config.Settings.Terminal.FontSize = 14

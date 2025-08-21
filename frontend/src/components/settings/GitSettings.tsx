@@ -1,16 +1,9 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/use-settings';
-import { COMMITS_LOAD_OPTIONS } from '@/types/settings';
-import { Check, ChevronDown, GitBranch } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 
 export function GitSettings() {
 	const { settings, updateSettings } = useSettings();
@@ -46,36 +39,56 @@ export function GitSettings() {
 					<Label htmlFor="commits-to-load" className="text-sm font-medium">
 						Commits to Load
 					</Label>
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="outline"
-								size="sm"
-								className="w-full justify-between mt-1"
-							>
-								{COMMITS_LOAD_OPTIONS.find(
-									(opt) => opt.value === settings.git.commitsToLoad
-								)?.label || `${settings.git.commitsToLoad} commits`}
-								<ChevronDown className="h-4 w-4 opacity-50" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent className="w-full">
-							{COMMITS_LOAD_OPTIONS.map((option) => (
-								<DropdownMenuItem
-									key={option.value}
-									onClick={() =>
-										handleGitSettingsChange('commitsToLoad', option.value)
-									}
-									className="flex items-center justify-between"
-								>
-									{option.label}
-									{settings.git.commitsToLoad === option.value && (
-										<Check className="h-4 w-4" />
-									)}
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
+
+					<Input
+						id="commits-to-load"
+						type="number"
+						placeholder="100"
+						value={settings.git.commitsToLoad === 0 ? undefined : settings.git.commitsToLoad}
+						onChange={(e) => {
+							const newValue = e.target.value !== '' ? parseInt(e.target.value) : null;
+							handleGitSettingsChange('commitsToLoad', parseInt(e.target.value));
+						}}
+						className="mt-1"
+					/>
+				</div>
+				<div>
+					<Label htmlFor="commit-message-tab-width" className="text-sm font-medium">
+						Commit Message Tab Width
+					</Label>
+					<Input
+						id="commit-message-tab-width"
+						type="number"
+						placeholder="4"
+						value={
+							settings.git.commitMessageTabWidth === 0
+								? undefined
+								: settings.git.commitMessageTabWidth
+						}
+						onChange={(e) =>
+							handleGitSettingsChange('commitMessageTabWidth', parseInt(e.target.value))
+						}
+						className="mt-1"
+					/>
+				</div>
+				<div>
+					<Label htmlFor="commit-message-wrap-limit" className="text-sm font-medium">
+						Commit Message Wrap Limit Column
+					</Label>
+					<Input
+						id="commit-message-wrap-limit"
+						type="number"
+						placeholder="70"
+						value={
+							settings.git.commitMessageWrapLimitCol === 0
+								? undefined
+								: settings.git.commitMessageWrapLimitCol
+						}
+						onChange={(e) =>
+							handleGitSettingsChange('commitMessageWrapLimitCol', parseInt(e.target.value))
+						}
+						className="mt-1"
+					/>
 				</div>
 				<div className="flex items-center justify-between">
 					<div className="space-y-0.5">
