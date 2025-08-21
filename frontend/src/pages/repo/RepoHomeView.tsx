@@ -26,7 +26,7 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 
 	return (
 		<div className="h-full flex flex-col">
-			<div className="flex-shrink-0 p-4 max-w-7xl mx-auto w-full">
+			<div className="shrink-0 p-4 max-w-7xl mx-auto w-full">
 				{/* Header with Quick Actions */}
 				<QuickActions repoPath={repoPath} onRefresh={handleRefresh} isRefreshing={isAnyLoading} />
 			</div>

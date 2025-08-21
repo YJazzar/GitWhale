@@ -137,7 +137,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 							variant="secondary"
 							size="sm"
 							onClick={handleShowCommitDetails}
-							className="w-full rounded-none border-t border-l-0 border-r-0 border-b-0 bg-muted/80 backdrop-blur-sm hover:bg-muted flex items-center justify-center gap-2 h-8 text-xs font-medium shadow-lg"
+							className="w-full rounded-none border-t border-l-0 border-r-0 border-b-0 bg-muted/80 backdrop-blur-xs hover:bg-muted flex items-center justify-center gap-2 h-8 text-xs font-medium shadow-lg"
 						>
 							<span> #{selectedCommitShortHash} - Click to view details</span>
 							<ChevronUp className="w-3 h-3" />

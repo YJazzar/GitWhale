@@ -53,7 +53,7 @@ export function CommitFileList({ commit }: CommitFileListProps) {
 	return (
 		<div className="space-y-3">
 			<div className='flex'>
-				<h4 className="text-sm font-medium text-muted-foreground flex-grow">Files Changed</h4>
+				<h4 className="text-sm font-medium text-muted-foreground grow">Files Changed</h4>
 				<div className="flex items-center gap-3 text-sm">
 					<Badge variant="secondary">{commit.commitStats.filesChanged} files</Badge>
 					<Badge variant="outline" className="text-green-600 border-green-600">

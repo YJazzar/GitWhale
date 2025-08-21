@@ -69,7 +69,7 @@ export function ContextMenuProvider<T = any>({
 		<div
 			ref={menuRef}
 			className={cn(
-				'fixed z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
+				'fixed z-50 min-w-48 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
 				'animate-in fade-in-0 zoom-in-95 duration-200',
 				className
 			)}
@@ -85,7 +85,7 @@ export function ContextMenuProvider<T = any>({
 					)}
 					<button
 						className={cn(
-							'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
+							'relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors',
 							'hover:bg-accent hover:text-accent-foreground',
 							'focus:bg-accent focus:text-accent-foreground',
 							'disabled:pointer-events-none disabled:opacity-50'

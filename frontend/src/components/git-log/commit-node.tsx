@@ -64,7 +64,7 @@ export function CommitNode({
 		<div className="relative flex items-start">
 			{/* Graph visualization area */}
 			<div
-				className="relative flex-shrink-0"
+				className="relative shrink-0"
 				style={{ width: graphWidth }}
 			>
 				{/* Connection lines - extend beyond the row to ensure seamless connections */}
@@ -139,7 +139,7 @@ export function CommitNode({
 
 				{/* Commit dot */}
 				<div
-					className="absolute z-20 w-4 h-4 rounded-full border-2 bg-background flex items-center justify-center shadow-sm transition-all duration-200 hover:scale-110"
+					className="absolute z-20 w-4 h-4 rounded-full border-2 bg-background flex items-center justify-center shadow-xs transition-all duration-200 hover:scale-110"
 					style={{
 						left: leftPadding + 8,
 						top: 24, // Adjusted for the new SVG positioning (32 - 8 offset)
@@ -158,7 +158,7 @@ export function CommitNode({
 			{/* Commit details */}
 			<div className="flex-1 p-0">
 				<div
-					className="px-3 py-1.5 rounded-md hover:bg-accent/50 hover:shadow-sm transition-all duration-200 cursor-pointer group border border-transparent hover:border-primary/20"
+					className="px-3 py-1.5 rounded-md hover:bg-accent/50 hover:shadow-xs transition-all duration-200 cursor-pointer group border border-transparent hover:border-primary/20"
 					onClick={handleCommitClick}
 					style={{
 						borderLeftColor: connections.find(c => c.type === 'straight')?.color || '#3b82f6',
@@ -180,14 +180,14 @@ export function CommitNode({
 							{/* Author and timestamp */}
 							<div className="flex items-center gap-3 text-xs text-muted-foreground overflow-hidden">
 								<div className="flex items-center gap-1 truncate">
-									<User className="w-3 h-3 flex-shrink-0" />
+									<User className="w-3 h-3 shrink-0" />
 									<span className="truncate">{commit.username}</span>
 								</div>
-								<div className="flex items-center gap-1 flex-shrink-0">
+								<div className="flex items-center gap-1 shrink-0">
 									<Calendar className="w-3 h-3" />
 									<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
 								</div>
-								<div className="flex items-center gap-1 flex-shrink-0">
+								<div className="flex items-center gap-1 shrink-0">
 									<Hash className="w-3 h-3" />
 									<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono group-hover:bg-primary/10 transition-colors">
 										{shortHash}

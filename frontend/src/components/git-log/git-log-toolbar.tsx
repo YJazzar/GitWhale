@@ -77,7 +77,7 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 
 			<FetchButton repoPath={repoPath} />
 
-			<div className="flex-grow" />
+			<div className="grow" />
 
 			<CompareButton repoPath={repoPath} />
 		</div>

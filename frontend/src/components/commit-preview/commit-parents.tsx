@@ -24,7 +24,7 @@ export function CommitParents({ commit, repoPath }: CommitParentsProps) {
 							commitHash={parentHash}
 							shortHash={true}
 							showIcon={false}
-							className="flex-shrink-0"
+							className="shrink-0"
 							repoPath={repoPath}
 							enableCopyHash
 						/>

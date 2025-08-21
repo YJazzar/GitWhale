@@ -364,7 +364,7 @@ function CommitDetails({
 									{displayMessage}
 								</span>
 								{commit.refs && (
-									<div className="flex-shrink-0">
+									<div className="shrink-0">
 										<GitRefs refs={commit.refs} />
 									</div>
 								)}
@@ -513,7 +513,7 @@ export function D3GitGraph({
 								ref={isLastCommit ? lastCommitElementRef : undefined}
 								className={`absolute w-full pointer-events-auto group transition-all duration-200 cursor-pointer ${
 									isSelected
-										? 'bg-primary/20 hover:bg-primary/25 border-l-4 border-l-primary shadow-sm'
+										? 'bg-primary/20 hover:bg-primary/25 border-l-4 border-l-primary shadow-xs'
 										: 'hover:bg-accent/30'
 								}`}
 								style={{

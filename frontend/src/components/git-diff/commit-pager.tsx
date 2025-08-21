@@ -100,7 +100,7 @@ export function CommitPager(props: CommitPagerProps) {
 					buttonText="Previous"
 				/>
 
-				<div className="flex-grow" />
+				<div className="grow" />
 
 				{/* Next Button */}
 				<PagingButton repoPath={repoPath} commitHashes={childCommits} buttonText="Next" />

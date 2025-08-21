@@ -27,7 +27,7 @@ export function RecentCommits(props: RecentCommitsProps) {
 
 	return (
 		<Card className="h-full flex flex-col">
-			<CardHeader className="pb-3 flex-shrink-0">
+			<CardHeader className="pb-3 shrink-0">
 				<CardTitle className="flex items-center gap-2 text-lg">
 					<History className="h-4 w-4" />
 					Recent Commits
@@ -38,7 +38,7 @@ export function RecentCommits(props: RecentCommitsProps) {
 					<div className="space-y-2">
 						{Array.from({ length: 5 }).map((_, index) => (
 							<div key={index} className="flex items-start gap-2.5 p-2.5 rounded-lg">
-								<Skeleton className="h-3.5 w-3.5 mt-0.5 rounded-sm flex-shrink-0" />
+								<Skeleton className="h-3.5 w-3.5 mt-0.5 rounded-sm shrink-0" />
 								<div className="flex-1 min-w-0 space-y-1">
 									<Skeleton className="h-4 w-full" />
 									<div className="flex items-center gap-2">
@@ -63,9 +63,9 @@ export function RecentCommits(props: RecentCommitsProps) {
 								onClick={() => onCommitClick(commit)}
 							>
 								{commit.parentCommitHashes.length > 1 ? (
-									<GitMerge className="h-3.5 w-3.5 mt-0.5 text-purple-500 flex-shrink-0" />
+									<GitMerge className="h-3.5 w-3.5 mt-0.5 text-purple-500 shrink-0" />
 								) : (
-									<GitCommit className="h-3.5 w-3.5 mt-0.5 text-blue-500 flex-shrink-0" />
+									<GitCommit className="h-3.5 w-3.5 mt-0.5 text-blue-500 shrink-0" />
 								)}
 
 								<div className="flex-1 min-w-0 space-y-1">

@@ -51,7 +51,7 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 
 	return (
 		<Card className="h-full flex flex-col">
-			<CardHeader className="pb-3 flex-shrink-0">
+			<CardHeader className="pb-3 shrink-0">
 				<CardTitle className="flex items-center gap-2 text-lg">
 					<FolderTree className="h-4 w-4" />
 					Worktrees

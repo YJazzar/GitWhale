@@ -171,7 +171,7 @@ const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
 			className={clsx(
 				'w-full flex items-center gap-2 p-2 rounded-md transition-all duration-200 group relative select-none',
 				'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-				'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+				'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sidebar-ring',
 				{
 					'bg-sidebar-accent text-sidebar-accent-foreground': isActive,
 					'text-sidebar-foreground': !isActive,
@@ -182,7 +182,7 @@ const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
 			)}
 		>
 			{/* Icon */}
-			<div className="flex-shrink-0 flex items-center justify-center h-4 w-4">{item.icon}</div>
+			<div className="shrink-0 flex items-center justify-center h-4 w-4">{item.icon}</div>
 
 			{/* Title (only in wide mode) */}
 			{!isCompact && (
@@ -196,7 +196,7 @@ const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
 					className={clsx(
 						'absolute right-1 p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200',
 						'hover:bg-destructive/10 hover:text-destructive',
-						'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+						'focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring',
 						{
 							'opacity-100': isActive,
 						}

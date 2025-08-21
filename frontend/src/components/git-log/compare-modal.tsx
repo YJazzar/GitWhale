@@ -103,7 +103,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 								/>
 							</div>
 
-							<ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mb-2" />
+							<ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mb-2" />
 
 							<div className="flex-1 min-w-0">
 								<LabeledRefSelectorInput

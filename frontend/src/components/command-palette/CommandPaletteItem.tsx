@@ -27,7 +27,7 @@ export function CommandPaletteItem({ command, isSelected, onSelect, onExecute }:
 						onDoubleClick={onExecute}
 					>
 						{/* Icon */}
-						<div className="flex-shrink-0 text-muted-foreground">
+						<div className="shrink-0 text-muted-foreground">
 							{command.icon || <CommandIcon className="h-3.5 w-3.5" />}
 						</div>
 

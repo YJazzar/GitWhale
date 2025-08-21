@@ -61,7 +61,7 @@ export default function StateInspectorPage() {
 	return (
 		<div className="h-full flex flex-col bg-background">
 			{/* Compact Toolbar */}
-			<div className="bg-muted/10 px-3 py-2 shadow-sm">
+			<div className="bg-muted/10 px-3 py-2 shadow-xs">
 				<div className="flex items-center justify-between gap-3">
 					<div className="flex items-center gap-2">
 						<Bug className="w-4 h-4 text-primary" />
@@ -139,7 +139,7 @@ function StateSection({ groupKey, title, icon, searchQuery, valuesGroup }: State
 	const dataCount = Object.values(valuesGroup).length;
 
 	return (
-		<div className="break-inside-avoid mb-2 border rounded bg-card/50 shadow-sm">
+		<div className="break-inside-avoid mb-2 border rounded bg-card/50 shadow-xs">
 			<div
 				className="px-3 py-2 cursor-pointer hover:bg-muted/40 flex items-center justify-between group transition-colors bg-muted/15"
 				onClick={() => setIsCollapsed(!isCollapsed)}

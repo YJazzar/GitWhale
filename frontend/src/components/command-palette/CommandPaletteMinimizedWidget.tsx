@@ -68,7 +68,7 @@ export function CommandPaletteMinimizedWidget() {
 	const isRunning = status === 'started';
 
 	return (
-		<div className={`fixed bottom-4 right-4 z-50 transition-all duration-200 ${getStatusInfo.bgColor} border rounded-lg shadow-lg backdrop-blur-sm`}>
+		<div className={`fixed bottom-4 right-4 z-50 transition-all duration-200 ${getStatusInfo.bgColor} border rounded-lg shadow-lg backdrop-blur-xs`}>
 			<div className="flex items-center gap-3 p-3 pr-2">
 				{/* Status and Command Info */}
 				<div className="flex items-center gap-2 min-w-0 flex-1">

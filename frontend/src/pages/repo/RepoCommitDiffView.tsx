@@ -65,7 +65,7 @@ export default function RepoCommitDiffView(props: RepoCommitDiffViewProps) {
 				<ResizablePanel id="file-tree-panel" defaultSize={panelSizes[0]} minSize={15}>
 					<div className="border-r h-full overflow-y-auto overflow-x-hidden flex flex-col">
 						<FileTree
-							className="flex-grow"
+							className="grow"
 							directoryData={diffSession.directoryData}
 							fileTabsSessionKey={FileTabsSessionKeyGenerator.diffSession(diffSessionID)}
 						/>

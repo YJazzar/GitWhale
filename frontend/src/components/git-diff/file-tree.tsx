@@ -110,18 +110,18 @@ function TreeNode({ directory, onFileClick, depth }: TreeNodeProps) {
 				<div className="flex items-center gap-1 min-w-0 flex-1">
 					{hasChildren ? (
 						isOpen ? (
-							<ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+							<ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
 						) : (
-							<ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+							<ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
 						)
 					) : (
-						<div className="w-3 h-3 flex-shrink-0" />
+						<div className="w-3 h-3 shrink-0" />
 					)}
 
 					{isOpen ? (
-						<FolderOpen className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+						<FolderOpen className="h-3.5 w-3.5 text-blue-500 shrink-0" />
 					) : (
-						<Folder className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+						<Folder className="h-3.5 w-3.5 text-blue-600 shrink-0" />
 					)}
 
 					<span className="truncate text-foreground/90 font-medium">{directory.Name}</span>
@@ -222,13 +222,13 @@ function FileNode({ file, onKeyDown, onFileClick, depth }: FileNodeProps) {
 					style={{ paddingLeft: `${depth * 12 + 16}px` }}
 					>
 						<div className="flex items-center gap-1.5 min-w-0 flex-1">
-							<File className="h-3.5 w-3.5 text-muted-foreground/70 flex-shrink-0" />
+							<File className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
 
 							<span className={cn('truncate', color)}>{file.Name}</span>
 
 						<span
 							className={cn(
-								'text-xs font-mono rounded px-1 py-0.5 text-white flex-shrink-0 ml-auto',
+								'text-xs font-mono rounded px-1 py-0.5 text-white shrink-0 ml-auto',
 								status === 'M' && 'bg-amber-500',
 								status === 'D' && 'bg-red-500',
 								status === 'A' && 'bg-green-500',
