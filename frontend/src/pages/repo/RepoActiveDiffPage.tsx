@@ -25,9 +25,9 @@ import {
 	Plus,
 	RefreshCw,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { CleanupStagingDiffSession, CreateStagingDiffSession } from '../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../wailsjs/go/models';
-import { CreateStagingDiffSession, CleanupStagingDiffSession } from '../../../wailsjs/go/backend/App';
 
 interface RepoActiveDiffPageProps {
 	repoPath: string;

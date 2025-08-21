@@ -47,7 +47,8 @@ const CommitTextarea = forwardRef<HTMLTextAreaElement, CommitTextareaProps>(
 				textarea.style.height = `${singleLineHeight}px`;
 			} else {
 				// Set height to scrollHeight to fit content
-				textarea.style.height = `${textarea.scrollHeight}px`;
+				const newHeight = Math.max(0, Math.min(textarea.scrollHeight, 250))
+				textarea.style.height = `${newHeight}px`;
 			}
 		};
 
