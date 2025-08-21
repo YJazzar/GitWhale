@@ -1,15 +1,20 @@
+import { UseAppState } from '@/hooks/state/use-app-state';
 import { cn } from '@/lib/utils';
 import { smartTextReWrap } from '@/utils/textwrapper';
-import * as React from 'react';
-import { useEffect, useImperativeHandle, useState } from 'react';
+
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 export interface CommitTextareaProps extends React.ComponentProps<'textarea'> {}
 
-const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps>(
+const CommitTextarea = forwardRef<HTMLTextAreaElement, CommitTextareaProps>(
 	({ className, ...props }, ref) => {
-		const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-		const rulerRef = React.useRef<HTMLDivElement>(null);
+		const { appState } = UseAppState();
+		const textareaRef = useRef<HTMLTextAreaElement>(null);
+		const rulerRef = useRef<HTMLDivElement>(null);
 		const [selectionStart, setSelectionStart] = useState<number | undefined>(undefined);
+
+		const wrapLimit = appState?.appConfig?.settings.git.commitMessageWrapLimitCol || 70;
+		const tabWidth = appState?.appConfig?.settings.git.commitMessageTabWidth || 4;
 
 		useImperativeHandle(ref, () => textareaRef.current!);
 
@@ -27,8 +32,6 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 		}, [selectionStart, setSelectionStart]);
 
 		const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-			const newValue = e.target.value;
-
 			if (props.onChange) {
 				props.onChange(e);
 			}
@@ -68,7 +71,7 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 			// Handle Tab for auto-rewrap
 			if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
 				e.preventDefault();
-				const rewrappedText = smartTextReWrap(e.currentTarget.value);
+				const rewrappedText = smartTextReWrap(e.currentTarget.value, wrapLimit, tabWidth);
 				createSyntheticChangeEvent(rewrappedText);
 				return;
 			}
@@ -83,8 +86,8 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 
 				// Insert tab character
 				const currentContents = textareaRef.current?.value ?? '';
-				const newTextareaContents =
-					currentContents.substring(0, start) + '\t' + currentContents.substring(end ?? 0);
+				const tabContents = getRepeatedChars(' ', tabWidth)
+				const newTextareaContents = `${currentContents.substring(0, start)}${tabContents}${currentContents.substring(end ?? 0)}`
 				createSyntheticChangeEvent(newTextareaContents, start + 1);
 
 				// Reposition cursor
@@ -98,14 +101,6 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 		// Calculate ruler position based on character width
 		useEffect(() => {
 			if (textareaRef.current && rulerRef.current) {
-				const getRepeatedChars = (char: string, repeating: number) => {
-					let result = '';
-					for (let i = 0; i < repeating; i++) {
-						result += char;
-					}
-					return result;
-				};
-
 				const textarea = textareaRef.current;
 				const ruler = rulerRef.current;
 
@@ -117,7 +112,7 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 				measureSpan.style.fontFamily =
 					'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 				measureSpan.style.fontSize = getComputedStyle(textarea).fontSize;
-				measureSpan.textContent = getRepeatedChars('M', 70);
+				measureSpan.textContent = getRepeatedChars('M', wrapLimit);
 
 				document.body.appendChild(measureSpan);
 				const charWidth = measureSpan.offsetWidth;
@@ -160,5 +155,13 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 );
 
 CommitTextarea.displayName = 'CommitTextarea';
+
+const getRepeatedChars = (char: string, repeating: number) => {
+	let result = '';
+	for (let i = 0; i < repeating; i++) {
+		result += char;
+	}
+	return result;
+};
 
 export { CommitTextarea };

@@ -394,22 +394,13 @@ export function rewrap(inputLines: string[], settings: WrapSettings, selections:
 	};
 }
 
-export function smartTextReWrap(text: string): string {
+export function smartTextReWrap(text: string, wrapColLimit: number, tabWidth: number): string {
 	// Type-safe settings
 	const settings: WrapSettings = {
-		column: 70,
-		tabWidth: 4,
+		column: wrapColLimit,
+		tabWidth: tabWidth,
 	};
 
-	// Type-safe selection
-	const selection: RewrapSelection = {
-		anchor: { line: 0, character: 0 },
-		active: { line: 0, character: 50 },
-	};
-
-	// const paragraphs = text.split("\n\n").map(para => para.replaceAll("\n", " "))
-
-	// // Fully typed usage
 	const paragraphs = text.split('\n\n');
 
 	return paragraphs
