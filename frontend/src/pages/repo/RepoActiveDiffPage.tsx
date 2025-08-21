@@ -56,7 +56,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 		<div className="w-full h-full flex flex-row min-h-0">
 			<ResizablePanelGroup direction="horizontal" onLayout={handleLayoutChange}>
 				{/* Left pane: File lists and commit form */}
-				<ResizablePanel id="file-lists-panel" defaultSize={panelSizes[0]} minSize={20}>
+				<ResizablePanel id="file-lists-panel" defaultSize={panelSizes[0]} minSize={5}>
 					<div className="border-r h-full flex flex-col">
 						{/* File lists - scrollable area */}
 						<div className="flex-1 overflow-y-auto">
@@ -198,7 +198,6 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 						value={commitMessage}
 						onChange={(e) => setCommitMessage(e.target.value)}
 						disabled={isCommitting || !stagingState.hasStagedChanges}
-						className="mb-3"
 					/>
 				</div>
 

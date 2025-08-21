@@ -232,7 +232,7 @@ function formatDisplayValue(val: unknown, depth: number, options: SerializerOpti
 
 	if (typeof val === 'object') {
 		if (React.isValidElement(val)) {
-			return serializeReactComponent(val, depth, options)
+			return serializeReactComponent(val, depth, options);
 		}
 
 		// Handle Map objects specially
@@ -322,11 +322,8 @@ function serializeSet(val: Set<unknown>, depth: number, options: SerializerOptio
 }
 
 function serializeReactComponent(component: React.ReactElement, depth: number, options: SerializerOptions) {
-	const indent = getSpaces(depth * options.indentLevel);
+	const type = component.type as any;
+	const componentName = type?.name ?? type?.displayName;
 
-	return `React.ReactElement(${component.key}) ${formatDisplayValue(
-		component.props,
-		depth,
-		options
-	)}`;
+	return `React.ReactElement(${componentName}) ${formatDisplayValue(component.props, depth, options)}`;
 }

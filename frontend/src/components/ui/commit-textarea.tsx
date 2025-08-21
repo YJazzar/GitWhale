@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { cn } from '@/lib/utils';
+import * as React from 'react';
 import { useEffect } from 'react';
 
 export interface CommitTextareaProps extends React.ComponentProps<'textarea'> {}
@@ -65,7 +65,6 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 			if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
 				e.preventDefault();
 				const rewrapped = rewrapText(e.currentTarget.value);
-
 
 				// Create a proper synthetic change event
 				if (textareaRef.current && props.onChange) {
@@ -133,18 +132,13 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 		}, []);
 
 		return (
-			<div className="relative">
-				{/* Visual ruler at 70th character */}
-				<div
-					ref={rulerRef}
-					className="absolute top-0 bottom-0 w-px text-xs bg-muted-foreground/30 pointer-events-none z-10"
-					style={{ left: '0px' }}
-				/>
-
+			<div className="relative overflow-hidden rounded-md">
 				<textarea
 					ref={textareaRef}
 					className={cn(
-						'flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-y',
+						'flex min-h-[80px] h-full w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm transition-colors',
+						'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed',
+						'disabled:opacity-50 relative z-10 whitespace-nowrap',
 						'font-mono', // Monospace font
 						className
 					)}
@@ -152,6 +146,13 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 					onChange={handleChange}
 					onKeyDown={handleKeyDown}
 					{...props}
+				/>
+
+				{/* Visual ruler at 70th character - positioned behind textarea */}
+				<div
+					ref={rulerRef}
+					className="absolute top-0 bottom-0 w-px bg-muted-foreground/30 pointer-events-none z-0"
+					style={{ left: '0px' }}
 				/>
 			</div>
 		);
