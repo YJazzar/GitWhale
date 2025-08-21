@@ -31,7 +31,37 @@ const CommitTextarea = forwardRef<HTMLTextAreaElement, CommitTextareaProps>(
 			setSelectionStart(undefined);
 		}, [selectionStart, setSelectionStart]);
 
+		const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
+			// Reset height to auto to get the correct scrollHeight
+			textarea.style.height = 'auto';
+			
+			// If textarea is empty, set to single line height
+			if (!textarea.value.includes('\n')) {
+				// Calculate single line height based on font size and line height
+				const computedStyle = getComputedStyle(textarea);
+				const fontSize = parseFloat(computedStyle.fontSize);
+				const lineHeight = computedStyle.lineHeight === 'normal' ? fontSize * 1.2 : parseFloat(computedStyle.lineHeight);
+				const paddingTop = parseFloat(computedStyle.paddingTop);
+				const paddingBottom = parseFloat(computedStyle.paddingBottom);
+				const singleLineHeight = lineHeight + paddingTop + paddingBottom;
+				textarea.style.height = `${singleLineHeight}px`;
+			} else {
+				// Set height to scrollHeight to fit content
+				textarea.style.height = `${textarea.scrollHeight}px`;
+			}
+		};
+
+		// Auto-resize when component mounts or value changes
+		useEffect(() => {
+			if (textareaRef.current) {
+				adjustTextareaHeight(textareaRef.current);
+			}
+		}, [props.value]);
+
 		const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+			// Auto-resize the textarea for browsers that don't support field-sizing-content
+			adjustTextareaHeight(e.target);
+			
 			if (props.onChange) {
 				props.onChange(e);
 			}
@@ -131,9 +161,9 @@ const CommitTextarea = forwardRef<HTMLTextAreaElement, CommitTextareaProps>(
 				<textarea
 					ref={textareaRef}
 					className={cn(
-						'flex h-full w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs transition-colors',
+						'flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs transition-colors',
 						'placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed',
-						'disabled:opacity-50 relative z-10 whitespace-pre',
+						'disabled:opacity-50 relative z-10 whitespace-pre field-sizing-content resize-none',
 						'font-mono', // Monospace font
 						className
 					)}
