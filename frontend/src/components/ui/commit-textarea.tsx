@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
+import { smartTextReWrap } from '@/utils/textwrapper';
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useImperativeHandle, useState } from 'react';
 
 export interface CommitTextareaProps extends React.ComponentProps<'textarea'> {}
 
@@ -8,49 +9,21 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 	({ className, ...props }, ref) => {
 		const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 		const rulerRef = React.useRef<HTMLDivElement>(null);
+		const [selectionStart, setSelectionStart] = useState<number | undefined>(undefined);
 
-		React.useImperativeHandle(ref, () => textareaRef.current!);
+		useImperativeHandle(ref, () => textareaRef.current!);
 
-		// Smart text rewrapping function
-		const rewrapText = (text: string): string => {
-			const lines = text.split('\n');
-			const rewrappedLines: string[] = [];
+		useEffect(() => {
+			if (!selectionStart) { return }
 
-			for (const line of lines) {
-				if (line.trim() === '') {
-					// Preserve empty lines (paragraph breaks)
-					rewrappedLines.push('');
-					continue;
-				}
-
-				if (line.length <= 70) {
-					rewrappedLines.push(line);
-					continue;
-				}
-
-				// Need to wrap this line
-				const words = line.split(' ');
-				let currentLine = '';
-
-				for (const word of words) {
-					if (currentLine === '') {
-						currentLine = word;
-					} else if ((currentLine + ' ' + word).length <= 70) {
-						currentLine += ' ' + word;
-					} else {
-						// Current line would exceed 70 chars, start a new line
-						rewrappedLines.push(currentLine);
-						currentLine = word;
-					}
-				}
-
-				if (currentLine !== '') {
-					rewrappedLines.push(currentLine);
-				}
+			const textarea = textareaRef.current
+			if (textarea) { 
+				textarea.selectionStart = selectionStart
+				textarea.selectionEnd = selectionStart
 			}
+			setSelectionStart(undefined)
 
-			return rewrappedLines.join('\n');
-		};
+		}, [selectionStart, setSelectionStart])
 
 		const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 			const newValue = e.target.value;
@@ -60,39 +33,65 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 			}
 		};
 
+		const createSyntheticChangeEvent = (newValue: string, newSelectionStart?: number) => {
+			// Create a proper synthetic change event
+			if (!textareaRef.current || !props.onChange) {
+				return;
+			}
+
+			const target = textareaRef.current;
+			const syntheticEvent = {
+				target: {
+					value: newValue,
+				},
+				currentTarget: target,
+				type: 'change',
+				bubbles: true,
+				cancelable: true,
+				nativeEvent: new Event('change'),
+				isDefaultPrevented: () => false,
+				isPropagationStopped: () => false,
+				persist: () => {},
+				preventDefault: () => {},
+				stopPropagation: () => {},
+			} as React.ChangeEvent<HTMLTextAreaElement>;
+
+			props.onChange(syntheticEvent);
+
+			if (newSelectionStart) {
+				setSelectionStart(newSelectionStart);
+			}
+		};
+
 		const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 			// Handle Tab for auto-rewrap
 			if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
 				e.preventDefault();
-				const rewrapped = rewrapText(e.currentTarget.value);
-
-				// Create a proper synthetic change event
-				if (textareaRef.current && props.onChange) {
-					const target = textareaRef.current;
-					target.value = rewrapped;
-
-					const syntheticEvent = {
-						target,
-						currentTarget: target,
-						type: 'change',
-						bubbles: true,
-						cancelable: true,
-						nativeEvent: new Event('change'),
-						isDefaultPrevented: () => false,
-						isPropagationStopped: () => false,
-						persist: () => {},
-						preventDefault: () => {},
-						stopPropagation: () => {},
-					} as React.ChangeEvent<HTMLTextAreaElement>;
-
-					props.onChange(syntheticEvent);
-				}
+				const rewrappedText = smartTextReWrap(e.currentTarget.value);
+				createSyntheticChangeEvent(rewrappedText);
 				return;
 			}
 
-			if (props.onKeyDown) {
-				props.onKeyDown(e);
+			// Handle Tab for auto-rewrap
+			if (e.key === 'Tab' && textareaRef.current) {
+				e.preventDefault();
+				e.preventDefault(); // Prevent default tab behavior
+
+				var start = textareaRef.current?.selectionStart;
+				var end = textareaRef.current?.selectionEnd;
+
+				// Insert tab character
+				const currentContents = textareaRef.current?.value ?? '';
+				const newTextareaContents =
+					currentContents.substring(0, start) + '\t' + currentContents.substring(end ?? 0);
+				createSyntheticChangeEvent(newTextareaContents, start + 1);
+
+				// Reposition cursor
+				textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 1;
+				return;
 			}
+
+			props?.onKeyDown?.(e);
 		};
 
 		// Calculate ruler position based on character width
@@ -138,7 +137,7 @@ const CommitTextarea = React.forwardRef<HTMLTextAreaElement, CommitTextareaProps
 					className={cn(
 						'flex min-h-[80px] h-full w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm transition-colors',
 						'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed',
-						'disabled:opacity-50 relative z-10 whitespace-nowrap',
+						'disabled:opacity-50 relative z-10 whitespace-pre-wrap',
 						'font-mono', // Monospace font
 						className
 					)}

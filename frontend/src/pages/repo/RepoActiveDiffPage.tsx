@@ -25,7 +25,7 @@ import {
 	Plus,
 	RefreshCw,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { git_operations } from '../../../wailsjs/go/models';
 import { CreateStagingDiffSession, CleanupStagingDiffSession } from '../../../wailsjs/go/backend/App';
 
@@ -166,6 +166,10 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 		stagingState.refreshGitStatus();
 	};
 
+	const onCommitMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+		setCommitMessage(event.target.value);
+	};
+
 	return (
 		<div className="p-4 border-t bg-muted/20">
 			<div className="space-y-3">
@@ -175,12 +179,13 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 							<label htmlFor="commit-message" className="text-sm font-medium">
 								Commit Message
 							</label>
+
 							<TooltipProvider>
-								<Tooltip delayDuration={100} >
-									<TooltipTrigger asChild >
+								<Tooltip delayDuration={100}>
+									<TooltipTrigger asChild>
 										<Info className="w-3 h-3 text-muted-foreground cursor-help" />
 									</TooltipTrigger>
-									<TooltipContent side='right'>
+									<TooltipContent side="right">
 										<p>Ctrl+T to rewrap • Cmd/Ctrl+Enter to commit</p>
 									</TooltipContent>
 								</Tooltip>
@@ -196,7 +201,7 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 						id="commit-message"
 						placeholder="Enter commit message..."
 						value={commitMessage}
-						onChange={(e) => setCommitMessage(e.target.value)}
+						onChange={onCommitMessageChange}
 						disabled={isCommitting || !stagingState.hasStagedChanges}
 					/>
 				</div>
