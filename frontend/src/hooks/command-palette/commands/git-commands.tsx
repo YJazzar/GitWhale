@@ -257,8 +257,8 @@ const gitFetch: CommandDefinitionWithRepoState = {
 
 			const command = `git fetch`;
 			await commandExecutor(command, providedHooks.repoPath);
-			// providedHooks?.repoSideBar.setActiveItem('log');
-			// providedHooks?.repoState?.logState.refreshLogAndRefs();
+			providedHooks?.repoSideBar.setActiveItem('log');
+			providedHooks?.repoState?.logState.refreshLogAndRefs();
 		},
 	},
 };
@@ -268,7 +268,6 @@ export function useRegisterGitCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
 	const gitCommands = [gitCheckoutBranch, gitStatus, gitFetch];
-	// const gitCommands = [gitCheckoutBranch, gitCreateBranch, gitCommit, gitPull, gitStatus];
 
 	useEffect(() => {
 		commandRegistry.registerCommands(gitCommands);

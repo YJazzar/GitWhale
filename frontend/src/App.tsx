@@ -16,6 +16,7 @@ import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
 import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
 import { CommandPaletteContextKey } from './types/command-palette';
+import { useRegisterRepoNavigationCommands } from './hooks/command-palette/commands/repo-navigation-commands';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -45,6 +46,7 @@ function App() {
 	const commandPaletteState = useCommandPaletteState();
 	useRegisterGitCommands();
 	useRegisterNavigationCommands();
+	useRegisterRepoNavigationCommands()
 
 	useKeyboardShortcut('p', () => {
 		const dialogCurrentState = commandPaletteState.dialogVisualState.get() === 'opened';

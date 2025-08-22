@@ -1,6 +1,6 @@
 import { Sidebar } from '@/components/sidebar';
 import { useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
-import { SidebarItemProps } from '@/hooks/state/useSidebarHandlers';
+import { SidebarItemProps, SidebarSessionKeyGenerator } from '@/hooks/state/useSidebarHandlers';
 import RepoActiveDiffPage from '@/pages/repo/RepoActiveDiffPage';
 import RepoHomeView from '@/pages/repo/RepoHomeView';
 import RepoLogView from '@/pages/repo/RepoLogView';
@@ -66,7 +66,7 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 	return (
 		<div className={`h-full w-full ${className || ''}`}>
 			<Sidebar
-				sidebarSessionKey={`repo-${repoPath}`}
+				sidebarSessionKey={SidebarSessionKeyGenerator.repoSidebar(repoPath)}
 				staticItems={staticItems}
 				initialMode="wide"
 				defaultItemId="home"
