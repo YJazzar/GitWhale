@@ -12,30 +12,29 @@ export const UseAppState = () => {
 	const commandRegistry = useCommandRegistry(undefined);
 
 	// Convert backend commands to frontend format and convert it to the real command definition
-	const frontendCustomCommands = state?.appConfig?.settings?.customCommands ?? []
-	const customCommandDefinitions = useCustomCommand(frontendCustomCommands as UserDefinedCommandDefinition[]);
+	const frontendCustomCommands = state?.appConfig?.settings?.customCommands ?? [];
+	const customCommandDefinitions = useCustomCommand(
+		frontendCustomCommands as UserDefinedCommandDefinition[]
+	);
 
 	const refreshAppState = async () => {
 		const newAppState = await GetAppState();
 		setState(newAppState);
-		return newAppState
+		return newAppState;
 	};
 
 	// Auto-register custom commands when they change
 	useEffect(() => {
-		// Unregister old custom commands (those with userDefined: prefix)
-		const existingCustomCommandIds = commandRegistry.allAvailableCommands
-			.filter(cmd => cmd.id.startsWith('userDefined:'))
-			.map(cmd => cmd.id);
-		
-		if (existingCustomCommandIds.length > 0) {
-			commandRegistry.unregisterCommands(existingCustomCommandIds);
-		}
-
 		// Register new custom commands
 		if (customCommandDefinitions.length > 0) {
 			commandRegistry.registerCommands(customCommandDefinitions);
+			console.log({customCommandDefinitions})
 		}
+
+		const customCommandIds = customCommandDefinitions.map((command) => command.id);
+		return () => {
+			commandRegistry.unregisterCommands(customCommandIds);
+		};
 	}, [customCommandDefinitions, commandRegistry]);
 
 	useEffect(() => {
@@ -55,8 +54,8 @@ export const UseAppState = () => {
 	return { appState: state, refreshAppState, executeAndRefreshState };
 };
 
-export function useAppStateAtoms() { 
+export function useAppStateAtoms() {
 	return {
-		appStateAtom
-	}
+		appStateAtom,
+	};
 }

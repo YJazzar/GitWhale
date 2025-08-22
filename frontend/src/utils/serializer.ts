@@ -220,7 +220,7 @@ function serializeObject(object: any, depth: number, options: SerializerOptions)
 
 function formatDisplayValue(val: unknown, depth: number, options: SerializerOptions): string {
 	console.debug('called format on: ', val);
-	debugger;
+
 	// Prevent infinite recursion with depth limit
 	if (depth > options.maxDepth) {
 		return '[Max Depth Reached]';
@@ -252,8 +252,6 @@ function formatDisplayValue(val: unknown, depth: number, options: SerializerOpti
 
 		return serializeObject(val, depth, options);
 	}
-
-	debugger;
 
 	return String(val);
 }

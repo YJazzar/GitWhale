@@ -39,7 +39,7 @@ export function useCommandRegistry(searchQuery: string | undefined) {
 				{ name: 'description', weight: 0.2 },
 				{ name: 'keywords', weight: 0.1 },
 			],
-			threshold: 0.4, // Lower = more strict matching
+			threshold: 0.3, // Lower = more strict matching
 			includeScore: true,
 			includeMatches: true,
 		});

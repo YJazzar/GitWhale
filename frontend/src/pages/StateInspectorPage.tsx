@@ -52,7 +52,7 @@ export default function StateInspectorPage() {
 
 	// Get all state values
 	const allStateValues = useStateInspectorValues();
-	debugger;
+
 	const handleCopyAll = useCallback(() => {
 		const serializedState = serialize(allStateValues);
 		navigator.clipboard.writeText(serializedState || 'Something went wrong with serialization');
