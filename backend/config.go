@@ -123,6 +123,7 @@ func LoadAppConfig() (*AppConfig, error) {
 	if config.Settings.CustomCommands == nil {
 		config.Settings.CustomCommands = []UserDefinedCommandDefinition{}
 	}
+	config.filterAllDeletedRepos()
 
 	return config, err
 }
@@ -149,7 +150,6 @@ func (config *AppConfig) openNewRepo(gitRepoPath string) {
 
 	config.addRepoToRecentList(gitRepoPath)
 	config.SaveAppConfig()
-	return
 }
 
 func (config *AppConfig) addRepoToRecentList(gitRepoPath string) {
@@ -191,4 +191,11 @@ func (config *AppConfig) toggleStarRepo(gitRepoPath string) bool {
 func (config *AppConfig) updateSettings(newSettings AppSettings) error {
 	config.Settings = newSettings
 	return config.SaveAppConfig()
+}
+
+// Filter all repos that show up in the starred, recent, and ordered repos
+func (config *AppConfig) filterAllDeletedRepos() {
+	config.StarredGitRepos = lib.FilterDeletedDirs(config.StarredGitRepos)
+	config.RecentGitRepos = lib.FilterDeletedDirs(config.RecentGitRepos)
+	config.OrderedOpenGitRepos = lib.FilterDeletedDirs(config.OrderedOpenGitRepos)
 }

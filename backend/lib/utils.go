@@ -125,6 +125,17 @@ func FindIndex[T comparable](slice []T, element T) int {
 	return -1
 }
 
+func FilterDeletedDirs(folderPaths []string) []string {
+	// Filter recent repos
+	filteredDirs := make([]string, 0, len(folderPaths))
+	for _, repoPath := range folderPaths {
+		if DirExists(repoPath) {
+			filteredDirs = append(filteredDirs, repoPath)
+		}
+	}
+	return filteredDirs
+}
+
 func PrettyPrint(t any) string {
 	// Debug print the final structure
 	b, err := json.MarshalIndent(t, "", "  ")
