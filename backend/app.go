@@ -34,6 +34,7 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 	logger.Log.SetContext(ctx)
+	command_utils.SetCommandBufferContext(ctx)
 
 	app.ctx = ctx
 	app.IsLoading = false
@@ -273,6 +274,19 @@ func (app *App) GetApplicationLogHistory() []logger.LogEntry {
 
 func (app *App) ClearApplicationLogHistory() {
 	logger.Log.ClearLogEntries()
+}
+
+// Command logging API methods
+func (app *App) GetCommandLogs() []command_utils.CommandEntry {
+	return command_utils.GetCachedCommandEntries()
+}
+
+func (app *App) ClearCommandLogs() {
+	command_utils.ClearCommandEntries()
+}
+
+func (app *App) GetCommandById(commandId string) *command_utils.CommandEntry {
+	return command_utils.GetCommandById(commandId)
 }
 
 // Returns the "topic" the user can subscribe to and send messages to

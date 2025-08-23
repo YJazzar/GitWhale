@@ -14,6 +14,10 @@ export function ClearApplicationLogHistory() {
   return window['go']['backend']['App']['ClearApplicationLogHistory']();
 }
 
+export function ClearCommandLogs() {
+  return window['go']['backend']['App']['ClearCommandLogs']();
+}
+
 export function CloseRepo(arg1) {
   return window['go']['backend']['App']['CloseRepo'](arg1);
 }
@@ -48,6 +52,14 @@ export function GetAppState() {
 
 export function GetApplicationLogHistory() {
   return window['go']['backend']['App']['GetApplicationLogHistory']();
+}
+
+export function GetCommandById(arg1) {
+  return window['go']['backend']['App']['GetCommandById'](arg1);
+}
+
+export function GetCommandLogs() {
+  return window['go']['backend']['App']['GetCommandLogs']();
 }
 
 export function GetDefaultShellCommand() {

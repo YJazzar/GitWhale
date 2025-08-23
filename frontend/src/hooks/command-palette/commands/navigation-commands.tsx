@@ -78,6 +78,24 @@ const navigateStateInspector: CommandDefinition<ReturnType<typeof useNavigateRoo
 	},
 };
 
+// Navigate to Command Logs
+const navigateCommandLogs: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
+	id: 'navigate.command-logs',
+	title: 'Go to: Command Logs',
+	icon: <Bug className="h-4 w-4" />,
+	keywords: ['commands', 'logs', 'debug', 'git', 'execution'],
+	context: CommandPaletteContextKey.Root,
+	action: {
+		type: 'function',
+		requestedHooks: () => {
+			return useNavigateRootFilTabs();
+		},
+		runAction: async (providedHooks) => {
+			providedHooks.onOpenCommandLogs();
+		},
+	},
+};
+
 // Open a command editor
 const navigateNewCommand: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
 	id: 'navigate.new.customCommand',
@@ -222,6 +240,7 @@ export function useRegisterNavigationCommands() {
 			navigateSettings,
 			navigateApplicationLogs,
 			navigateStateInspector,
+			navigateCommandLogs,
 			openRepository,
 			navigateNewCommand,
 			editCommand,

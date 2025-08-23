@@ -294,6 +294,60 @@ export namespace backend {
 
 export namespace command_utils {
 	
+	export class CommandEntry {
+	    id: string;
+	    command: string;
+	    args: string[];
+	    fullCommand: string;
+	    workingDirectory: string;
+	    // Go type: time
+	    startTime: any;
+	    // Go type: time
+	    endTime?: any;
+	    output: string;
+	    errorOutput: string;
+	    exitCode?: number;
+	    status: number;
+	    duration: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CommandEntry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.command = source["command"];
+	        this.args = source["args"];
+	        this.fullCommand = source["fullCommand"];
+	        this.workingDirectory = source["workingDirectory"];
+	        this.startTime = this.convertValues(source["startTime"], null);
+	        this.endTime = this.convertValues(source["endTime"], null);
+	        this.output = source["output"];
+	        this.errorOutput = source["errorOutput"];
+	        this.exitCode = source["exitCode"];
+	        this.status = source["status"];
+	        this.duration = source["duration"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class TTYSize {
 	    cols: number;
 	    rows: number;

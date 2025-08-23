@@ -3,6 +3,7 @@ package command_utils
 import (
 	"gitwhale/backend/logger"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -13,8 +14,17 @@ func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
 	logger.Log.Trace("\t- Command working directory: %s", command.Dir)
 	logger.Log.Trace("\t- Command environment variables: %v", command.Env)
 
-	// Record start time
+	// Record start time and log to command buffer
 	startTime := time.Now()
+
+	// Get working directory (fallback to current dir if not set)
+	workingDir := command.Dir
+	if workingDir == "" {
+		workingDir, _ = filepath.Abs(".")
+	}
+
+	// Log command start to buffer
+	commandID := LogCommandStart(command.Path, command.Args, workingDir)
 
 	HideWindowsConsole(command)
 	result, err := command.CombinedOutput()
@@ -23,12 +33,15 @@ func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
 	duration := time.Since(startTime)
 	logger.Log.Trace("\t- Command execution time: %v", duration)
 
+	// Determine exit code
+	exitCode := 0
 	if err != nil {
-		// Get more detailed error information
 		if exitError, ok := err.(*exec.ExitError); ok {
-			logger.Log.Error("\t- Git command failed with exit code %d: %s", exitError.ExitCode(), strings.Join(command.Args, " "))
+			exitCode = exitError.ExitCode()
+			logger.Log.Error("\t- Git command failed with exit code %d: %s", exitCode, strings.Join(command.Args, " "))
 			logger.Log.Error("\t- Command stderr: %s", string(exitError.Stderr))
 		} else {
+			exitCode = 420 // Generic error code
 			logger.Log.Error("\t- Error running git command: [%v] -> %v", command.Args, err)
 		}
 		logger.Log.Debug("\t- Failed command output: %s", string(result))
@@ -40,5 +53,13 @@ func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
 		}
 	}
 
-	return string(result), err
+	// Log command completion to buffer
+	output := string(result)
+	errorOutput := ""
+	if err != nil {
+		errorOutput = err.Error()
+	}
+	LogCommandEnd(commandID, output, errorOutput, exitCode)
+
+	return output, err
 }

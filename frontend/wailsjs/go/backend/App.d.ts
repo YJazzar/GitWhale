@@ -12,6 +12,8 @@ export function CleanupTerminalSession(arg1:string):Promise<void>;
 
 export function ClearApplicationLogHistory():Promise<void>;
 
+export function ClearCommandLogs():Promise<void>;
+
 export function CloseRepo(arg1:string):Promise<backend.App>;
 
 export function CommitChanges(arg1:string,arg2:string):Promise<void>;
@@ -29,6 +31,10 @@ export function GetAllRefs(arg1:string):Promise<Array<git_operations.GitRef>>;
 export function GetAppState():Promise<backend.App>;
 
 export function GetApplicationLogHistory():Promise<Array<logger.LogEntry>>;
+
+export function GetCommandById(arg1:string):Promise<command_utils.CommandEntry>;
+
+export function GetCommandLogs():Promise<Array<command_utils.CommandEntry>>;
 
 export function GetDefaultShellCommand():Promise<string>;
 
