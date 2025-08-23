@@ -2,7 +2,6 @@ import { TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
 import clsx from 'clsx';
 import { Circle, X } from 'lucide-react';
-import { useCallback } from 'react';
 
 export type FileTabManagerProps = {
 	fileTabManageSessionKey: string;
