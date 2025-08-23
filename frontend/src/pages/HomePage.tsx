@@ -20,11 +20,10 @@ export default function HomePage() {
 	};
 
 	// Separate starred and non-starred repos for display
-	const starredRepos1 = appState?.appConfig?.starredGitRepos ?? [];
+	const starredRepos = appState?.appConfig?.starredGitRepos ?? [];
 	const recentRepos = appState?.appConfig?.recentGitRepos ?? [];
-	const nonStarredRecentRepos1 = recentRepos.filter((repo) => !starredRepos1.includes(repo));
-	const nonStarredRecentRepos = [...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ...nonStarredRecentRepos1, ]
-	const starredRepos = nonStarredRecentRepos
+	const nonStarredRecentRepos = recentRepos.filter((repo) => !starredRepos.includes(repo));
+	
 	
 	// Detect platform for keyboard shortcut
 	const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -36,7 +35,7 @@ export default function HomePage() {
 			<div className="flex-1 flex items-center justify-center min-h-0">
 				<div className="flex items-center justify-center gap-8 h-full max-h-full">
 					{/* Column 1: actions */}
-					<div className="flex flex-col items-center justify-center">
+					<div className="flex flex-col items-center justify-center w-80">
 						<ul className="space-y-2">
 							<li>
 								<Button
@@ -84,7 +83,7 @@ export default function HomePage() {
 					<Separator orientation="vertical" className="h-64" />
 
 					{/* Column 2: Repo lists */}
-					<div className="flex flex-col max-h-full min-w-fit">
+					<div className="flex flex-col max-h-full w-80">
 						{starredRepos.length > 0 && (
 							<div className="mb-6">
 								<h2 className="text-xl font-semibold mb-4">Starred:</h2>
