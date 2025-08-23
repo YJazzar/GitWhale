@@ -1,7 +1,7 @@
 import { CommandDefinition } from '@/types/command-palette';
 import Fuse from 'fuse.js';
 import { atom, useAtom } from 'jotai';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useCommandPaletteAvailableContexts } from './use-command-palette-state';
 
 // Global command registry - we'll populate this with commands

@@ -1,7 +1,7 @@
 import { atom, useAtom } from 'jotai';
+import { useEffect, useState } from 'react';
 import { GetAppState } from '../../../wailsjs/go/backend/App';
 import { backend } from '../../../wailsjs/go/models';
-import { useEffect } from 'react';
 import { useCommandRegistry } from '../command-palette/use-command-registry';
 import { useCustomCommand, UserDefinedCommandDefinition } from '../command-palette/use-custom-command';
 
@@ -16,6 +16,8 @@ export const UseAppState = () => {
 	const customCommandDefinitions = useCustomCommand(
 		frontendCustomCommands as UserDefinedCommandDefinition[]
 	);
+	const [registeredCustomCommands, setRegisteredCustomCommands] = useState<ReturnType<typeof useCustomCommand>>([])
+
 
 	const refreshAppState = async () => {
 		const newAppState = await GetAppState();
@@ -25,17 +27,23 @@ export const UseAppState = () => {
 
 	// Auto-register custom commands when they change
 	useEffect(() => {
+		if (customCommandDefinitions === registeredCustomCommands) { 
+			return
+		}
+ 
 		// Register new custom commands
 		if (customCommandDefinitions.length > 0) {
 			commandRegistry.registerCommands(customCommandDefinitions);
+			setRegisteredCustomCommands(customCommandDefinitions)
 			console.log({customCommandDefinitions})
 		}
 
 		const customCommandIds = customCommandDefinitions.map((command) => command.id);
 		return () => {
 			commandRegistry.unregisterCommands(customCommandIds);
+			setRegisteredCustomCommands([])
 		};
-	}, [customCommandDefinitions, commandRegistry]);
+	}, [customCommandDefinitions, commandRegistry.unregisterCommands, commandRegistry.registerCommands, registeredCustomCommands, setRegisteredCustomCommands]);
 
 	useEffect(() => {
 		if (!!state) {
