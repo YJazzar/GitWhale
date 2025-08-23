@@ -29,17 +29,17 @@ export default function RepoPage({ repoPath, className }: RepoViewTabsProps) {
 			preventClose: true,
 		},
 		{
-			id: 'staging',
-			title: 'Staging',
-			icon: <FolderGit className="h-4 w-4" />,
-			component: <RepoActiveDiffPage repoPath={repoPath} />,
-			preventClose: true,
-		},
-		{
 			id: 'log',
 			title: 'Log',
 			icon: <GitGraph className="h-4 w-4" />,
 			component: <RepoLogView repoPath={repoPath} />,
+			preventClose: true,
+		},
+		{
+			id: 'staging',
+			title: 'Staging',
+			icon: <FolderGit className="h-4 w-4" />,
+			component: <RepoActiveDiffPage repoPath={repoPath} />,
 			preventClose: true,
 		},
 		{
