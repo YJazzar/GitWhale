@@ -1,8 +1,6 @@
-import { UseAppState } from './state/use-app-state';
+import { backend } from 'wailsjs/go/models';
 
-export const UseIsDirDiffMode = () => {
-	const {appState} = UseAppState();
-
+export const UseIsDirDiffMode = (appState: backend.App | undefined) => {
 	if (!appState) {
 		return undefined;
 	}

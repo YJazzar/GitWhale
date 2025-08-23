@@ -17,6 +17,8 @@ import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
 import { CommandPaletteContextKey } from './types/command-palette';
 import { useRegisterRepoNavigationCommands } from './hooks/command-palette/commands/repo-navigation-commands';
+import { UseAppState } from './hooks/state/use-app-state';
+import { useCustomCommand, UserDefinedCommandDefinition } from './hooks/command-palette/use-custom-command';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -40,13 +42,18 @@ export default function WrappedAppProvider() {
 }
 
 function App() {
-	const isInDirDiffMode = UseIsDirDiffMode();
+	const { appState } = UseAppState();
+	const isInDirDiffMode = UseIsDirDiffMode(appState);
+
+	// Convert backend commands to frontend format and convert it to the real command definition
+	const frontendCustomCommands = appState?.appConfig?.settings?.customCommands ?? [];
+	useCustomCommand(frontendCustomCommands as UserDefinedCommandDefinition[]);
 
 	// Command palette stuff
 	const commandPaletteState = useCommandPaletteState();
 	useRegisterGitCommands();
 	useRegisterNavigationCommands();
-	useRegisterRepoNavigationCommands()
+	useRegisterRepoNavigationCommands();
 
 	useKeyboardShortcut('p', () => {
 		const dialogCurrentState = commandPaletteState.dialogVisualState.get() === 'opened';

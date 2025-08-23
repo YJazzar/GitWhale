@@ -30,8 +30,6 @@ export function GetAppState():Promise<backend.App>;
 
 export function GetApplicationLogHistory():Promise<Array<logger.LogEntry>>;
 
-export function GetCustomCommands():Promise<Array<backend.UserDefinedCommandDefinition>>;
-
 export function GetDefaultShellCommand():Promise<string>;
 
 export function GetDetailedCommitInfo(arg1:string,arg2:string):Promise<git_operations.DetailedCommitInfo>;

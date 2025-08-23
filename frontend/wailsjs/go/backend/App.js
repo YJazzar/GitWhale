@@ -50,10 +50,6 @@ export function GetApplicationLogHistory() {
   return window['go']['backend']['App']['GetApplicationLogHistory']();
 }
 
-export function GetCustomCommands() {
-  return window['go']['backend']['App']['GetCustomCommands']();
-}
-
 export function GetDefaultShellCommand() {
   return window['go']['backend']['App']['GetDefaultShellCommand']();
 }

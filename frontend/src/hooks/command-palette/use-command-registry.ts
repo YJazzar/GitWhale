@@ -1,7 +1,7 @@
 import { CommandDefinition } from '@/types/command-palette';
 import Fuse from 'fuse.js';
 import { atom, useAtom } from 'jotai';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useCommandPaletteAvailableContexts } from './use-command-palette-state';
 
 // Global command registry - we'll populate this with commands
@@ -54,21 +54,27 @@ export function useCommandRegistry(searchQuery: string | undefined) {
 		return results.map((result) => result.item);
 	}, [availableContexts, searchQuery, _registeredCommands]);
 
-	const registerCommands = (commands: CommandDefinition<unknown>[]) => {
-		_setRegisteredCommands((oldRegisteredCommands) => {
-			let newRegisteredCommands = new Map(oldRegisteredCommands);
-			commands.forEach((command) => newRegisteredCommands.set(command.id, command));
-			return newRegisteredCommands;
-		});
-	};
+	const registerCommands = useCallback(
+		(commands: CommandDefinition<unknown>[]) => {
+			_setRegisteredCommands((oldRegisteredCommands) => {
+				let newRegisteredCommands = new Map(oldRegisteredCommands);
+				commands.forEach((command) => newRegisteredCommands.set(command.id, command));
+				return newRegisteredCommands;
+			});
+		},
+		[_setRegisteredCommands]
+	);
 
-	const unregisterCommands = (commandIDs: string[]) => {
-		_setRegisteredCommands((oldRegisteredCommands) => {
-			let newRegisteredCommands = new Map(oldRegisteredCommands);
-			commandIDs.forEach((commandID) => newRegisteredCommands.delete(commandID));
-			return newRegisteredCommands;
-		});
-	};
+	const unregisterCommands = useCallback(
+		(commandIDs: string[]) => {
+			_setRegisteredCommands((oldRegisteredCommands) => {
+				let newRegisteredCommands = new Map(oldRegisteredCommands);
+				commandIDs.forEach((commandID) => newRegisteredCommands.delete(commandID));
+				return newRegisteredCommands;
+			});
+		},
+		[_setRegisteredCommands]
+	);
 
 	return {
 		allAvailableCommands,

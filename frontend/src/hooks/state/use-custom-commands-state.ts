@@ -1,20 +1,14 @@
 import { atom, useAtom } from 'jotai';
-import { useCallback, useEffect } from 'react';
-import { GetCustomCommands, SaveCustomCommand, DeleteCustomCommand } from '../../../wailsjs/go/backend/App';
+import { useCallback, useEffect, useMemo } from 'react';
+import { DeleteCustomCommand, SaveCustomCommand } from '../../../wailsjs/go/backend/App';
 import { backend } from '../../../wailsjs/go/models';
 import { UserDefinedCommandDefinition } from '../command-palette/use-custom-command';
+import { UseAppState } from './use-app-state';
 
 // Atoms for state management
 const customCommandsAtom = atom<UserDefinedCommandDefinition[]>([]);
 const customCommandsLoadingAtom = atom<boolean>(false);
 const customCommandsErrorAtom = atom<string | null>(null);
-
-// Helper function to convert from backend type to frontend type
-function convertFromBackendType(
-	backendCommand: backend.UserDefinedCommandDefinition
-): UserDefinedCommandDefinition {
-	return backendCommand as UserDefinedCommandDefinition;
-}
 
 // Helper function to convert from frontend type to backend type
 function convertToBackendType(
@@ -24,28 +18,26 @@ function convertToBackendType(
 }
 
 export function useCustomCommandsState() {
-	const [customCommands, setCustomCommands] = useAtom(customCommandsAtom);
+	const appState = UseAppState();
 	const [isLoading, setIsLoading] = useAtom(customCommandsLoadingAtom);
 	const [error, setError] = useAtom(customCommandsErrorAtom);
 
-	useEffect(() => {
-		console.log({ customCommands });
-	}, [customCommands]);
+	const customCommands = useMemo(() => {
+		return appState.appState?.appConfig?.settings?.customCommands ?? [];
+	}, [appState.appState]) as UserDefinedCommandDefinition[];
 
 	// Load custom commands from backend
 	const loadCustomCommands = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
-			const backendCommands = await GetCustomCommands();
-			const frontendCommands = backendCommands?.map(convertFromBackendType) ?? [];
-			setCustomCommands(frontendCommands);
+			await appState.refreshAppState();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to load custom commands: ' + err);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [setCustomCommands, setIsLoading, setError]);
+	}, [setIsLoading, setError]);
 
 	// Save a custom command (create or update)
 	const saveCustomCommand = useCallback(
@@ -54,26 +46,13 @@ export function useCustomCommandsState() {
 				setError(null);
 				const backendCommand = convertToBackendType(command);
 				await SaveCustomCommand(backendCommand);
-
-				// Update local state
-				setCustomCommands((prev) => {
-					const existingIndex = prev.findIndex((cmd) => cmd.id === command.id);
-					if (existingIndex >= 0) {
-						// Update existing
-						const updated = [...prev];
-						updated[existingIndex] = command;
-						return updated;
-					} else {
-						// Add new
-						return [...prev, command];
-					}
-				});
+				await appState.refreshAppState();
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to save custom command: ' + err);
 				throw err;
 			}
 		},
-		[setCustomCommands, setError]
+		[appState.refreshAppState, setError]
 	);
 
 	// Delete a custom command
@@ -82,15 +61,13 @@ export function useCustomCommandsState() {
 			try {
 				setError(null);
 				await DeleteCustomCommand(commandId);
-
-				// Update local state
-				setCustomCommands((prev) => prev.filter((cmd) => cmd.id !== commandId));
+				await appState.refreshAppState();
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to delete custom command: ' + err);
 				throw err;
 			}
 		},
-		[setCustomCommands, setError]
+		[appState.refreshAppState, setError]
 	);
 
 	// Get a single command by ID

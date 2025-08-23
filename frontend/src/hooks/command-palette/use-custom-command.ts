@@ -2,11 +2,13 @@ import {
 	CommandDefinition,
 	CommandPaletteContextData,
 	CommandPaletteContextKey,
-	RepoCommandPaletteContextData
+	RepoCommandPaletteContextData,
 } from '@/types/command-palette';
+import { useEffect } from 'react';
 import { useNavigateRootFilTabs } from '../navigation/use-navigate-root-file-tabs';
 import { useRepoState } from '../state/repo/use-repo-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '../state/useSidebarHandlers';
+import { useCommandRegistry } from './use-command-registry';
 
 export type UserDefinedCommandDefinition = {
 	id: string;
@@ -40,87 +42,110 @@ type UserDefinedStringParameter = UserDefinedParameterBase & {
 
 export type UserDefinedParameter = UserDefinedSelectParameter | UserDefinedStringParameter;
 
-export function useCustomCommand(
-	userDefinedCommands: UserDefinedCommandDefinition[]
-): CommandDefinition<ReturnType<typeof userDefinedCommandRequestedHooks>>[] {
-	return userDefinedCommands.map((userDefinedCommand) => {
-		return {
-			id: `userDefined:${userDefinedCommand.id}`,
-			title: userDefinedCommand.title,
-			description: userDefinedCommand.description,
-			keywords: userDefinedCommand.keywords,
-			context: userDefinedCommand.context,
-			parameters: userDefinedCommand.parameters?.map((param) => {
-				if (param.type === 'select') {
-					return {
-						type: 'select',
-						id: param.id,
-						prompt: param.prompt,
-						description: param.description,
-						placeholder: param.placeholder,
-						required: param.required,
-						allowCustomInput: param.allowCustomInput,
-						options: () => {
-							return [
-								{
-									groupKey: 'mainGroup',
-									groupName: '',
-									options: param.options.map((option) => {
-										return {
-											optionKey: option.replaceAll(' ', '').toLocaleLowerCase(),
-											optionValue: option,
-										};
-									}),
-								},
-							];
-						},
-					};
-				}
+export function useCustomCommand(userDefinedCommands: UserDefinedCommandDefinition[]) {
+	const commandRegistry = useCommandRegistry(undefined);
 
-				if (param.type !== 'string') {
-					throw "Did we add a new parameter type that's supposed to be supported for user defined commands?";
-				}
+	// Auto-register custom commands when they change
+	useEffect(() => {
+		const convertedCustomCommandDefinitions = userDefinedCommands.map(convertToRealCommandDefinition);
 
+		// Register new custom commands
+		if (convertedCustomCommandDefinitions.length > 0) {
+			commandRegistry.registerCommands(
+				convertedCustomCommandDefinitions as CommandDefinition<unknown>[]
+			);
+
+			console.debug('reregistering custom commands', { convertedCustomCommandDefinitions });
+		}
+
+		const customCommandIds = convertedCustomCommandDefinitions.map((command) => command.id);
+		return () => {
+			commandRegistry.unregisterCommands(customCommandIds);
+		};
+	}, [userDefinedCommands, commandRegistry.unregisterCommands, commandRegistry.registerCommands]);
+}
+
+function convertToRealCommandDefinition(
+	userDefinedCommand: UserDefinedCommandDefinition
+): CommandDefinition<ReturnType<typeof userDefinedCommandRequestedHooks>> {
+	return {
+		id: `userDefined:${userDefinedCommand.id}`,
+		title: userDefinedCommand.title,
+		description: userDefinedCommand.description,
+		keywords: userDefinedCommand.keywords,
+		context: userDefinedCommand.context,
+		parameters: userDefinedCommand.parameters?.map((param) => {
+			if (param.type === 'select') {
 				return {
-					type: 'string',
+					type: 'select',
 					id: param.id,
 					prompt: param.prompt,
 					description: param.description,
 					placeholder: param.placeholder,
 					required: param.required,
+					allowCustomInput: param.allowCustomInput,
+					options: () => {
+						return [
+							{
+								groupKey: 'mainGroup',
+								groupName: '',
+								options: param.options.map((option) => {
+									return {
+										optionKey: option.replaceAll(' ', '').toLocaleLowerCase(),
+										optionValue: option,
+									};
+								}),
+							},
+						];
+					},
 				};
-			}),
-			action: {
-				type: 'terminalCommand',
-				requestedHooks: (context) => {
-					return userDefinedCommandRequestedHooks(context, userDefinedCommand);
-				},
-				runAction: async (providedHooks, parameters, commandExecutor) => {
-					let constructedCommandString = userDefinedCommand.action.commandString;
+			}
 
-					// Go through all the parameters and replace them in their placeholders
-					parameters.forEach((paramData) => {
-						if (!!paramData.value && paramData.value !== '') {
-							const replaceMarker = `{{${paramData.id}}}`;
-							constructedCommandString = constructedCommandString.replaceAll(replaceMarker, paramData.value);
-						}
-					});
+			if (param.type !== 'string') {
+				throw "Did we add a new parameter type that's supposed to be supported for user defined commands?";
+			}
 
-					let workingDir = '';
-					if (userDefinedCommand.context === CommandPaletteContextKey.Repo) {
-						workingDir = providedHooks?.repoHooks.repoPath ?? ''
-						if (workingDir === '') { 
-							throw "Requested a repo context, but we couldn't find a repoPath to use during the command's execution"
-						}
-					}
-
-		
-					await commandExecutor(constructedCommandString, workingDir);
-					// TODO: optionally implement in the future the ability to navigate to a specific page.
-				},
+			return {
+				type: 'string',
+				id: param.id,
+				prompt: param.prompt,
+				description: param.description,
+				placeholder: param.placeholder,
+				required: param.required,
+			};
+		}),
+		action: {
+			type: 'terminalCommand',
+			requestedHooks: (context) => {
+				return userDefinedCommandRequestedHooks(context, userDefinedCommand);
 			},
-		};
-	});
+			runAction: async (providedHooks, parameters, commandExecutor) => {
+				let constructedCommandString = userDefinedCommand.action.commandString;
+
+				// Go through all the parameters and replace them in their placeholders
+				parameters.forEach((paramData) => {
+					if (!!paramData.value && paramData.value !== '') {
+						const replaceMarker = `{{${paramData.id}}}`;
+						constructedCommandString = constructedCommandString.replaceAll(
+							replaceMarker,
+							paramData.value
+						);
+					}
+				});
+
+				let workingDir = '';
+				if (userDefinedCommand.context === CommandPaletteContextKey.Repo) {
+					workingDir = providedHooks?.repoHooks.repoPath ?? '';
+					if (workingDir === '') {
+						throw "Requested a repo context, but we couldn't find a repoPath to use during the command's execution";
+					}
+				}
+
+				await commandExecutor(constructedCommandString, workingDir);
+				// TODO: optionally implement in the future the ability to navigate to a specific page.
+			},
+		},
+	};
 }
 
 function userDefinedCommandRequestedHooks(
@@ -148,7 +173,7 @@ function userDefinedCommandRequestedHooks(
 			rootNavigator: useNavigateRootFilTabs(),
 		},
 		repoHooks: {
-			repoPath, 
+			repoPath,
 			repoSidebar,
 			repoState,
 		},

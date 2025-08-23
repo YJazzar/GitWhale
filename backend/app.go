@@ -282,10 +282,6 @@ func (app *App) ExecuteShellCommand(command string, workingDir, broadcastToTopic
 
 // Custom Commands CRUD operations
 
-func (app *App) GetCustomCommands() []UserDefinedCommandDefinition {
-	return app.AppConfig.Settings.CustomCommands
-}
-
 func (app *App) SaveCustomCommand(command UserDefinedCommandDefinition) error {
 	// Check if command with this ID already exists
 	existingIndex := -1
