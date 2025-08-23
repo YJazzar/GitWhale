@@ -185,29 +185,6 @@ export function getLogState(repoPath: string) {
 		}
 	};
 
-	// Find the best commit to continue loading from - one where we haven't loaded all its parents
-	const findCommitWithUnloadedParents = (
-		loadedCommits: git_operations.GitLogCommitInfo[],
-		loadedCommitSet: Set<string>
-	): string | null => {
-		// Start from the end (most recent commits in topological order) and work backwards
-		for (let i = loadedCommits.length - 2; i >= 0; i--) {
-			const commit = loadedCommits[i];
-
-			// Check if any parent commits are not loaded
-			const hasUnloadedParents = commit.parentCommitHashes.some(
-				(parentHash) => !loadedCommitSet.has(parentHash)
-			);
-
-			if (hasUnloadedParents) {
-				return commit.commitHash;
-			}
-		}
-
-		// If all loaded commits have their parents loaded, use the last commit
-		return loadedCommits.length > 0 ? loadedCommits[loadedCommits.length - 1].commitHash : null;
-	};
-
 	const loadMoreCommits = async () => {
 		// Prevent multiple simultaneous requests
 		const prevLogs = _gitLogDataPrim.value;
@@ -222,18 +199,13 @@ export function getLogState(repoPath: string) {
 			return;
 		}
 
-		const fromCommitHash = findCommitWithUnloadedParents(prevLogs, loadedCommitSet);
-		if (!fromCommitHash) {
-			return;
-		}
-
 		try {
 			_isLoadingMorePrim.set(true);
 
 			// Create options for incremental loading from the optimal commit
 			const incrementalOptions: git_operations.GitLogOptions = {
 				...currentLogOptions,
-				fromRef: fromCommitHash,
+				commitsToSkip: _gitLogDataPrim.value?.length ?? 0,
 			};
 
 			await refreshLogsInner(incrementalOptions, true);

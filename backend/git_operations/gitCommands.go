@@ -19,6 +19,7 @@ type GitLogOptions struct {
 	CommitsToLoad *int    `json:"commitsToLoad"`
 	FromRef       *string `json:"fromRef"`
 	SearchQuery   *string `json:"searchQuery"`
+	CommitsToSkip *int    `json:"commitsToSkip"`
 }
 
 // Represents a line in `git log`'s output
@@ -114,6 +115,10 @@ func ReadGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
 	// Add search query if provided
 	if options.SearchQuery != nil && *options.SearchQuery != "" {
 		args = append(args, "--grep="+(*options.SearchQuery), "--all-match", "--regexp-ignore-case")
+	}
+
+	if options.CommitsToSkip != nil && *options.CommitsToSkip != 0 {
+		args = append(args, fmt.Sprintf("--skip=%v", *options.CommitsToSkip))
 	}
 
 	if options.FromRef == nil || *options.FromRef == "" {
@@ -517,7 +522,7 @@ func getNumstatData(repoPath, parentRef, commitHash string, fileChanges []FileCh
 
 	// Split by null character for -z output, removing empty last element
 	records := strings.Split(strings.TrimSuffix(output, "\x00"), "\x00")
-	
+
 	for _, record := range records {
 		if record == "" {
 			continue

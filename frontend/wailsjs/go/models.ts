@@ -591,6 +591,7 @@ export namespace git_operations {
 	    commitsToLoad?: number;
 	    fromRef?: string;
 	    searchQuery?: string;
+	    commitsToSkip?: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new GitLogOptions(source);
@@ -601,6 +602,7 @@ export namespace git_operations {
 	        this.commitsToLoad = source["commitsToLoad"];
 	        this.fromRef = source["fromRef"];
 	        this.searchQuery = source["searchQuery"];
+	        this.commitsToSkip = source["commitsToSkip"];
 	    }
 	}
 	export class GitRef {
