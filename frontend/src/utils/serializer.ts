@@ -153,8 +153,12 @@ function isPrimitive(value: unknown): boolean {
 	);
 }
 
-function handlePrimitive(value: unknown, options: SerializerOptions): string | undefined | null {
+function handlePrimitive(value: unknown, options: SerializerOptions): string | boolean | number | undefined | null {
 	if (value === undefined || value === null) {
+		return value;
+	}
+
+	if (typeof value === 'boolean' || typeof value === 'number') {
 		return value;
 	}
 
@@ -177,7 +181,7 @@ function handlePrimitive(value: unknown, options: SerializerOptions): string | u
 		return `Symbol(${value.description || ''})`;
 	}
 
-	return '[Not a Primitive]';
+	return `[Not a Primitive]: ${typeof value}`;
 }
 
 type SerializerOptions = {
@@ -202,11 +206,7 @@ export function serialize(object: unknown): string {
 	});
 }
 
-function serializeObject(
-	object: Record<string, unknown> | null,
-	depth: number,
-	options: SerializerOptions
-) {
+function serializeObject(object: Record<string, unknown> | null, depth: number, options: SerializerOptions) {
 	if (!object || Object.keys(object).length === 0) return '{}';
 
 	const indent = getSpaces(depth * options.indentLevel);

@@ -6,7 +6,6 @@ import { UserDefinedCommandDefinition } from '../command-palette/use-custom-comm
 import { UseAppState } from './use-app-state';
 
 // Atoms for state management
-const customCommandsAtom = atom<UserDefinedCommandDefinition[]>([]);
 const customCommandsLoadingAtom = atom<boolean>(false);
 const customCommandsErrorAtom = atom<string | null>(null);
 
@@ -98,7 +97,6 @@ export function useCustomCommandsState() {
 
 export function useCustomCommandStateAtoms() {
 	return {
-		customCommandsAtom,
 		customCommandsLoadingAtom,
 		customCommandsErrorAtom,
 	};

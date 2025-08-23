@@ -10,13 +10,14 @@ import { useCustomCommandStateAtoms } from './use-custom-commands-state';
 import { useFileTabsStateAtoms } from './useFileTabsState';
 import { useSidebarStateAtoms } from './useSidebarState';
 import { useMemo } from 'react';
+import { useCommandRegistryStateAtoms } from '../command-palette/use-command-registry';
 
 // Hook to get all application state values for debugging
 export function useStateInspectorValues() {
 	const appStateAtoms = useAppStateAtoms();
 	const applicationLogsStateAtoms = useAppLogStateAtoms();
 	const commandPaletteStateAtoms = useCommandPaletteStateAtoms();
-	const commandRegistryStateAtoms = useCustomCommandStateAtoms();
+	const commandRegistryStateAtoms = useCommandRegistryStateAtoms();
 	const customCommandStateAtoms = useCustomCommandStateAtoms();
 	const fileTabsStateAtoms = useFileTabsStateAtoms();
 	const sidebarStateAtoms = useSidebarStateAtoms();
