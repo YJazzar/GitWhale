@@ -1,6 +1,6 @@
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
-import { Terminal } from '@xterm/xterm';
+import { ITerminalOptions, Terminal } from '@xterm/xterm';
 import { atom, useAtom } from 'jotai';
 import { ClearApplicationLogHistory, GetApplicationLogHistory } from '../../../wailsjs/go/backend/App';
 import { command_utils, logger } from '../../../wailsjs/go/models';
@@ -82,9 +82,9 @@ export const useAppLogState = () => {
 		const fitAddon = new FitAddon();
 
 		// Use provided terminal settings or defaults optimized for logs
-		let terminalOptions: any = {
+		let terminalOptions: ITerminalOptions = {
 			fontSize: terminalSettings?.fontSize || 12,
-			cursorStyle: 'none', // No cursor for read-only terminal
+			cursorStyle: 'bar', // No cursor for read-only terminal
 			disableStdin: true, // Disable input
 			convertEol: true,
 			scrollback: 10000, // Large scrollback for logs

@@ -112,8 +112,8 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 	}, [formData]);
 
 	const onCloseEditorPage = () => {
-		rootNavigation.onCloseCustomCommandEditor(originalCommandId)
-	}
+		rootNavigation.onCloseCustomCommandEditor(originalCommandId);
+	};
 
 	const handleSave = useCallback(async () => {
 		if (!validateForm()) {
@@ -149,12 +149,15 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 		onCloseEditorPage();
 	}, [onCloseEditorPage]);
 
-	const updateFormField = useCallback((field: string, value: any) => {
-		setFormData((prev) => ({
-			...prev,
-			[field]: value,
-		}));
-	}, []);
+	const updateFormField = useCallback(
+		<T extends typeof formData, K extends keyof T>(key: K, value: T[K]) => {
+			setFormData((prev) => ({
+				...prev,
+				[key]: value,
+			}));
+		},
+		[]
+	);
 
 	const addParameter = useCallback(() => {
 		const newParam: UserDefinedParameter = {
@@ -170,14 +173,18 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 		}));
 	}, []);
 
-	const updateParameter = useCallback((index: number, field: string, value: any) => {
-		setFormData((prev) => ({
-			...prev,
-			parameters:
-				prev.parameters?.map((param, i) => (i === index ? { ...param, [field]: value } : param)) ||
-				[],
-		}));
-	}, []);
+	const updateParameter = useCallback(
+		<T extends UserDefinedParameter, K extends keyof T>(index: number, paramField: K, value: T[K]) => {
+			setFormData((prev) => ({
+				...prev,
+				parameters:
+					prev.parameters?.map((param, i) =>
+						i === index ? { ...param, [paramField]: value } : param
+					) || [],
+			}));
+		},
+		[]
+	);
 
 	const removeParameter = useCallback((index: number) => {
 		setFormData((prev) => ({
@@ -187,157 +194,175 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 	}, []);
 
 	// Memoized sub-components to prevent unnecessary re-renders
-	const CommandBasicInfoForm = useMemo(() => (
-		<>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div>
-					<Label htmlFor="title">Title *</Label>
-					<Input
-						id="title"
-						value={formData.title}
-						onChange={(e) => updateFormField('title', e.target.value)}
-						placeholder="Git: My Custom Command"
-						className={errors.title ? 'border-destructive' : ''}
-					/>
-					{errors.title && (
-						<div className="text-sm text-destructive mt-1">{errors.title}</div>
-					)}
-				</div>
-
-				<div>
-					<Label htmlFor="context">Context *</Label>
-					<Select value={formData.context} onValueChange={(value) => updateFormField('context', value)}>
-						<SelectTrigger className={'w-full ' + (errors.context ? 'border-destructive' : '')}>
-							<SelectValue placeholder="Command context" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectGroup>
-								{[
-									CommandPaletteContextKey.Root,
-									CommandPaletteContextKey.Repo,
-									CommandPaletteContextKey.ApplicationLogs,
-									CommandPaletteContextKey.Settings,
-								].map((contextType) => (
-									<SelectItem key={contextType} value={contextType}>
-										{contextType}
-									</SelectItem>
-								))}
-							</SelectGroup>
-						</SelectContent>
-					</Select>
-					{errors.context && (
-						<div className="text-sm text-destructive mt-1">{errors.context}</div>
-					)}
-				</div>
-			</div>
-
-			<div>
-				<Label htmlFor="description">Description</Label>
-				<Input
-					id="description"
-					value={formData.description || ''}
-					onChange={(e) => updateFormField('description', e.target.value)}
-					placeholder="Brief description of what this command does"
-				/>
-			</div>
-
-			<div>
-				<Label htmlFor="keywords">Keywords</Label>
-				<TagInput
-					value={formData.keywords || []}
-					onChange={(keywords) => updateFormField('keywords', keywords)}
-					placeholder="git, status, branch"
-				/>
-			</div>
-
-			<div>
-				<Label htmlFor="commandString">Command String *</Label>
-				<Input
-					id="commandString"
-					value={formData.action.commandString}
-					onChange={(e) => updateFormField('action', { commandString: e.target.value })}
-					placeholder="git status --porcelain"
-					className={errors['action.commandString'] ? 'border-destructive' : ''}
-				/>
-				{errors['action.commandString'] && (
-					<div className="text-sm text-destructive mt-1">
-						{errors['action.commandString']}
-					</div>
-				)}
-				<div className="text-sm text-muted-foreground mt-1">
-					Use {`{{parameterID}}`} to reference parameters
-				</div>
-			</div>
-		</>
-	), [formData.title, formData.context, formData.description, formData.keywords, formData.action.commandString, errors, updateFormField]);
-
-	const ParameterManagementSection = useMemo(() => (
-		<div>
-			<div className="flex items-center justify-between mb-4">
-				<Label className="text-base font-medium">Parameters</Label>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={addParameter}
-					className="select-none"
-				>
-					<Plus className="h-4 w-4 mr-2" />
-					Add Parameter
-				</Button>
-			</div>
-
-			{formData.parameters && formData.parameters.length > 0 ? (
-				<div className="space-y-3">
-					{formData.parameters.map((param, index) => (
-						<ParameterForm
-							key={index}
-							parameter={param}
-							parameterIndex={index}
-							onUpdate={updateParameter}
-							onRemove={removeParameter}
+	const CommandBasicInfoForm = useMemo(
+		() => (
+			<>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<Label htmlFor="title">Title *</Label>
+						<Input
+							id="title"
+							value={formData.title}
+							onChange={(e) => updateFormField('title', e.target.value)}
+							placeholder="Git: My Custom Command"
+							className={errors.title ? 'border-destructive' : ''}
 						/>
-					))}
-				</div>
-			) : (
-				<div className="text-center py-8 text-muted-foreground">
-					<div className="text-sm">No parameters defined</div>
-					<div className="text-xs">
-						Parameters allow users to provide input to your command
+						{errors.title && <div className="text-sm text-destructive mt-1">{errors.title}</div>}
+					</div>
+
+					<div>
+						<Label htmlFor="context">Context *</Label>
+						<Select
+							value={formData.context}
+							onValueChange={(value) =>
+								updateFormField('context', value as CommandPaletteContextKey)
+							}
+						>
+							<SelectTrigger
+								className={'w-full ' + (errors.context ? 'border-destructive' : '')}
+							>
+								<SelectValue placeholder="Command context" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectGroup>
+									{[
+										CommandPaletteContextKey.Root,
+										CommandPaletteContextKey.Repo,
+										CommandPaletteContextKey.ApplicationLogs,
+										CommandPaletteContextKey.Settings,
+									].map((contextType) => (
+										<SelectItem key={contextType} value={contextType}>
+											{contextType}
+										</SelectItem>
+									))}
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+						{errors.context && (
+							<div className="text-sm text-destructive mt-1">{errors.context}</div>
+						)}
 					</div>
 				</div>
-			)}
-		</div>
-	), [formData.parameters, addParameter, updateParameter, removeParameter]);
 
-	const CommandActionButtons = useMemo(() => (
-		<div className="flex justify-between">
+				<div>
+					<Label htmlFor="description">Description</Label>
+					<Input
+						id="description"
+						value={formData.description || ''}
+						onChange={(e) => updateFormField('description', e.target.value)}
+						placeholder="Brief description of what this command does"
+					/>
+				</div>
+
+				<div>
+					<Label htmlFor="keywords">Keywords</Label>
+					<TagInput
+						value={formData.keywords || []}
+						onChange={(keywords) => updateFormField('keywords', keywords)}
+						placeholder="git, status, branch"
+					/>
+				</div>
+
+				<div>
+					<Label htmlFor="commandString">Command String *</Label>
+					<Input
+						id="commandString"
+						value={formData.action.commandString}
+						onChange={(e) => updateFormField('action', { commandString: e.target.value })}
+						placeholder="git status --porcelain"
+						className={errors['action.commandString'] ? 'border-destructive' : ''}
+					/>
+					{errors['action.commandString'] && (
+						<div className="text-sm text-destructive mt-1">{errors['action.commandString']}</div>
+					)}
+					<div className="text-sm text-muted-foreground mt-1">
+						Use {`{{parameterID}}`} to reference parameters
+					</div>
+				</div>
+			</>
+		),
+		[
+			formData.title,
+			formData.context,
+			formData.description,
+			formData.keywords,
+			formData.action.commandString,
+			errors,
+			updateFormField,
+		]
+	);
+
+	const ParameterManagementSection = useMemo(
+		() => (
 			<div>
-				{originalCommandId && (
-					<ConfirmDeleteButton onDelete={handleDelete} disabled={isLoading}>
-						<Trash2 className="h-4 w-4 mr-2" />
-						Delete Command
-					</ConfirmDeleteButton>
+				<div className="flex items-center justify-between mb-4">
+					<Label className="text-base font-medium">Parameters</Label>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={addParameter}
+						className="select-none"
+					>
+						<Plus className="h-4 w-4 mr-2" />
+						Add Parameter
+					</Button>
+				</div>
+
+				{formData.parameters && formData.parameters.length > 0 ? (
+					<div className="space-y-3">
+						{formData.parameters.map((param, index) => (
+							<ParameterForm
+								key={index}
+								parameter={param}
+								parameterIndex={index}
+								onUpdate={updateParameter}
+								onRemove={removeParameter}
+							/>
+						))}
+					</div>
+				) : (
+					<div className="text-center py-8 text-muted-foreground">
+						<div className="text-sm">No parameters defined</div>
+						<div className="text-xs">Parameters allow users to provide input to your command</div>
+					</div>
 				)}
 			</div>
+		),
+		[formData.parameters, addParameter, updateParameter, removeParameter]
+	);
 
-			<div className="flex gap-2">
-				<Button
-					type="button"
-					variant="outline"
-					onClick={handleCancel}
-					disabled={isLoading}
-					className="select-none"
-				>
-					Cancel
-				</Button>
-				<Button onClick={handleSave} disabled={isLoading} className="select-none">
-					<Save className="h-4 w-4 mr-2" />
-					{isLoading ? 'Saving...' : 'Save Command'}
-				</Button>
+	const CommandActionButtons = useMemo(
+		() => (
+			<div className="flex justify-between">
+				<div>
+					{originalCommandId && (
+						<ConfirmDeleteButton onDelete={handleDelete} disabled={isLoading}>
+							<Trash2 className="h-4 w-4 mr-2" />
+							Delete Command
+						</ConfirmDeleteButton>
+					)}
+				</div>
+
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={handleCancel}
+						disabled={isLoading}
+						className="select-none"
+					>
+						Cancel
+					</Button>
+					<Button onClick={handleSave} disabled={isLoading} className="select-none">
+						<Save className="h-4 w-4 mr-2" />
+						{isLoading ? 'Saving...' : 'Save Command'}
+					</Button>
+				</div>
 			</div>
-		</div>
-	), [originalCommandId, handleDelete, handleCancel, handleSave, isLoading]);
+		),
+		[originalCommandId, handleDelete, handleCancel, handleSave, isLoading]
+	);
 
 	return (
 		<div className="container mx-auto max-w-4xl pb-4">

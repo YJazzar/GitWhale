@@ -1,15 +1,14 @@
+import clsx from 'clsx';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { KeyboardEventHandler, useState } from 'react';
-import { backend, git_operations } from '../../wailsjs/go/models';
+import { git_operations } from '../../wailsjs/go/models';
 import { Button } from './ui/button';
-import clsx from 'clsx';
 
 interface TreeNodeProps {
 	directory: git_operations.Directory;
 	onFileClick: (file: git_operations.FileInfo, keepFileOpen: boolean) => void;
 }
 
-const leftPadding = 'pl-4';
 const greyTextColor = 'text-slate-500';
 
 // A component to represent an individual folder or file
@@ -110,9 +109,6 @@ export function FileNode(props: {
 	} else if (!file.LeftDirAbsPath && file.RightDirAbsPath) {
 		fileColor = 'text-green-700';
 		fileDescription = ' (A)';
-	} else if (!file.LeftDirAbsPath && file.RightDirAbsPath) {
-		fileColor = greyTextColor;
-		fileDescription = ' (Unknown)';
 	}
 
 	return (

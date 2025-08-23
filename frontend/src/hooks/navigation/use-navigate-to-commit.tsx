@@ -1,13 +1,12 @@
-import { GitCommit, GitMerge } from 'lucide-react';
-import { backend } from 'wailsjs/go/models';
 import { CommitPreview } from '@/components/commit-preview/commit-preview';
 import {
-	useSidebarHandlers,
 	SidebarItemProps,
 	SidebarSessionKeyGenerator,
+	useSidebarHandlers,
 } from '@/hooks/state/useSidebarHandlers';
+import { GitCommit, GitMerge } from 'lucide-react';
 import { Logger } from '../../utils/logger';
-import { useShortHash } from '../git-log/use-short-hash';
+import { convertToShortHash } from '../git-log/use-short-hash';
 
 export function useNavigateToCommit(repoPath: string) {
 	const sidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoPath));
@@ -26,7 +25,7 @@ export function useNavigateToCommit(repoPath: string) {
 		// Create the sidebar item
 		const commitItem: SidebarItemProps = {
 			id: `commit-${commitHash}`,
-			title: useShortHash(commitHash) || 'noCommitFound',
+			title: convertToShortHash(commitHash) || 'noCommitFound',
 			icon: isMergeCommit ? <GitMerge className="h-4 w-4" /> : <GitCommit className="h-4 w-4" />,
 			component: <CommitPreview commitHash={commitHash} repoPath={repoPath} />,
 			isDynamic: true,

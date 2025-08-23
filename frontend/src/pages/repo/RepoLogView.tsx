@@ -9,7 +9,7 @@ import { ChevronUp } from 'lucide-react';
 import { useEffect } from 'react';
 import { CommitPreview } from '@/components/commit-preview/commit-preview';
 import { usePersistentPanelSizes } from '@/hooks/use-persistent-panel-sizes';
-import { useShortHash } from '@/hooks/git-log/use-short-hash';
+import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
 
 export type CommitSelectType = 'primarySelect' | 'secondarySelect' | 'unselect';
 
@@ -88,7 +88,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 
 	// Determine if we should show the bottom indicator to re-open the pane
 	const shouldShowBottomIndicator = selectedCommitForDetails && !logState.commitDetailsPane.shouldShow;
-	const selectedCommitShortHash = useShortHash(selectedCommitForDetails);
+	const selectedCommitShortHash = convertToShortHash(selectedCommitForDetails);
 
 	// Handle panel layout changes to persist sizes
 	const handleLayoutChange = (sizes: number[]) => {

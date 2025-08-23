@@ -44,10 +44,10 @@ export function useStateInspectorValues() {
 		const valuesGroup = Object.keys(atomsGroup).reduce((groupAcc, atomKey) => {
 			groupAcc[atomKey] = useAtomValue(atomsGroup[atomKey as keyof typeof atomsGroup]);
 			return groupAcc;
-		}, {} as Record<string, any>);
+		}, {} as Record<string, unknown>);
 		acc[key] = valuesGroup;
 		return acc;
-	}, {} as Record<string, Record<string, any>>);
+	}, {} as Record<string, Record<string, unknown>>);
 
 	return useMemo(() => {
 		console.log(allStateValues)

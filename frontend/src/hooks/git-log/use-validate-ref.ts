@@ -1,8 +1,8 @@
 import { useDebounce } from '@uidotdev/usehooks';
+import { useEffect, useState } from 'react';
 import { ValidateRef } from '../../../wailsjs/go/backend/App';
-import { useState, useEffect, useCallback } from 'react';
-import { useRepoState } from '../state/repo/use-repo-state';
 import { Logger } from '../../utils/logger';
+import { useRepoState } from '../state/repo/use-repo-state';
 
 type ValidationState = 'idle' | 'validating' | 'valid' | 'invalid';
 
@@ -12,6 +12,7 @@ export interface UseValidateRefResult {
 
 	// true if the passed in ref was not validated because it partially matches one of the known refs in the repo
 	didSkipValidation: boolean;
+	validatedRef: string;
 }
 
 /**
@@ -83,6 +84,6 @@ export function useValidateRef(repoPath: string, refToValidate: string): UseVali
 		validationState,
 		isValid,
 		didSkipValidation: validationState === 'idle',
-		checkedRef: debouncedRefToValidate,
-	} as any;
+		validatedRef: debouncedRefToValidate,
+	};
 }

@@ -38,7 +38,7 @@ const navigateRepoHome: CommandDefinitionWithRepoState = {
 	action: {
 		type: 'function',
 		requestedHooks: repoNavigationRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks?.repoSideBar.setActiveItem('home');
 		},
 	},
@@ -54,7 +54,7 @@ const navigateRepoStagingArea: CommandDefinitionWithRepoState = {
 	action: {
 		type: 'function',
 		requestedHooks: repoNavigationRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks?.repoSideBar.setActiveItem('staging');
 		},
 	},
@@ -70,7 +70,7 @@ const navigateRepoLog: CommandDefinitionWithRepoState = {
 	action: {
 		type: 'function',
 		requestedHooks: repoNavigationRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks?.repoSideBar.setActiveItem('log');
 		},
 	},
@@ -86,7 +86,7 @@ const navigateRepoTerminal: CommandDefinitionWithRepoState = {
 	action: {
 		type: 'function',
 		requestedHooks: repoNavigationRequestedHooks,
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks?.repoSideBar.setActiveItem('terminal');
 		},
 	},
@@ -96,14 +96,14 @@ const navigateRepoTerminal: CommandDefinitionWithRepoState = {
 export function useRegisterRepoNavigationCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
-	const repoNavigationCommands = [
-		navigateRepoHome,
-		navigateRepoLog,
-		navigateRepoStagingArea,
-		navigateRepoTerminal,
-	];
-
 	useEffect(() => {
-		commandRegistry.registerCommands(repoNavigationCommands);
+		const repoNavigationCommands = [
+			navigateRepoHome,
+			navigateRepoLog,
+			navigateRepoStagingArea,
+			navigateRepoTerminal,
+		];
+
+		commandRegistry.registerCommands(repoNavigationCommands as CommandDefinition<unknown>[]);
 	}, []);
 }

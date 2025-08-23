@@ -1,6 +1,6 @@
 import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { useUnixTime } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
 import { cn } from '@/lib/utils';
 import { Calendar, ChevronDown, GitCommit, Hash, User } from 'lucide-react';
 import { git_operations } from '../../../wailsjs/go/models';
@@ -31,7 +31,7 @@ export function CommitPager(props: CommitPagerProps) {
 	const truncatedMessage = fullMessage.split('\n')[0] || '';
 
 	// Format commit date
-	const commitDate = useUnixTime(commitData.commitTimeStamp);
+	const commitDate = convertUnixTimeToDate(commitData.commitTimeStamp);
 
 	// Get child commits from cache for navigation
 	const childCommits = logState.getChildCommits(commitData.commitHash);

@@ -5,7 +5,7 @@ import { Logger } from '../../utils/logger';
 import { useRepoState } from '../state/repo/use-repo-state';
 import { git_operations } from 'wailsjs/go/models';
 import { useState } from 'react';
-import { useShortHash } from '../git-log/use-short-hash';
+import { convertToShortHash } from '../git-log/use-short-hash';
 
 export function useNavigateToCommitDiffs(repoPath: string) {
 	const sidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoPath));
@@ -48,8 +48,8 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 			return;
 		}
 
-		const firstCommitHashShort = useShortHash(options.fromRef);
-		const secondCommitHashShort = useShortHash(options.toRef);
+		const firstCommitHashShort = convertToShortHash(options.fromRef);
+		const secondCommitHashShort = convertToShortHash(options.toRef);
 		const pageTitle =
 			options.toRef !== `${options.fromRef}^`
 				? `${firstCommitHashShort}`

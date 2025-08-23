@@ -1,11 +1,14 @@
-import Logger from "@/utils/logger";
-import { FitAddon } from "@xterm/addon-fit";
-import { SearchAddon } from "@xterm/addon-search";
-import { Terminal } from "@xterm/xterm";
-import { CleanupTerminalSession, OnTerminalSessionWasResized, InitNewTerminalSession } from "../../../../wailsjs/go/backend/App";
-import { command_utils } from "../../../../wailsjs/go/models";
-import { EventsOff, EventsOn, EventsEmit } from "../../../../wailsjs/runtime/runtime";
-
+import Logger from '@/utils/logger';
+import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
+import { ITerminalOptions, Terminal } from '@xterm/xterm';
+import {
+	CleanupTerminalSession,
+	OnTerminalSessionWasResized,
+	InitNewTerminalSession,
+} from '../../../../wailsjs/go/backend/App';
+import { command_utils } from '../../../../wailsjs/go/models';
+import { EventsOff, EventsOn, EventsEmit } from '../../../../wailsjs/runtime/runtime';
 
 // Map color schemes to xterm themes
 export function getXTermTheme(colorScheme: string) {
@@ -60,11 +63,11 @@ export function getTerminalState(repoPath: string) {
 		const fitAddon = new FitAddon();
 
 		// Use provided terminal settings or defaults
-		let terminalOptions: any = {};
+		let terminalOptions: ITerminalOptions = {};
 		if (terminalSettings) {
 			terminalOptions = {
 				fontSize: terminalSettings.fontSize,
-				cursorStyle: terminalSettings.cursorStyle,
+				cursorStyle: terminalSettings.cursorStyle as ITerminalOptions['cursorStyle'],
 				// Map color schemes to xterm themes
 				theme: getXTermTheme(terminalSettings.colorScheme),
 			};

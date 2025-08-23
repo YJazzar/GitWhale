@@ -1,4 +1,4 @@
-import { backend, git_operations } from "wailsjs/go/models";
+import { git_operations } from "wailsjs/go/models";
 
 interface GitGraphCommit {
 	commit: git_operations.GitLogCommitInfo;

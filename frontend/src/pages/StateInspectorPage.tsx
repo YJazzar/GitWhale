@@ -115,7 +115,7 @@ interface StateSectionProps {
 	title: string;
 	icon: React.ReactNode;
 	searchQuery: string;
-	valuesGroup: Record<string, any>;
+	valuesGroup: Record<string, unknown>;
 }
 
 function StateSection({ groupKey, title, icon, searchQuery, valuesGroup }: StateSectionProps) {

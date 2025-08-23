@@ -54,7 +54,7 @@ export function useCommandRegistry(searchQuery: string | undefined) {
 		return results.map((result) => result.item);
 	}, [availableContexts, searchQuery, _registeredCommands]);
 
-	const registerCommands = (commands: CommandDefinition<any>[]) => {
+	const registerCommands = (commands: CommandDefinition<unknown>[]) => {
 		_setRegisteredCommands((oldRegisteredCommands) => {
 			let newRegisteredCommands = new Map(oldRegisteredCommands);
 			commands.forEach((command) => newRegisteredCommands.set(command.id, command));

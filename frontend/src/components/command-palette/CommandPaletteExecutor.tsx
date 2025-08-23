@@ -23,18 +23,6 @@ export function CommandPaletteExecutor() {
 	const commandExecutor = useCommandPaletteExecutor();
 	const inProgressCommand = commandExecutor._inProgressCommand.value;
 
-	if (!inProgressCommand) {
-		// This should be guarded against already in the parent component, but just in case
-		return (
-			<EmptyState
-				title={() => (
-					<>Error: we got tricked into executing a command, but we don't know which one! </>
-				)}
-				message={"I cAn'T BeLeIve YoU'vE DoNe ThIs"}
-			/>
-		);
-	}
-
 	const { allParameters } = commandExecutor.commandParameters;
 	const commandAction = commandExecutor.commandAction;
 
@@ -64,6 +52,18 @@ export function CommandPaletteExecutor() {
 	useKeyboardShortcut('Enter', () => {
 		commandAction.runAction();
 	});
+
+	if (!inProgressCommand) {
+		// This should be guarded against already in the parent component, but just in case
+		return (
+			<EmptyState
+				title={() => (
+					<>Error: we got tricked into executing a command, but we don't know which one! </>
+				)}
+				message={"I cAn'T BeLeIve YoU'vE DoNe ThIs"}
+			/>
+		);
+	}
 
 	// Show the terminal command as it's executing
 	if (inProgressCommand.action.type === 'terminalCommand') {
@@ -258,7 +258,9 @@ const CommandPaletteSelectParameterInput = forwardRef<
 					>
 						{/* The name of the ref */}
 						<div className="flex w-full gap-1 min-w-0">
-							<span className={cn('truncate')}>{allOptionsMap.get(paramValue?.value ?? '')?.optionValue}</span>
+							<span className={cn('truncate')}>
+								{allOptionsMap.get(paramValue?.value ?? '')?.optionValue}
+							</span>
 						</div>
 
 						<ChevronsUpDown className="w-4 h-4 shrink-0 opacity-50" />

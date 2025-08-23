@@ -4,7 +4,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
-	DropdownMenuTrigger
+	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,7 @@ import {
 	Loader2,
 	RefreshCw,
 	Search,
-	Settings
+	Settings,
 } from 'lucide-react';
 import { useState } from 'react';
 import { CompareModal } from './compare-modal';
@@ -43,15 +43,6 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 		logState.refreshLogAndRefs();
 	};
 
-	const getCurrentRefDisplay = () => {
-		if (!toolbarOptions.fromRef) {
-			return 'HEAD';
-		}
-		return toolbarOptions.fromRef.length > 20
-			? `${toolbarOptions.fromRef.substring(0, 20)}...`
-			: toolbarOptions.fromRef;
-	};
-
 	return (
 		<div className="flex items-center gap-2 p-3 border-b bg-muted/30">
 			{/* Refresh Button */}
@@ -63,8 +54,8 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 
 			<RefSelectorInput
 				repoPath={repoPath}
-				currentGitRef={toolbarOptions.fromRef ?? ""}
-				showEmptyAs={"HEAD"}
+				currentGitRef={toolbarOptions.fromRef ?? ''}
+				showEmptyAs={'HEAD'}
 				onUpdateGitRef={onUpdateSelectedRefForLog}
 				allowCurrentChangesAsRef={false}
 			/>

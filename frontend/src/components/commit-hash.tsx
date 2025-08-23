@@ -1,7 +1,7 @@
 import { GitCommit, GitMerge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigateToCommit } from '@/hooks/navigation/use-navigate-to-commit';
-import { useShortHash } from '@/hooks/git-log/use-short-hash';
+import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
 import { CopyButton } from '@/components/ui/copy-button';
 
 interface CommitHashProps {
@@ -25,7 +25,7 @@ export function CommitHash({
 	repoPath,
 	enableCopyHash = false,
 }: CommitHashProps) {
-	const displayHash = shortHash ? useShortHash(commitHash) : commitHash;
+	const displayHash = shortHash ? convertToShortHash(commitHash) : commitHash;
 
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
 

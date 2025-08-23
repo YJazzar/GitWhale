@@ -11,7 +11,7 @@ import { CommitFileList } from './commit-file-list';
 import { CommitMessage } from './commit-message';
 import { CommitParents } from './commit-parents';
 import { CommitRefs } from './commit-refs';
-import { useShortHash } from '@/hooks/git-log/use-short-hash';
+import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
 
 interface CommitPreviewProps {
 	commitHash: string;
@@ -76,7 +76,7 @@ export function CommitPreview({ commitHash, repoPath, onClose }: CommitPreviewPr
 					<p className="text-muted-foreground mb-4">
 						{error?.message ||
 							`Failed to load commit details for ${
-								useShortHash(commitHash) || 'unknown commit'
+								convertToShortHash(commitHash) || 'unknown commit'
 							}`}
 					</p>
 					{onClose && (

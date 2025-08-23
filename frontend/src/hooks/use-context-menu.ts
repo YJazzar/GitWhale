@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-export interface ContextMenuAction<T = any> {
+export interface ContextMenuAction<T = unknown> {
 	id: string;
 	label: string;
 	icon?: React.ComponentType<{ className?: string }>;
@@ -26,7 +26,7 @@ interface UseContextMenuReturn<T> {
 	hideContextMenu: () => void;
 }
 
-export function useContextMenu<T = any>({
+export function useContextMenu<T = unknown>({
 	actions,
 	shouldShow,
 }: UseContextMenuProps<T>): UseContextMenuReturn<T> {

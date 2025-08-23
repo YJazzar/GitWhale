@@ -18,7 +18,7 @@ type MonacoDiffModels = {
 function useMonacoDiffModel(file: git_operations.FileInfo) {
 	const [monacoModel, setMonacoModel] = useState<MonacoDiffModels | undefined>(undefined);
 
-	const directoryDiffDetails = useQuery({
+	useQuery({
 		queryKey: ['GetFileContentsForDiff', file],
 		queryFn: async () => {
 			const [originalFilePromise, modifiedFilePromise] = await Promise.allSettled([
@@ -61,7 +61,7 @@ function useMonacoDiffModel(file: git_operations.FileInfo) {
 
 				modifiedModel: monaco.editor.createModel(
 					data.modifiedFile,
-					language, 
+					language
 					// monaco.Uri.file(data.originalFilePath)
 				),
 
@@ -137,7 +137,6 @@ export default function FileDiffView(props: FileDiffViewProps) {
 			theme: 'vs-dark',
 			readOnly: true,
 		});
-		
 
 		setEditor(myEditor);
 

@@ -6,7 +6,7 @@ import {
 	CommandPaletteContextKey,
 	RepoCommandPaletteContextData,
 } from '@/types/command-palette';
-import { Download, DownloadCloud, GitBranch } from 'lucide-react';
+import { DownloadCloud, GitBranch } from 'lucide-react';
 import { useEffect } from 'react';
 import { ValidateRef } from '../../../../wailsjs/go/backend/App';
 import { useCommandRegistry } from '../use-command-registry';
@@ -69,7 +69,7 @@ const gitCheckoutBranch: CommandDefinitionWithRepoState = {
 
 				return isValid ? undefined : 'Invalid ref';
 			},
-			options: (providedHooks, parameters) => {
+			options: (providedHooks) => {
 				if (!providedHooks) {
 					return [];
 				}
@@ -267,9 +267,9 @@ const gitFetch: CommandDefinitionWithRepoState = {
 export function useRegisterGitCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
-	const gitCommands = [gitCheckoutBranch, gitStatus, gitFetch];
-
 	useEffect(() => {
-		commandRegistry.registerCommands(gitCommands);
+		const gitCommands = [gitCheckoutBranch, gitStatus, gitFetch];
+
+		commandRegistry.registerCommands(gitCommands as CommandDefinition<unknown>[]);
 	}, []);
 }

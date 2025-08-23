@@ -1,6 +1,6 @@
 import { GitRefs } from '@/components/git-refs';
-import { useShortHash } from '@/hooks/git-log/use-short-hash';
-import { useUnixTime } from '@/hooks/use-unix-time';
+import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
+import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
 import { Calendar, GitCommit, GitMerge, Hash, User } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 
@@ -19,7 +19,6 @@ interface CommitNodeProps {
 	isFirst: boolean;
 	isLast: boolean;
 	onCommitClick?: (commitHash: string) => void;
-	generateCommitPageUrl?: (commitHash: string) => string;
 }
 
 export function CommitNode({
@@ -30,9 +29,8 @@ export function CommitNode({
 	isFirst,
 	isLast,
 	onCommitClick,
-	generateCommitPageUrl,
 }: CommitNodeProps) {
-	const shortHash = useShortHash(commit.commitHash);
+	const shortHash = convertToShortHash(commit.commitHash);
 	const commitMessage = Array.isArray(commit.commitMessage)
 		? commit.commitMessage.join('\n')
 		: commit.commitMessage;
@@ -185,7 +183,7 @@ export function CommitNode({
 								</div>
 								<div className="flex items-center gap-1 shrink-0">
 									<Calendar className="w-3 h-3" />
-									<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
+									<span>{convertUnixTimeToDate(commit.commitTimeStamp).toLocaleDateString()}</span>
 								</div>
 								<div className="flex items-center gap-1 shrink-0">
 									<Hash className="w-3 h-3" />

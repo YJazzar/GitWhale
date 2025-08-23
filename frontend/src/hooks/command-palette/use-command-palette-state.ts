@@ -5,7 +5,7 @@ import {
 	ParameterData,
 	StreamedCommandEvent,
 } from '@/types/command-palette';
-import { atom, useAtom, useAtomValue } from 'jotai';
+import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo } from 'react';
 import { ExecuteShellCommand } from '../../../wailsjs/go/backend/App';
 import { EventsEmit, EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
@@ -33,11 +33,11 @@ type CommandPaletteCurrentState = 'executingCommand' | 'searchingForCommand';
  */
 export function useCommandPaletteState() {
 	const [_isPaletteOpen, _setPaletteIsOpen] = useAtom(isCommandPaletteOpenAtom);
-	const [_isMinimized, _setIsMinimized] = useAtom(isCommandPaletteMinimizedAtom);
+	const _setIsMinimized = useSetAtom(isCommandPaletteMinimizedAtom);
 	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
-	const [_terminalCommandState, _setTerminalCommandState] = useAtom(terminalCommandStateAtom);
+	const _terminalCommandState = useAtomValue(terminalCommandStateAtom);
 
 	const calculateCurrentState = (): CommandPaletteCurrentState => {
 		if (_inProgressCommand) {
@@ -104,7 +104,7 @@ export function useCommandPaletteState() {
 		_setAvailableContexts(newContextMap);
 	};
 
-	const invokeCommand = (command: CommandDefinition<any>) => {
+	const invokeCommand = (command: CommandDefinition<unknown>) => {
 		if (_inProgressCommand) {
 			return;
 		}
@@ -140,7 +140,7 @@ export function useCommandPaletteState() {
 const selectedCommandInSearchDialogAtom = atom('');
 
 export function useCommandPaletteSelectionManager(autoSelectCommandOnChange: boolean) {
-	const [_searchQuery, _setSearchQuery] = useAtom(searchQueryAtom);
+	const _searchQuery = useAtomValue(searchQueryAtom);
 	const [_selectedCommandID, _setSelectedCommandID] = useAtom(selectedCommandInSearchDialogAtom);
 
 	const registry = useCommandRegistry(_searchQuery);
@@ -215,7 +215,7 @@ const runActionStateAtom = atom<RunActionExecutionState>('notExecuted');
 
 export function useCommandPaletteExecutor() {
 	const [_isCommandPaletteOpen, _setIsCommandPaletteOpen] = useAtom(isCommandPaletteOpenAtom);
-	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
+	const _availableContexts = useAtomValue(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
 
 	const contextData = _inProgressCommand?.context
@@ -387,9 +387,10 @@ function useCommandPaletteTerminalCommandExecutor() {
 		return `terminal-command-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 	}, []);
 
+	type PromiseCallback = (value: string) => void;
 	const executeShellCommand = async (shellCommand: string, workingDir: string) => {
-		let resolveCallback: ((value: string) => void) | undefined = undefined;
-		let rejectCallback: ((value: string) => void) | undefined = undefined;
+		let resolveCallback: PromiseCallback | undefined = undefined;
+		let rejectCallback: PromiseCallback | undefined = undefined;
 		const terminalCommandPromise = new Promise((resolve, reject) => {
 			resolveCallback = resolve;
 			rejectCallback = reject;
@@ -420,7 +421,7 @@ function useCommandPaletteTerminalCommandExecutor() {
 
 		// Set up event listener for this command
 		EventsOn(topic, (event: StreamedCommandEvent) => {
-			handleCommandEvent(event, resolveCallback as any, rejectCallback as any);
+			handleCommandEvent(event, resolveCallback as PromiseCallback, rejectCallback as PromiseCallback);
 		});
 
 		try {
@@ -436,15 +437,15 @@ function useCommandPaletteTerminalCommandExecutor() {
 				error: error instanceof Error ? error.message : `${error}`,
 			});
 
-			(rejectCallback as any)?.(error);
+			(rejectCallback as PromiseCallback)?.(error as string);
 		}
 		return terminalCommandPromise;
 	};
 
 	const handleCommandEvent = (
 		event: StreamedCommandEvent,
-		resolve: (value: unknown) => void,
-		reject: (value: unknown) => void
+		resolve: PromiseCallback,
+		reject: PromiseCallback
 	) => {
 		switch (event.state) {
 			case 'started':
@@ -478,7 +479,7 @@ function useCommandPaletteTerminalCommandExecutor() {
 					exitCode: event.exitCode,
 				}));
 
-				reject(event.error);
+				reject(event.error ?? "No specific error was received from backend");
 				break;
 
 			case 'cancelled':

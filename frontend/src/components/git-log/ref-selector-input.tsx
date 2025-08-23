@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
 	Command,
@@ -11,7 +10,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useShortHash } from '@/hooks/git-log/use-short-hash';
+import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
 import { useValidateRef, UseValidateRefResult } from '@/hooks/git-log/use-validate-ref';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { cn } from '@/lib/utils';
@@ -149,7 +148,7 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 	if (!!showEmptyAs && (!currentGitRef || currentGitRef === "")) { 
 		currentGitRefDisplayValue = showEmptyAs
 	} else { 
-		currentGitRefDisplayValue = useShortHash(currentGitRef, true)
+		currentGitRefDisplayValue = convertToShortHash(currentGitRef, true)
 	}
 
 	return (
@@ -273,7 +272,7 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 												{getValidationIcon(commandInputValidation)}
 
 												<span className="italic">
-													{useShortHash(commandSearchInput, true)}
+													{convertToShortHash(commandSearchInput, true)}
 												</span>
 
 												<Check

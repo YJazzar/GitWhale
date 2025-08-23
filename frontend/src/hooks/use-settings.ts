@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS } from '@/types/settings';
 import { UpdateSettings } from '../../wailsjs/go/backend/App';
-import { backend, command_utils, git_operations } from '../../wailsjs/go/models';
+import { backend, command_utils } from '../../wailsjs/go/models';
 import { Logger } from '../utils/logger';
 import { UseAppState } from './state/use-app-state';
 

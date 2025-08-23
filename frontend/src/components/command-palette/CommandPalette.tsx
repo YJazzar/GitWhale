@@ -12,11 +12,10 @@ import { CommandPaletteMinimizedWidget } from './CommandPaletteMinimizedWidget';
 
 export function CommandPalette() {
 	const commandPaletteState = useCommandPaletteState();
-	const selectionManager = useCommandPaletteSelectionManager(true);
+	useCommandPaletteSelectionManager(true);
 
 	// Helpful aliases
 	const dialogVisualState = commandPaletteState.dialogVisualState;
-	const commandsToShow = selectionManager.commandsToShow;
 
 	const isSearchingForCommand = commandPaletteState.currentState === 'searchingForCommand';
 	const isExecutingCommand = commandPaletteState.currentState === 'executingCommand';

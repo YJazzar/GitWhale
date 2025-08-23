@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { useUnixTime } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
 import { useNavigateToCommit } from '@/hooks/navigation/use-navigate-to-commit';
 import { git_operations } from 'wailsjs/go/models';
 
@@ -84,7 +84,7 @@ export function RecentCommits(props: RecentCommitsProps) {
 										<span>•</span>
 										<Calendar className="h-3 w-3" />
 										<span>
-											{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}
+											{convertUnixTimeToDate(commit.commitTimeStamp).toLocaleDateString()}
 										</span>
 									</div>
 								</div>

@@ -1,4 +1,4 @@
-import { useUnixTime } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
 import { Calendar, Clock, Hash, User } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 
@@ -27,10 +27,10 @@ export function CommitAuthorInfo({ commit }: CommitAuthorInfoProps) {
 					</div>
 					<div className="pl-6">
 						<div className="text-sm">
-							{useUnixTime(commit.authoredTimeStamp).toLocaleDateString()}
+							{convertUnixTimeToDate(commit.authoredTimeStamp).toLocaleDateString()}
 						</div>
 						<div className="text-xs text-muted-foreground">
-							{useUnixTime(commit.authoredTimeStamp).toLocaleTimeString()}
+							{convertUnixTimeToDate(commit.authoredTimeStamp).toLocaleTimeString()}
 						</div>
 					</div>
 				</div>
@@ -51,10 +51,10 @@ export function CommitAuthorInfo({ commit }: CommitAuthorInfoProps) {
 					</div>
 					<div className="pl-6">
 						<div className="text-sm">
-							{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}
+							{convertUnixTimeToDate(commit.commitTimeStamp).toLocaleDateString()}
 						</div>
 						<div className="text-xs text-muted-foreground">
-							{useUnixTime(commit.commitTimeStamp).toLocaleTimeString()}
+							{convertUnixTimeToDate(commit.commitTimeStamp).toLocaleTimeString()}
 						</div>
 					</div>
 				</div>

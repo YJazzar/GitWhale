@@ -77,7 +77,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 		handlers.closeTab(file.tabKey);
 	};
 
-	const onOpenFileClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
+	const onOpenFileClick: React.MouseEventHandler<HTMLDivElement> = () => {
 		if (isCurrentFileOpen && isTemporarilyOpen) {
 			handlers.setTabPermaOpen(file);
 			return;
@@ -86,7 +86,7 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 		handlers.openTab(file);
 	};
 
-	const onDoubleClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
+	const onDoubleClick: React.MouseEventHandler<HTMLDivElement> = () => {
 		handlers.setTabPermaOpen(file);
 	};
 

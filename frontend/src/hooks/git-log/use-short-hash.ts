@@ -1,7 +1,7 @@
 
 
 
-export function useShortHash(commitHash: string | undefined, smartShortening: boolean = false) { 
+export function convertToShortHash(commitHash: string | undefined, smartShortening: boolean = false) { 
 	if (!commitHash) { 
 		return undefined
 	}

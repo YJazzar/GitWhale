@@ -12,7 +12,7 @@ interface ContextMenuProviderProps<T> {
 	className?: string;
 }
 
-export function ContextMenuProvider<T = any>({
+export function ContextMenuProvider<T = unknown>({
 	isOpen,
 	position,
 	contextData,

@@ -18,7 +18,7 @@ const navigateHome: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>>
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks.onOpenHomePage();
 		},
 	},
@@ -36,7 +36,7 @@ const navigateSettings: CommandDefinition<ReturnType<typeof useNavigateRootFilTa
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks.onOpenSettings();
 		},
 	},
@@ -54,7 +54,7 @@ const navigateApplicationLogs: CommandDefinition<ReturnType<typeof useNavigateRo
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks.onOpenApplicationLogs();
 		},
 	},
@@ -72,7 +72,7 @@ const navigateStateInspector: CommandDefinition<ReturnType<typeof useNavigateRoo
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks.onOpenStateInspector();
 		},
 	},
@@ -90,7 +90,7 @@ const navigateNewCommand: CommandDefinition<ReturnType<typeof useNavigateRootFil
 		requestedHooks: () => {
 			return useNavigateRootFilTabs();
 		},
-		runAction: async (providedHooks, parameters) => {
+		runAction: async (providedHooks) => {
 			providedHooks.onOpenCustomCommandEditor();
 		},
 	},
@@ -164,7 +164,7 @@ const openRepository: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
 			placeholder: '/path/to/repository',
 			required: true,
 			allowCustomInput: true,
-			options: (providedHooks, parameters) => {
+			options: (providedHooks) => {
 				const convertStringsToOptions = (arrayOfStrings: string[] | undefined) => {
 					return (arrayOfStrings ?? []).map((str) => {
 						return { optionKey: str, optionValue: str };
@@ -195,7 +195,7 @@ const openRepository: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
 
 				return options;
 			},
-			validation: async (value, context) => {
+			validation: async (value) => {
 				if (!value.trim()) return 'Repository path is required';
 				// In a real implementation, you might validate the path exists
 				return undefined;
@@ -216,17 +216,16 @@ const openRepository: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
 export function useRegisterNavigationCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
-	const gitCommands = [
-		navigateHome,
-		navigateSettings,
-		navigateApplicationLogs,
-		navigateStateInspector,
-		openRepository,
-		navigateNewCommand,
-		editCommand,
-	];
-
 	useEffect(() => {
-		commandRegistry.registerCommands(gitCommands);
+		const gitCommands = [
+			navigateHome,
+			navigateSettings,
+			navigateApplicationLogs,
+			navigateStateInspector,
+			openRepository,
+			navigateNewCommand,
+			editCommand,
+		];
+		commandRegistry.registerCommands(gitCommands as CommandDefinition<unknown>[]);
 	}, []);
 }

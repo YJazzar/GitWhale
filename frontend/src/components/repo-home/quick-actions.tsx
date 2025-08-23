@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CopyButton } from '@/components/ui/copy-button';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '@/hooks/state/useSidebarHandlers';
 import { Eye, FolderOpen, GitCompare, RefreshCw, Search, Terminal } from 'lucide-react';
 import { useState } from 'react';
@@ -16,7 +15,6 @@ interface QuickActionsProps {
 export function QuickActions(props: QuickActionsProps) {
 	const { repoPath, onRefresh, isRefreshing } = props;
 	const sidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoPath));
-	const repoState = useRepoState(repoPath);
 
 	const [showCompareModal, setShowCompareModal] = useState(false);
 

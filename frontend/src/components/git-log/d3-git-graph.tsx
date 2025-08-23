@@ -1,7 +1,7 @@
 import { GitRefs } from '@/components/git-refs';
 import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git-log/use-git-graph';
-import { useShortHash } from '@/hooks/git-log/use-short-hash';
-import { useUnixTime } from '@/hooks/use-unix-time';
+import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
+import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
 import { CommitSelectType } from '@/pages/repo/RepoLogView';
 import * as d3 from 'd3';
 import { useEffect, useMemo, useRef } from 'react';
@@ -323,7 +323,7 @@ function CommitDetails({
 
 				const firstLine = commitMessage.split('\n')[0];
 				const displayMessage = firstLine.length > 60 ? firstLine.slice(0, 60) + '...' : firstLine;
-				const shortHash = useShortHash(commit.commitHash);
+				const shortHash = convertToShortHash(commit.commitHash);
 
 				const nodeX = getNodeX(item.column);
 				const nodeY = getNodeY(index) - ROW_HEIGHT / 2 + 6;
@@ -373,7 +373,9 @@ function CommitDetails({
 							<div className="flex items-center gap-2 text-xs text-muted-foreground">
 								<span className="font-mono font-medium text-primary">{shortHash}</span>
 								<span>{commit.username}</span>
-								<span>{useUnixTime(commit.commitTimeStamp).toLocaleDateString()}</span>
+								<span>
+									{convertUnixTimeToDate(commit.commitTimeStamp).toLocaleDateString()}
+								</span>
 								{commit.shortStat && (
 									<span className="text-xs bg-muted px-1.5 py-0.5 rounded">
 										{commit.shortStat}
@@ -399,10 +401,9 @@ export function D3GitGraph({
 	lastCommitElementRef,
 }: D3GitGraphProps) {
 	const svgRef = useRef<SVGSVGElement>(null);
-	const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const selectedCommitHashSet = new Set(selectedCommitHashes);
-
 
 	// Create click handlers that can detect single vs double clicks
 	const handleSingleClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, commitHash: string) => {
@@ -410,7 +411,7 @@ export function D3GitGraph({
 			clearTimeout(clickTimeoutRef.current);
 		}
 
-		const isCtrlPressedDown = event.ctrlKey || event.metaKey
+		const isCtrlPressedDown = event.ctrlKey || event.metaKey;
 
 		// Delay single click to see if a double click follows
 		clickTimeoutRef.current = setTimeout(() => {

@@ -28,7 +28,7 @@ type UserDefinedParameterBase = {
 	required?: boolean;
 };
 
-type UserDefinedSelectParameter = UserDefinedParameterBase & {
+export type UserDefinedSelectParameter = UserDefinedParameterBase & {
 	type: 'select';
 	allowCustomInput: boolean;
 	options: string[]; // must be unique in all indices
@@ -60,7 +60,7 @@ export function useCustomCommand(
 						placeholder: param.placeholder,
 						required: param.required,
 						allowCustomInput: param.allowCustomInput,
-						options: (providedHooks, parameters) => {
+						options: () => {
 							return [
 								{
 									groupKey: 'mainGroup',
@@ -99,7 +99,7 @@ export function useCustomCommand(
 					let constructedCommandString = userDefinedCommand.action.commandString;
 
 					// Go through all the parameters and replace them in their placeholders
-					parameters.forEach((paramData, key) => {
+					parameters.forEach((paramData) => {
 						if (!!paramData.value && paramData.value !== '') {
 							const replaceMarker = `{{${paramData.id}}}`;
 							constructedCommandString = constructedCommandString.replaceAll(replaceMarker, paramData.value);
