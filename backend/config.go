@@ -157,7 +157,11 @@ func (config *AppConfig) addRepoToRecentList(gitRepoPath string) {
 	prevIndex := lib.FindIndex(config.RecentGitRepos, gitRepoPath)
 	config.RecentGitRepos = lib.RemoveFromArray(config.RecentGitRepos, prevIndex)
 	config.RecentGitRepos = append([]string{gitRepoPath}, config.RecentGitRepos...)
-	config.RecentGitRepos = config.RecentGitRepos[:6] // Limit to 6 repos
+
+	// Limit to 6 repos
+	if len(config.RecentGitRepos) > 6 {
+		config.RecentGitRepos = config.RecentGitRepos[:6]
+	}
 }
 
 func (config *AppConfig) closeRepo(gitRepoPath string) {
