@@ -1,5 +1,4 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { git_operations } from 'wailsjs/go/models';
 
 interface CommitMessageProps {

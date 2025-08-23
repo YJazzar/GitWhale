@@ -1,7 +1,5 @@
-import { useCallback } from 'react';
 import { useSidebarState, SidebarItemProps } from './useSidebarState';
 import Logger from '@/utils/logger';
-import { r } from 'react-router/dist/development/fog-of-war-DU_DzpDb';
 export type { SidebarItemProps } from './useSidebarState';
 
 type SidebarSessionKey = string;

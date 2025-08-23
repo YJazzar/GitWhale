@@ -1,8 +1,7 @@
-import { GitCompare } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 export interface EmptyStateProps {
-	title: () => JSX.Element;
+	title: () => React.JSX.Element;
 	message: string;
 }
 

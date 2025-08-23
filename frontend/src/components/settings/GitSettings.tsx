@@ -8,7 +8,7 @@ import { GitBranch } from 'lucide-react';
 export function GitSettings() {
 	const { settings, updateSettings } = useSettings();
 
-	const handleGitSettingsChange = (key: string, value: any) => {
+	const handleGitSettingsChange = <T extends typeof settings.git, K extends keyof T>(key: K, value: T[K]) => {
 		updateSettings({
 			git: {
 				...settings.git,
@@ -17,7 +17,7 @@ export function GitSettings() {
 		});
 	};
 
-	const handleUISettingsChange = (key: string, value: any) => {
+	const handleUISettingsChange = <T extends typeof settings.ui, K extends keyof T>(key: K, value: T[K]) => {
 		updateSettings({
 			ui: {
 				...settings.ui,
@@ -46,8 +46,7 @@ export function GitSettings() {
 						placeholder="100"
 						value={settings.git.commitsToLoad === 0 ? undefined : settings.git.commitsToLoad}
 						onChange={(e) => {
-							const newValue = e.target.value !== '' ? parseInt(e.target.value) : null;
-							handleGitSettingsChange('commitsToLoad', parseInt(e.target.value));
+							handleGitSettingsChange('commitsToLoad', parseInt(e.target.value) || 0);
 						}}
 						className="mt-1"
 					/>
@@ -100,7 +99,7 @@ export function GitSettings() {
 					<Checkbox
 						checked={settings.ui.autoShowCommitDetails}
 						onCheckedChange={(checked) =>
-							handleUISettingsChange('autoShowCommitDetails', checked)
+							handleUISettingsChange('autoShowCommitDetails', !!checked)
 						}
 					/>
 				</div>

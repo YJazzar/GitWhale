@@ -1,4 +1,4 @@
-import { atom, useAtom } from 'jotai';
+import { atom } from 'jotai';
 import { ReactNode, useEffect } from 'react';
 import { useMapPrimitive } from './primitives/use-map-primitive';
 

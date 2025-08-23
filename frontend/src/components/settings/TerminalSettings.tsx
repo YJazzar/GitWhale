@@ -29,7 +29,7 @@ export function TerminalSettings() {
 			.catch((error) => Logger.error(`Failed to get default shell command: ${error}`, 'TerminalSettings'));
 	}, []);
 
-	const handleTerminalSettingsChange = (key: string, value: any) => {
+	const handleTerminalSettingsChange = <T extends typeof settings.terminal, K extends keyof T>(key: K, value: T[K]) => {
 		updateSettings({
 			terminal: {
 				...settings.terminal,

@@ -4,7 +4,7 @@ import { smartTextReWrap } from '@/utils/textwrapper';
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-export interface CommitTextareaProps extends React.ComponentProps<'textarea'> {}
+export type CommitTextareaProps = React.ComponentProps<'textarea'>;
 
 const CommitTextarea = forwardRef<HTMLTextAreaElement, CommitTextareaProps>(
 	({ className, ...props }, ref) => {

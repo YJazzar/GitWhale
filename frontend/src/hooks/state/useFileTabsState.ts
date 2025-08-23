@@ -1,4 +1,4 @@
-import { atom, useAtom, useSetAtom } from 'jotai';
+import { atom, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
 import { useMapPrimitive } from './primitives/use-map-primitive';
 
@@ -7,7 +7,7 @@ type TabKey = string;
 
 export interface TabProps {
 	tabKey: TabKey;
-	titleRender: () => JSX.Element;
+	titleRender: () => React.JSX.Element;
 	component: React.ReactNode;
 	preventUserClose?: boolean;
 	isPermanentlyOpen?: boolean;

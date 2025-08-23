@@ -1,7 +1,5 @@
 import { CommitHash } from '@/components/commit-hash';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react';
 import { useRepoState } from '@/hooks/state/repo/use-repo-state';

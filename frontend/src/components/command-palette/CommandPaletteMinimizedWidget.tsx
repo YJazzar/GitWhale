@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useCommandPaletteExecutor, useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
 import { Terminal, Maximize2, Square, CheckCircle, XCircle, StopCircle } from 'lucide-react';
 import { useMemo } from 'react';
@@ -65,7 +64,6 @@ export function CommandPaletteMinimizedWidget() {
 	}, [status]);
 
 	const commandTitle = inProgressCommand?.title || 'Command';
-	const isRunning = status === 'started';
 
 	return (
 		<div className={`fixed bottom-4 right-4 z-50 transition-all duration-200 ${getStatusInfo.bgColor} border rounded-lg shadow-lg backdrop-blur-xs`}>

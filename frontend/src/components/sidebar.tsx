@@ -6,7 +6,6 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
-import { ReactNode } from 'react';
 
 export type SidebarProps = {
 	sidebarSessionKey: string;
