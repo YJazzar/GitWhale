@@ -153,7 +153,7 @@ function isPrimitive(value: unknown): boolean {
 	);
 }
 
-function handlePrimitive(value: unknown, options: SerializerOptions): any {
+function handlePrimitive(value: unknown, options: SerializerOptions): string | undefined | null {
 	if (value === undefined || value === null) {
 		return value;
 	}
@@ -177,7 +177,7 @@ function handlePrimitive(value: unknown, options: SerializerOptions): any {
 		return `Symbol(${value.description || ''})`;
 	}
 
-	return value;
+	return '[Not a Primitive]';
 }
 
 type SerializerOptions = {
@@ -202,8 +202,12 @@ export function serialize(object: unknown): string {
 	});
 }
 
-function serializeObject(object: any, depth: number, options: SerializerOptions) {
-	if (Object.keys(object).length === 0) return '{}';
+function serializeObject(
+	object: Record<string, unknown> | null,
+	depth: number,
+	options: SerializerOptions
+) {
+	if (!object || Object.keys(object).length === 0) return '{}';
 
 	const indent = getSpaces(depth * options.indentLevel);
 	const nextIndent = getSpaces((depth + 1) * options.indentLevel);
@@ -250,7 +254,7 @@ function formatDisplayValue(val: unknown, depth: number, options: SerializerOpti
 			return serializeArray(val, depth, options);
 		}
 
-		return serializeObject(val, depth, options);
+		return serializeObject(val as Record<string, unknown>, depth, options);
 	}
 
 	return String(val);
@@ -320,8 +324,13 @@ function serializeSet(val: Set<unknown>, depth: number, options: SerializerOptio
 }
 
 function serializeReactComponent(component: React.ReactElement, depth: number, options: SerializerOptions) {
-	const type = component.type as any;
-	const componentName = type?.name ?? type?.displayName;
+	const type = component.type;
+
+	if (typeof type === 'string') {
+		return `React.ReactElement(${type}) ${formatDisplayValue(component.props, depth, options)}`;
+	}
+
+	const componentName = type?.name ?? (type as unknown as { displayName?: string })?.displayName;
 
 	return `React.ReactElement(${componentName}) ${formatDisplayValue(component.props, depth, options)}`;
 }

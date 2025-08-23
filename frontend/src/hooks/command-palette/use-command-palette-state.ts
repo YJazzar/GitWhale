@@ -40,7 +40,7 @@ export function useCommandPaletteState() {
 	const [_terminalCommandState, _setTerminalCommandState] = useAtom(terminalCommandStateAtom);
 
 	const calculateCurrentState = (): CommandPaletteCurrentState => {
-		if (!!_inProgressCommand) {
+		if (_inProgressCommand) {
 			return 'executingCommand';
 		}
 
@@ -105,7 +105,7 @@ export function useCommandPaletteState() {
 	};
 
 	const invokeCommand = (command: CommandDefinition<any>) => {
-		if (!!_inProgressCommand) {
+		if (_inProgressCommand) {
 			return;
 		}
 
@@ -218,7 +218,7 @@ export function useCommandPaletteExecutor() {
 	const [_availableContexts, _setAvailableContexts] = useAtom(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
 
-	const contextData = !!_inProgressCommand?.context
+	const contextData = _inProgressCommand?.context
 		? _availableContexts.get(_inProgressCommand.context)
 		: undefined;
 	const requestedHooks = _inProgressCommand?.action.requestedHooks(contextData);

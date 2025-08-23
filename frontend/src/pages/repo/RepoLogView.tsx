@@ -22,10 +22,6 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	// Persistent panel sizes
 	const [panelSizes, setPanelSizes] = usePersistentPanelSizes('gitwhale-repo-log-panel-sizes', [60, 40]);
 
-	if (!repoPath) {
-		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
-	}
-
 	const onCommitSelect = (commitHash: string, selectionType: CommitSelectType) => {
 		if (selectionType === 'unselect') {
 			logState.selectedCommits.removeFromSelectedCommitsList(commitHash);
@@ -101,6 +97,10 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 		}
 	};
 
+	if (!repoPath) {
+		return <>Error: why are we rendering RepoLogView when there's no repo provided?</>;
+	}
+
 	return (
 		<div className="flex flex-col h-full">
 			<GitLogToolbar repoPath={repoPath} />
@@ -118,7 +118,7 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 
 					{shouldShowPane && (
 						<>
-							<ResizableHandle withHandle/>
+							<ResizableHandle withHandle />
 							<ResizablePanel defaultSize={panelSizes[1]} minSize={10}>
 								<CommitPreview
 									commitHash={selectedCommitForDetails}

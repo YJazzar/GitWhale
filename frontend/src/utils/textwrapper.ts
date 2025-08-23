@@ -250,7 +250,7 @@ export class TextWrapper {
 		let hangingIndent = prefix;
 		const firstContentLine = lines.find((line) => line.trim());
 		if (firstContentLine) {
-			const match = firstContentLine.match(/^(\s*(?:\*|\d+\.|\-|\+)\s+)/);
+			const match = firstContentLine.match(/^(\s*(?:\*|\d+\.|-|\+)\s+)/);
 			if (match) {
 				hangingIndent = prefix + ' '.repeat(match[1].length);
 			}
@@ -297,7 +297,7 @@ export class TextWrapper {
 		}
 
 		// Adjust selections if provided
-		const newSelections = selections ? this.adjustSelections(selections, result) : [];
+		const newSelections = selections ? this.adjustSelections(selections) : [];
 
 		return {
 			lines: result,
@@ -306,7 +306,7 @@ export class TextWrapper {
 	}
 
 	// Adjust selections after wrapping (simplified)
-	private adjustSelections(originalSelections: RewrapSelection[], newLines: string[]): RewrapSelection[] {
+	private adjustSelections(originalSelections: RewrapSelection[]): RewrapSelection[] {
 		// This is a simplified version - in practice you'd want more sophisticated
 		// selection adjustment based on how the text was actually wrapped
 		return originalSelections.map((sel) => ({

@@ -16,7 +16,7 @@ export default function DirDiffPage() {
 	const [directoryData, setDirectoryData] = useAtom(directoryDataAtom);
 
 	useEffect(() => {
-		if (!!directoryData) {
+		if (directoryData) {
 			return;
 		}
 

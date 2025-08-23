@@ -46,7 +46,7 @@ export const UseAppState = () => {
 	}, [customCommandDefinitions, commandRegistry.unregisterCommands, commandRegistry.registerCommands, registeredCustomCommands, setRegisteredCustomCommands]);
 
 	useEffect(() => {
-		if (!!state) {
+		if (state) {
 			return;
 		}
 
