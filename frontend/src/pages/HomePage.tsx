@@ -3,6 +3,7 @@ import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-fil
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { Bug, FileText, FolderOpen, Lightbulb, Settings, Star } from 'lucide-react';
 import { ToggleStarRepo } from '../../wailsjs/go/backend/App';
+import { Separator } from '@/components/ui/separator';
 
 export default function HomePage() {
 	const { appState, refreshAppState } = UseAppState();
@@ -28,7 +29,7 @@ export default function HomePage() {
 
 	return (
 		<div className="h-full flex flex-col items-center justify-center p-8">
-			<div className="grid grid-cols-2 gap-6 max-w-xl w-full">
+			<div className="flex items-center justify-center gap-8 h-full">
 				{/* Column 1: actions */}
 				<div className="flex flex-col items-center justify-center">
 					<ul className="space-y-2">
@@ -75,46 +76,41 @@ export default function HomePage() {
 					</ul>
 				</div>
 
-				{/* Vertical separator */}
-				<div className="relative">
-					<div className="absolute left-0 top-0 bottom-0 w-px bg-border -translate-x-3" />
+				<Separator orientation="vertical" className="max-h-64" />
 
-					{/* Column 2: Repo lists */}
-					<div className="flex flex-col items-start">
-						{starredRepos.length > 0 && (
-							<div className="mb-8">
-								<h2 className="text-xl font-semibold mb-4">Starred:</h2>
-								<div className="space-y-2">
-									{starredRepos.map((repoPath) => (
-										<RepoEntry
-											key={repoPath}
-											repoPath={repoPath}
-											isStarred
-											onOpenRepo={onOpenRepo}
-											onToggleStar={onToggleStar}
-										/>
-									))}
-								</div>
+				{/* Column 2: Repo lists */}
+				<div className="flex flex-col items-start justify-center flex-1 h-full">
+					{starredRepos.length > 0 && (
+						<div className="mb-8">
+							<h2 className="text-xl font-semibold mb-4">Starred:</h2>
+							<div className="space-y-2">
+								{starredRepos.map((repoPath) => (
+									<RepoEntry
+										key={repoPath}
+										repoPath={repoPath}
+										isStarred
+										onOpenRepo={onOpenRepo}
+										onToggleStar={onToggleStar}
+									/>
+								))}
 							</div>
-						)}
+						</div>
+					)}
 
-						{nonStarredRecentRepos.length > 0 && (
-							<div>
-								<h2 className="text-xl font-semibold mb-4">Recent:</h2>
-								<div className="space-y-2">
-									{nonStarredRecentRepos.map((repoPath) => (
-										<RepoEntry
-											key={repoPath}
-											repoPath={repoPath}
-											isStarred={false}
-											onOpenRepo={onOpenRepo}
-											onToggleStar={onToggleStar}
-										/>
-									))}
-								</div>
-							</div>
-						)}
-					</div>
+					{nonStarredRecentRepos.length > 0 && (
+						<>
+							<h2 className="text-xl font-semibold mb-4">Recent:</h2>
+							{nonStarredRecentRepos.map((repoPath) => (
+								<RepoEntry
+									key={repoPath}
+									repoPath={repoPath}
+									isStarred={false}
+									onOpenRepo={onOpenRepo}
+									onToggleStar={onToggleStar}
+								/>
+							))}
+						</>
+					)}
 				</div>
 			</div>
 
