@@ -4,8 +4,8 @@ import { useRepoState } from '@/hooks/state/repo/use-repo-state';
 import { useContextMenu, type ContextMenuAction } from '@/hooks/use-context-menu';
 import { cn } from '@/lib/utils';
 import { CommitSelectType } from '@/pages/repo/RepoLogView';
-import { Cherry, Copy, Eye, GitBranch, RotateCcw, Loader2 } from 'lucide-react';
-import { useEffect, useRef, useCallback } from 'react';
+import { Copy, Eye, GitBranch, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface GitLogGraphProps {
 	repoPath: string;
@@ -57,7 +57,6 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 			label: 'Copy commit hash',
 			icon: Copy,
 			onClick: (commitHash) => {
-				console.log('Copy commit hash:', commitHash);
 				navigator.clipboard?.writeText(commitHash);
 			},
 		},
@@ -66,34 +65,25 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 			label: 'View commit details',
 			icon: Eye,
 			onClick: (commitHash) => {
-				console.log('View commit details:', commitHash);
-				// TODO: Implement view details functionality
+				onCommitDoubleClick(commitHash)
 			},
 		},
-		{
-			id: 'separator-1',
-			label: '',
-			separator: true,
-			onClick: () => {},
-		},
-		{
-			id: 'cherry-pick',
-			label: 'Cherry-pick commit',
-			icon: Cherry,
-			onClick: (commitHash) => {
-				console.log('Cherry-pick commit:', commitHash);
-				// TODO: Implement cherry-pick functionality
-			},
-		},
-		{
-			id: 'revert',
-			label: 'Revert commit',
-			icon: RotateCcw,
-			onClick: (commitHash) => {
-				console.log('Revert commit:', commitHash);
-				// TODO: Implement revert functionality
-			},
-		},
+		// {
+		// 	id: 'cherry-pick',
+		// 	label: 'Cherry-pick commit',
+		// 	icon: Cherry,
+		// 	onClick: (commitHash) => {
+		// 		console.log('Cherry-pick commit:', commitHash);
+		// 	},
+		// },
+		// {
+		// 	id: 'revert',
+		// 	label: 'Revert commit',
+		// 	icon: RotateCcw,
+		// 	onClick: (commitHash) => {
+		// 		console.log('Revert commit:', commitHash);
+		// 	},
+		// },
 	];
 
 	// Context menu functionality
