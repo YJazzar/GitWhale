@@ -42,6 +42,7 @@ export function useStateInspectorValues() {
 	const allStateValues = Object.keys(allStateAtoms).reduce((acc, key) => {
 		const atomsGroup = allStateAtoms[key as keyof typeof allStateAtoms];
 		const valuesGroup = Object.keys(atomsGroup).reduce((groupAcc, atomKey) => {
+			// eslint-disable-next-line react-hooks/react-compiler
 			groupAcc[atomKey] = useAtomValue(atomsGroup[atomKey as keyof typeof atomsGroup]);
 			return groupAcc;
 		}, {} as Record<string, unknown>);

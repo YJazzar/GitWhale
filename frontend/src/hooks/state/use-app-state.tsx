@@ -4,6 +4,7 @@ import { GetAppState } from '../../../wailsjs/go/backend/App';
 import { backend } from '../../../wailsjs/go/models';
 import { useCommandRegistry } from '../command-palette/use-command-registry';
 import { useCustomCommand, UserDefinedCommandDefinition } from '../command-palette/use-custom-command';
+import { CommandDefinition } from '@/types/command-palette';
 
 const appStateAtom = atom<backend.App | undefined>(undefined);
 
@@ -16,8 +17,9 @@ export const UseAppState = () => {
 	const customCommandDefinitions = useCustomCommand(
 		frontendCustomCommands as UserDefinedCommandDefinition[]
 	);
-	const [registeredCustomCommands, setRegisteredCustomCommands] = useState<ReturnType<typeof useCustomCommand>>([])
-
+	const [registeredCustomCommands, setRegisteredCustomCommands] = useState<
+		ReturnType<typeof useCustomCommand>
+	>([]);
 
 	const refreshAppState = async () => {
 		const newAppState = await GetAppState();
@@ -27,23 +29,29 @@ export const UseAppState = () => {
 
 	// Auto-register custom commands when they change
 	useEffect(() => {
-		if (customCommandDefinitions === registeredCustomCommands) { 
-			return
+		if (customCommandDefinitions === registeredCustomCommands) {
+			return;
 		}
- 
+
 		// Register new custom commands
 		if (customCommandDefinitions.length > 0) {
-			commandRegistry.registerCommands(customCommandDefinitions);
-			setRegisteredCustomCommands(customCommandDefinitions)
-			console.log({customCommandDefinitions})
+			commandRegistry.registerCommands(customCommandDefinitions as CommandDefinition<unknown>[]);
+			setRegisteredCustomCommands(customCommandDefinitions);
+			console.log({ customCommandDefinitions });
 		}
 
 		const customCommandIds = customCommandDefinitions.map((command) => command.id);
 		return () => {
 			commandRegistry.unregisterCommands(customCommandIds);
-			setRegisteredCustomCommands([])
+			setRegisteredCustomCommands([]);
 		};
-	}, [customCommandDefinitions, commandRegistry.unregisterCommands, commandRegistry.registerCommands, registeredCustomCommands, setRegisteredCustomCommands]);
+	}, [
+		customCommandDefinitions,
+		commandRegistry.unregisterCommands,
+		commandRegistry.registerCommands,
+		registeredCustomCommands,
+		setRegisteredCustomCommands,
+	]);
 
 	useEffect(() => {
 		if (state) {
