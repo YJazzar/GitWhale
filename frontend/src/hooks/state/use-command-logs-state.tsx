@@ -4,11 +4,17 @@ import { ClearCommandLogs, GetCommandById, GetCommandLogs } from '../../../wails
 import { command_utils } from '../../../wailsjs/go/models';
 
 // Atoms for command logs state
+const searchTermAtom = atom<string | undefined>(undefined);
+const filterAtom = atom<FilterType>('all');
 const commandLogsAtom = atom<command_utils.CommandEntry[]>([]);
 const isLoadingAtom = atom<boolean>(false);
 const lastRefreshAtom = atom<Date | null>(null);
 
+type FilterType = 'all' | 'running' | 'success' | 'failed';
+
 export const useCommandLogsState = () => {
+	const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
+	const [filter, setFilter] = useAtom(filterAtom);
 	const [commands, setCommands] = useAtom(commandLogsAtom);
 	const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
 	const [lastRefresh, setLastRefresh] = useAtom(lastRefreshAtom);
@@ -80,6 +86,16 @@ export const useCommandLogsState = () => {
 	};
 
 	return {
+		searchTerm: {
+			value: searchTerm,
+			set: setSearchTerm,
+		},
+
+		filter: {
+			value: filter,
+			set: setFilter,
+		},
+
 		// Data
 		commands: {
 			all: commands,
