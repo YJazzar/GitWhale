@@ -120,14 +120,14 @@ const CommandCard = ({
 						</Button>
 					</div>
 				</div>
-				<div className="flex items-center gap-2 mt-1">
-					<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono flex-1 truncate">
+				<div className="flex items-center gap-2 mt-1 min-w-0">
+					<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono flex-1 truncate min-w-0">
 						{command.fullCommand}
 					</code>
 				</div>
 				{command.workingDirectory && (
-					<div className="text-xs text-muted-foreground mt-0.5 truncate">
-						<code className="text-xs">{command.workingDirectory}</code>
+					<div className="text-xs text-muted-foreground mt-0.5 truncate min-w-0">
+						<code className="text-xs break-all">{command.workingDirectory}</code>
 					</div>
 				)}
 			</CardHeader>
@@ -183,9 +183,9 @@ const CommandCard = ({
 								</div>
 
 								{outputVisible && (
-									<div className="space-y-1">
+									<div className="space-y-1 min-w-0">
 										{command.output && (
-											<div>
+											<div className="min-w-0">
 												<div className="flex items-center justify-between mb-0.5">
 													<span className="text-xs text-muted-foreground">
 														Output:
@@ -195,16 +195,16 @@ const CommandCard = ({
 														title="Copy command output"
 													/>
 												</div>
-												<ScrollArea className="max-h-24">
-													<pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+												<div className="max-h-24 overflow-auto border border-border rounded-md">
+													<pre className="text-xs bg-muted p-2 whitespace-pre-wrap break-all">
 														{command.output}
 													</pre>
-												</ScrollArea>
+												</div>
 											</div>
 										)}
 
 										{command.errorOutput && (
-											<div>
+											<div className="min-w-0">
 												<div className="flex items-center justify-between mb-0.5">
 													<span className="text-xs text-red-500">Error:</span>
 													<CopyButton
@@ -212,11 +212,11 @@ const CommandCard = ({
 														title="Copy command error output"
 													/>
 												</div>
-												<ScrollArea className="max-h-24">
-													<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-2 rounded-md overflow-x-auto">
+												<div className="max-h-24 overflow-auto border border-red-200 dark:border-red-800 rounded-md">
+													<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-2 whitespace-pre-wrap break-all">
 														{command.errorOutput}
 													</pre>
-												</ScrollArea>
+												</div>
 											</div>
 										)}
 									</div>
@@ -290,11 +290,11 @@ export default function CommandLogsPage() {
 	return (
 		<div className="h-full flex flex-col p-3">
 			{/* Header */}
-			<div className="flex items-center justify-between mb-3">
-				<div>
-					<div className="flex items-center gap-2">
+			<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
+				<div className="min-w-0">
+					<div className="flex items-center gap-2 mb-1">
 						<h1 className="text-lg font-bold">Command Logs</h1>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-xs text-muted-foreground hidden sm:block">
 							Monitor commands being run in the background
 						</p>
 					</div>
@@ -302,27 +302,27 @@ export default function CommandLogsPage() {
 						<div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
 						<span className="text-xs font-medium">Auto-refresh 2.5s</span>
 						{lastRefresh && (
-							<span className="text-xs text-muted-foreground ml-1">
+							<span className="text-xs text-muted-foreground ml-1 hidden md:inline">
 								(last refereshed {lastRefresh.toLocaleTimeString()})
 							</span>
 						)}
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
-					<div className="relative">
+				<div className="flex items-center gap-2 flex-wrap">
+					<div className="relative flex-shrink-0">
 						<Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
 						<Input
 							placeholder="Search..."
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
-							className="pl-7 h-7 text-xs w-40"
+							className="pl-7 h-7 text-xs w-32 sm:w-40"
 						/>
 					</div>
 
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="outline" size="sm" className="h-7 px-2">
+							<Button variant="outline" size="sm" className="h-7 px-2 flex-shrink-0">
 								<Filter className="w-3 h-3 mr-1" />
 								<span className="text-xs">{filterLabels[filter]}</span>
 								<ChevronDown className="w-3 h-3 ml-1" />
@@ -346,45 +346,45 @@ export default function CommandLogsPage() {
 					<Button
 						variant="outline"
 						size="sm"
-						className="h-7 px-2"
+						className="h-7 px-2 flex-shrink-0"
 						onClick={refreshCommands}
 						disabled={isLoading}
 					>
 						<RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-						<span className="text-xs">Refresh</span>
+						<span className="text-xs hidden sm:inline">Refresh</span>
 					</Button>
 					<Button
 						variant="outline"
 						size="sm"
-						className="h-7 px-2"
+						className="h-7 px-2 flex-shrink-0"
 						onClick={clearAllCommands}
 						disabled={commands.all.length === 0}
 					>
 						<Trash2 className="w-3 h-3 mr-1" />
-						<span className="text-xs">Clear</span>
+						<span className="text-xs hidden sm:inline">Clear</span>
 					</Button>
 				</div>
 			</div>
 
-			{/* Statistics - Single Line */}
-			<div className="flex items-center gap-4 mb-3 px-3 py-2 bg-muted/30 rounded-lg">
-				<div className="flex items-center gap-1">
+			{/* Statistics - Responsive Layout */}
+			<div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:items-center gap-2 lg:gap-4 mb-3 px-3 py-2 bg-muted/30 rounded-lg overflow-x-auto">
+				<div className="flex items-center gap-1 whitespace-nowrap">
 					<span className="text-xs font-medium">Total:</span>
 					<span className="text-sm font-bold">{statistics.total}</span>
 				</div>
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1 whitespace-nowrap">
 					<span className="text-xs font-medium">Running:</span>
 					<span className="text-sm font-bold text-yellow-500">{statistics.running}</span>
 				</div>
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1 whitespace-nowrap">
 					<span className="text-xs font-medium">Success:</span>
 					<span className="text-sm font-bold text-green-500">{statistics.success}</span>
 				</div>
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1 whitespace-nowrap">
 					<span className="text-xs font-medium">Failed:</span>
 					<span className="text-sm font-bold text-red-500">{statistics.failed}</span>
 				</div>
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1 whitespace-nowrap col-span-2 sm:col-span-1">
 					<span className="text-xs font-medium">Success Rate:</span>
 					<span className="text-sm font-bold">{statistics.successRate.toFixed(0)}%</span>
 				</div>
