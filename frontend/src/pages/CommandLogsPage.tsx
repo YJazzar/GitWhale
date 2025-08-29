@@ -3,6 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { CopyButton } from '@/components/ui/copy-button';
 import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog';
+import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -21,7 +29,6 @@ import {
 	ChevronRight,
 	Clock,
 	Eye,
-	EyeOff,
 	Filter,
 	Loader2,
 	RefreshCw,
@@ -86,14 +93,108 @@ const CommandCard = ({
 	formatTimeAgo: (date: string) => string;
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [outputVisible, setOutputVisible] = useState(false);
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const hasOutput = !!(command.output || command.errorOutput);
+
+	const handleDoubleClick = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (hasOutput) {
+			setDialogOpen(true);
+		}
+	};
 
 	return (
-		<Card className="mb-2">
+		<Card className="mb-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)} onDoubleClick={handleDoubleClick}>
 			<CardHeader className="pb-1 pt-2 px-3">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<StatusBadge status={command.status} />
+						{hasOutput && (
+							<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+								<DialogTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-6 px-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
+										onClick={(e) => e.stopPropagation()}
+									>
+										<Eye className="w-3 h-3 mr-1" />
+										<span className="text-xs">Output</span>
+									</Button>
+								</DialogTrigger>
+								<DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+									<DialogHeader className="flex-shrink-0">
+										<DialogTitle className="flex items-center gap-2">
+											<Terminal className="w-4 h-4" />
+											Command Output
+										</DialogTitle>
+										<DialogDescription className="text-xs font-mono bg-muted px-2 py-1 rounded truncate">
+											{command.fullCommand}
+										</DialogDescription>
+									</DialogHeader>
+									<div className="flex-1 min-h-0 space-y-4 overflow-hidden">
+										{command.output && command.errorOutput ? (
+											<>
+												<div className="flex flex-col flex-1 min-h-0">
+													<div className="flex items-center justify-between mb-2 flex-shrink-0">
+														<h4 className="text-sm font-medium">Standard Output</h4>
+														<CopyButton text={command.output} title="Copy output" />
+													</div>
+													<div className="flex-1 border rounded-md overflow-hidden min-h-0">
+														<ScrollArea className="h-full">
+															<pre className="text-xs p-4 whitespace-pre-wrap break-all">
+																{command.output}
+															</pre>
+														</ScrollArea>
+													</div>
+												</div>
+												<div className="flex flex-col flex-1 min-h-0">
+													<div className="flex items-center justify-between mb-2 flex-shrink-0">
+														<h4 className="text-sm font-medium text-red-600 dark:text-red-400">Error Output</h4>
+														<CopyButton text={command.errorOutput} title="Copy error output" />
+													</div>
+													<div className="flex-1 border border-red-200 dark:border-red-800 rounded-md overflow-hidden min-h-0">
+														<ScrollArea className="h-full">
+															<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-4 whitespace-pre-wrap break-all">
+																{command.errorOutput}
+															</pre>
+														</ScrollArea>
+													</div>
+												</div>
+											</>
+										) : command.output ? (
+											<div className="flex flex-col h-full min-h-0">
+												<div className="flex items-center justify-between mb-2 flex-shrink-0">
+													<h4 className="text-sm font-medium">Standard Output</h4>
+													<CopyButton text={command.output} title="Copy output" />
+												</div>
+												<div className="flex-1 border rounded-md overflow-hidden min-h-0">
+													<ScrollArea className="h-full">
+														<pre className="text-xs p-4 whitespace-pre-wrap break-all">
+															{command.output}
+														</pre>
+													</ScrollArea>
+												</div>
+											</div>
+										) : command.errorOutput ? (
+											<div className="flex flex-col h-full min-h-0">
+												<div className="flex items-center justify-between mb-2 flex-shrink-0">
+													<h4 className="text-sm font-medium text-red-600 dark:text-red-400">Error Output</h4>
+													<CopyButton text={command.errorOutput} title="Copy error output" />
+												</div>
+												<div className="flex-1 border border-red-200 dark:border-red-800 rounded-md overflow-hidden min-h-0">
+													<ScrollArea className="h-full">
+														<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-4 whitespace-pre-wrap break-all">
+															{command.errorOutput}
+														</pre>
+													</ScrollArea>
+												</div>
+											</div>
+										) : null}
+									</div>
+								</DialogContent>
+							</Dialog>
+						)}
 						<div className="flex items-center gap-1 text-xs text-muted-foreground">
 							<Clock className="w-2.5 h-2.5" />
 							{formatTimeAgo(command.startTime)}
@@ -104,13 +205,14 @@ const CommandCard = ({
 						</div>
 					</div>
 					<div className="flex items-center gap-1">
-						<CopyButton text={command.fullCommand} title="Copy command" />
-
 						<Button
 							variant="ghost"
 							size="sm"
 							className="h-6 w-6 p-0"
-							onClick={() => setIsExpanded(!isExpanded)}
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsExpanded(!isExpanded);
+							}}
 						>
 							{isExpanded ? (
 								<ChevronDownIcon className="w-3 h-3" />
@@ -124,6 +226,12 @@ const CommandCard = ({
 					<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono flex-1 truncate min-w-0">
 						{command.fullCommand}
 					</code>
+					<CopyButton 
+						text={command.fullCommand} 
+						title="Copy command" 
+						size="sm"
+						className="h-5 w-5 flex-shrink-0"
+					/>
 				</div>
 				{command.workingDirectory && (
 					<div className="text-xs text-muted-foreground mt-0.5 truncate min-w-0">
@@ -164,65 +272,6 @@ const CommandCard = ({
 							</div>
 						</div>
 
-						{(command.output || command.errorOutput) && (
-							<div className="space-y-1">
-								<div className="flex items-center justify-between">
-									<h4 className="text-xs font-medium">Output</h4>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="h-5 w-5 p-0"
-										onClick={() => setOutputVisible(!outputVisible)}
-									>
-										{outputVisible ? (
-											<EyeOff className="w-3 h-3" />
-										) : (
-											<Eye className="w-3 h-3" />
-										)}
-									</Button>
-								</div>
-
-								{outputVisible && (
-									<div className="space-y-1 min-w-0">
-										{command.output && (
-											<div className="min-w-0">
-												<div className="flex items-center justify-between mb-0.5">
-													<span className="text-xs text-muted-foreground">
-														Output:
-													</span>
-													<CopyButton
-														text={command.output}
-														title="Copy command output"
-													/>
-												</div>
-												<div className="max-h-24 overflow-auto border border-border rounded-md">
-													<pre className="text-xs bg-muted p-2 whitespace-pre-wrap break-all">
-														{command.output}
-													</pre>
-												</div>
-											</div>
-										)}
-
-										{command.errorOutput && (
-											<div className="min-w-0">
-												<div className="flex items-center justify-between mb-0.5">
-													<span className="text-xs text-red-500">Error:</span>
-													<CopyButton
-														text={command.errorOutput}
-														title="Copy command error output"
-													/>
-												</div>
-												<div className="max-h-24 overflow-auto border border-red-200 dark:border-red-800 rounded-md">
-													<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-2 whitespace-pre-wrap break-all">
-														{command.errorOutput}
-													</pre>
-												</div>
-											</div>
-										)}
-									</div>
-								)}
-							</div>
-						)}
 					</div>
 				</CardContent>
 			)}
@@ -303,7 +352,7 @@ export default function CommandLogsPage() {
 						<span className="text-xs font-medium">Auto-refresh 2.5s</span>
 						{lastRefresh && (
 							<span className="text-xs text-muted-foreground ml-1 hidden md:inline">
-								(last refereshed {lastRefresh.toLocaleTimeString()})
+								(last refreshed {lastRefresh.toLocaleTimeString()})
 							</span>
 						)}
 					</div>
