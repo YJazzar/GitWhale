@@ -7,8 +7,7 @@ import {
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
+	DialogTitle
 } from '@/components/ui/dialog';
 import {
 	DropdownMenu,
@@ -25,8 +24,6 @@ import { useCommandLogsState } from '@/hooks/state/use-command-logs-state';
 import {
 	CheckCircle,
 	ChevronDown,
-	ChevronDown as ChevronDownIcon,
-	ChevronRight,
 	Clock,
 	Eye,
 	Filter,
@@ -35,7 +32,7 @@ import {
 	Search,
 	Terminal,
 	Trash2,
-	XCircle
+	XCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { command_utils } from '../../wailsjs/go/models';
@@ -92,7 +89,6 @@ const CommandCard = ({
 	formatDuration: (ns: number) => string;
 	formatTimeAgo: (date: string) => string;
 }) => {
-	const [isExpanded, setIsExpanded] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const hasOutput = !!(command.output || command.errorOutput);
 
@@ -104,154 +100,58 @@ const CommandCard = ({
 	};
 
 	return (
-		<Card className="mb-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)} onDoubleClick={handleDoubleClick}>
-			<CardHeader className="pb-1 pt-2 px-3">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<StatusBadge status={command.status} />
-						{hasOutput && (
-							<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-								<DialogTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="h-6 px-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
-										onClick={(e) => e.stopPropagation()}
-									>
-										<Eye className="w-3 h-3 mr-1" />
-										<span className="text-xs">Output</span>
-									</Button>
-								</DialogTrigger>
-								<DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-									<DialogHeader className="flex-shrink-0">
-										<DialogTitle className="flex items-center gap-2">
-											<Terminal className="w-4 h-4" />
-											Command Output
-										</DialogTitle>
-										<DialogDescription className="text-xs font-mono bg-muted px-2 py-1 rounded truncate">
-											{command.fullCommand}
-										</DialogDescription>
-									</DialogHeader>
-									<div className="flex-1 min-h-0 space-y-4 overflow-hidden">
-										{command.output && command.errorOutput ? (
-											<>
-												<div className="flex flex-col flex-1 min-h-0">
-													<div className="flex items-center justify-between mb-2 flex-shrink-0">
-														<h4 className="text-sm font-medium">Standard Output</h4>
-														<CopyButton text={command.output} title="Copy output" />
-													</div>
-													<div className="flex-1 border rounded-md overflow-hidden min-h-0">
-														<ScrollArea className="h-full">
-															<pre className="text-xs p-4 whitespace-pre-wrap break-all">
-																{command.output}
-															</pre>
-														</ScrollArea>
-													</div>
-												</div>
-												<div className="flex flex-col flex-1 min-h-0">
-													<div className="flex items-center justify-between mb-2 flex-shrink-0">
-														<h4 className="text-sm font-medium text-red-600 dark:text-red-400">Error Output</h4>
-														<CopyButton text={command.errorOutput} title="Copy error output" />
-													</div>
-													<div className="flex-1 border border-red-200 dark:border-red-800 rounded-md overflow-hidden min-h-0">
-														<ScrollArea className="h-full">
-															<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-4 whitespace-pre-wrap break-all">
-																{command.errorOutput}
-															</pre>
-														</ScrollArea>
-													</div>
-												</div>
-											</>
-										) : command.output ? (
-											<div className="flex flex-col h-full min-h-0">
-												<div className="flex items-center justify-between mb-2 flex-shrink-0">
-													<h4 className="text-sm font-medium">Standard Output</h4>
-													<CopyButton text={command.output} title="Copy output" />
-												</div>
-												<div className="flex-1 border rounded-md overflow-hidden min-h-0">
-													<ScrollArea className="h-full">
-														<pre className="text-xs p-4 whitespace-pre-wrap break-all">
-															{command.output}
-														</pre>
-													</ScrollArea>
-												</div>
-											</div>
-										) : command.errorOutput ? (
-											<div className="flex flex-col h-full min-h-0">
-												<div className="flex items-center justify-between mb-2 flex-shrink-0">
-													<h4 className="text-sm font-medium text-red-600 dark:text-red-400">Error Output</h4>
-													<CopyButton text={command.errorOutput} title="Copy error output" />
-												</div>
-												<div className="flex-1 border border-red-200 dark:border-red-800 rounded-md overflow-hidden min-h-0">
-													<ScrollArea className="h-full">
-														<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-4 whitespace-pre-wrap break-all">
-															{command.errorOutput}
-														</pre>
-													</ScrollArea>
-												</div>
-											</div>
-										) : null}
-									</div>
-								</DialogContent>
-							</Dialog>
-						)}
-						<div className="flex items-center gap-1 text-xs text-muted-foreground">
-							<Clock className="w-2.5 h-2.5" />
-							{formatTimeAgo(command.startTime)}
-						</div>
-						<div className="flex items-center gap-1 text-xs text-muted-foreground">
-							<Terminal className="w-2.5 h-2.5" />
-							{formatDuration(command.duration)}
-						</div>
-					</div>
-					<div className="flex items-center gap-1">
-						<Button
-							variant="ghost"
-							size="sm"
-							className="h-6 w-6 p-0"
-							onClick={(e) => {
-								e.stopPropagation();
-								setIsExpanded(!isExpanded);
-							}}
-						>
-							{isExpanded ? (
-								<ChevronDownIcon className="w-3 h-3" />
-							) : (
-								<ChevronRight className="w-3 h-3" />
+		<>
+			<Card className="mb-2 cursor-pointer" onClick={handleDoubleClick}>
+				<CardHeader className="pb-1 pt-2 px-3">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<StatusBadge status={command.status} />
+							{hasOutput && (
+								<Button
+									variant="ghost"
+									size="sm"
+									className="h-6 px-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
+								>
+									<Eye className="w-3 h-3 mr-1" />
+									<span className="text-xs">Output</span>
+								</Button>
 							)}
-						</Button>
-					</div>
-				</div>
-				<div className="flex items-center gap-2 mt-1 min-w-0">
-					<code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono flex-1 truncate min-w-0">
-						{command.fullCommand}
-					</code>
-					<CopyButton 
-						text={command.fullCommand} 
-						title="Copy command" 
-						size="sm"
-						className="h-5 w-5 flex-shrink-0"
-					/>
-				</div>
-				{command.workingDirectory && (
-					<div className="text-xs text-muted-foreground mt-0.5 truncate min-w-0">
-						<code className="text-xs break-all">{command.workingDirectory}</code>
-					</div>
-				)}
-			</CardHeader>
 
-			{isExpanded && (
+							<div className="flex items-center gap-1 text-xs text-muted-foreground">
+								<Clock className="w-2.5 h-2.5" />
+								{formatTimeAgo(command.startTime)}
+							</div>
+							<div className="flex items-center gap-1 text-xs text-muted-foreground">
+								<Terminal className="w-2.5 h-2.5" />
+								{formatDuration(command.duration)}
+							</div>
+						</div>
+					</div>
+					<div className="mt-1 min-w-0">
+						<div className="bg-muted px-1.5 py-0.5 rounded min-w-0 flex items-center gap-2">
+							<code className="text-xs font-mono flex-1 truncate min-w-0">
+								{command.fullCommand}
+							</code>
+							<CopyButton
+								text={command.fullCommand}
+								title="Copy command"
+								size="sm"
+								className="h-4 w-4 p-4 flex-shrink-0 border border-border/50 hover:border-border shadow-sm"
+							/>
+						</div>
+					</div>
+					{command.workingDirectory && (
+						<div className="text-xs text-muted-foreground mt-0.5 truncate min-w-0">
+							<code className="text-xs break-all">{command.workingDirectory}</code>
+						</div>
+					)}
+				</CardHeader>
+
 				<CardContent className="pt-0 px-3 pb-2">
 					<Separator className="mb-2" />
 
 					<div className="space-y-2">
-						<div className="grid grid-cols-2 gap-2 text-xs">
-							<div>
-								<span className="font-medium">ID:</span>
-								<code className="ml-1 text-xs bg-muted px-1 py-0.5 rounded">
-									{command.id.slice(0, 8)}...
-								</code>
-							</div>
+						<div className="grid grid-cols-4 gap-2 text-xs">
 							<div>
 								<span className="font-medium">Exit:</span>
 								<span className="ml-1">{command.exitCode ?? 'N/A'}</span>
@@ -270,12 +170,99 @@ const CommandCard = ({
 										: 'Running'}
 								</span>
 							</div>
+							<div>
+								<span className="font-medium">ID:</span>
+								<code className="ml-1 text-xs bg-muted px-1 py-0.5 rounded">
+									{command.id.slice(0, 8)}...
+								</code>
+							</div>
 						</div>
-
 					</div>
 				</CardContent>
+			</Card>
+			{hasOutput && (
+				<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+					<DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+						<DialogHeader className="flex-shrink-0">
+							<DialogTitle className="flex items-center gap-2">
+								<Terminal className="w-4 h-4" />
+								Command Output
+							</DialogTitle>
+							<DialogDescription className="text-xs font-mono bg-muted px-2 py-1 rounded truncate">
+								{command.fullCommand}
+							</DialogDescription>
+						</DialogHeader>
+						<div className="flex-1 min-h-0 space-y-4 overflow-hidden">
+							{command.output && command.errorOutput ? (
+								<>
+									<div className="flex flex-col flex-1 min-h-0">
+										<div className="flex items-center justify-between mb-2 flex-shrink-0">
+											<h4 className="text-sm font-medium">Standard Output</h4>
+											<CopyButton text={command.output} title="Copy output" />
+										</div>
+										<div className="flex-1 border rounded-md overflow-hidden min-h-0">
+											<ScrollArea className="h-full">
+												<pre className="text-xs p-4 whitespace-pre-wrap break-all">
+													{command.output}
+												</pre>
+											</ScrollArea>
+										</div>
+									</div>
+									<div className="flex flex-col flex-1 min-h-0">
+										<div className="flex items-center justify-between mb-2 flex-shrink-0">
+											<h4 className="text-sm font-medium text-red-600 dark:text-red-400">
+												Error Output
+											</h4>
+											<CopyButton
+												text={command.errorOutput}
+												title="Copy error output"
+											/>
+										</div>
+										<div className="flex-1 border border-red-200 dark:border-red-800 rounded-md overflow-hidden min-h-0">
+											<ScrollArea className="h-full">
+												<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-4 whitespace-pre-wrap break-all">
+													{command.errorOutput}
+												</pre>
+											</ScrollArea>
+										</div>
+									</div>
+								</>
+							) : command.output ? (
+								<div className="flex flex-col h-full min-h-0">
+									<div className="flex items-center justify-between mb-2 flex-shrink-0">
+										<h4 className="text-sm font-medium">Standard Output</h4>
+										<CopyButton text={command.output} title="Copy output" />
+									</div>
+									<div className="flex-1 border rounded-md overflow-hidden min-h-0">
+										<ScrollArea className="h-full">
+											<pre className="text-xs p-4 whitespace-pre-wrap break-all">
+												{command.output}
+											</pre>
+										</ScrollArea>
+									</div>
+								</div>
+							) : command.errorOutput ? (
+								<div className="flex flex-col h-full min-h-0">
+									<div className="flex items-center justify-between mb-2 flex-shrink-0">
+										<h4 className="text-sm font-medium text-red-600 dark:text-red-400">
+											Error Output
+										</h4>
+										<CopyButton text={command.errorOutput} title="Copy error output" />
+									</div>
+									<div className="flex-1 border border-red-200 dark:border-red-800 rounded-md overflow-hidden min-h-0">
+										<ScrollArea className="h-full">
+											<pre className="text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-4 whitespace-pre-wrap break-all">
+												{command.errorOutput}
+											</pre>
+										</ScrollArea>
+									</div>
+								</div>
+							) : null}
+						</div>
+					</DialogContent>
+				</Dialog>
 			)}
-		</Card>
+		</>
 	);
 };
 
