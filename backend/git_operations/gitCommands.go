@@ -38,7 +38,7 @@ type GitLogCommitInfo struct {
 func GetCurrentBranchName(repoPath string) string {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	cmd.Dir = repoPath
-	branchName, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	branchName, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
 		return ""
 	}
@@ -129,7 +129,7 @@ func ReadGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
 
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoPath
-	cmdOutput, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	cmdOutput, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
 		return make([]GitLogCommitInfo, 0)
 	}
@@ -168,7 +168,7 @@ func GetAllRefs(repoPath string) []GitRef {
 	// Get local branches
 	cmd := exec.Command("git", "show-ref")
 	cmd.Dir = repoPath
-	commandOutput, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	commandOutput, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
 		return make([]GitRef, 0)
 	}
@@ -227,7 +227,7 @@ func GetWorktrees(repoPath string) []WorktreeInfo {
 
 	cmd := exec.Command("git", "worktree", "list", "--porcelain")
 	cmd.Dir = repoPath
-	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	output, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
 		// If worktree command fails, this might not be a git repo or worktrees not supported
 		logger.Log.Debug("Failed to get worktrees (likely not a worktree repo): %v", err)
@@ -272,7 +272,7 @@ func GitFetch(repoPath string) error {
 
 	cmd := exec.Command("git", "fetch", "origin")
 	cmd.Dir = repoPath
-	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	output, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
 		logger.Log.Error("Error fetching: %v, output: %s", err, string(output))
 		return fmt.Errorf("failed to fetch: %v", err)
@@ -296,7 +296,7 @@ func ValidateGitRef(repoPath, ref string) bool {
 	logger.Log.Debug(fmt.Sprintf("ValidateGitRef: Running 'git rev-parse --verify --quiet %s' in repo '%s'", ref, repoPath))
 	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", ref)
 	cmd.Dir = repoPath
-	_, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	_, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 
 	isValid := err == nil && exitCode == 0
 
@@ -366,7 +366,7 @@ func getBasicCommitInfo(repoPath, commitHash string, commit *DetailedCommitInfo)
 	// Use git show with precise format to get basic commit info
 	cmd := exec.Command("git", "show", "--no-patch", "--format=%H%n%an%n%ae%n%cn%n%ce%n%ct%n%at%n%P%n%D%n%s%n%B", commitHash)
 	cmd.Dir = repoPath
-	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	output, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || output == "" || exitCode != 0 {
 		return fmt.Errorf("failed to get commit info for %s: %v", commitHash, err)
 	}
@@ -420,7 +420,7 @@ func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInf
 	// Get file status changes using diff-tree with proper options
 	cmd := exec.Command("git", "diff-tree", "-r", "--name-status", "-z", "--diff-filter=ADMR", "--find-renames=50%", parentRef, commitHash)
 	cmd.Dir = repoPath
-	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	output, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
 		return fmt.Errorf("failed to get file changes for %s: %v", commitHash, err)
 	}
@@ -445,7 +445,7 @@ func getCommitFileChanges(repoPath, commitHash string, commit *DetailedCommitInf
 	// Get short stat summary
 	shortStatCmd := exec.Command("git", "diff", "--shortstat", parentRef, commitHash)
 	shortStatCmd.Dir = repoPath
-	shortStatOutput, err, exitCode := command_utils.RunCommandAndLogErr(shortStatCmd)
+	shortStatOutput, exitCode, err := command_utils.RunCommandAndLogErr(shortStatCmd)
 	if err == nil || exitCode != 0 {
 		commit.ShortStat = strings.TrimSpace(shortStatOutput)
 	}
@@ -506,7 +506,7 @@ func parseFileChanges(output string) ([]FileChange, error) {
 func getNumstatData(repoPath, parentRef, commitHash string, fileChanges []FileChange) (*CommitStats, error) {
 	cmd := exec.Command("git", "diff", "--numstat", "-z", parentRef, commitHash)
 	cmd.Dir = repoPath
-	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	output, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
 		return nil, err
 	}
