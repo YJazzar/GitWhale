@@ -21,7 +21,7 @@ const hasMoreCommitsAtom = atom<Map<string, boolean>>(new Map());
 
 // MARK: Git log state management functions
 
-export function getLogState(repoPath: string) {
+export function useRepoLogState(repoPath: string) {
 	const { appState } = UseAppState();
 	const _isLoadingPrim = useMapPrimitive(isLoadingGitDataAtom, repoPath);
 

@@ -1,19 +1,19 @@
 import Logger from '@/utils/logger';
-import { getDiffState } from './use-git-diff-state';
-import { getHomeState } from './use-git-home-state';
-import { getLogState } from './use-git-log-state';
-import { getTerminalState } from './use-repo-terminal';
+import { useRepoDiffState } from './use-git-diff-state';
+import { useRepoHomeState } from './use-git-home-state';
+import { useRepoLogState } from './use-git-log-state';
+import { useRepoTerminalState } from './use-repo-terminal';
 import { getStagingState } from './use-git-staging-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '../useSidebarHandlers';
 import { useCallback, useMemo } from 'react';
 
-export const useRepoState = (repoPath: string) => {
+export const useAllRepoStates = (repoPath: string) => {
 	const sidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoPath));
 
-	const terminalState = getTerminalState(repoPath);
-	const homeState = getHomeState(repoPath);
-	const diffState = getDiffState(repoPath);
-	const logState = getLogState(repoPath);
+	const terminalState = useRepoTerminalState(repoPath);
+	const homeState = useRepoHomeState(repoPath);
+	const diffState = useRepoDiffState(repoPath);
+	const logState = useRepoLogState(repoPath);
 	const stagingState = getStagingState(repoPath);
 
 	const stateObjects = useMemo(() => {

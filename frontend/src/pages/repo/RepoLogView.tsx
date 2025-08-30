@@ -1,20 +1,20 @@
-import { Button } from '@/components/ui/button';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { CommitPreview } from '@/components/commit-preview/commit-preview';
 import { GitLogGraph } from '@/components/git-log/git-log-graph';
 import { GitLogToolbar } from '@/components/git-log/git-log-toolbar';
+import { Button } from '@/components/ui/button';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
 import { useNavigateToCommit } from '@/hooks/navigation/use-navigate-to-commit';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useRepoLogState } from '@/hooks/state/repo/use-git-log-state';
 import { UseAppState } from '@/hooks/state/use-app-state';
+import { usePersistentPanelSizes } from '@/hooks/use-persistent-panel-sizes';
 import { ChevronUp } from 'lucide-react';
 import { useEffect } from 'react';
-import { CommitPreview } from '@/components/commit-preview/commit-preview';
-import { usePersistentPanelSizes } from '@/hooks/use-persistent-panel-sizes';
-import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
 
 export type CommitSelectType = 'primarySelect' | 'secondarySelect' | 'unselect';
 
 export default function RepoLogView({ repoPath }: { repoPath: string }) {
-	const { logState } = useRepoState(repoPath);
+	const { selectedCommits, commitDetailsPane } = useRepoLogState(repoPath);
 	const { appState } = UseAppState();
 
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
@@ -24,18 +24,18 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 
 	const onCommitSelect = (commitHash: string, selectionType: CommitSelectType) => {
 		if (selectionType === 'unselect') {
-			logState.selectedCommits.removeFromSelectedCommitsList(commitHash);
+			selectedCommits.removeFromSelectedCommitsList(commitHash);
 			return;
 		}
 
 		const isSecondarySelect = selectionType === 'secondarySelect';
-		logState.selectedCommits.addToSelectedCommitsList(commitHash, isSecondarySelect);
+		selectedCommits.addToSelectedCommitsList(commitHash, isSecondarySelect);
 
 		// Auto-show commit details pane if:
 		// 1. App setting allows it AND
 		// 2. User hasn't manually dismissed the pane
 		const autoShowSetting = appState?.appConfig?.settings?.ui?.autoShowCommitDetails ?? true;
-		const userWantsPaneShown = logState.commitDetailsPane.shouldShow;
+		const userWantsPaneShown = commitDetailsPane.shouldShow;
 
 		if (autoShowSetting && userWantsPaneShown) {
 			handleShowCommitDetails();
@@ -43,22 +43,22 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 	};
 
 	const onCommitDoubleClick = (commitHash: string) => {
-		logState.selectedCommits.addToSelectedCommitsList(commitHash, false);
+		selectedCommits.addToSelectedCommitsList(commitHash, false);
 		handleViewFullCommit(commitHash, false);
 	};
 
 	const handleCloseCommitDetails = () => {
 		// Mark that user has manually dismissed the pane
-		logState.commitDetailsPane.dismiss();
+		commitDetailsPane.dismiss();
 	};
 
 	const handleShowCommitDetails = () => {
 		// Show the commit details pane
-		logState.commitDetailsPane.show();
+		commitDetailsPane.show();
 	};
 
 	const toggleCommitDetailsPane = () => {
-		if (logState.commitDetailsPane.shouldShow) {
+		if (commitDetailsPane.shouldShow) {
 			handleCloseCommitDetails();
 		} else {
 			handleShowCommitDetails();
@@ -78,16 +78,16 @@ export default function RepoLogView({ repoPath }: { repoPath: string }) {
 		return () => {
 			document.removeEventListener('keydown', handleKeyDown);
 		};
-	}, [logState.commitDetailsPane]);
+	}, [commitDetailsPane]);
 
-	const currentSelectedCommits = logState.selectedCommits.currentSelectedCommits;
+	const currentSelectedCommits = selectedCommits.currentSelectedCommits;
 	const selectedCommitForDetails = currentSelectedCommits[currentSelectedCommits.length - 1];
 
 	// Determine if we should show the commit details pane
-	const shouldShowPane = selectedCommitForDetails && logState.commitDetailsPane.shouldShow;
+	const shouldShowPane = selectedCommitForDetails && commitDetailsPane.shouldShow;
 
 	// Determine if we should show the bottom indicator to re-open the pane
-	const shouldShowBottomIndicator = selectedCommitForDetails && !logState.commitDetailsPane.shouldShow;
+	const shouldShowBottomIndicator = selectedCommitForDetails && !commitDetailsPane.shouldShow;
 	const selectedCommitShortHash = convertToShortHash(selectedCommitForDetails);
 
 	// Handle panel layout changes to persist sizes

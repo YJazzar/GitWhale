@@ -16,7 +16,7 @@ const recentCommitsAtom = createLoadTrackedMappedAtom<git_operations.GitLogCommi
 // Track if data has been initially loaded for each repo
 const hasInitialLoadedAtom = atom<Map<string, boolean>>(new Map());
 
-export function getHomeState(repoPath: string) {
+export function useRepoHomeState(repoPath: string) {
 	const _worktreesPrim = useLoadTrackedMapPrimitive(worktreesAtom, repoPath, async () => {
 		try {
 			const worktrees = await GetWorktrees(repoPath);

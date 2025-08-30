@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useRepoLogState } from '@/hooks/state/repo/use-git-log-state';
 import Logger from '@/utils/logger';
 import {
 	ChevronDown,
@@ -31,23 +31,23 @@ interface GitLogToolbarProps {
 }
 
 export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
-	const { logState } = useRepoState(repoPath);
+	const { refreshLogAndRefs, options, isLoading } = useRepoLogState(repoPath);
 
 	const onRefresh = async () => {
-		logState.refreshLogAndRefs();
+		refreshLogAndRefs();
 	};
 
-	const toolbarOptions = logState.options.get();
+	const toolbarOptions = options.get();
 	const onUpdateSelectedRefForLog = (newFromRef: string) => {
-		logState.options.set({ ...toolbarOptions, fromRef: newFromRef });
-		logState.refreshLogAndRefs();
+		options.set({ ...toolbarOptions, fromRef: newFromRef });
+		refreshLogAndRefs();
 	};
 
 	return (
 		<div className="flex items-center gap-2 p-3 border-b bg-muted/30">
 			{/* Refresh Button */}
-			<Button variant="outline" size="sm" onClick={onRefresh} disabled={logState.isLoading}>
-				<RefreshCw className={`w-4 h-4 ${logState.isLoading ? 'animate-spin' : ''}`} />
+			<Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
+				<RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
 			</Button>
 
 			<ViewOptionsDropdown repoPath={repoPath} />
@@ -77,14 +77,14 @@ export function GitLogToolbar({ repoPath }: GitLogToolbarProps) {
 
 // Fetch Dropdown Component
 function FetchButton({ repoPath }: { repoPath: string }) {
-	const { logState } = useRepoState(repoPath);
+	const { refetchRepo, isLoading } = useRepoLogState(repoPath);
 
 	const onFetch = () => {
-		logState.refetchRepo();
+		refetchRepo();
 	};
 
 	return (
-		<Button variant="outline" size="sm" disabled={logState.isLoading} onClick={onFetch}>
+		<Button variant="outline" size="sm" disabled={isLoading} onClick={onFetch}>
 			<Download className="w-4 h-4" />
 			Fetch
 		</Button>
@@ -92,24 +92,26 @@ function FetchButton({ repoPath }: { repoPath: string }) {
 }
 
 function CompareButton({ repoPath }: { repoPath: string }) {
-	const { logState } = useRepoState(repoPath);
+	const { selectedCommits, isLoading } = useRepoLogState(repoPath);
 	const { navigateToCommitDiff, isLoadingNewDiff } = useNavigateToCommitDiffs(repoPath);
 	const [showCompareModal, setShowCompareModal] = useState(false);
 
-	const selectedCommits = logState.selectedCommits.currentSelectedCommits;
-	const numSelectedCommits = selectedCommits.length ?? 0;
+	const numSelectedCommits = selectedCommits.currentSelectedCommits.length ?? 0;
 
 	const hasCommitSelected = numSelectedCommits > 0;
-	const isButtonDisabled = logState.isLoading || !hasCommitSelected || isLoadingNewDiff;
+	const isButtonDisabled = isLoading || !hasCommitSelected || isLoadingNewDiff;
 
 	const onCompare = () => {
 		if (numSelectedCommits === 1) {
-			navigateToCommitDiff(selectedCommits[0], undefined);
+			navigateToCommitDiff(selectedCommits.currentSelectedCommits[0], undefined);
 			return;
 		}
 
 		if (numSelectedCommits === 2) {
-			navigateToCommitDiff(selectedCommits[0], selectedCommits[1]);
+			navigateToCommitDiff(
+				selectedCommits.currentSelectedCommits[0],
+				selectedCommits.currentSelectedCommits[1]
+			);
 			return;
 		}
 
@@ -139,7 +141,7 @@ function CompareButton({ repoPath }: { repoPath: string }) {
 				<Button
 					variant="outline"
 					size="sm"
-					disabled={logState.isLoading}
+					disabled={isLoading}
 					onClick={() => setShowCompareModal(true)}
 					className="rounded-l-none border-l-0 pl-1 pr-1 min-w-0 "
 				>
@@ -154,22 +156,21 @@ function CompareButton({ repoPath }: { repoPath: string }) {
 
 // Search Section Component
 function SearchSection({ repoPath }: { repoPath: string }) {
-	const { logState } = useRepoState(repoPath);
-	const toolbarOptions = logState.options.get();
-	const isLoading = logState.isLoading;
+	const { options, isLoading, refreshLogAndRefs } = useRepoLogState(repoPath);
+	const toolbarOptions = options.get();
 
 	const searchQuery = toolbarOptions.searchQuery ?? '';
 	const setSearchQuery = (newQuery: string) => {
-		logState.options.set({ ...toolbarOptions, searchQuery: newQuery });
+		options.set({ ...toolbarOptions, searchQuery: newQuery });
 	};
 
 	const onSearch = async () => {
-		logState.refreshLogAndRefs();
+		refreshLogAndRefs();
 	};
 
 	const onClearSearch = () => {
 		setSearchQuery('');
-		logState.refreshLogAndRefs();
+		refreshLogAndRefs();
 	};
 
 	return (
@@ -218,28 +219,28 @@ function SearchSection({ repoPath }: { repoPath: string }) {
 
 // View Options Dropdown Component
 function ViewOptionsDropdown({ repoPath }: { repoPath: string }) {
-	const { logState } = useRepoState(repoPath);
+	const { options, refreshLogAndRefs, isLoading } = useRepoLogState(repoPath);
 
-	const toolbarOptions = logState.options.get();
+	const toolbarOptions = options.get();
 
 	const onSetCommitCountToLoad = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const newCommitsToLoad = event.target.value;
 		if (!newCommitsToLoad || !Number(newCommitsToLoad)) {
-			logState.options.set({ ...toolbarOptions, commitsToLoad: undefined });
+			options.set({ ...toolbarOptions, commitsToLoad: undefined });
 			return;
 		}
 
-		logState.options.set({ ...toolbarOptions, commitsToLoad: Number(newCommitsToLoad) });
+		options.set({ ...toolbarOptions, commitsToLoad: Number(newCommitsToLoad) });
 	};
 
 	const onApplyFilters = () => {
-		logState.refreshLogAndRefs();
+		refreshLogAndRefs();
 	};
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="sm" disabled={logState.isLoading}>
+				<Button variant="outline" size="sm" disabled={isLoading}>
 					<Settings className="w-4 h-4" />
 				</Button>
 			</DropdownMenuTrigger>

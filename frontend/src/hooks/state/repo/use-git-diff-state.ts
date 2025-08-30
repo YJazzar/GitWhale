@@ -15,7 +15,7 @@ const isLoadingDiffAtom = atom<Map<string, boolean>>(new Map());
 
 // MARK: Diff state management functions
 
-export function getDiffState(repoPath: string) {
+export function useRepoDiffState(repoPath: string) {
 	const _diffSessionsPrim = useMapPrimitive(diffSessionsAtom, repoPath);
 	const _isLoadingPrim = useMapPrimitive(isLoadingDiffAtom, repoPath);
 

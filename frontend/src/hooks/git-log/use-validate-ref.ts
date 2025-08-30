@@ -2,7 +2,7 @@ import { useDebounce } from '@uidotdev/usehooks';
 import { useEffect, useState } from 'react';
 import { ValidateRef } from '../../../wailsjs/go/backend/App';
 import { Logger } from '../../utils/logger';
-import { useRepoState } from '../state/repo/use-repo-state';
+import { useRepoLogState } from '../state/repo/use-git-log-state';
 
 type ValidationState = 'idle' | 'validating' | 'valid' | 'invalid';
 
@@ -19,7 +19,7 @@ export interface UseValidateRefResult {
  * Hook to validate Git references with debounced validation
  */
 export function useValidateRef(repoPath: string, refToValidate: string): UseValidateRefResult {
-	const { logState } = useRepoState(repoPath);
+	const { refs } = useRepoLogState(repoPath);
 	const [validationState, setValidationState] = useState<ValidationState>('idle');
 	const debouncedRefToValidate = useDebounce(refToValidate, 200);
 
@@ -36,7 +36,7 @@ export function useValidateRef(repoPath: string, refToValidate: string): UseVali
 			setValidationState('validating');
 
 			// Check if the ref matches any of the ones we already know
-			const knownRefs = logState.refs ?? [];
+			const knownRefs = refs ?? [];
 			const matchingRefs = knownRefs.filter((ref) =>
 				ref.name.toLowerCase().includes(debouncedRefToValidate.toLowerCase())
 			);
@@ -76,7 +76,7 @@ export function useValidateRef(repoPath: string, refToValidate: string): UseVali
 		};
 
 		validateAsync(debouncedRefToValidate);
-	}, [debouncedRefToValidate, logState.refs, repoPath, refToValidate]);
+	}, [debouncedRefToValidate, refs, repoPath, refToValidate]);
 
 	const isValid = validationState === 'valid' ? true : validationState === 'invalid' ? false : null;
 

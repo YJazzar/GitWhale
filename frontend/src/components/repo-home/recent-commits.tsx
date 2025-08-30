@@ -1,10 +1,10 @@
 import { CommitHash } from '@/components/commit-hash';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
 import { useNavigateToCommit } from '@/hooks/navigation/use-navigate-to-commit';
+import { useRepoHomeState } from '@/hooks/state/repo/use-git-home-state';
+import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
+import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 
 interface RecentCommitsProps {
@@ -13,11 +13,10 @@ interface RecentCommitsProps {
 
 export function RecentCommits(props: RecentCommitsProps) {
 	const { repoPath } = props;
-	const { homeState } = useRepoState(repoPath);
+	const { recentCommits } = useRepoHomeState(repoPath);
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
 
-	const recentCommits = homeState.recentCommits.value ?? [];
-	const isLoading = homeState.recentCommits.isLoading;
+	const isLoading = recentCommits.isLoading;
 
 	const onCommitClick = (commitData: git_operations.GitLogCommitInfo) => {
 		handleViewFullCommit(commitData.commitHash, commitData.parentCommitHashes.length > 1);
@@ -54,7 +53,7 @@ export function RecentCommits(props: RecentCommitsProps) {
 					</div>
 				) : (
 					<div className="space-y-2">
-						{recentCommits.map((commit, index) => (
+						{(recentCommits.value || []).map((commit, index) => (
 							<div
 								key={index}
 								className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
@@ -84,7 +83,9 @@ export function RecentCommits(props: RecentCommitsProps) {
 										<span>•</span>
 										<Calendar className="h-3 w-3" />
 										<span>
-											{convertUnixTimeToDate(commit.commitTimeStamp).toLocaleDateString()}
+											{convertUnixTimeToDate(
+												commit.commitTimeStamp
+											).toLocaleDateString()}
 										</span>
 									</div>
 								</div>

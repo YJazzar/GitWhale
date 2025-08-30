@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useRepoHomeState } from '@/hooks/state/repo/use-git-home-state';
 import { FolderTree } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 
@@ -33,11 +33,11 @@ function WorktreesSkeleton() {
 
 export function WorktreesOverview(props: WorktreesOverviewProps) {
 	const { repoPath } = props;
-	const { homeState } = useRepoState(repoPath);
-	const rootNavigation = useNavigateRootFilTabs()
+	const { worktrees: worktreeData } = useRepoHomeState(repoPath);
+	const rootNavigation = useNavigateRootFilTabs();
 
-	const isLoading = homeState.worktrees.isLoading;
-	const worktrees = homeState.worktrees.value ?? [];
+	const isLoading = worktreeData.isLoading;
+	const worktrees = worktreeData.value ?? [];
 	const hasWorktrees = worktrees.length > 0;
 
 	// Don't render if no worktrees found
@@ -46,8 +46,8 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 	}
 
 	const onOpenWorktree = (worktree: git_operations.WorktreeInfo) => {
-		rootNavigation.onOpenRepoWithPath(worktree.path)
-	}
+		rootNavigation.onOpenRepoWithPath(worktree.path);
+	};
 
 	return (
 		<Card className="h-full flex flex-col">
@@ -77,7 +77,7 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 										key={index}
 										className="flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer hover:bg-muted/50"
 										onClick={() => {
-											onOpenWorktree(worktree)
+											onOpenWorktree(worktree);
 										}}
 									>
 										<div className="flex items-center gap-2">

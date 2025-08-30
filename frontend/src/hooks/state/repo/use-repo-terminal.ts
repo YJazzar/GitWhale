@@ -59,7 +59,7 @@ const xTermRefMap = new Map<
 	}
 >();
 
-export function getTerminalState(repoPath: string) {
+export function useRepoTerminalState(repoPath: string) {
 	const createTerminal = useCallback((terminalSettings?: command_utils.TerminalSettings) => {
 		const fitAddon = new FitAddon();
 

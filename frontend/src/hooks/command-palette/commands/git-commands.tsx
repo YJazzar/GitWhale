@@ -1,4 +1,4 @@
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useAllRepoStates } from '@/hooks/state/repo/use-all-repo-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '@/hooks/state/useSidebarHandlers';
 import {
 	CommandDefinition,
@@ -21,7 +21,7 @@ function commandWithRepoStateRequestedHooks(contextData: CommandPaletteContextDa
 
 	const repoContextData = contextData as RepoCommandPaletteContextData;
 	const repoSideBar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoContextData.repoPath));
-	const repoState = useRepoState(repoContextData.repoPath);
+	const repoState = useAllRepoStates(repoContextData.repoPath);
 
 	useEffect(() => {
 		if (!repoState.logState.refs?.length) {

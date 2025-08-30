@@ -6,7 +6,7 @@ import {
 } from '@/types/command-palette';
 import { useEffect } from 'react';
 import { useNavigateRootFilTabs } from '../navigation/use-navigate-root-file-tabs';
-import { useRepoState } from '../state/repo/use-repo-state';
+import { useAllRepoStates } from '../state/repo/use-all-repo-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '../state/useSidebarHandlers';
 import { useCommandRegistry } from './use-command-registry';
 
@@ -165,7 +165,7 @@ function userDefinedCommandRequestedHooks(
 
 		repoPath = repoContext.repoPath;
 		repoSidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoContext.repoPath));
-		repoState = useRepoState(repoContext.repoPath);
+		repoState = useAllRepoStates(repoContext.repoPath);
 	}
 
 	return {

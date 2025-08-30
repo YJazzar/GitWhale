@@ -5,7 +5,7 @@ import { CommitTextarea } from '@/components/ui/commit-textarea';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { getStagingState } from '@/hooks/state/repo/use-git-staging-state';
 import {
 	FileTabsSessionKeyGenerator,
 	TabProps,
@@ -34,7 +34,7 @@ interface RepoActiveDiffPageProps {
 }
 
 export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps) {
-	const { stagingState } = useRepoState(repoPath);
+	const { refreshGitStatus, hasChanges } = getStagingState(repoPath);
 
 	// Persistent panel sizes for file lists (left) and diff content (right)
 	const [panelSizes, setPanelSizes] = usePersistentPanelSizes(
@@ -49,7 +49,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 	};
 
 	const handleRefresh = () => {
-		stagingState.refreshGitStatus();
+		refreshGitStatus();
 	};
 
 	return (
@@ -73,7 +73,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 				{/* Right pane: Diff viewer */}
 				<ResizablePanel id="diff-content-panel" defaultSize={panelSizes[1]}>
 					<div className="grow h-full flex flex-col min-h-0">
-						{!stagingState.hasChanges && (
+						{!hasChanges && (
 							<div className="w-full h-full flex items-center justify-center">
 								<div className="text-center space-y-4">
 									<div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -91,7 +91,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 							</div>
 						)}
 
-						{stagingState.hasChanges && (
+						{hasChanges && (
 							<FileTabs
 								key={`staging-${repoPath}`}
 								initialTabs={[]}
@@ -107,11 +107,11 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 
 // File Lists Container Component
 function StagingAreaFileLists({ repoPath }: { repoPath: string }) {
-	const { stagingState } = useRepoState(repoPath);
+	const { gitStatus } = getStagingState(repoPath);
 
-	const stagedFiles = stagingState.gitStatus.value?.stagedFiles ?? [];
-	const unstagedFiles = stagingState.gitStatus.value?.unstagedFiles ?? [];
-	const untrackedFiles = stagingState.gitStatus.value?.untrackedFiles ?? [];
+	const stagedFiles = gitStatus.value?.stagedFiles ?? [];
+	const unstagedFiles = gitStatus.value?.unstagedFiles ?? [];
+	const untrackedFiles = gitStatus.value?.untrackedFiles ?? [];
 
 	const hasStagedFiles = stagedFiles.length > 0;
 	const hasUnstagedFiles = unstagedFiles.length > 0;
@@ -140,7 +140,8 @@ function StagingAreaFileLists({ repoPath }: { repoPath: string }) {
 
 // Commit Form Component
 function CommitForm({ repoPath }: { repoPath: string }) {
-	const { stagingState } = useRepoState(repoPath);
+	const { commitChanges, refreshGitStatus, hasStagedChanges, gitStatus, isLoading } =
+		getStagingState(repoPath);
 	const [commitMessage, setCommitMessage] = useState('');
 	const [isCommitting, setIsCommitting] = useState(false);
 
@@ -152,7 +153,7 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 
 		setIsCommitting(true);
 		try {
-			await stagingState.commitChanges(commitMessage.trim());
+			await commitChanges(commitMessage.trim());
 			setCommitMessage(''); // Clear the message after successful commit
 			Logger.info('Successfully committed changes', 'StagingPage');
 		} catch (error) {
@@ -163,7 +164,7 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 	};
 
 	const handleRefresh = () => {
-		stagingState.refreshGitStatus();
+		refreshGitStatus();
 	};
 
 	const onCommitMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -172,73 +173,71 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 
 	return (
 		<div className="p-4 border-t bg-muted/20">
+			<div className="pb-2">
+				<div className="flex justify-between items-center mb-2">
+					<div className="flex items-center gap-1">
+						<label htmlFor="commit-message" className="text-sm font-medium">
+							Commit Message
+						</label>
 
-				<div className='pb-2'>
-					<div className="flex justify-between items-center mb-2">
-						<div className="flex items-center gap-1">
-							<label htmlFor="commit-message" className="text-sm font-medium">
-								Commit Message
-							</label>
-
-							<TooltipProvider>
-								<Tooltip delayDuration={100}>
-									<TooltipTrigger asChild>
-										<Info className="w-3 h-3 text-muted-foreground cursor-help" />
-									</TooltipTrigger>
-									<TooltipContent side="right">
-										<p>Ctrl+T to rewrap • Cmd/Ctrl+Enter to commit</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						</div>
-						{stagingState.hasStagedChanges && (
-							<span className="text-xs text-muted-foreground">
-								{stagingState.gitStatus.value?.stagedFiles?.length ?? 0} staged
-							</span>
-						)}
+						<TooltipProvider>
+							<Tooltip delayDuration={100}>
+								<TooltipTrigger asChild>
+									<Info className="w-3 h-3 text-muted-foreground cursor-help" />
+								</TooltipTrigger>
+								<TooltipContent side="right">
+									<p>Ctrl+T to rewrap • Cmd/Ctrl+Enter to commit</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 					</div>
-					<CommitTextarea
-						id="commit-message"
-						placeholder="Enter commit message..."
-						value={commitMessage}
-						onChange={onCommitMessageChange}
-						className='h-fit'
-					/>
+					{hasStagedChanges && (
+						<span className="text-xs text-muted-foreground">
+							{gitStatus.value?.stagedFiles?.length ?? 0} staged
+						</span>
+					)}
 				</div>
+				<CommitTextarea
+					id="commit-message"
+					placeholder="Enter commit message..."
+					value={commitMessage}
+					onChange={onCommitMessageChange}
+					className="h-fit"
+				/>
+			</div>
 
-				<div className="flex items-center gap-2">
-					<Button
-						onClick={handleCommit}
-						disabled={!commitMessage.trim() || !stagingState.hasStagedChanges || isCommitting}
-						className="flex-1"
-						size="sm"
-					>
-						{isCommitting ? (
-							<RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-						) : (
-							<GitCommit className="w-4 h-4 mr-2" />
-						)}
-						{isCommitting ? 'Committing...' : 'Commit'}
-					</Button>
-					<Button
-						onClick={handleRefresh}
-						variant="outline"
-						size="sm"
-						disabled={stagingState.isLoading}
-						className="px-3"
-					>
-						<RefreshCw className={cn('w-4 h-4', stagingState.isLoading && 'animate-spin')} />
-					</Button>
-				</div>
-
+			<div className="flex items-center gap-2">
+				<Button
+					onClick={handleCommit}
+					disabled={!commitMessage.trim() || !hasStagedChanges || isCommitting}
+					className="flex-1"
+					size="sm"
+				>
+					{isCommitting ? (
+						<RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+					) : (
+						<GitCommit className="w-4 h-4 mr-2" />
+					)}
+					{isCommitting ? 'Committing...' : 'Commit'}
+				</Button>
+				<Button
+					onClick={handleRefresh}
+					variant="outline"
+					size="sm"
+					disabled={isLoading}
+					className="px-3"
+				>
+					<RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+				</Button>
+			</div>
 		</div>
 	);
 }
 
 // Staged Files List Component
 function StagedFilesList({ repoPath }: { repoPath: string }) {
-	const { stagingState } = useRepoState(repoPath);
-	const files = stagingState.gitStatus.value?.stagedFiles ?? [];
+	const { unstageAllFiles, unstageFile, isLoading, gitStatus } = getStagingState(repoPath);
+	const files = gitStatus.value?.stagedFiles ?? [];
 
 	return (
 		<FileListSection
@@ -247,9 +246,9 @@ function StagedFilesList({ repoPath }: { repoPath: string }) {
 			files={files}
 			fileType="staged"
 			action="unstage"
-			onFileAction={stagingState.unstageFile}
-			onBulkAction={stagingState.unstageAllFiles}
-			isLoading={stagingState.isLoading}
+			onFileAction={unstageFile}
+			onBulkAction={unstageAllFiles}
+			isLoading={isLoading}
 			repoPath={repoPath}
 		/>
 	);
@@ -257,8 +256,8 @@ function StagedFilesList({ repoPath }: { repoPath: string }) {
 
 // Unstaged Files List Component
 function UnstagedFilesList({ repoPath }: { repoPath: string }) {
-	const { stagingState } = useRepoState(repoPath);
-	const files = stagingState.gitStatus.value?.unstagedFiles ?? [];
+	const { stageFile, stageAllFiles, isLoading, gitStatus } = getStagingState(repoPath);
+	const files = gitStatus.value?.unstagedFiles ?? [];
 
 	return (
 		<FileListSection
@@ -267,9 +266,9 @@ function UnstagedFilesList({ repoPath }: { repoPath: string }) {
 			files={files}
 			fileType="unstaged"
 			action="stage"
-			onFileAction={stagingState.stageFile}
-			onBulkAction={stagingState.stageAllFiles}
-			isLoading={stagingState.isLoading}
+			onFileAction={stageFile}
+			onBulkAction={stageAllFiles}
+			isLoading={isLoading}
 			repoPath={repoPath}
 		/>
 	);
@@ -277,13 +276,13 @@ function UnstagedFilesList({ repoPath }: { repoPath: string }) {
 
 // Untracked Files List Component
 function UntrackedFilesList({ repoPath }: { repoPath: string }) {
-	const { stagingState } = useRepoState(repoPath);
-	const files = stagingState.gitStatus.value?.untrackedFiles ?? [];
+	const { gitStatus, stageFile, isLoading } = getStagingState(repoPath);
+	const files = gitStatus.value?.untrackedFiles ?? [];
 
 	const handleStageAll = async () => {
 		// Stage each untracked file individually
 		for (const file of files) {
-			await stagingState.stageFile(file.path);
+			await stageFile(file.path);
 		}
 	};
 
@@ -294,9 +293,9 @@ function UntrackedFilesList({ repoPath }: { repoPath: string }) {
 			files={files}
 			fileType="untracked"
 			action="stage"
-			onFileAction={stagingState.stageFile}
+			onFileAction={stageFile}
 			onBulkAction={handleStageAll}
-			isLoading={stagingState.isLoading}
+			isLoading={isLoading}
 			repoPath={repoPath}
 		/>
 	);

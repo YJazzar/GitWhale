@@ -1,6 +1,6 @@
 import { D3GitGraph } from '@/components/git-log/d3-git-graph';
 import { ContextMenuProvider } from '@/components/ui/context-menu-provider';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useRepoLogState } from '@/hooks/state/repo/use-git-log-state';
 import { useContextMenu, type ContextMenuAction } from '@/hooks/use-context-menu';
 import { cn } from '@/lib/utils';
 import { CommitSelectType } from '@/pages/repo/RepoLogView';
@@ -15,16 +15,22 @@ interface GitLogGraphProps {
 }
 
 export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, className }: GitLogGraphProps) {
-	const { logState } = useRepoState(repoPath);
-	const commits = logState.logs;
-	const isLoading = logState.isLoading;
-	const isLoadingMore = logState.isLoadingMore;
-	const hasMoreCommits = logState.hasMoreCommits;
-	const selectedCommitHashes = logState.selectedCommits.currentSelectedCommits;
+	const {
+		logs,
+		isLoading,
+		isLoadingMore,
+		hasMoreCommits,
+		selectedCommits,
+		refreshLogAndRefs,
+		loadMoreCommits,
+		options,
+	} = useRepoLogState(repoPath);
+	const commits = logs;
+	const selectedCommitHashes = selectedCommits.currentSelectedCommits;
 
 	useEffect(() => {
 		if (!commits?.length) {
-			logState.refreshLogAndRefs();
+			refreshLogAndRefs();
 		}
 	}, []);
 
@@ -34,20 +40,20 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 		(node: HTMLDivElement | null) => {
 			if (isLoadingMore) return;
 			if (observer.current) observer.current.disconnect();
-			
+
 			observer.current = new IntersectionObserver((entries) => {
 				if (entries[0].isIntersecting && hasMoreCommits) {
-					logState.loadMoreCommits();
+					loadMoreCommits();
 				}
 			});
-			
+
 			if (node) observer.current.observe(node);
 		},
-		[isLoadingMore, hasMoreCommits, logState.loadMoreCommits]
+		[isLoadingMore, hasMoreCommits, loadMoreCommits]
 	);
 
 	// Check if we're in search mode by looking at the current log options
-	const currentLogOptions = logState.options.get();
+	const currentLogOptions = options.get();
 	const isSearchMode = !!(currentLogOptions.searchQuery && currentLogOptions.searchQuery.trim());
 
 	// Define commit-specific context menu actions
@@ -65,7 +71,7 @@ export function GitLogGraph({ repoPath, onCommitClick, onCommitDoubleClick, clas
 			label: 'View commit details',
 			icon: Eye,
 			onClick: (commitHash) => {
-				onCommitDoubleClick(commitHash)
+				onCommitDoubleClick(commitHash);
 			},
 		},
 		// {

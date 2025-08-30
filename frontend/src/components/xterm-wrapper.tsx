@@ -1,8 +1,8 @@
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
-import { useResizeObserver } from '@/hooks/use-resize-observer';
+import { useRepoTerminalState } from '@/hooks/state/repo/use-repo-terminal';
 import { UseAppState } from '@/hooks/state/use-app-state';
+import { useResizeObserver } from '@/hooks/use-resize-observer';
 import '@xterm/xterm/css/xterm.css';
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 
 export default function XTermWrapper(props: { repoPath: string }) {
 	const { repoPath } = props;
@@ -10,16 +10,16 @@ export default function XTermWrapper(props: { repoPath: string }) {
 	const divNodeRef = useRef<HTMLDivElement | null>(null);
 
 	// This will not cause a re-render and we can treat it like a ref
-	const { terminalState } = useRepoState(repoPath);
+	const { getTerminalState, createTerminal } = useRepoTerminalState(repoPath);
 
 	useLayoutEffect(() => {
-		let state = terminalState.getTerminalState();
+		let state = getTerminalState();
 
 		// first visit for this repo
 		if (!state) {
 			// Get terminal settings from app state
 			const terminalSettings = appState?.appConfig?.settings?.terminal;
-			state = terminalState.createTerminal(terminalSettings);
+			state = createTerminal(terminalSettings);
 		}
 
 		// ① put (or move) the DOM node into place
@@ -38,10 +38,13 @@ export default function XTermWrapper(props: { repoPath: string }) {
 		};
 	}, []);
 
-	useResizeObserver(divNodeRef as unknown as React.MutableRefObject<null>, () => {
-		const fitAddon = terminalState.getTerminalState()?.fitAddon;
-		fitAddon?.fit();
-	});
+	useResizeObserver(
+		divNodeRef as unknown as React.MutableRefObject<null>,
+		useCallback(() => {
+			const fitAddon = getTerminalState()?.fitAddon;
+			fitAddon?.fit();
+		}, [getTerminalState])
+	);
 
 	return <div className="w-full h-full" ref={divNodeRef}></div>;
 }

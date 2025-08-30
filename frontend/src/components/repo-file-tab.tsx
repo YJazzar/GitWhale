@@ -1,18 +1,17 @@
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useAllRepoStates } from '@/hooks/state/repo/use-all-repo-state';
 import { FolderGit2 } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function RepoFileTab(props: { repoPath: string }) {
 	const { repoPath } = props;
-	const repoState  = useRepoState(repoPath);
-
+	const { onCloseRepo } = useAllRepoStates(repoPath);
 	const repoName = getRepoDisplayName(repoPath);
 
 	useEffect(() => {
 		return () => {
 			// Cleanup the repo state when this tab is closed
-			repoState.onCloseRepo();
-		}
+			onCloseRepo();
+		};
 	}, []);
 
 	if (!repoPath) {

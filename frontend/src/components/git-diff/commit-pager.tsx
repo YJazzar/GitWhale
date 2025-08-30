@@ -1,5 +1,5 @@
 import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useRepoLogState } from '@/hooks/state/repo/use-git-log-state';
 import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
 import { cn } from '@/lib/utils';
 import { Calendar, ChevronDown, GitCommit, Hash, User } from 'lucide-react';
@@ -22,7 +22,7 @@ interface CommitPagerProps {
 
 export function CommitPager(props: CommitPagerProps) {
 	const { repoPath, commitData, className } = props;
-	const { logState } = useRepoState(repoPath);
+	const {getChildCommits} = useRepoLogState(repoPath);
 
 	// Process commit message - join array and get first line for truncation
 	const fullMessage = Array.isArray(commitData.commitMessage)
@@ -34,7 +34,7 @@ export function CommitPager(props: CommitPagerProps) {
 	const commitDate = convertUnixTimeToDate(commitData.commitTimeStamp);
 
 	// Get child commits from cache for navigation
-	const childCommits = logState.getChildCommits(commitData.commitHash);
+	const childCommits = getChildCommits(commitData.commitHash);
 
 	return (
 		<div className={cn('text-xs p-2', className)}>

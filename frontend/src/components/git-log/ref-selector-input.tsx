@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
 import { useValidateRef, UseValidateRefResult } from '@/hooks/git-log/use-validate-ref';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useRepoLogState } from '@/hooks/state/repo/use-git-log-state';
 import { cn } from '@/lib/utils';
 import {
 	Check,
@@ -56,23 +56,17 @@ interface RefSelectorInputProps {
 }
 
 export function RefSelectorInput(props: RefSelectorInputProps) {
-	const {
-		repoPath,
-		currentGitRef,
-		onUpdateGitRef,
-		className,
-		allowCurrentChangesAsRef,
-		showEmptyAs,
-	} = props;
+	const { repoPath, currentGitRef, onUpdateGitRef, className, allowCurrentChangesAsRef, showEmptyAs } =
+		props;
 
-	const { logState } = useRepoState(repoPath);
+	const { refs, isLoading } = useRepoLogState(repoPath);
 	const [open, setOpen] = useState(false);
 	const [commandSearchInput, setCommandSearchInput] = useState<string>('');
 
 	const currentGitRefValidation = useValidateRef(repoPath, currentGitRef);
 	const commandInputValidation = useValidateRef(repoPath, commandSearchInput);
 
-	const allRepoRefs = logState.refs ?? [];
+	const allRepoRefs = refs ?? [];
 
 	// Add HEAD to the refs list and create a flat structure
 	const allRefs = useMemo(() => {
@@ -143,12 +137,11 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 		}
 	};
 
-
-	let currentGitRefDisplayValue
-	if (!!showEmptyAs && (!currentGitRef || currentGitRef === "")) { 
-		currentGitRefDisplayValue = showEmptyAs
-	} else { 
-		currentGitRefDisplayValue = convertToShortHash(currentGitRef, true)
+	let currentGitRefDisplayValue;
+	if (!!showEmptyAs && (!currentGitRef || currentGitRef === '')) {
+		currentGitRefDisplayValue = showEmptyAs;
+	} else {
+		currentGitRefDisplayValue = convertToShortHash(currentGitRef, true);
 	}
 
 	return (
@@ -164,7 +157,7 @@ export function RefSelectorInput(props: RefSelectorInputProps) {
 							currentGitRefValidation.isValid === false && 'border-red-500',
 							className
 						)}
-						disabled={logState.isLoading}
+						disabled={isLoading}
 					>
 						<div className="flex items-center gap-2 min-w-0">
 							{/* Show validation icon */}

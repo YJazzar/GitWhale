@@ -1,14 +1,14 @@
 import { QuickActions } from '@/components/repo-home/quick-actions';
 import { RecentCommits } from '@/components/repo-home/recent-commits';
 import { WorktreesOverview } from '@/components/repo-home/worktrees-overview';
-import { useRepoState } from '@/hooks/state/repo/use-repo-state';
+import { useRepoHomeState } from '@/hooks/state/repo/use-git-home-state';
 
 interface RepoHomeViewProps {
 	repoPath: string;
 }
 
 export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
-	const { homeState } = useRepoState(repoPath);
+	const { refreshHomeData, isAnyLoading } = useRepoHomeState(repoPath);
 
 	if (!repoPath) {
 		return (
@@ -18,10 +18,8 @@ export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
 		);
 	}
 
-	const isAnyLoading = homeState.isAnyLoading;
-
 	const handleRefresh = () => {
-		homeState.refreshHomeData();
+		refreshHomeData();
 	};
 
 	return (
