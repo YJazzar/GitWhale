@@ -36,8 +36,6 @@ export function GetCommandById(arg1:string):Promise<command_utils.CommandEntry>;
 
 export function GetCommandLogs():Promise<Array<command_utils.CommandEntry>>;
 
-export function GetDefaultShellCommand():Promise<string>;
-
 export function GetDetailedCommitInfo(arg1:string,arg2:string):Promise<git_operations.DetailedCommitInfo>;
 
 export function GetDiffSession(arg1:string):Promise<git_operations.DiffSession>;
@@ -45,6 +43,8 @@ export function GetDiffSession(arg1:string):Promise<git_operations.DiffSession>;
 export function GetGitStatus(arg1:string):Promise<git_operations.GitStatus>;
 
 export function GetStartupDirDiffDirectory():Promise<git_operations.Directory>;
+
+export function GetTerminalDefaults():Promise<backend.TerminalDefaults>;
 
 export function GetWorktrees(arg1:string):Promise<Array<git_operations.WorktreeInfo>>;
 

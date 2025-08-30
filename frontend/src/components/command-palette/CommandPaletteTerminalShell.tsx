@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCommandPaletteExecutor, useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
 import { AlertCircle, CheckCircle, Clock, Minimize2, Square, StopCircle, Terminal, XCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -146,11 +145,14 @@ export function CommandPaletteTerminalShell() {
 			)}
 
 			{/* Terminal output */}
-			<div className="flex-1 border rounded-md bg-black/95 text-green-400 font-mono text-[10px]">
-				<ScrollArea ref={scrollAreaRef} className="h-full">
-					<div className="p-2">
+			<div className="flex-1 border rounded-md bg-black/95 text-green-400 font-mono text-[10px] min-w-0 max-w-full">
+				<div 
+					ref={scrollAreaRef} 
+					className="h-full w-full overflow-auto max-w-full"
+				>
+					<div className="p-2 w-fit min-w-full">
 						{hasOutput ? (
-							<pre className="whitespace-pre-wrap leading-tight">{terminalOutput}</pre>
+							<pre className="whitespace-pre leading-tight w-fit">{terminalOutput}</pre>
 						) : (
 							<div className="text-muted-foreground/60 italic text-xs">
 								{status === 'notStarted'
@@ -164,7 +166,7 @@ export function CommandPaletteTerminalShell() {
 						)}
 						<div ref={bottomRef} />
 					</div>
-				</ScrollArea>
+				</div>
 			</div>
 
 			{/* Footer with status information */}

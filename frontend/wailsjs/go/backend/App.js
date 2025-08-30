@@ -62,10 +62,6 @@ export function GetCommandLogs() {
   return window['go']['backend']['App']['GetCommandLogs']();
 }
 
-export function GetDefaultShellCommand() {
-  return window['go']['backend']['App']['GetDefaultShellCommand']();
-}
-
 export function GetDetailedCommitInfo(arg1, arg2) {
   return window['go']['backend']['App']['GetDetailedCommitInfo'](arg1, arg2);
 }
@@ -80,6 +76,10 @@ export function GetGitStatus(arg1) {
 
 export function GetStartupDirDiffDirectory() {
   return window['go']['backend']['App']['GetStartupDirDiffDirectory']();
+}
+
+export function GetTerminalDefaults() {
+  return window['go']['backend']['App']['GetTerminalDefaults']();
 }
 
 export function GetWorktrees(arg1) {

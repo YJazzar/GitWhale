@@ -44,11 +44,11 @@ var cancelledCommands = make(map[string]bool)
 var cancelledCommandsMutex sync.RWMutex
 
 // StartRunningAndStreamCommand asynchronously executes a command and streams output
-func StartRunningAndStreamCommand(ctx context.Context, commandString, workingDir, broadcastToTopic string) {
+func StartRunningAndStreamCommand(ctx context.Context, shellPath []string, commandString, workingDir, broadcastToTopic string) {
 	logger.Log.Debug("StartRunningAndStreamCommand called - command: %s, topic: %s", commandString, broadcastToTopic)
 
 	go func() {
-		err := streamOutput(ctx, commandString, workingDir, broadcastToTopic)
+		err := streamOutput(ctx, shellPath, commandString, workingDir, broadcastToTopic)
 		if err != nil {
 			emitEvent(ctx, broadcastToTopic, StreamedCommandEvent{
 				State:     StateError,
@@ -100,14 +100,18 @@ func cancelCommand(broadcastToTopic string) {
 }
 
 // streamOutput executes the command and streams output in real-time
-func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTopic string) error {
-	commandArgs := strings.Fields(commandString)
-	if len(commandArgs) == 0 {
+func streamOutput(ctx context.Context, shellPath []string, commandString, workingDir, broadcastToTopic string) error {
+	if len(shellPath) < 1 {
+		return fmt.Errorf("misconfigured shell path for running commands")
+	}
+
+	if len(commandString) == 0 {
 		return fmt.Errorf("empty command string")
 	}
 
 	// Create command
-	command := exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
+	allCommand := append(shellPath, commandString)
+	command := exec.CommandContext(ctx, allCommand[0], allCommand[1:]...)
 	command.Dir = workingDir
 
 	// Log the command being executed
@@ -115,7 +119,7 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 	logger.Log.Trace("\t- Command working directory: %s", command.Dir)
 
 	// Start logging the command
-	commandID := LogCommandStart(commandArgs[0], commandArgs[1:], workingDir)
+	commandID := LogCommandStart(allCommand[0], allCommand[1:], workingDir)
 	logger.Log.Debug("Started streaming command with ID: %s, topic: %s", commandID, broadcastToTopic)
 
 	// Record start time

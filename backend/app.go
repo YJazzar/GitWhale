@@ -189,8 +189,16 @@ func (app *App) UpdateSettings(newSettings AppSettings) error {
 	return err
 }
 
-func (app *App) GetDefaultShellCommand() string {
-	return strings.Join(app.terminalManager.GetDefaultShellCommand(), " ")
+type TerminalDefaults struct {
+	DefaultInteractiveTerminalCommand string `json:"defaultInteractiveTerminalCommand"`
+	DefaultShellForBackgroundCommands string `json:"defaultShellForBackgroundCommands"`
+}
+
+func (app *App) GetTerminalDefaults() TerminalDefaults {
+	return TerminalDefaults{
+		DefaultInteractiveTerminalCommand: strings.Join(app.terminalManager.GetDefaultInteractiveTerminalCommand(), " "),
+		DefaultShellForBackgroundCommands: strings.Join(app.terminalManager.GetDefaultShellForBackgroundCommands(), " "),
+	}
 }
 
 // Diff session management methods
@@ -291,7 +299,9 @@ func (app *App) GetCommandById(commandId string) *command_utils.CommandEntry {
 
 // Returns the "topic" the user can subscribe to and send messages to
 func (app *App) ExecuteShellCommand(command string, workingDir, broadcastToTopic string) {
-	command_utils.StartRunningAndStreamCommand(app.ctx, command, workingDir, broadcastToTopic)
+	// app.AppConfig.Settings.Terminal.
+	shellPathCommand := app.terminalManager.GetDefaultShellForBackgroundCommands()
+	command_utils.StartRunningAndStreamCommand(app.ctx, shellPathCommand, command, workingDir, broadcastToTopic)
 }
 
 // Custom Commands CRUD operations

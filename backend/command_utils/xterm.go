@@ -28,13 +28,14 @@ type TerminalSession struct {
 }
 
 type TerminalSettings struct {
-	DefaultCommand string `json:"defaultCommand"`
-	FontSize       int    `json:"fontSize"`
-	ColorScheme    string `json:"colorScheme"`
-	CursorStyle    string `json:"cursorStyle"`
+	DefaultShellForBackgroundCommands string `json:"defaultShellForBackgroundCommands"`
+	DefaultInteractiveTerminalCommand string `json:"defaultInteractiveTerminalCommand"`
+	FontSize                          int    `json:"fontSize"`
+	ColorScheme                       string `json:"colorScheme"`
+	CursorStyle                       string `json:"cursorStyle"`
 }
 
-func (sessionManager *XTermSessionManager) GetDefaultShellCommand() []string {
+func (sessionManager *XTermSessionManager) GetDefaultInteractiveTerminalCommand() []string {
 	if goruntime.GOOS == "windows" {
 		return []string{"C:\\Program Files\\Git\\bin\\bash.exe", "--login", "-i"}
 	} else {
@@ -42,12 +43,20 @@ func (sessionManager *XTermSessionManager) GetDefaultShellCommand() []string {
 	}
 }
 
+func (sessionManager *XTermSessionManager) GetDefaultShellForBackgroundCommands() []string {
+	if goruntime.GOOS == "windows" {
+		return []string{"C:\\Program Files\\Git\\bin\\bash.exe", "-c"}
+	} else {
+		return []string{"/bin/zsh", "-c"}
+	}
+}
+
 func (sessionManager *XTermSessionManager) ResolveConfiguredShellCommand() []string {
-	if sessionManager.Settings != nil && sessionManager.Settings.DefaultCommand != "" {
-		return []string{sessionManager.Settings.DefaultCommand}
+	if sessionManager.Settings != nil && sessionManager.Settings.DefaultInteractiveTerminalCommand != "" {
+		return []string{sessionManager.Settings.DefaultInteractiveTerminalCommand}
 	}
 
-	return sessionManager.GetDefaultShellCommand()
+	return sessionManager.GetDefaultInteractiveTerminalCommand()
 }
 
 func (sessionManager *XTermSessionManager) SetupXTermForNewRepo(repoPath string) {

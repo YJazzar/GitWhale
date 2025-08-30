@@ -9,27 +9,31 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/use-settings';
-import {
-	FONT_SIZE_OPTIONS,
-	TERMINAL_COLOR_SCHEMES,
-	TERMINAL_CURSOR_STYLES,
-} from '@/types/settings';
+import { FONT_SIZE_OPTIONS, TERMINAL_COLOR_SCHEMES, TERMINAL_CURSOR_STYLES } from '@/types/settings';
 import { Logger } from '@/utils/logger';
 import { Check, ChevronDown, Terminal } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { GetDefaultShellCommand } from '../../../wailsjs/go/backend/App';
+import { GetTerminalDefaults } from '../../../wailsjs/go/backend/App';
+import { backend } from '../../../wailsjs/go/models';
 
 export function TerminalSettings() {
 	const { settings, updateSettings } = useSettings();
-	const [defaultShellCommand, setDefaultShellCommand] = useState('');
+	const [defaultShellCommands, setDefaultShellCommands] = useState<backend.TerminalDefaults | undefined>(
+		undefined
+	);
 
 	useEffect(() => {
-		GetDefaultShellCommand()
-			.then(setDefaultShellCommand)
-			.catch((error) => Logger.error(`Failed to get default shell command: ${error}`, 'TerminalSettings'));
+		GetTerminalDefaults()
+			.then(setDefaultShellCommands)
+			.catch((error) =>
+				Logger.error(`Failed to get default shell command: ${error}`, 'TerminalSettings')
+			);
 	}, []);
 
-	const handleTerminalSettingsChange = <T extends typeof settings.terminal, K extends keyof T>(key: K, value: T[K]) => {
+	const handleTerminalSettingsChange = <T extends typeof settings.terminal, K extends keyof T>(
+		key: K,
+		value: T[K]
+	) => {
 		updateSettings({
 			terminal: {
 				...settings.terminal,
@@ -48,16 +52,35 @@ export function TerminalSettings() {
 			</CardHeader>
 			<CardContent className="space-y-3">
 				<div>
-					<Label htmlFor="terminal-command" className="text-sm font-medium">
-						Default Command
+					<Label htmlFor="terminal-interactive-command" className="text-sm font-medium">
+						Interactive Shell Command
 					</Label>
 					<Input
-						id="terminal-command"
+						id="terminal-interactive-command"
 						className="mt-1"
-						placeholder={defaultShellCommand || 'System default shell'}
-						value={settings.terminal.defaultCommand}
+						placeholder={
+							defaultShellCommands?.defaultInteractiveTerminalCommand || 'System default shell'
+						}
+						value={settings.terminal.defaultInteractiveTerminalCommand}
 						onChange={(e) =>
-							handleTerminalSettingsChange('defaultCommand', e.target.value)
+							handleTerminalSettingsChange('defaultInteractiveTerminalCommand', e.target.value)
+						}
+					/>
+				</div>
+
+				<div>
+					<Label htmlFor="terminal-background-command" className="text-sm font-medium">
+						Background Shell Command
+					</Label>
+					<Input
+						id="terminal-background-command"
+						className="mt-1"
+						placeholder={
+							defaultShellCommands?.defaultShellForBackgroundCommands || 'System default shell'
+						}
+						value={settings.terminal.defaultShellForBackgroundCommands}
+						onChange={(e) =>
+							handleTerminalSettingsChange('defaultShellForBackgroundCommands', e.target.value)
 						}
 					/>
 				</div>
@@ -67,14 +90,9 @@ export function TerminalSettings() {
 						<Label className="text-sm font-medium">Font Size</Label>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									className="w-full justify-between mt-1"
-								>
-									{FONT_SIZE_OPTIONS.find(
-										(opt) => opt.value === settings.terminal.fontSize
-									)?.label || `${settings.terminal.fontSize}px`}
+								<Button variant="outline" size="sm" className="w-full justify-between mt-1">
+									{FONT_SIZE_OPTIONS.find((opt) => opt.value === settings.terminal.fontSize)
+										?.label || `${settings.terminal.fontSize}px`}
 									<ChevronDown className="h-4 w-4 opacity-50" />
 								</Button>
 							</DropdownMenuTrigger>
@@ -82,9 +100,7 @@ export function TerminalSettings() {
 								{FONT_SIZE_OPTIONS.map((option) => (
 									<DropdownMenuItem
 										key={option.value}
-										onClick={() =>
-											handleTerminalSettingsChange('fontSize', option.value)
-										}
+										onClick={() => handleTerminalSettingsChange('fontSize', option.value)}
 										className="flex items-center justify-between"
 									>
 										{option.label}
@@ -101,11 +117,7 @@ export function TerminalSettings() {
 						<Label className="text-sm font-medium">Cursor Style</Label>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									className="w-full justify-between mt-1"
-								>
+								<Button variant="outline" size="sm" className="w-full justify-between mt-1">
 									{TERMINAL_CURSOR_STYLES.find(
 										(opt) => opt.value === settings.terminal.cursorStyle
 									)?.label || settings.terminal.cursorStyle}
@@ -136,11 +148,7 @@ export function TerminalSettings() {
 					<Label className="text-sm font-medium">Color Scheme</Label>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button
-								variant="outline"
-								size="sm"
-								className="w-full justify-between mt-1"
-							>
+							<Button variant="outline" size="sm" className="w-full justify-between mt-1">
 								{TERMINAL_COLOR_SCHEMES.find(
 									(opt) => opt.value === settings.terminal.colorScheme
 								)?.label || settings.terminal.colorScheme}
@@ -151,9 +159,7 @@ export function TerminalSettings() {
 							{TERMINAL_COLOR_SCHEMES.map((option) => (
 								<DropdownMenuItem
 									key={option.value}
-									onClick={() =>
-										handleTerminalSettingsChange('colorScheme', option.value)
-									}
+									onClick={() => handleTerminalSettingsChange('colorScheme', option.value)}
 									className="flex items-center justify-between"
 								>
 									{option.label}

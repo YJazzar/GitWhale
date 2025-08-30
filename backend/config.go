@@ -85,10 +85,10 @@ func LoadAppConfig() (*AppConfig, error) {
 					CommitMessageWrapLimitCol: 72,
 				},
 				Terminal: command_utils.TerminalSettings{
-					DefaultCommand: "",
-					FontSize:       14,
-					ColorScheme:    "default",
-					CursorStyle:    "block",
+					DefaultInteractiveTerminalCommand: "",
+					FontSize:                          14,
+					ColorScheme:                       "default",
+					CursorStyle:                       "block",
 				},
 				UI: UISettings{
 					AutoShowCommitDetails: true, // Default to true for existing behavior

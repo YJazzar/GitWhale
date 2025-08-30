@@ -286,6 +286,20 @@ export namespace backend {
 	
 	
 	
+	export class TerminalDefaults {
+	    defaultInteractiveTerminalCommand: string;
+	    defaultShellForBackgroundCommands: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TerminalDefaults(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.defaultInteractiveTerminalCommand = source["defaultInteractiveTerminalCommand"];
+	        this.defaultShellForBackgroundCommands = source["defaultShellForBackgroundCommands"];
+	    }
+	}
 	
 	
 	
@@ -363,7 +377,8 @@ export namespace command_utils {
 	    }
 	}
 	export class TerminalSettings {
-	    defaultCommand: string;
+	    defaultShellForBackgroundCommands: string;
+	    defaultInteractiveTerminalCommand: string;
 	    fontSize: number;
 	    colorScheme: string;
 	    cursorStyle: string;
@@ -374,7 +389,8 @@ export namespace command_utils {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.defaultCommand = source["defaultCommand"];
+	        this.defaultShellForBackgroundCommands = source["defaultShellForBackgroundCommands"];
+	        this.defaultInteractiveTerminalCommand = source["defaultInteractiveTerminalCommand"];
 	        this.fontSize = source["fontSize"];
 	        this.colorScheme = source["colorScheme"];
 	        this.cursorStyle = source["cursorStyle"];
