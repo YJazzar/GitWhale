@@ -1,5 +1,5 @@
 import { atom, useAtom } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { GetAppState } from '../../../wailsjs/go/backend/App';
 import { backend } from '../../../wailsjs/go/models';
 
@@ -22,7 +22,9 @@ export const UseAppState = () => {
 		refreshAppState();
 	}, [state, setState]);
 
-	return { appState: state, refreshAppState };
+	return useMemo(() => {
+		return { appState: state, refreshAppState };
+	}, [state, refreshAppState]);
 };
 
 export function useAppStateAtoms() {

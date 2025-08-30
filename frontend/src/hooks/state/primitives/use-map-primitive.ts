@@ -31,9 +31,11 @@ export function useMapPrimitive<T>(atom: MappedWritableAtom<T>, mapKey: string):
 		setMapData(newMap);
 	}, [setMapData, mapKey]);
 
-	return {
-		value: keyedData, 
-		set: updateMapAtKey, 
-		kill: deleteKey
-	};
+	return useMemo(() => {
+		return {
+			value: keyedData,
+			set: updateMapAtKey,
+			kill: deleteKey,
+		};
+	}, [keyedData, updateMapAtKey, deleteKey]);
 }

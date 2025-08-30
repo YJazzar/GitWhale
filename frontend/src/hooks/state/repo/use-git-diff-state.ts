@@ -6,6 +6,7 @@ import { git_operations } from '../../../../wailsjs/go/models';
 import { useMapPrimitive } from '../primitives/use-map-primitive';
 import { FileTabsSessionKeyGenerator } from '../useFileTabsHandlers';
 import { useFileManagerStatesCleanup } from '../useFileTabsState';
+import { useCallback, useMemo } from 'react';
 
 // Store diff sessions per repository path
 const diffSessionsAtom = atom<Map<string, git_operations.DiffSession[]>>(new Map());
@@ -25,67 +26,83 @@ export function getDiffState(repoPath: string) {
 
 	const { toast } = useToast();
 
-	const createSession = async (options: git_operations.DiffOptions) => {
-		try {
-			_isLoadingPrim.set(true);
+	const createSession = useCallback(
+		async (options: git_operations.DiffOptions) => {
+			try {
+				_isLoadingPrim.set(true);
 
-			const session = await StartDiffSession(options);
-			Logger.debug(`Received session: ${session.sessionId}`, 'RepoDiffView');
+				const session = await StartDiffSession(options);
+				Logger.debug(`Received session: ${session.sessionId}`, 'RepoDiffView');
 
-			if (!session.hasDiffData) {
+				if (!session.hasDiffData) {
+					toast({
+						variant: 'default',
+						title: 'No changes found',
+					});
+					return;
+				}
+
+				const newSessions = [...(_diffSessionsPrim.value ?? []), session];
+				_diffSessionsPrim.set(newSessions);
+				return session;
+			} catch (error) {
+				Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
+				Logger.error(`${JSON.stringify(error, null, 3)}`);
+
 				toast({
-					variant: 'default',
-					title: 'No changes found',
+					variant: 'destructive',
+					title: 'Failed to create diff session',
+					description: `${error}`,
 				});
-				return;
+
+				return undefined;
+			} finally {
+				_isLoadingPrim.set(false);
 			}
+		},
+		[_isLoadingPrim.set, toast, _diffSessionsPrim.set]
+	);
 
-			const newSessions = [...(_diffSessionsPrim.value ?? []), session];
-			_diffSessionsPrim.set(newSessions);
-			return session;
-		} catch (error) {
-			Logger.error(`Failed to create diff session: ${error}`, 'RepoDiffView');
-			Logger.error(`${JSON.stringify(error, null, 3)}`);
+	const closeSession = useCallback(
+		async (sessionId: string) => {
+			try {
+				await EndDiffSession(sessionId);
+				const newSessions = _diffSessionsPrim.value?.filter((s) => s.sessionId !== sessionId) ?? [];
+				_diffSessionsPrim.set(newSessions);
+			} catch (error) {
+				Logger.error(`Failed to close diff session: ${error}`, 'RepoDiffView');
+				throw error;
+			}
+		},
+		[_diffSessionsPrim.value, _diffSessionsPrim.set]
+	);
 
-			toast({
-				variant: 'destructive',
-				title: 'Failed to create diff session',
-				description: `${error}`,
-			});
+	return useMemo(() => {
+		return {
+			isLoading: _isLoadingPrim.value || false,
 
-			return undefined;
-		} finally {
-			_isLoadingPrim.set(false);
-		}
-	};
+			createSession,
+			closeSession,
 
-	const closeSession = async (sessionId: string) => {
-		try {
-			await EndDiffSession(sessionId);
-			const newSessions = _diffSessionsPrim.value?.filter((s) => s.sessionId !== sessionId) ?? [];
-			_diffSessionsPrim.set(newSessions);
-		} catch (error) {
-			Logger.error(`Failed to close diff session: ${error}`, 'RepoDiffView');
-			throw error;
-		}
-	};
+			// Get current sessions for this repo
+			sessionsData: _diffSessionsPrim.value ?? [],
 
-	return {
-		isLoading: _isLoadingPrim.value || false,
-
+			// Clear all diff state for this repo
+			disposeSessions: () => {
+				_diffSessionsPrim.kill();
+				_isLoadingPrim.kill();
+				diffStateFileTabs.cleanupFileManagerStates();
+			},
+		};
+	}, [
+		_isLoadingPrim.value,
 		createSession,
 		closeSession,
-
-		// Get current sessions for this repo
-		sessionsData: _diffSessionsPrim.value ?? [],
-
-		// Clear all diff state for this repo
-		disposeSessions: () => {
-			_diffSessionsPrim.kill();
-			_isLoadingPrim.kill();
-			diffStateFileTabs.cleanupFileManagerStates();
-		},
-	};
+		_diffSessionsPrim.value,
+		_diffSessionsPrim.kill,
+		_isLoadingPrim.kill,
+		diffStateFileTabs.cleanupFileManagerStates,
+	]);
 }
 
 export function useGitDiffStateAtoms() {

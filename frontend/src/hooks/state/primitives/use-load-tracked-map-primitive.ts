@@ -64,10 +64,12 @@ export function useLoadTrackedMapPrimitive<T>(
 		}
 	}, [updateAtom, loadOperation]);
 
-	return {
-		isLoading: keyedData?.isLoading ?? false,
-		value: keyedData?.data,
-		load: loadBlock,
-		kill: deleteKey,
-	};
+	return useMemo(() => {
+		return {
+			isLoading: keyedData?.isLoading ?? false,
+			value: keyedData?.data,
+			load: loadBlock,
+			kill: deleteKey,
+		};
+	}, [keyedData, loadBlock, deleteKey]);
 }

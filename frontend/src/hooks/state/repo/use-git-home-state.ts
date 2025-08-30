@@ -4,11 +4,8 @@ import {
 } from '@/hooks/state/primitives/use-load-tracked-map-primitive';
 import Logger from '@/utils/logger';
 import { atom } from 'jotai';
-import { useEffect, useState } from 'react';
-import {
-	GetWorktrees,
-	RunGitLog
-} from '../../../../wailsjs/go/backend/App';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { GetWorktrees, RunGitLog } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { useMapPrimitive } from '../primitives/use-map-primitive';
 
@@ -51,7 +48,7 @@ export function getHomeState(repoPath: string) {
 	const [needsToReload, setNeedsToReload] = useState(false);
 
 	// Refresh all home data
-	const refreshHomeData = async () => {
+	const refreshHomeData = useCallback(async () => {
 		if (!needsToReload) {
 			return;
 		}
@@ -63,7 +60,7 @@ export function getHomeState(repoPath: string) {
 
 		_hasInitialLoadedPrim.set(true);
 		setNeedsToReload(false);
-	};
+	}, [needsToReload, _worktreesPrim, _recentCommitsPrim, _hasInitialLoadedPrim, setNeedsToReload]);
 
 	// Auto-load data on first use
 	useEffect(() => {
@@ -81,31 +78,40 @@ export function getHomeState(repoPath: string) {
 
 	const isAnyLoading = _worktreesPrim.isLoading || _recentCommitsPrim.isLoading;
 
-	return {
-		// Data
-		worktrees: _worktreesPrim,
-		recentCommits: _recentCommitsPrim,
+	return useMemo(() => {
+		return {
+			// Data
+			worktrees: _worktreesPrim,
+			recentCommits: _recentCommitsPrim,
+			isWorktreeRepo,
+
+			// Loading states
+			isAnyLoading,
+
+			// Actions
+			refreshHomeData: () => setNeedsToReload(true),
+
+			// Cleanup
+			disposeHomeState: () => {
+				_worktreesPrim.kill();
+				_recentCommitsPrim.kill();
+				_hasInitialLoadedPrim.kill();
+			},
+		};
+	}, [
+		_worktreesPrim,
+		_recentCommitsPrim,
 		isWorktreeRepo,
-
-		// Loading states
 		isAnyLoading,
-
-		// Actions
-		refreshHomeData: () => setNeedsToReload(true),
-
-		// Cleanup
-		disposeHomeState: () => {
-			_worktreesPrim.kill();
-			_recentCommitsPrim.kill();
-			_hasInitialLoadedPrim.kill();
-		},
-	};
+		setNeedsToReload,
+		_hasInitialLoadedPrim,
+	]);
 }
 
-export function useGitHomeStateAtoms() { 
+export function useGitHomeStateAtoms() {
 	return {
-		worktreesAtom, 
+		worktreesAtom,
 		recentCommitsAtom,
-		hasInitialLoadedAtom
-	}
+		hasInitialLoadedAtom,
+	};
 }

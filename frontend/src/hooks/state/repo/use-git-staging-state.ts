@@ -4,7 +4,7 @@ import {
 } from '@/hooks/state/primitives/use-load-tracked-map-primitive';
 import Logger from '@/utils/logger';
 import { atom } from 'jotai';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	GetGitStatus,
 	StageFile,
@@ -38,7 +38,7 @@ export function getStagingState(repoPath: string) {
 	const [needsToReload, setNeedsToReload] = useState(false);
 
 	// Refresh git status
-	const refreshGitStatus = async () => {
+	const refreshGitStatus = useCallback(async () => {
 		if (!needsToReload) {
 			return;
 		}
@@ -46,7 +46,7 @@ export function getStagingState(repoPath: string) {
 		_gitStatusPrim.load();
 		_hasInitialLoadedPrim.set(true);
 		setNeedsToReload(false);
-	};
+	}, [needsToReload, setNeedsToReload, _gitStatusPrim.load, _hasInitialLoadedPrim.set]);
 
 	// Auto-load data on first use
 	useEffect(() => {
@@ -60,29 +60,35 @@ export function getStagingState(repoPath: string) {
 	}, []);
 
 	// Staging operations
-	const stageFile = async (filePath: string) => {
-		try {
-			await StageFile(repoPath, filePath);
-			setNeedsToReload(true); // Refresh status after staging
-			Logger.info(`Successfully staged file: ${filePath}`, 'StagingState');
-		} catch (error) {
-			Logger.error(`Failed to stage file ${filePath}: ${error}`, 'StagingState');
-			throw error;
-		}
-	};
+	const stageFile = useCallback(
+		async (filePath: string) => {
+			try {
+				await StageFile(repoPath, filePath);
+				setNeedsToReload(true); // Refresh status after staging
+				Logger.info(`Successfully staged file: ${filePath}`, 'StagingState');
+			} catch (error) {
+				Logger.error(`Failed to stage file ${filePath}: ${error}`, 'StagingState');
+				throw error;
+			}
+		},
+		[repoPath, setNeedsToReload]
+	);
 
-	const unstageFile = async (filePath: string) => {
-		try {
-			await UnstageFile(repoPath, filePath);
-			setNeedsToReload(true); // Refresh status after unstaging
-			Logger.info(`Successfully unstaged file: ${filePath}`, 'StagingState');
-		} catch (error) {
-			Logger.error(`Failed to unstage file ${filePath}: ${error}`, 'StagingState');
-			throw error;
-		}
-	};
+	const unstageFile = useCallback(
+		async (filePath: string) => {
+			try {
+				await UnstageFile(repoPath, filePath);
+				setNeedsToReload(true); // Refresh status after unstaging
+				Logger.info(`Successfully unstaged file: ${filePath}`, 'StagingState');
+			} catch (error) {
+				Logger.error(`Failed to unstage file ${filePath}: ${error}`, 'StagingState');
+				throw error;
+			}
+		},
+		[repoPath, setNeedsToReload]
+	);
 
-	const stageAllFiles = async () => {
+	const stageAllFiles = useCallback(async () => {
 		try {
 			await StageAllFiles(repoPath);
 			setNeedsToReload(true); // Refresh status after staging all
@@ -91,9 +97,9 @@ export function getStagingState(repoPath: string) {
 			Logger.error(`Failed to stage all files: ${error}`, 'StagingState');
 			throw error;
 		}
-	};
+	}, [repoPath, setNeedsToReload]);
 
-	const unstageAllFiles = async () => {
+	const unstageAllFiles = useCallback(async () => {
 		try {
 			await UnstageAllFiles(repoPath);
 			setNeedsToReload(true); // Refresh status after unstaging all
@@ -102,46 +108,62 @@ export function getStagingState(repoPath: string) {
 			Logger.error(`Failed to unstage all files: ${error}`, 'StagingState');
 			throw error;
 		}
-	};
+	}, [repoPath, setNeedsToReload]);
 
-	const commitChanges = async (message: string) => {
-		try {
-			await CommitChanges(repoPath, message);
-			setNeedsToReload(true); // Refresh status after commit
-			Logger.info(`Successfully committed changes: ${message}`, 'StagingState');
-		} catch (error) {
-			Logger.error(`Failed to commit changes: ${error}`, 'StagingState');
-			throw error;
-		}
-	};
+	const commitChanges = useCallback(
+		async (message: string) => {
+			try {
+				await CommitChanges(repoPath, message);
+				setNeedsToReload(true); // Refresh status after commit
+				Logger.info(`Successfully committed changes: ${message}`, 'StagingState');
+			} catch (error) {
+				Logger.error(`Failed to commit changes: ${error}`, 'StagingState');
+				throw error;
+			}
+		},
+		[repoPath, setNeedsToReload]
+	);
 
 	const isLoading = _gitStatusPrim.isLoading;
 	const hasChanges = _gitStatusPrim.value?.hasChanges ?? false;
 	const hasStagedChanges = (_gitStatusPrim.value?.stagedFiles?.length ?? 0) > 0;
 
-	return {
-		// Data
-		gitStatus: _gitStatusPrim,
+	return useMemo(() => {
+		return {
+			gitStatus: _gitStatusPrim,
+			hasChanges,
+			hasStagedChanges,
+
+			// Loading states
+			isLoading,
+
+			// Actions
+			stageFile,
+			unstageFile,
+			stageAllFiles,
+			unstageAllFiles,
+			commitChanges,
+			refreshGitStatus: () => setNeedsToReload(true),
+
+			// Cleanup
+			disposeStagingState: () => {
+				_gitStatusPrim.kill();
+				_hasInitialLoadedPrim.kill();
+			},
+		};
+	}, [
+		_gitStatusPrim,
 		hasChanges,
 		hasStagedChanges,
-
-		// Loading states
 		isLoading,
-
-		// Actions
 		stageFile,
 		unstageFile,
 		stageAllFiles,
 		unstageAllFiles,
 		commitChanges,
-		refreshGitStatus: () => setNeedsToReload(true),
-
-		// Cleanup
-		disposeStagingState: () => {
-			_gitStatusPrim.kill();
-			_hasInitialLoadedPrim.kill();
-		},
-	};
+		setNeedsToReload,
+		_hasInitialLoadedPrim,
+	]);
 }
 
 export function useGitStagingStateAtoms() {

@@ -9,6 +9,7 @@ import {
 } from '../../../../wailsjs/go/backend/App';
 import { command_utils } from '../../../../wailsjs/go/models';
 import { EventsOff, EventsOn, EventsEmit } from '../../../../wailsjs/runtime/runtime';
+import { useCallback, useMemo } from 'react';
 
 // Map color schemes to xterm themes
 export function getXTermTheme(colorScheme: string) {
@@ -59,7 +60,7 @@ const xTermRefMap = new Map<
 >();
 
 export function getTerminalState(repoPath: string) {
-	const createTerminal = (terminalSettings?: command_utils.TerminalSettings) => {
+	const createTerminal = useCallback((terminalSettings?: command_utils.TerminalSettings) => {
 		const fitAddon = new FitAddon();
 
 		// Use provided terminal settings or defaults
@@ -102,9 +103,9 @@ export function getTerminalState(repoPath: string) {
 		newTerminal.open(element);
 
 		return { terminal: newTerminal, fitAddon, element, isDisposed: false };
-	};
+	}, []);
 
-	const disposeTerminal = () => {
+	const disposeTerminal = useCallback(() => {
 		const terminalData = xTermRefMap.get(repoPath);
 		if (!terminalData || terminalData.isDisposed) {
 			Logger.debug(
@@ -135,15 +136,17 @@ export function getTerminalState(repoPath: string) {
 
 		// Remove from map to free memory
 		xTermRefMap.delete(repoPath);
-	};
+	}, []);
 
-	const getTerminalState = () => {
+	const getTerminalState = useCallback(() => {
 		const terminalData = xTermRefMap.get(repoPath);
 		// Return undefined if terminal is disposed to prevent usage of stale references
 		return terminalData && !terminalData.isDisposed ? terminalData : undefined;
-	};
+	}, []);
 
-	return { createTerminal, disposeTerminal, getTerminalState };
+	return useMemo(() => {
+		return { createTerminal, disposeTerminal, getTerminalState };
+	}, [createTerminal, disposeTerminal, getTerminalState]);
 }
 
 async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
@@ -178,7 +181,7 @@ async function setupTerminalEvents(repoPath: string, terminal: Terminal) {
 		if (!terminalData || terminalData.isDisposed) {
 			return;
 		}
-		Logger.trace(`Terminal input data: ${event}`, 'use-repo-state');
+		Logger.trace(`Terminal input data: ${event}`, 'use-repo-terminal');
 		EventsEmit(`onTerminalData://${repoPath}`, event);
 	});
 

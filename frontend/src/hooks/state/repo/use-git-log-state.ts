@@ -1,6 +1,6 @@
 import Logger from '@/utils/logger';
 import { atom } from 'jotai';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GetAllRefs, GitFetch, RunGitLog } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { useMapPrimitive } from '../primitives/use-map-primitive';
@@ -77,59 +77,72 @@ export function getLogState(repoPath: string) {
 	}, [_gitLogDataPrim.value]);
 
 	// Function to get child commits for a given commit hash
-	const getChildCommits = (commitHash: string): string[] => {
-		return childCommitCache.get(commitHash) || [];
-	};
+	const getChildCommits = useCallback(
+		(commitHash: string): string[] => {
+			return childCommitCache.get(commitHash) || [];
+		},
+		[childCommitCache]
+	);
 
-	const addToSelectedCommitsList = (commitHashToSelect: string, isSecondarySelect: boolean) => {
-		if (!isSecondarySelect) {
-			// we're in single-select mode right now, so we can clear out all other things selected
-			_selectedCommitsPrim.set([commitHashToSelect]);
-			return;
-		}
+	const addToSelectedCommitsList = useCallback(
+		(commitHashToSelect: string, isSecondarySelect: boolean) => {
+			if (!isSecondarySelect) {
+				// we're in single-select mode right now, so we can clear out all other things selected
+				_selectedCommitsPrim.set([commitHashToSelect]);
+				return;
+			}
 
-		// Otherwise, if we have either one, or no commit selected, we can add it to the list of selected commits
-		const numOfSelectedCommits = _selectedCommitsPrim.value?.length ?? 0;
-		if (numOfSelectedCommits <= 1) {
-			_selectedCommitsPrim.set([...(_selectedCommitsPrim.value ?? []), commitHashToSelect]);
-			return;
-		}
+			// Otherwise, if we have either one, or no commit selected, we can add it to the list of selected commits
+			const numOfSelectedCommits = _selectedCommitsPrim.value?.length ?? 0;
+			if (numOfSelectedCommits <= 1) {
+				_selectedCommitsPrim.set([...(_selectedCommitsPrim.value ?? []), commitHashToSelect]);
+				return;
+			}
 
-		// Last case: enforce rule that only 2 commits can be selected at a time
-		const lastSelectedCommit = (_selectedCommitsPrim.value ?? [])[numOfSelectedCommits - 1];
-		_selectedCommitsPrim.set([lastSelectedCommit, commitHashToSelect]);
-	};
+			// Last case: enforce rule that only 2 commits can be selected at a time
+			const lastSelectedCommit = (_selectedCommitsPrim.value ?? [])[numOfSelectedCommits - 1];
+			_selectedCommitsPrim.set([lastSelectedCommit, commitHashToSelect]);
+		},
+		[_selectedCommitsPrim.value, _selectedCommitsPrim.set]
+	);
 
-	const removeFromSelectedCommitsList = (commitHash: string) => {
-		const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash);
-		if (previousIndex === -1) {
-			return;
-		}
+	const removeFromSelectedCommitsList = useCallback(
+		(commitHash: string) => {
+			const previousIndex = currentSelectedCommits.findIndex((cH) => cH === commitHash);
+			if (previousIndex === -1) {
+				return;
+			}
 
-		let filteredSelectedCommits = [...currentSelectedCommits];
-		filteredSelectedCommits.splice(previousIndex, 1);
-		_selectedCommitsPrim.set(filteredSelectedCommits);
-	};
+			let filteredSelectedCommits = [...currentSelectedCommits];
+			filteredSelectedCommits.splice(previousIndex, 1);
+			_selectedCommitsPrim.set(filteredSelectedCommits);
+		},
+		[currentSelectedCommits, _selectedCommitsPrim.set]
+	);
 
 	// Commit details pane state management
 	const shouldShowCommitDetailsPane =
 		_commitDetailsPaneStatePrim.value ?? appState?.appConfig?.settings?.ui?.autoShowCommitDetails;
 
-	const dismissCommitDetailsPane = () => {
+	const dismissCommitDetailsPane = useCallback(() => {
 		_commitDetailsPaneStatePrim.set(false);
-	};
+	}, [_commitDetailsPaneStatePrim.set]);
 
-	const showCommitDetailsPane = () => {
+	const showCommitDetailsPane = useCallback(() => {
 		_commitDetailsPaneStatePrim.set(true);
-	};
+	}, [_commitDetailsPaneStatePrim.set]);
 
-	const currentLogOptions = _gitLogOptionsPrim.value || {
-		author: undefined,
-		commitsToLoad: appState?.appConfig?.settings?.git?.commitsToLoad,
-		fromRef: undefined,
-		searchQuery: undefined,
-		toRef: undefined,
-	};
+	const currentLogOptions = useMemo(() => {
+		return (
+			_gitLogOptionsPrim.value || {
+				author: undefined,
+				commitsToLoad: appState?.appConfig?.settings?.git?.commitsToLoad,
+				fromRef: undefined,
+				searchQuery: undefined,
+				toRef: undefined,
+			}
+		);
+	}, [_gitLogOptionsPrim.value, appState]);
 
 	const refreshLogsInner = async (options: git_operations.GitLogOptions, append: boolean = false) => {
 		const newLogs = await RunGitLog(repoPath, options);
@@ -162,12 +175,12 @@ export function getLogState(repoPath: string) {
 		_hasMoreCommitsPrim.set(newLogs.length >= requestedCount);
 	};
 
-	const loadAllRefsInner = async () => {
+	const loadAllRefsInner = useCallback(async () => {
 		const newRefs = await GetAllRefs(repoPath);
 		_gitRefsPrim.set(newRefs);
-	};
+	}, [_gitRefsPrim.set]);
 
-	const refreshLogAndRefs = async () => {
+	const refreshLogAndRefs = useCallback(async () => {
 		if (_isLoadingPrim.value) {
 			return;
 		}
@@ -183,9 +196,9 @@ export function getLogState(repoPath: string) {
 			_isLoadingPrim.set(false);
 			setNeedsToReload(false);
 		}
-	};
+	}, [_isLoadingPrim.value, _isLoadingPrim.set, _hasMoreCommitsPrim.set, setNeedsToReload]);
 
-	const loadMoreCommits = async () => {
+	const loadMoreCommits = useCallback(async () => {
 		// Prevent multiple simultaneous requests
 		const prevLogs = _gitLogDataPrim.value;
 		const loadedCommitSet = _gitLogCommitSetPrim.value;
@@ -214,9 +227,17 @@ export function getLogState(repoPath: string) {
 		} finally {
 			_isLoadingMorePrim.set(false);
 		}
-	};
+	}, [
+		currentLogOptions,
+		_gitLogDataPrim.value,
+		_gitLogCommitSetPrim.value,
+		_isLoadingMorePrim.value,
+		_isLoadingPrim.value,
+		_hasMoreCommitsPrim.value,
+		_isLoadingMorePrim.set,
+	]);
 
-	const refetchRepo = async () => {
+	const refetchRepo = useCallback(async () => {
 		try {
 			_isLoadingPrim.set(true);
 			await GitFetch(repoPath);
@@ -226,7 +247,7 @@ export function getLogState(repoPath: string) {
 		} finally {
 			_isLoadingPrim.set(false);
 		}
-	};
+	}, [_isLoadingPrim.set, loadAllRefsInner, refreshLogsInner, currentLogOptions]);
 
 	useEffect(() => {
 		if (needsToReload) {
@@ -234,64 +255,84 @@ export function getLogState(repoPath: string) {
 		}
 	}, [needsToReload]);
 
-	return {
-		isLoading: _isLoadingPrim.value || false,
-		isLoadingMore: _isLoadingMorePrim.value || false,
-		hasMoreCommits: _hasMoreCommitsPrim.value ?? true,
+	return useMemo(() => {
+		return {
+			isLoading: _isLoadingPrim.value || false,
+			isLoadingMore: _isLoadingMorePrim.value || false,
+			hasMoreCommits: _hasMoreCommitsPrim.value ?? true,
 
-		// Get git log data for this repo
-		logs: _gitLogDataPrim.value,
+			// Get git log data for this repo
+			logs: _gitLogDataPrim.value,
 
-		// All the refs that git is tracking for this repo
-		refs: _gitRefsPrim.value,
+			// All the refs that git is tracking for this repo
+			refs: _gitRefsPrim.value,
 
-		refreshLogAndRefs: () => {
-			setNeedsToReload(true);
-		},
+			refreshLogAndRefs: () => {
+				setNeedsToReload(true);
+			},
 
-		refreshRefs: () => {
-			loadAllRefsInner();
-		},
+			refreshRefs: loadAllRefsInner,
+			loadMoreCommits,
 
+			refetchRepo,
+
+			// Get selected commit for this repo
+			selectedCommits: {
+				currentSelectedCommits,
+				addToSelectedCommitsList,
+				removeFromSelectedCommitsList,
+			},
+
+			// Commit details pane state
+			commitDetailsPane: {
+				shouldShow: shouldShowCommitDetailsPane,
+				show: showCommitDetailsPane,
+				dismiss: dismissCommitDetailsPane,
+			},
+
+			// Get log options for this repo
+			options: {
+				get: () => currentLogOptions,
+				set: _gitLogOptionsPrim.set,
+			},
+
+			// Get child commits for a given commit hash (for navigation)
+			getChildCommits,
+
+			// Clear all log state for this repo
+			disposeLogState: () => {
+				_isLoadingPrim.kill();
+				_gitLogDataPrim.kill();
+				_selectedCommitsPrim.kill();
+				_gitRefsPrim.kill();
+				_gitLogOptionsPrim.kill();
+				_commitDetailsPaneStatePrim.kill();
+				_isLoadingMorePrim.kill();
+				_hasMoreCommitsPrim.kill();
+			},
+		};
+	}, [
+		setNeedsToReload,
+		loadAllRefsInner,
 		loadMoreCommits,
-
 		refetchRepo,
-
-		// Get selected commit for this repo
-		selectedCommits: {
-			currentSelectedCommits,
-			addToSelectedCommitsList,
-			removeFromSelectedCommitsList,
-		},
-
-		// Commit details pane state
-		commitDetailsPane: {
-			shouldShow: shouldShowCommitDetailsPane,
-			show: showCommitDetailsPane,
-			dismiss: dismissCommitDetailsPane,
-		},
-
-		// Get log options for this repo
-		options: {
-			get: () => currentLogOptions,
-			set: _gitLogOptionsPrim.set,
-		},
-
-		// Get child commits for a given commit hash (for navigation)
+		currentSelectedCommits,
+		addToSelectedCommitsList,
+		removeFromSelectedCommitsList,
+		shouldShowCommitDetailsPane,
+		showCommitDetailsPane,
+		dismissCommitDetailsPane,
+		currentLogOptions,
 		getChildCommits,
-
-		// Clear all log state for this repo
-		disposeLogState: () => {
-			_isLoadingPrim.kill();
-			_gitLogDataPrim.kill();
-			_selectedCommitsPrim.kill();
-			_gitRefsPrim.kill();
-			_gitLogOptionsPrim.kill();
-			_commitDetailsPaneStatePrim.kill();
-			_isLoadingMorePrim.kill();
-			_hasMoreCommitsPrim.kill();
-		},
-	};
+		_isLoadingPrim,
+		_gitLogDataPrim,
+		_selectedCommitsPrim,
+		_gitRefsPrim,
+		_gitLogOptionsPrim,
+		_commitDetailsPaneStatePrim,
+		_isLoadingMorePrim,
+		_hasMoreCommitsPrim,
+	]);
 }
 
 export function useGitLogStateAtoms() {
@@ -303,7 +344,7 @@ export function useGitLogStateAtoms() {
 		gitLogOptionsAtom,
 		gitRefsAtom,
 		commitDetailsPaneStateAtom,
-		isLoadingMoreCommitsAtom, 
+		isLoadingMoreCommitsAtom,
 		hasMoreCommitsAtom,
 	};
 }
