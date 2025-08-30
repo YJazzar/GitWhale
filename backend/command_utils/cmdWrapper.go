@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
+func RunCommandAndLogErr(command *exec.Cmd) (string, error, int) {
 	// Log the command being executed with full details
 	logger.Log.Debug("Executing git command: %s", strings.Join(command.Args, " "))
 	logger.Log.Trace("\t- Command working directory: %s", command.Dir)
@@ -61,5 +61,5 @@ func RunCommandAndLogErr(command *exec.Cmd) (string, error) {
 	}
 	LogCommandEnd(commandID, output, errorOutput, exitCode)
 
-	return output, err
+	return output, err, exitCode
 }

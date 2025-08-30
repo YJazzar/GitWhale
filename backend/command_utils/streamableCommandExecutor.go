@@ -39,6 +39,10 @@ type StreamedCommandEvent struct {
 var activeCommands = make(map[string]*exec.Cmd)
 var activeCommandsMutex sync.RWMutex
 
+// TODO PROMPT: Modify the file so that streamable commands also call into the LogCommandStart() and LogCommandEnd() functions.
+// TO handle the streamed output, create a new function in the same file as LogCommandStart() and LogCommandEnd() called LogCommandAppendMoreOutput()
+// so that the streamed output is captured there as well
+
 // StartRunningAndStreamCommand asynchronously executes a command and streams output
 func StartRunningAndStreamCommand(ctx context.Context, commandString, workingDir, broadcastToTopic string) {
 	go func() {

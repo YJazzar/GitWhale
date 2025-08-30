@@ -87,7 +87,7 @@ func SetupGitDirDiffHelperScript() error {
 
 	// Check if already configured correctly
 	checkCmd := exec.Command("git", "config", "--global", configKey)
-	if output, err := command_utils.RunCommandAndLogErr(checkCmd); err == nil {
+	if output, err, exitCode := command_utils.RunCommandAndLogErr(checkCmd); err == nil || exitCode != 0 {
 		currentValue := strings.TrimSpace(string(output))
 		if currentValue == configValue {
 			logger.Log.Debug("Git difftool already configured correctly")
@@ -97,7 +97,7 @@ func SetupGitDirDiffHelperScript() error {
 
 	// Set the configuration
 	configCmd := exec.Command("git", "config", "--global", configKey, configValue)
-	if _, err := command_utils.RunCommandAndLogErr(configCmd); err != nil {
+	if _, err, exitCode := command_utils.RunCommandAndLogErr(configCmd); err != nil || exitCode != 0 {
 		return fmt.Errorf("failed to configure git difftool: %v", err)
 	}
 
@@ -225,7 +225,7 @@ func validateDiffInputs(options DiffOptions) error {
 	// TODO: only need to check then when opening a repo. Move there please
 	cmd := exec.Command("git", "rev-parse", "--git-dir")
 	cmd.Dir = options.RepoPath
-	if _, err := command_utils.RunCommandAndLogErr(cmd); err != nil {
+	if _, err, exitCode := command_utils.RunCommandAndLogErr(cmd); err != nil || exitCode != 0 {
 		return fmt.Errorf("not a valid git repository: %s", options.RepoPath)
 	}
 
@@ -254,8 +254,8 @@ func validateGitRef(repoPath, ref string) error {
 
 	cmd := exec.Command("git", "rev-parse", "--verify", ref+"^{commit}")
 	cmd.Dir = repoPath
-	output, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
+	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil || exitCode != 0 {
 		gitError := strings.TrimSpace(string(output))
 		if gitError != "" {
 			return fmt.Errorf("invalid git reference '%s': %s", ref, gitError)
@@ -322,7 +322,7 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) (bo
 	logger.Log.Debug("Command timeout: 60 seconds")
 
 	startTime := time.Now()
-	outputStr, err := command_utils.RunCommandAndLogErr(cmd)
+	outputStr, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
 	duration := time.Since(startTime)
 
 	logger.Log.Debug("Git difftool execution completed in %v", duration)
@@ -339,7 +339,7 @@ func executeDiffScript(repoPath, fromRef, toRef, leftDest, rightDest string) (bo
 		return false, nil
 	}
 
-	if err != nil {
+	if err != nil || exitCode != 0 {
 		logger.Log.Error("Git difftool command failed with error: %v", err)
 
 		// Check for exit error to get more details

@@ -46,8 +46,8 @@ func GetGitStatus(repoPath string) (*GitStatus, error) {
 
 	cmd := exec.Command("git", "status", "--porcelain=v1", "-z")
 	cmd.Dir = repoPath
-	output, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
+	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil || exitCode != 0 {
 		return nil, fmt.Errorf("failed to get git status: %v", err)
 	}
 
@@ -125,8 +125,8 @@ func StageFile(repoPath, filePath string) error {
 
 	cmd := exec.Command("git", "add", filePath)
 	cmd.Dir = repoPath
-	_, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
+	_, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil || exitCode != 0 {
 		return fmt.Errorf("failed to stage file %s: %v", filePath, err)
 	}
 
@@ -140,8 +140,8 @@ func UnstageFile(repoPath, filePath string) error {
 
 	cmd := exec.Command("git", "reset", "HEAD", filePath)
 	cmd.Dir = repoPath
-	_, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
+	_, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil || exitCode != 0 {
 		return fmt.Errorf("failed to unstage file %s: %v", filePath, err)
 	}
 
@@ -155,8 +155,8 @@ func StageAllFiles(repoPath string) error {
 
 	cmd := exec.Command("git", "add", ".")
 	cmd.Dir = repoPath
-	_, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
+	_, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil || exitCode != 0 {
 		return fmt.Errorf("failed to stage all files: %v", err)
 	}
 
@@ -170,8 +170,8 @@ func UnstageAllFiles(repoPath string) error {
 
 	cmd := exec.Command("git", "reset", "HEAD")
 	cmd.Dir = repoPath
-	_, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
+	_, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil || exitCode != 0 {
 		return fmt.Errorf("failed to unstage all files: %v", err)
 	}
 
@@ -189,8 +189,8 @@ func CommitChanges(repoPath, message string) error {
 
 	cmd := exec.Command("git", "commit", "-m", message)
 	cmd.Dir = repoPath
-	output, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil {
+	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil || exitCode != 0 {
 		return fmt.Errorf("failed to commit changes: %v", err)
 	}
 
@@ -215,10 +215,10 @@ func GetFileContentFromRef(repoPath, filePath, ref string) (string, error) {
 	}
 
 	cmd.Dir = repoPath
-	output, err := command_utils.RunCommandAndLogErr(cmd)
+	output, err, exitCode := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil {
 		// If file doesn't exist in this ref, return empty content
-		if strings.Contains(output, "does not exist") || strings.Contains(output, "Path '"+filePath+"' does not exist") {
+		if exitCode == 128 || strings.Contains(output, "does not exist") || strings.Contains(output, "Path '"+filePath+"' does not exist") {
 			logger.Log.Debug("File %s does not exist in ref %s", filePath, ref)
 			return output, nil
 		}
