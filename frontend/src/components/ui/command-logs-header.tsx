@@ -35,7 +35,7 @@ export function CommandLogsHeader() {
 				</div>
 				<div className="flex items-center w-fit gap-1 px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md border border-green-500/20">
 					<div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-					<span className="text-xs font-medium">Auto-refresh 2.5s</span>
+					<span className="text-xs font-medium">Auto-refresh 1s</span>
 					{lastRefresh && (
 						<span className="text-xs text-muted-foreground ml-1 hidden md:inline">
 							(last refreshed {lastRefresh.toLocaleTimeString()})

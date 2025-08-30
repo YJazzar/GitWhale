@@ -56,10 +56,10 @@ export const useCommandLogsState = () => {
 		// Initial load
 		refreshCommands();
 
-		// Set up polling every 2.5 seconds
+		// Set up polling every 1 seconds
 		refreshIntervalRef.current = setInterval(() => {
 			refreshCommands();
-		}, 2500);
+		}, 1000);
 
 		// Cleanup on unmount
 		return () => {
