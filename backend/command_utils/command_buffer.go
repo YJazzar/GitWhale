@@ -16,6 +16,7 @@ const (
 	CommandRunning CommandStatus = iota
 	CommandSuccess
 	CommandFailed
+	CommandCancelled
 )
 
 func (s CommandStatus) String() string {
@@ -138,7 +139,7 @@ func (cb *CommandBuffer) LogCommandAppendMoreOutput(commandID string, output str
 }
 
 // LogCommandEndStreamableCommand finalizes a streamed command without overwriting output
-func (cb *CommandBuffer) LogCommandEndStreamableCommand(commandID string, exitCode int) {
+func (cb *CommandBuffer) LogCommandEndStreamableCommand(commandID string, exitCode int, wasCancelled bool) {
 	cb.mutex.Lock()
 	defer cb.mutex.Unlock()
 
@@ -152,6 +153,8 @@ func (cb *CommandBuffer) LogCommandEndStreamableCommand(commandID string, exitCo
 			status := CommandSuccess
 			if exitCode != 0 {
 				status = CommandFailed
+			} else if wasCancelled {
+				status = CommandCancelled
 			}
 
 			// Update only completion fields, preserve existing output
@@ -232,8 +235,8 @@ func LogCommandAppendMoreOutput(commandID string, output string, isErrorOutput b
 	commandBuffer.LogCommandAppendMoreOutput(commandID, output, isErrorOutput)
 }
 
-func LogCommandEndStreamableCommand(commandID string, exitCode int) {
-	commandBuffer.LogCommandEndStreamableCommand(commandID, exitCode)
+func LogCommandEndStreamableCommand(commandID string, exitCode int, wasCancelled bool) {
+	commandBuffer.LogCommandEndStreamableCommand(commandID, exitCode, wasCancelled)
 }
 
 func GetCachedCommandEntries() []CommandEntry {

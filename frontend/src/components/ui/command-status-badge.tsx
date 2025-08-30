@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle, Loader2, XCircle, CircleX } from 'lucide-react';
 
 interface CommandStatusBadgeProps {
 	status: number;
@@ -39,6 +39,16 @@ export function CommandStatusBadge({ status, size = 'default' }: CommandStatusBa
 				>
 					<XCircle className={`${iconSize} mr-0.5`} />
 					Fail
+				</Badge>
+			);
+		case 3: // CommandCancelled
+			return (
+				<Badge
+					variant="secondary"
+					className={`bg-amber-500/10 text-amber-600 border-amber-500/20 ${sizeClasses}`}
+				>
+					<CircleX className={`${iconSize} mr-0.5`} />
+					Cancel
 				</Badge>
 			);
 		default:

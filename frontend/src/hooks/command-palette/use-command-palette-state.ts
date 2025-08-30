@@ -8,7 +8,7 @@ import {
 import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo } from 'react';
 import { ExecuteShellCommand } from '../../../wailsjs/go/backend/App';
-import { EventsEmit, EventsOff, EventsOn } from '../../../wailsjs/runtime/runtime';
+import { EventsEmit, EventsOn } from '../../../wailsjs/runtime/runtime';
 import { useCommandRegistry } from './use-command-registry';
 
 // Atoms for command palette state
@@ -479,7 +479,7 @@ function useCommandPaletteTerminalCommandExecutor() {
 					exitCode: event.exitCode,
 				}));
 
-				reject(event.error ?? "No specific error was received from backend");
+				reject(event.error ?? 'No specific error was received from backend');
 				break;
 
 			case 'cancelled':
@@ -498,7 +498,7 @@ function useCommandPaletteTerminalCommandExecutor() {
 		if (_terminalCommandState.activeTopic && _terminalCommandState.status === 'started') {
 			// Send cancel event to the backend
 			EventsEmit(_terminalCommandState.activeTopic, 'cancel');
-			EventsOff(_terminalCommandState.activeTopic);
+			// EventsOff(_terminalCommandState.activeTopic);
 		}
 	}, [_terminalCommandState.activeTopic, _terminalCommandState.status]);
 

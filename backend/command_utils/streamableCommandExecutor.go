@@ -39,6 +39,10 @@ type StreamedCommandEvent struct {
 var activeCommands = make(map[string]*exec.Cmd)
 var activeCommandsMutex sync.RWMutex
 
+// cancelledCommands tracks which commands were explicitly cancelled
+var cancelledCommands = make(map[string]bool)
+var cancelledCommandsMutex sync.RWMutex
+
 // StartRunningAndStreamCommand asynchronously executes a command and streams output
 func StartRunningAndStreamCommand(ctx context.Context, commandString, workingDir, broadcastToTopic string) {
 	logger.Log.Debug("StartRunningAndStreamCommand called - command: %s, topic: %s", commandString, broadcastToTopic)
@@ -79,6 +83,11 @@ func cancelCommand(broadcastToTopic string) {
 	defer activeCommandsMutex.Unlock()
 
 	if cmd, exists := activeCommands[broadcastToTopic]; exists {
+		// Mark command as cancelled
+		cancelledCommandsMutex.Lock()
+		cancelledCommands[broadcastToTopic] = true
+		cancelledCommandsMutex.Unlock()
+
 		if cmd.Process != nil {
 			logger.Log.Debug("Cancelling command for topic: %s", broadcastToTopic)
 			err := cmd.Process.Kill()
@@ -158,6 +167,12 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 		// Calculate duration
 		duration := time.Since(startTime)
 
+		// Check if command was explicitly cancelled and clean it up from the map
+		cancelledCommandsMutex.RLock()
+		wasCancelled := cancelledCommands[broadcastToTopic]
+		delete(cancelledCommands, broadcastToTopic)
+		cancelledCommandsMutex.RUnlock()
+
 		// Clean up active command tracking
 		activeCommandsMutex.Lock()
 		delete(activeCommands, broadcastToTopic)
@@ -168,7 +183,11 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 		var exitCode int
 		var errorMsg string
 
-		if cmdErr != nil {
+		if wasCancelled {
+			finalState = StateCancelled
+			errorMsg = "Command was cancelled"
+			logger.Log.Debug("Command was cancelled: %s", strings.Join(command.Args, " "))
+		} else if cmdErr != nil {
 			if exitError, ok := cmdErr.(*exec.ExitError); ok {
 				exitCode = exitError.ExitCode()
 				finalState = StateError
@@ -185,7 +204,7 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 		}
 
 		// Finalize the streamed command (preserves accumulated output)
-		LogCommandEndStreamableCommand(commandID, exitCode)
+		LogCommandEndStreamableCommand(commandID, exitCode, wasCancelled)
 
 		// Emit completion event with timing information
 		emitEvent(ctx, broadcastToTopic, StreamedCommandEvent{
