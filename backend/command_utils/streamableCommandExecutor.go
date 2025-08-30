@@ -39,12 +39,10 @@ type StreamedCommandEvent struct {
 var activeCommands = make(map[string]*exec.Cmd)
 var activeCommandsMutex sync.RWMutex
 
-// TODO PROMPT: Modify the file so that streamable commands also call into the LogCommandStart() and LogCommandEnd() functions.
-// TO handle the streamed output, create a new function in the same file as LogCommandStart() and LogCommandEnd() called LogCommandAppendMoreOutput()
-// so that the streamed output is captured there as well
-
 // StartRunningAndStreamCommand asynchronously executes a command and streams output
 func StartRunningAndStreamCommand(ctx context.Context, commandString, workingDir, broadcastToTopic string) {
+	logger.Log.Debug("StartRunningAndStreamCommand called - command: %s, topic: %s", commandString, broadcastToTopic)
+
 	go func() {
 		err := streamOutput(ctx, commandString, workingDir, broadcastToTopic)
 		if err != nil {
@@ -107,6 +105,10 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 	logger.Log.Debug("Executing command: %s", strings.Join(command.Args, " "))
 	logger.Log.Trace("\t- Command working directory: %s", command.Dir)
 
+	// Start logging the command
+	commandID := LogCommandStart(commandArgs[0], commandArgs[1:], workingDir)
+	logger.Log.Debug("Started streaming command with ID: %s, topic: %s", commandID, broadcastToTopic)
+
 	// Record start time
 	startTime := time.Now()
 	HideWindowsConsole(command)
@@ -143,8 +145,8 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	go streamPipe(ctx, stdout, "stdout", broadcastToTopic, &wg)
-	go streamPipe(ctx, stderr, "stderr", broadcastToTopic, &wg)
+	go streamPipe(ctx, stdout, "stdout", broadcastToTopic, commandID, &wg)
+	go streamPipe(ctx, stderr, "stderr", broadcastToTopic, commandID, &wg)
 
 	// Wait for command to complete
 	go func() {
@@ -182,6 +184,9 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 			logger.Log.Debug("Command completed successfully: %s", strings.Join(command.Args, " "))
 		}
 
+		// Finalize the streamed command (preserves accumulated output)
+		LogCommandEndStreamableCommand(commandID, exitCode)
+
 		// Emit completion event with timing information
 		emitEvent(ctx, broadcastToTopic, StreamedCommandEvent{
 			State:     finalState,
@@ -198,18 +203,24 @@ func streamOutput(ctx context.Context, commandString, workingDir, broadcastToTop
 }
 
 // streamPipe reads from a pipe and emits output events
-func streamPipe(ctx context.Context, pipe io.ReadCloser, pipeType, broadcastToTopic string, wg *sync.WaitGroup) {
+func streamPipe(ctx context.Context, pipe io.ReadCloser, pipeType, broadcastToTopic, commandID string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer pipe.Close()
 
+	isErrorOutput := pipeType == "stderr"
 	scanner := bufio.NewScanner(pipe)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line != "" {
-			output := line
+			output := line + "\n" // Add newline to preserve line breaks in the logged output
+
+			// Append output to command log
+			LogCommandAppendMoreOutput(commandID, output, isErrorOutput)
+
+			// Emit event for real-time streaming (without the added newline for display)
 			emitEvent(ctx, broadcastToTopic, StreamedCommandEvent{
 				State:     StateOutput,
-				Output:    output,
+				Output:    line,
 				Timestamp: time.Now(),
 			})
 		}

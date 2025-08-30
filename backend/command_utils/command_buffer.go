@@ -119,6 +119,51 @@ func (cb *CommandBuffer) LogCommandEnd(commandID string, output string, errorOut
 	}
 }
 
+// LogCommandAppendMoreOutput appends additional output to an existing command entry
+func (cb *CommandBuffer) LogCommandAppendMoreOutput(commandID string, output string, isErrorOutput bool) {
+	cb.mutex.Lock()
+	defer cb.mutex.Unlock()
+
+	// Find the command entry
+	for i, entry := range cb.entries {
+		if entry.ID == commandID {
+			if isErrorOutput {
+				cb.entries[i].ErrorOutput += output
+			} else {
+				cb.entries[i].Output += output
+			}
+			break
+		}
+	}
+}
+
+// LogCommandEndStreamableCommand finalizes a streamed command without overwriting output
+func (cb *CommandBuffer) LogCommandEndStreamableCommand(commandID string, exitCode int) {
+	cb.mutex.Lock()
+	defer cb.mutex.Unlock()
+
+	// Find the command entry
+	for i, entry := range cb.entries {
+		if entry.ID == commandID {
+			endTime := time.Now()
+			duration := endTime.Sub(entry.StartTime)
+
+			// Determine status based on exit code
+			status := CommandSuccess
+			if exitCode != 0 {
+				status = CommandFailed
+			}
+
+			// Update only completion fields, preserve existing output
+			cb.entries[i].EndTime = &endTime
+			cb.entries[i].ExitCode = &exitCode
+			cb.entries[i].Status = status
+			cb.entries[i].Duration = duration
+			break
+		}
+	}
+}
+
 // GetCachedCommandEntries returns all cached command entries
 func (cb *CommandBuffer) GetCachedCommandEntries() []CommandEntry {
 	cb.mutex.RLock()
@@ -181,6 +226,14 @@ func LogCommandStart(command string, args []string, workingDir string) string {
 
 func LogCommandEnd(commandID string, output string, errorOutput string, exitCode int) {
 	commandBuffer.LogCommandEnd(commandID, output, errorOutput, exitCode)
+}
+
+func LogCommandAppendMoreOutput(commandID string, output string, isErrorOutput bool) {
+	commandBuffer.LogCommandAppendMoreOutput(commandID, output, isErrorOutput)
+}
+
+func LogCommandEndStreamableCommand(commandID string, exitCode int) {
+	commandBuffer.LogCommandEndStreamableCommand(commandID, exitCode)
 }
 
 func GetCachedCommandEntries() []CommandEntry {
