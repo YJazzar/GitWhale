@@ -16,7 +16,7 @@ const recentCommitsAtom = createLoadTrackedMappedAtom<git_operations.GitLogCommi
 // Track if data has been initially loaded for each repo
 const hasInitialLoadedAtom = atom<Map<string, boolean>>(new Map());
 
-export function useRepoHomeState(repoPath: string) {
+export function useRepoHomeState(repoPath: string, isHomeRootComponent: boolean) {
 	const _worktreesPrim = useLoadTrackedMapPrimitive(worktreesAtom, repoPath, async () => {
 		try {
 			const worktrees = await GetWorktrees(repoPath);
@@ -46,7 +46,7 @@ export function useRepoHomeState(repoPath: string) {
 	// Track initial load state
 	const _hasInitialLoadedPrim = useMapPrimitive(hasInitialLoadedAtom, repoPath);
 	const [needsToReload, setNeedsToReload] = useState(false);
-
+	
 	// Refresh all home data
 	const refreshHomeData = useCallback(async () => {
 		if (!needsToReload) {
@@ -68,7 +68,7 @@ export function useRepoHomeState(repoPath: string) {
 	}, [needsToReload, refreshHomeData]);
 
 	useEffect(() => {
-		if (!_hasInitialLoadedPrim.value) {
+		if (!_hasInitialLoadedPrim.value && isHomeRootComponent) {
 			setNeedsToReload(true);
 		}
 	}, []);

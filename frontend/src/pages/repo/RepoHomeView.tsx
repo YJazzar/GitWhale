@@ -8,7 +8,7 @@ interface RepoHomeViewProps {
 }
 
 export default function RepoHomeView({ repoPath }: RepoHomeViewProps) {
-	const { refreshHomeData, isAnyLoading } = useRepoHomeState(repoPath);
+	const { refreshHomeData, isAnyLoading } = useRepoHomeState(repoPath, true);
 
 	if (!repoPath) {
 		return (

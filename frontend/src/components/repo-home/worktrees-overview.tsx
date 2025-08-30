@@ -33,7 +33,7 @@ function WorktreesSkeleton() {
 
 export function WorktreesOverview(props: WorktreesOverviewProps) {
 	const { repoPath } = props;
-	const { worktrees: worktreeData } = useRepoHomeState(repoPath);
+	const { worktrees: worktreeData } = useRepoHomeState(repoPath, false);
 	const rootNavigation = useNavigateRootFilTabs();
 
 	const isLoading = worktreeData.isLoading;

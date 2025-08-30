@@ -13,7 +13,7 @@ interface RecentCommitsProps {
 
 export function RecentCommits(props: RecentCommitsProps) {
 	const { repoPath } = props;
-	const { recentCommits } = useRepoHomeState(repoPath);
+	const { recentCommits } = useRepoHomeState(repoPath, false);
 	const handleViewFullCommit = useNavigateToCommit(repoPath);
 
 	const isLoading = recentCommits.isLoading;

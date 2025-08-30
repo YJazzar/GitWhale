@@ -11,7 +11,7 @@ export const useAllRepoStates = (repoPath: string) => {
 	const sidebar = useSidebarHandlers(SidebarSessionKeyGenerator.repoSidebar(repoPath));
 
 	const terminalState = useRepoTerminalState(repoPath);
-	const homeState = useRepoHomeState(repoPath);
+	const homeState = useRepoHomeState(repoPath, false);
 	const diffState = useRepoDiffState(repoPath);
 	const logState = useRepoLogState(repoPath);
 	const stagingState = getStagingState(repoPath);
