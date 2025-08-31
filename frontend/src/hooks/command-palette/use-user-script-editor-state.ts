@@ -5,6 +5,7 @@ import { useNavigateRootFilTabs } from '../navigation/use-navigate-root-file-tab
 import { createMappedAtom, useMapPrimitive } from '../state/primitives/use-map-primitive';
 import { useUserScriptCommandsState } from '../state/use-user-script-commands-state';
 import { UserDefinedCommandDefinition, UserDefinedParameter } from './use-user-script-command';
+import Logger from '@/utils/logger';
 
 // Zod validation schema
 const parameterSchema = z.object({
@@ -117,7 +118,7 @@ export function useUserScriptEditorState(sessionKey: string, originalCommandId: 
 			await saveUserScriptCommand(formData as UserDefinedCommandDefinition);
 			onCloseEditorPage();
 		} catch (error) {
-			console.error('Failed to save command:', error);
+			Logger.error(`Failed to save command: ${error}`);
 		} finally {
 			_isLoadingPrim.set('finishedLoading');
 		}
@@ -138,7 +139,7 @@ export function useUserScriptEditorState(sessionKey: string, originalCommandId: 
 			await deleteUserScriptCommand(originalCommandId);
 			onCloseEditorPage();
 		} catch (error) {
-			console.error('Failed to delete command:', error);
+			Logger.error(`Failed to delete command: ${error}`);
 		} finally {
 			_isLoadingPrim.set('finishedLoading');
 		}

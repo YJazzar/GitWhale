@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { ExecuteShellCommand } from '../../../wailsjs/go/backend/App';
 import { EventsEmit, EventsOn } from '../../../wailsjs/runtime/runtime';
 import { useCommandRegistry } from './use-command-registry';
+import Logger from '@/utils/logger';
 
 // Atoms for command palette state
 const isCommandPaletteOpenAtom = atom<'closed' | 'opened' | 'minimized'>('closed');
@@ -328,7 +329,7 @@ export function useCommandPaletteExecutor() {
 				_setIsCommandPaletteOpen('closed');
 			}
 		} catch (error) {
-			console.error('Command execution failed:', error);
+			Logger.error(`Command execution failed: ${error}`);
 			_setRunActionState('finishedExecutingWithError');
 		}
 	};
@@ -428,7 +429,7 @@ function useCommandPaletteTerminalCommandExecutor() {
 			// Execute the command
 			await ExecuteShellCommand(shellCommand, workingDir, topic);
 		} catch (error) {
-			console.error('Failed to execute shell command:', error);
+			Logger.error(`Failed to execute shell command: ${error}`);
 			_setTerminalCommandState({
 				status: 'error',
 				activeTopic: topic,

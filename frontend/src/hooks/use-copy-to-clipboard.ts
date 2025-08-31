@@ -1,3 +1,4 @@
+import Logger from '@/utils/logger';
 import { useState, useEffect } from 'react';
 
 export interface UseCopyToClipboardReturn {
@@ -14,7 +15,7 @@ export function useCopyToClipboard(resetDelay: number = 800): UseCopyToClipboard
 			await navigator.clipboard.writeText(text);
 			setCopySuccess(true);
 		} catch (err) {
-			console.error('Failed to copy text to clipboard:', err);
+			Logger.error(`Failed to copy text to clipboard: ${err}`);
 			throw err;
 		}
 	};

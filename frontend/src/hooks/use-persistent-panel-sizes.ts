@@ -1,3 +1,4 @@
+import Logger from '@/utils/logger';
 import { useState } from 'react';
 
 /**
@@ -21,7 +22,7 @@ export function usePersistentPanelSizes(storageKey: string, defaultSizes: number
 		try {
 			localStorage.setItem(storageKey, JSON.stringify(newSizes));
 		} catch (error) {
-			console.warn('Failed to save panel sizes to localStorage:', error);
+			Logger.warn(`Failed to save panel sizes to localStorage: ${error}`);
 		}
 	};
 

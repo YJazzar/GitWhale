@@ -2,6 +2,7 @@ import { atom, useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { ClearCommandLogs, GetCommandById, GetCommandLogs } from '../../../wailsjs/go/backend/App';
 import { command_utils } from '../../../wailsjs/go/models';
+import Logger from '@/utils/logger';
 
 // Atoms for command logs state
 const searchTermAtom = atom<string | undefined>(undefined);
@@ -37,7 +38,7 @@ export const useLoggedShellCommandsState = () => {
 		try {
 			await ClearCommandLogs();
 		} catch (error) {
-			console.error('Failed to clear command logs:', error);
+			Logger.error(`Failed to clear command logs: ${error}`);
 		}
 		await refreshCommands();
 	};
@@ -46,7 +47,7 @@ export const useLoggedShellCommandsState = () => {
 		try {
 			return await GetCommandById(id);
 		} catch (error) {
-			console.error('Failed to get command by ID:', error);
+			Logger.error(`Failed to get command by ID: ${error}`);
 			return null;
 		}
 	};

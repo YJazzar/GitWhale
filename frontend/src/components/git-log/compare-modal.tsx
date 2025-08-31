@@ -21,6 +21,7 @@ import {
 	DialogTitle,
 } from '../ui/dialog';
 import { LabeledRefSelectorInput } from './ref-selector-input';
+import Logger from '@/utils/logger';
 
 interface CompareModalProps {
 	repoPath: string;
@@ -65,7 +66,7 @@ export function CompareModal({ repoPath, open, onOpenChange }: CompareModalProps
 
 			onOpenChange(false);
 		} catch (error) {
-			console.error('Failed to create diff:', error);
+			Logger.error(`Failed to create diff: ${error}`);
 		} finally {
 			setIsLoading(false);
 		}

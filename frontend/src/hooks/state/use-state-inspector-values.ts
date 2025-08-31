@@ -52,7 +52,6 @@ export function useStateInspectorValues() {
 	}, {} as Record<string, Record<string, unknown>>);
 
 	return useMemo(() => {
-		console.log(allStateValues)
 		return allStateValues
 	}, [allStateValues]);
 }

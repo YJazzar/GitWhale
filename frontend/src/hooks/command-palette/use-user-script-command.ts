@@ -9,6 +9,7 @@ import { useNavigateRootFilTabs } from '../navigation/use-navigate-root-file-tab
 import { useAllRepoStates } from '../state/repo/use-all-repo-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '../state/useSidebarHandlers';
 import { useCommandRegistry } from './use-command-registry';
+import Logger from '@/utils/logger';
 
 export type UserDefinedCommandDefinition = {
 	id: string;
@@ -55,7 +56,9 @@ export function useUserScriptCommand(userDefinedCommands: UserDefinedCommandDefi
 				convertedCustomCommandDefinitions as CommandDefinition<unknown>[]
 			);
 
-			console.debug('reregistering user script commands', { convertedCustomCommandDefinitions });
+			Logger.debug(
+				`reregistering user script commands: ${JSON.stringify(convertedCustomCommandDefinitions)}`
+			);
 		}
 
 		const customCommandIds = convertedCustomCommandDefinitions.map((command) => command.id);

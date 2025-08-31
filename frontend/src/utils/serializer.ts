@@ -9,6 +9,7 @@
 // 	}
 
 import React from 'react';
+import Logger from './logger';
 
 // 	private formatOutput(processed: any, options: SerializationOptions): string {
 // 		const space = options.indent;
@@ -223,7 +224,7 @@ function serializeObject(object: Record<string, unknown> | null, depth: number, 
 }
 
 function formatDisplayValue(val: unknown, depth: number, options: SerializerOptions): string {
-	console.debug('called format on: ', val);
+	Logger.debug(`called format on:  ${val}`);
 
 	// Prevent infinite recursion with depth limit
 	if (depth > options.maxDepth) {
