@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { useSettings } from '@/hooks/use-settings';
+import { useSettings } from '@/hooks/app-settings/use-settings';
 import { RotateCcw } from 'lucide-react';
 
 export function ApplicationInfo() {

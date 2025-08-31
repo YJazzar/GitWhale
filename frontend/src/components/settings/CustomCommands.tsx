@@ -1,15 +1,25 @@
+import { UserScriptImportDialog } from '@/components/settings/user-scripts/UserScriptImportDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button';
-import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
-import { Edit, Plus, Trash2, Terminal } from 'lucide-react';
-import { useCallback } from 'react';
-import { CommandPaletteContextKey } from '@/types/command-palette';
+import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
+import { Download, Edit, Plus, Terminal, Trash2, Upload } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import {
+	ExportUserScripts,
+	SelectUserScriptFileForImport
+} from '../../../wailsjs/go/backend/App';
 
 export function CustomCommands() {
 	const { customCommands, isLoading, error, deleteCustomCommand } = useCustomCommandsState();
 	const { onOpenCustomCommandEditor } = useNavigateRootFilTabs();
+	const [importingFile, setImportingFile] = useState<string | undefined>(undefined);
+	const [isExporting, setIsExporting] = useState(false);
+
+	const onCloseImportDialog = useCallback(() => {
+		setImportingFile(undefined);
+	}, [setImportingFile]);
 
 	const handleCreateNew = useCallback(() => {
 		onOpenCustomCommandEditor();
@@ -34,16 +44,28 @@ export function CustomCommands() {
 		[deleteCustomCommand]
 	);
 
-	const getContextLabel = (context: CommandPaletteContextKey) => {
-		switch (context) {
-			case CommandPaletteContextKey.Root:
-				return 'Root';
-			case CommandPaletteContextKey.Repo:
-				return 'Repository';
-			default:
-				return context;
+	const handleExport = useCallback(async () => {
+		if (customCommands.length === 0) return;
+
+		setIsExporting(true);
+		try {
+			await ExportUserScripts();
+		} catch (err) {
+			console.error('Failed to export user scripts:', err);
+		} finally {
+			setIsExporting(false);
 		}
-	};
+	}, [customCommands]);
+
+	const handleImport = useCallback(async () => {
+		// Open file dialog
+		const filePath = await SelectUserScriptFileForImport();
+		if (!filePath || filePath === '') {
+			return;
+		}
+
+		setImportingFile(filePath);
+	}, []);
 
 	if (isLoading) {
 		return (
@@ -57,10 +79,6 @@ export function CustomCommands() {
 							</CardTitle>
 							<CardDescription>Create and manage your custom commands</CardDescription>
 						</div>
-						<Button onClick={handleCreateNew} size="sm" className="select-none" disabled>
-							<Plus className="h-4 w-4 mr-2" />
-							Add Command
-						</Button>
 					</div>
 				</CardHeader>
 				<CardContent>
@@ -83,10 +101,35 @@ export function CustomCommands() {
 							Create and manage your custom commands for the command palette
 						</CardDescription>
 					</div>
-					<Button onClick={handleCreateNew} size="sm" className="select-none">
-						<Plus className="h-4 w-4 mr-2" />
-						Add Command
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button variant="outline" size="sm" onClick={handleImport} className="select-none">
+							<Download className="h-4 w-4 mr-2" />
+							Import
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleExport}
+							disabled={customCommands.length === 0 || isExporting}
+							className="select-none"
+						>
+							{isExporting ? (
+								<>
+									<div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></div>
+									Exporting...
+								</>
+							) : (
+								<>
+									<Upload className="h-4 w-4 mr-2" />
+									Export
+								</>
+							)}
+						</Button>
+						<Button onClick={handleCreateNew} size="sm" className="select-none">
+							<Plus className="h-4 w-4 mr-2" />
+							Add Command
+						</Button>
+					</div>
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-4">
@@ -114,15 +157,13 @@ export function CustomCommands() {
 												{command.title}
 											</h4>
 											<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-												{getContextLabel(command.context)}
+												{command.context}
 											</span>
 										</div>
-										
+
 										<div className="flex items-center gap-3 text-xs text-muted-foreground">
 											{command.description && (
-												<span className="truncate">
-													{command.description}
-												</span>
+												<span className="truncate">{command.description}</span>
 											)}
 											<div className="flex items-center gap-1.5 shrink-0">
 												<Terminal className="h-3 w-3" />
@@ -132,7 +173,7 @@ export function CustomCommands() {
 											</div>
 										</div>
 									</div>
-									
+
 									<div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
 										<Button
 											variant="ghost"
@@ -156,6 +197,12 @@ export function CustomCommands() {
 					</div>
 				)}
 			</CardContent>
+
+			{/* Import Dialog */}
+			<UserScriptImportDialog
+				filePathToImport={importingFile}
+				onCloseImportDialog={onCloseImportDialog}
+			/>
 		</Card>
 	);
 }

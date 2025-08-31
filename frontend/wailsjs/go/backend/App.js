@@ -42,6 +42,10 @@ export function ExecuteShellCommand(arg1, arg2, arg3) {
   return window['go']['backend']['App']['ExecuteShellCommand'](arg1, arg2, arg3);
 }
 
+export function ExportUserScripts() {
+  return window['go']['backend']['App']['ExportUserScripts']();
+}
+
 export function GetAllRefs(arg1) {
   return window['go']['backend']['App']['GetAllRefs'](arg1);
 }
@@ -90,6 +94,10 @@ export function GitFetch(arg1) {
   return window['go']['backend']['App']['GitFetch'](arg1);
 }
 
+export function ImportCustomUserScripts(arg1, arg2) {
+  return window['go']['backend']['App']['ImportCustomUserScripts'](arg1, arg2);
+}
+
 export function InitNewTerminalSession(arg1) {
   return window['go']['backend']['App']['InitNewTerminalSession'](arg1);
 }
@@ -120,6 +128,10 @@ export function RunGitLog(arg1, arg2) {
 
 export function SaveCustomCommand(arg1) {
   return window['go']['backend']['App']['SaveCustomCommand'](arg1);
+}
+
+export function SelectUserScriptFileForImport() {
+  return window['go']['backend']['App']['SelectUserScriptFileForImport']();
 }
 
 export function StageAllFiles(arg1) {
@@ -156,4 +168,8 @@ export function UpdateSettings(arg1) {
 
 export function ValidateRef(arg1, arg2) {
   return window['go']['backend']['App']['ValidateRef'](arg1, arg2);
+}
+
+export function ValidateUserScriptsFile(arg1) {
+  return window['go']['backend']['App']['ValidateUserScriptsFile'](arg1);
 }

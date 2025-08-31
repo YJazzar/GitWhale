@@ -26,7 +26,7 @@ export function useCustomCommandsState() {
 	}, [appState.appState]) as UserDefinedCommandDefinition[];
 
 	// Load custom commands from backend
-	const loadCustomCommands = useCallback(async () => {
+	const reloadUserScripts = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
@@ -80,15 +80,15 @@ export function useCustomCommandsState() {
 	// Load commands on mount
 	useEffect(() => {
 		if (customCommands.length === 0 && !isLoading) {
-			loadCustomCommands();
+			reloadUserScripts();
 		}
-	}, [customCommands.length, isLoading, loadCustomCommands]);
+	}, [customCommands.length, isLoading, reloadUserScripts]);
 
 	return {
 		customCommands,
 		isLoading,
 		error,
-		loadCustomCommands,
+		reloadUserScripts,
 		saveCustomCommand,
 		deleteCustomCommand,
 		getCustomCommand,

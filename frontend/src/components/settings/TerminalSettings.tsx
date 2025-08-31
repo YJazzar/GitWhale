@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSettings } from '@/hooks/use-settings';
+import { useSettings } from '@/hooks/app-settings/use-settings';
 import { FONT_SIZE_OPTIONS, TERMINAL_COLOR_SCHEMES, TERMINAL_CURSOR_STYLES } from '@/types/settings';
 import { Logger } from '@/utils/logger';
 import { Check, ChevronDown, Terminal } from 'lucide-react';

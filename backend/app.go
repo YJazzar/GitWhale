@@ -2,14 +2,17 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"gitwhale/backend/command_utils"
 	"gitwhale/backend/git_operations"
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -339,6 +342,141 @@ func (app *App) DeleteCustomCommand(commandId string) error {
 		}
 	}
 	return fmt.Errorf("custom command with ID %s not found", commandId)
+}
+
+// User Script Import/Export operations
+
+// UserScriptExportData represents the structure for exporting user scripts
+type UserScriptExportData struct {
+	Version     string                         `json:"version"`
+	ExportDate  string                         `json:"exportDate"`
+	UserScripts []UserDefinedCommandDefinition `json:"userScripts"`
+}
+
+// ExportUserScripts opens a file dialog for saving user scripts export file,
+// then serializes all custom user scripts to JSON and saves to a file
+func (app *App) ExportUserScripts() error {
+	today := time.Now()
+	defaultName := fmt.Sprintf("gitwhale-user-scripts-%s.json", today.Format("2006-01-02"))
+
+	filePath, err := runtime.SaveFileDialog(app.ctx, runtime.SaveDialogOptions{
+		Title:           "Export User Scripts",
+		DefaultFilename: defaultName,
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "JSON Files",
+				Pattern:     "*.json",
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to open save dialog: %w", err)
+	}
+	if filePath != "" {
+		return nil
+	}
+
+	exportData := UserScriptExportData{
+		Version:     "1.0",
+		ExportDate:  time.Now().Format(time.RFC3339),
+		UserScripts: app.AppConfig.Settings.CustomCommands,
+	}
+
+	return lib.SaveAsJSON(filePath, exportData)
+}
+
+// ValidateUserScriptsFile validates the structure of a user scripts import file and returns the parsed data
+func (app *App) ValidateUserScriptsFile(filePath string) (*UserScriptExportData, error) {
+	if !lib.FileExists(filePath) {
+		return nil, fmt.Errorf("file not found at: %s", filePath)
+	}
+
+	fileData, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var exportData UserScriptExportData
+	err = json.Unmarshal(fileData, &exportData)
+	if err != nil {
+		return nil, fmt.Errorf("invalid JSON format: %w", err)
+	}
+
+	// Validate required fields
+	if exportData.Version == "" {
+		return nil, fmt.Errorf("missing required field: version")
+	}
+
+	if exportData.UserScripts == nil {
+		return nil, fmt.Errorf("missing required field: userScripts")
+	}
+
+	// Validate each user script structure
+	for i, userScript := range exportData.UserScripts {
+		if userScript.ID == "" {
+			return nil, fmt.Errorf("user script %d is missing required field: id", i+1)
+		}
+		if userScript.Title == "" {
+			return nil, fmt.Errorf("user script %d is missing required field: title", i+1)
+		}
+		if userScript.Context == "" {
+			return nil, fmt.Errorf("user script %d is missing required field: context", i+1)
+		}
+		if userScript.Action.CommandString == "" {
+			return nil, fmt.Errorf("user script %d is missing required field: action.commandString", i+1)
+		}
+	}
+
+	return &exportData, nil
+}
+
+// SelectUserScriptFileForImport opens a file dialog for selecting user scripts import file
+func (app *App) SelectUserScriptFileForImport() (string, error) {
+	filePath, err := runtime.OpenFileDialog(app.ctx, runtime.OpenDialogOptions{
+		Title: "Select User Scripts File",
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "JSON Files",
+				Pattern:     "*.json",
+			},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to open file dialog: %w", err)
+	}
+	return filePath, nil
+}
+
+// ImportCustomUserScripts imports selected user scripts from a validated file
+func (app *App) ImportCustomUserScripts(filePath string, selectedUserScriptIds []string) error {
+	exportData, err := app.ValidateUserScriptsFile(filePath)
+	if err != nil {
+		return fmt.Errorf("file validation failed: %w", err)
+	}
+
+	if len(selectedUserScriptIds) == 0 {
+		return fmt.Errorf("no user scripts selected for import")
+	}
+
+	// Create a map for quick lookup of selected IDs
+	selectedIds := make(map[string]bool)
+	for _, id := range selectedUserScriptIds {
+		selectedIds[id] = true
+	}
+
+	// Import selected user scripts with new IDs to avoid conflicts
+	for _, userScript := range exportData.UserScripts {
+		if selectedIds[userScript.ID] {
+			// Generate new UUID to avoid ID conflicts
+			newUserScript := userScript
+			newUserScript.ID = uuid.New().String()
+
+			// Add the user script
+			app.AppConfig.Settings.CustomCommands = append(app.AppConfig.Settings.CustomCommands, newUserScript)
+		}
+	}
+
+	return app.AppConfig.SaveAppConfig()
 }
 
 // Git staging operations

@@ -1,8 +1,8 @@
 import { DEFAULT_SETTINGS } from '@/types/settings';
-import { UpdateSettings } from '../../wailsjs/go/backend/App';
-import { backend, command_utils } from '../../wailsjs/go/models';
-import { Logger } from '../utils/logger';
-import { UseAppState } from './state/use-app-state';
+import { UpdateSettings } from '../../../wailsjs/go/backend/App';
+import { backend, command_utils } from '../../../wailsjs/go/models';
+import { Logger } from '../../utils/logger';
+import { UseAppState } from '../state/use-app-state';
 
 export function useSettings() {
 	const { appState, refreshAppState } = UseAppState();

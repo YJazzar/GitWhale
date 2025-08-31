@@ -26,6 +26,8 @@ export function EndDiffSession(arg1:string):Promise<void>;
 
 export function ExecuteShellCommand(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function ExportUserScripts():Promise<void>;
+
 export function GetAllRefs(arg1:string):Promise<Array<git_operations.GitRef>>;
 
 export function GetAppState():Promise<backend.App>;
@@ -50,6 +52,8 @@ export function GetWorktrees(arg1:string):Promise<Array<git_operations.WorktreeI
 
 export function GitFetch(arg1:string):Promise<void>;
 
+export function ImportCustomUserScripts(arg1:string,arg2:Array<string>):Promise<void>;
+
 export function InitNewTerminalSession(arg1:string):Promise<void>;
 
 export function ListDiffSessions():Promise<Array<git_operations.DiffSession>>;
@@ -65,6 +69,8 @@ export function ReadFile(arg1:string):Promise<string>;
 export function RunGitLog(arg1:string,arg2:git_operations.GitLogOptions):Promise<Array<git_operations.GitLogCommitInfo>>;
 
 export function SaveCustomCommand(arg1:backend.UserDefinedCommandDefinition):Promise<void>;
+
+export function SelectUserScriptFileForImport():Promise<string>;
 
 export function StageAllFiles(arg1:string):Promise<void>;
 
@@ -83,3 +89,5 @@ export function UnstageFile(arg1:string,arg2:string):Promise<void>;
 export function UpdateSettings(arg1:backend.AppSettings):Promise<void>;
 
 export function ValidateRef(arg1:string,arg2:string):Promise<boolean>;
+
+export function ValidateUserScriptsFile(arg1:string):Promise<backend.UserScriptExportData>;
