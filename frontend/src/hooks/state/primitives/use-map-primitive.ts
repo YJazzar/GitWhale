@@ -1,15 +1,27 @@
-import { useAtom, WritableAtom } from 'jotai';
+import { atom, useAtom, WritableAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
-type MappedWritableAtom<T> = WritableAtom<Map<string, T>, [Map<string, T>], void>;
+type MappedWritableAtom<T> = WritableAtom<
+	Map<string, T>,
+	[Map<string, T> | ((prev: Map<string, T>) => Map<string, T>)],
+	void
+>;
+
+type SetIntentCallback<T> = (prevValue: T | undefined) => T;
+type SetIntent<T> = T | SetIntentCallback<T>;
 
 type MapPrimitive<T> = {
 	value: T | undefined;
-	set: (newValue: T) => void;
+	set: (newValue: SetIntent<T>) => void;
 	kill: () => void;
 };
 
-export function useMapPrimitive<T>(atom: MappedWritableAtom<T>, mapKey: string): MapPrimitive<T> {
+export function createMappedAtom<T>(): MappedWritableAtom<T> {
+	return atom<Map<string, T>>(new Map());
+}
+
+
+export function useMapPrimitive<T>(atom: MappedWritableAtom<T>, mapKey: string, defaultValue?: T | undefined): MapPrimitive<T> {
 	const [mapData, setMapData] = useAtom(atom);
 
 	const keyedData = useMemo(() => {
@@ -17,7 +29,22 @@ export function useMapPrimitive<T>(atom: MappedWritableAtom<T>, mapKey: string):
 	}, [mapData, mapKey]);
 
 	const updateMapAtKey = useCallback(
-		(newData: T) => {
+		(newData: SetIntent<T>) => {
+			// Set based on a function that depends on the previous state
+			if (typeof newData === 'function') {
+				setMapData((previousMapData) => {
+					const previousKeyedData = previousMapData.get(mapKey);
+					const resolvedNewData = (newData as SetIntentCallback<T>)(previousKeyedData);
+
+					const newMap = new Map(previousMapData);
+					newMap.set(mapKey, resolvedNewData);
+					return newMap;
+				});
+
+				return;
+			}
+
+			// Set based on the current known state
 			const newMap = new Map(mapData);
 			newMap.set(mapKey, newData);
 			setMapData(newMap);
@@ -33,7 +60,7 @@ export function useMapPrimitive<T>(atom: MappedWritableAtom<T>, mapKey: string):
 
 	return useMemo(() => {
 		return {
-			value: keyedData,
+			value: keyedData ?? defaultValue,
 			set: updateMapAtKey,
 			kill: deleteKey,
 		};

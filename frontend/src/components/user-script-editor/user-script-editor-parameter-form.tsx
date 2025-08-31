@@ -12,11 +12,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { UserDefinedParameter, UserDefinedSelectParameter } from '@/hooks/command-palette/use-user-script-command';
+import {
+	UserDefinedParameter,
+	UserDefinedSelectParameter,
+} from '@/hooks/command-palette/use-user-script-command';
 import { Trash2 } from 'lucide-react';
 import { memo } from 'react';
 
-interface ParameterFormProps {
+interface UserScriptEditorParameterFormProps {
 	parameter: UserDefinedParameter;
 	parameterIndex: number;
 	onUpdate: <T extends UserDefinedParameter, K extends keyof T>(
@@ -27,8 +30,13 @@ interface ParameterFormProps {
 	onRemove: (index: number) => void;
 }
 
-export const ParameterForm = memo(
-	function ParameterForm({ parameter, parameterIndex, onUpdate, onRemove }: ParameterFormProps) {
+export const UserScriptEditorParameterForm = memo(
+	function ParameterForm({
+		parameter,
+		parameterIndex,
+		onUpdate,
+		onRemove,
+	}: UserScriptEditorParameterFormProps) {
 		return (
 			<Card className="p-4">
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">

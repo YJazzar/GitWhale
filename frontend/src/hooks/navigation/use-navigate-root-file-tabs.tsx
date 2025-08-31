@@ -1,12 +1,11 @@
-import { FileTabsSessionKeyGenerator, TabProps } from '@/hooks/state/useFileTabsHandlers';
-import { useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
 import RepoFileTab from '@/components/repo-file-tab';
+import { FileTabsSessionKeyGenerator, TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
 import ApplicationLogsPage from '@/pages/ApplicationLogsPage';
+import CommandLogsPage from '@/pages/CommandLogsPage';
 import RepoPage from '@/pages/repo/RepoPage';
 import SettingsPage from '@/pages/SettingsPage';
-import UserScriptCommandEditor from '@/pages/UserScriptCommandEditor';
 import StateInspectorPage from '@/pages/StateInspectorPage';
-import CommandLogsPage from '@/pages/CommandLogsPage';
+import UserScriptCommandEditor from '@/pages/UserScriptCommandEditor';
 import { useCallback } from 'react';
 import { OpenNewRepo, OpenRepoWithPath } from '../../../wailsjs/go/backend/App';
 import { UseAppState } from '../state/use-app-state';
@@ -96,10 +95,12 @@ export function useNavigateRootFilTabs() {
 			title = command?.title ? command.title : `Edit Command`;
 		}
 
+		const sessionId = crypto.randomUUID();
+
 		fileTabs.openTab({
 			tabKey,
 			titleRender: () => <>{title}</>,
-			component: <UserScriptCommandEditor originalCommandId={commandId} />,
+			component: <UserScriptCommandEditor sessionKey={sessionId} originalCommandId={commandId} />,
 			isPermanentlyOpen: true,
 		});
 	};
