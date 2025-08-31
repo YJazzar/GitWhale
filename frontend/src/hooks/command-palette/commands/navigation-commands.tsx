@@ -130,7 +130,7 @@ const editCommand: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
 			options: (providedHooks) => {
 				return [
 					{
-						groupKey: 'custom commands',
+						groupKey: 'user script commands',
 						groupName: '',
 						options:
 							providedHooks.appState?.appConfig?.settings?.userScriptCommands?.map(

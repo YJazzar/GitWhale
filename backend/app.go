@@ -307,7 +307,7 @@ func (app *App) ExecuteShellCommand(command string, workingDir, broadcastToTopic
 	command_utils.StartRunningAndStreamCommand(app.ctx, shellPathCommand, command, workingDir, broadcastToTopic)
 }
 
-// Custom Commands CRUD operations
+// UserScript CRUD operations
 
 func (app *App) SaveUserScriptCommand(command UserDefinedCommandDefinition) error {
 	// Check if command with this ID already exists
@@ -341,7 +341,7 @@ func (app *App) DeleteUserScriptCommand(commandId string) error {
 			return app.AppConfig.SaveAppConfig()
 		}
 	}
-	return fmt.Errorf("custom command with ID %s not found", commandId)
+	return fmt.Errorf("user script with ID %s not found", commandId)
 }
 
 // User Script Import/Export operations

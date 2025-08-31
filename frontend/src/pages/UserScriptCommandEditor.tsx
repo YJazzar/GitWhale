@@ -205,7 +205,7 @@ export default function UserScriptCommandEditor({ originalCommandId }: UserScrip
 							id="title"
 							value={formData.title}
 							onChange={(e) => updateFormField('title', e.target.value)}
-							placeholder="Git: My Custom Command"
+							placeholder="Git: My custom user script"
 							className={errors.title ? 'border-destructive' : ''}
 						/>
 						{errors.title && <div className="text-sm text-destructive mt-1">{errors.title}</div>}
@@ -370,7 +370,7 @@ export default function UserScriptCommandEditor({ originalCommandId }: UserScrip
 			<div className="flex items-center gap-3 p-4">
 				<Terminal className="h-6 w-6" />
 				<h1 className="text-2xl font-bold">
-					{originalCommandId ? 'Edit Custom Command' : 'Create Custom Command'}
+					{originalCommandId ? 'Edit User Script' : 'Create User Script'}
 				</h1>
 			</div>
 

@@ -45,17 +45,17 @@ export type UserDefinedParameter = UserDefinedSelectParameter | UserDefinedStrin
 export function useUserScriptCommand(userDefinedCommands: UserDefinedCommandDefinition[]) {
 	const commandRegistry = useCommandRegistry(undefined);
 
-	// Auto-register custom commands when they change
+	// Auto-register user script commands when they change
 	useEffect(() => {
 		const convertedCustomCommandDefinitions = userDefinedCommands.map(convertToRealCommandDefinition);
 
-		// Register new custom commands
+		// Register new user script commands
 		if (convertedCustomCommandDefinitions.length > 0) {
 			commandRegistry.registerCommands(
 				convertedCustomCommandDefinitions as CommandDefinition<unknown>[]
 			);
 
-			console.debug('reregistering custom commands', { convertedCustomCommandDefinitions });
+			console.debug('reregistering user script commands', { convertedCustomCommandDefinitions });
 		}
 
 		const customCommandIds = convertedCustomCommandDefinitions.map((command) => command.id);

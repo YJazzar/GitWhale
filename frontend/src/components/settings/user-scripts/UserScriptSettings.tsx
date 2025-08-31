@@ -1,15 +1,12 @@
 import { UserScriptImportDialog } from '@/components/settings/user-scripts/UserScriptImportDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { useUserScriptCommandsState } from '@/hooks/state/use-user-script-commands-state';
 import { Download, Edit, Plus, Terminal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import {
-	ExportUserScripts,
-	SelectUserScriptFileForImport
-} from '../../../../wailsjs/go/backend/App';
+import { ExportUserScripts, SelectUserScriptFileForImport } from '../../../../wailsjs/go/backend/App';
 
 export function UserScriptSettings() {
 	const { userScriptCommands, isLoading, error, deleteUserScriptCommand } = useUserScriptCommandsState();
@@ -75,14 +72,13 @@ export function UserScriptSettings() {
 						<div>
 							<CardTitle className="flex items-center gap-2">
 								<Terminal className="h-5 w-5" />
-								Custom Commands
+								User Scripts
 							</CardTitle>
-							<CardDescription>Create and manage your custom commands</CardDescription>
 						</div>
 					</div>
 				</CardHeader>
 				<CardContent>
-					<div className="text-center text-muted-foreground py-8">Loading custom commands...</div>
+					<div className="text-center text-muted-foreground py-8">Loading user scripts...</div>
 				</CardContent>
 			</Card>
 		);
@@ -95,11 +91,8 @@ export function UserScriptSettings() {
 					<div>
 						<CardTitle className="flex items-center gap-2">
 							<Terminal className="h-5 w-5" />
-							Custom Commands
+							User Scripts
 						</CardTitle>
-						<CardDescription>
-							Create and manage your custom commands for the command palette
-						</CardDescription>
 					</div>
 					<div className="flex items-center gap-2">
 						<Button variant="outline" size="sm" onClick={handleImport} className="select-none">
@@ -140,8 +133,8 @@ export function UserScriptSettings() {
 				{userScriptCommands.length === 0 ? (
 					<div className="text-center py-8 text-muted-foreground">
 						<Terminal className="h-12 w-12 mx-auto mb-4 opacity-50" />
-						<div className="text-sm font-medium">No custom commands yet</div>
-						<div className="text-xs">Create your first custom command to get started</div>
+						<div className="text-sm font-medium">No user scripts yet</div>
+						<div className="text-xs">Create or import your first user script to get started</div>
 					</div>
 				) : (
 					<div className="space-y-2">

@@ -84,7 +84,7 @@ export function useNavigateRootFilTabs() {
 		fileTabs.switchToTab('$$home$$');
 	};
 
-	// Callback to open custom command editor tab
+	// Callback to open user script command editor tab
 	const onOpenUserScriptCommandEditor = (commandId?: string) => {
 		const tabKey = commandId ? `$$custom-command-editor-${commandId}$$` : '$$custom-command-editor-new$$';
 

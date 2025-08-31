@@ -25,20 +25,20 @@ export function useUserScriptCommandsState() {
 		return appState.appState?.appConfig?.settings?.userScriptCommands ?? [];
 	}, [appState.appState]) as UserDefinedCommandDefinition[];
 
-	// Load custom commands from backend
+	// Load user script commands from backend
 	const reloadUserScripts = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
 			await appState.refreshAppState();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to load custom commands: ' + err);
+			setError(err instanceof Error ? err.message : 'Failed to load user script commands: ' + err);
 		} finally {
 			setIsLoading(false);
 		}
 	}, [setIsLoading, setError]);
 
-	// Save a custom command (create or update)
+	// Save a user script command (create or update)
 	const saveUserScriptCommand = useCallback(
 		async (command: UserDefinedCommandDefinition) => {
 			try {
@@ -47,14 +47,14 @@ export function useUserScriptCommandsState() {
 				await SaveUserScriptCommand(backendCommand);
 				await appState.refreshAppState();
 			} catch (err) {
-				setError(err instanceof Error ? err.message : 'Failed to save custom command: ' + err);
+				setError(err instanceof Error ? err.message : 'Failed to save user script command: ' + err);
 				throw err;
 			}
 		},
 		[appState.refreshAppState, setError]
 	);
 
-	// Delete a custom command
+	// Delete a user script command
 	const deleteUserScriptCommand = useCallback(
 		async (commandId: string) => {
 			try {
@@ -62,7 +62,7 @@ export function useUserScriptCommandsState() {
 				await DeleteUserScriptCommand(commandId);
 				await appState.refreshAppState();
 			} catch (err) {
-				setError(err instanceof Error ? err.message : 'Failed to delete custom command: ' + err);
+				setError(err instanceof Error ? err.message : 'Failed to delete user script command: ' + err);
 				throw err;
 			}
 		},
