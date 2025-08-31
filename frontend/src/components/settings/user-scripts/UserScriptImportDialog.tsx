@@ -14,6 +14,7 @@ import { useUserScriptImporter } from '@/hooks/app-settings/use-user-script-impo
 import { AlertCircle, CheckCircle, Terminal, Upload } from 'lucide-react';
 import { backend } from '../../../../wailsjs/go/models';
 import { useCallback } from 'react';
+import { ShellCommand } from '@/components/shell-command';
 
 interface UserScriptImportDialogProps {
 	filePathToImport: string | undefined;
@@ -153,11 +154,9 @@ export function UserScriptImportDialog(props: UserScriptImportDialogProps) {
 															{userScript.description}
 														</p>
 													)}
-													<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+													<div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
 														<Terminal className="h-3 w-3" />
-														<code className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">
-															{userScript.action.commandString}
-														</code>
+														<ShellCommand commandString={userScript.action.commandString} includeCopyButton />
 													</div>
 												</div>
 											</div>

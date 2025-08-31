@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useLoggedShellCommandsState } from '@/hooks/state/use-logged-shell-commands-state';
+import clsx from 'clsx';
 import { Clock, Eye, Terminal } from 'lucide-react';
 import { useState } from 'react';
 import { command_utils } from '../../../wailsjs/go/models';
@@ -54,9 +55,9 @@ export function LoggedShellCommandCard({ command }: CommandCardProps) {
 							</div>
 						</div>
 						{command.workingDirectory && (
-							<div className="text-xs text-muted-foreground truncate min-w-0">
-								<code className="text-xs break-all">{command.workingDirectory}</code>
-							</div>
+							<code className={clsx('text-xs text-muted-foreground select-auto w-fit')}>
+								{command.workingDirectory}
+							</code>
 						)}
 					</div>
 					<LoggedShellCommandDisplay command={command} />
@@ -96,7 +97,11 @@ export function LoggedShellCommandCard({ command }: CommandCardProps) {
 				</CardContent>
 			</Card>
 
-			<LoggedShellCommandOutputDialog open={dialogOpen} onOpenChange={setDialogOpen} command={command} />
+			<LoggedShellCommandOutputDialog
+				open={dialogOpen}
+				onOpenChange={setDialogOpen}
+				command={command}
+			/>
 		</>
 	);
 }

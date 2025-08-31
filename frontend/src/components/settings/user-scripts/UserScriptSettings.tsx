@@ -7,6 +7,7 @@ import { useUserScriptCommandsState } from '@/hooks/state/use-user-script-comman
 import { Download, Edit, Plus, Terminal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { ExportUserScripts, SelectUserScriptFileForImport } from '../../../../wailsjs/go/backend/App';
+import { ShellCommand } from '@/components/shell-command';
 
 export function UserScriptSettings() {
 	const { userScriptCommands, isLoading, error, deleteUserScriptCommand } = useUserScriptCommandsState();
@@ -143,7 +144,7 @@ export function UserScriptSettings() {
 								key={command.id}
 								className="group relative px-3 py-2.5 border border-border/50 rounded-lg hover:border-border hover:bg-muted/30 transition-all duration-200 select-none"
 							>
-								<div className="flex items-center justify-between gap-4">
+								<div className="flex items-center gap-4">
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center gap-2 mb-1">
 											<h4 className="font-medium text-foreground truncate">
@@ -154,15 +155,16 @@ export function UserScriptSettings() {
 											</span>
 										</div>
 
-										<div className="flex items-center gap-3 text-xs text-muted-foreground">
+										<div className="flex items-center text-xs text-muted-foreground">
 											{command.description && (
 												<span className="truncate">{command.description}</span>
 											)}
-											<div className="flex items-center gap-1.5 shrink-0">
-												<Terminal className="h-3 w-3" />
-												<code className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">
-													{command.action.commandString}
-												</code>
+											<div className="flex items-center shrink-0 max-w-full">
+												<ShellCommand
+													commandString={command.action.commandString}
+													showTerminalIcon
+													truncateCommand
+												/>
 											</div>
 										</div>
 									</div>
