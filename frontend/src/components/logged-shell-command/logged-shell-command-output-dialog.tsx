@@ -23,7 +23,7 @@ export function LoggedShellCommandOutputDialog({ open, onOpenChange, command }: 
 						<Terminal className="w-4 h-4" />
 						Command Output
 					</DialogTitle>
-					<DialogDescription className="text-xs font-mono bg-muted px-2 py-1 m-2 rounded truncate">
+					<DialogDescription className="text-xs font-mono bg-muted px-2 py-1 m-2 rounded truncate" asChild>
 						<LoggedShellCommandDisplay command={command} />
 					</DialogDescription>
 				</DialogHeader>
