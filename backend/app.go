@@ -9,6 +9,7 @@ import (
 	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -355,9 +356,16 @@ type UserScriptExportData struct {
 
 // ExportUserScripts opens a file dialog for saving user scripts export file,
 // then serializes all custom user scripts to JSON and saves to a file
-func (app *App) ExportUserScripts() error {
+func (app *App) ExportUserScripts(selectedUserScriptIds []string) error {
 	today := time.Now()
 	defaultName := fmt.Sprintf("gitwhale-user-scripts-%s.json", today.Format("2006-01-02"))
+
+	scriptsToExport := make([]UserDefinedCommandDefinition, len(selectedUserScriptIds))
+	for _, userScript := range app.AppConfig.Settings.UserScriptCommands {
+		if slices.Contains(selectedUserScriptIds, userScript.ID) {
+			scriptsToExport = append(scriptsToExport, userScript)
+		}
+	}
 
 	filePath, err := runtime.SaveFileDialog(app.ctx, runtime.SaveDialogOptions{
 		Title:           "Export User Scripts",
@@ -379,7 +387,7 @@ func (app *App) ExportUserScripts() error {
 	exportData := UserScriptExportData{
 		Version:     "1.0",
 		ExportDate:  time.Now().Format(time.RFC3339),
-		UserScripts: app.AppConfig.Settings.UserScriptCommands,
+		UserScripts: scriptsToExport,
 	}
 
 	return lib.SaveAsJSON(filePath, exportData)

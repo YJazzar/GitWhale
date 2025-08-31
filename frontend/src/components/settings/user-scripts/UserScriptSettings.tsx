@@ -1,19 +1,21 @@
 import { UserScriptImportDialog } from '@/components/settings/user-scripts/UserScriptImportDialog';
+import { ShellCommand } from '@/components/shell-command';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { useUserScriptCommandsState } from '@/hooks/state/use-user-script-commands-state';
+import Logger from '@/utils/logger';
 import { Download, Edit, Plus, Terminal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { ExportUserScripts, SelectUserScriptFileForImport } from '../../../../wailsjs/go/backend/App';
-import { ShellCommand } from '@/components/shell-command';
+import { SelectUserScriptFileForImport } from '../../../../wailsjs/go/backend/App';
+import { UserScriptExportDialog } from './UserScriptExportDialog';
 
 export function UserScriptSettings() {
 	const { userScriptCommands, isLoading, error, deleteUserScriptCommand } = useUserScriptCommandsState();
 	const { onOpenUserScriptCommandEditor } = useNavigateRootFilTabs();
 	const [importingFile, setImportingFile] = useState<string | undefined>(undefined);
-	const [isExporting, setIsExporting] = useState(false);
+	const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
 	const onCloseImportDialog = useCallback(() => {
 		setImportingFile(undefined);
@@ -36,26 +38,13 @@ export function UserScriptSettings() {
 				await deleteUserScriptCommand(commandId);
 			} catch (err) {
 				// Error is handled by the hook
-				console.error('Failed to delete command:', err);
+				Logger.error(`Failed to delete command: ${err}`);
 			}
 		},
 		[deleteUserScriptCommand]
 	);
 
-	const handleExport = useCallback(async () => {
-		if (userScriptCommands.length === 0) return;
-
-		setIsExporting(true);
-		try {
-			await ExportUserScripts();
-		} catch (err) {
-			console.error('Failed to export user scripts:', err);
-		} finally {
-			setIsExporting(false);
-		}
-	}, [userScriptCommands]);
-
-	const handleImport = useCallback(async () => {
+	const onImportClicked = useCallback(async () => {
 		// Open file dialog
 		const filePath = await SelectUserScriptFileForImport();
 		if (!filePath || filePath === '') {
@@ -64,6 +53,10 @@ export function UserScriptSettings() {
 
 		setImportingFile(filePath);
 	}, []);
+
+	const onExportClicked = useCallback(() => {
+		setIsExportDialogOpen(true);
+	}, [setIsExportDialogOpen]);
 
 	if (isLoading) {
 		return (
@@ -96,28 +89,19 @@ export function UserScriptSettings() {
 						</CardTitle>
 					</div>
 					<div className="flex items-center gap-2">
-						<Button variant="outline" size="sm" onClick={handleImport} className="select-none">
+						<Button variant="outline" size="sm" onClick={onImportClicked} className="select-none">
 							<Download className="h-4 w-4 mr-2" />
 							Import
 						</Button>
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={handleExport}
-							disabled={userScriptCommands.length === 0 || isExporting}
+							onClick={onExportClicked}
+							disabled={userScriptCommands.length === 0}
 							className="select-none"
 						>
-							{isExporting ? (
-								<>
-									<div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent mr-2"></div>
-									Exporting...
-								</>
-							) : (
-								<>
-									<Upload className="h-4 w-4 mr-2" />
-									Export
-								</>
-							)}
+							<Upload className="h-4 w-4 mr-2" />
+							Export
 						</Button>
 						<Button onClick={handleCreateNew} size="sm" className="select-none">
 							<Plus className="h-4 w-4 mr-2" />
@@ -197,6 +181,11 @@ export function UserScriptSettings() {
 			<UserScriptImportDialog
 				filePathToImport={importingFile}
 				onCloseImportDialog={onCloseImportDialog}
+			/>
+
+			<UserScriptExportDialog
+				isExportDialogOpen={isExportDialogOpen}
+				onCloseExportDialog={() => setIsExportDialogOpen(false)}
 			/>
 		</Card>
 	);

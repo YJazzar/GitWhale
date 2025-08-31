@@ -42,8 +42,8 @@ export function ExecuteShellCommand(arg1, arg2, arg3) {
   return window['go']['backend']['App']['ExecuteShellCommand'](arg1, arg2, arg3);
 }
 
-export function ExportUserScripts() {
-  return window['go']['backend']['App']['ExportUserScripts']();
+export function ExportUserScripts(arg1) {
+  return window['go']['backend']['App']['ExportUserScripts'](arg1);
 }
 
 export function GetAllRefs(arg1) {

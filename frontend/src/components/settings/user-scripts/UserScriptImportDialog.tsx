@@ -1,6 +1,4 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
 	Dialog,
 	DialogContent,
@@ -9,12 +7,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUserScriptImporter } from '@/hooks/app-settings/use-user-script-importer';
-import { AlertCircle, CheckCircle, Terminal, Upload } from 'lucide-react';
-import { backend } from '../../../../wailsjs/go/models';
+import { AlertCircle, CheckCircle, Upload } from 'lucide-react';
 import { useCallback } from 'react';
-import { ShellCommand } from '@/components/shell-command';
+import { UserScriptListSelector } from './UserScriptListSelector';
 
 interface UserScriptImportDialogProps {
 	filePathToImport: string | undefined;
@@ -26,15 +22,6 @@ export function UserScriptImportDialog(props: UserScriptImportDialogProps) {
 	const { validation, selectedUserScriptIds } = userScriptImporter;
 
 	const isImportDialogOpen = !!filePathToImport && filePathToImport !== '';
-
-	const onToggleUserScriptCallbackFactory = useCallback(
-		(userScriptId: string) => {
-			return (checked: boolean) => {
-				userScriptImporter.onToggleScriptId(userScriptId, !!checked);
-			};
-		},
-		[userScriptImporter]
-	);
 
 	const onChangeIsDialogOpen = useCallback(
 		(newValue: boolean) => {
@@ -124,46 +111,11 @@ export function UserScriptImportDialog(props: UserScriptImportDialogProps) {
 								</div>
 							</div>
 
-							{/* User Scripts List */}
-							<ScrollArea className="h-60 border rounded-md">
-								<div className="p-4 space-y-3">
-									{validation.data.userScripts.map(
-										(userScript: backend.UserDefinedCommandDefinition) => (
-											<div
-												key={userScript.id}
-												className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors"
-											>
-												<Checkbox
-													checked={selectedUserScriptIds.has(userScript.id)}
-													onCheckedChange={onToggleUserScriptCallbackFactory(
-														userScript.id
-													)}
-													className="mt-1"
-												/>
-												<div className="flex-1 min-w-0">
-													<div className="flex items-center gap-2 mb-1">
-														<h4 className="font-medium text-sm truncate">
-															{userScript.title}
-														</h4>
-														<Badge variant="secondary" className="text-xs">
-															{userScript.context}
-														</Badge>
-													</div>
-													{userScript.description && (
-														<p className="text-xs text-muted-foreground mb-2 truncate">
-															{userScript.description}
-														</p>
-													)}
-													<div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-														<Terminal className="h-3 w-3" />
-														<ShellCommand commandString={userScript.action.commandString} includeCopyButton />
-													</div>
-												</div>
-											</div>
-										)
-									)}
-								</div>
-							</ScrollArea>
+							<UserScriptListSelector
+								onToggleScriptId={userScriptImporter.onToggleScriptId}
+								selectedUserScriptIds={userScriptImporter.selectedUserScriptIds}
+								userScriptCommands={userScriptImporter.validation.data?.userScripts ?? []}
+							/>
 						</div>
 					)}
 				</div>
