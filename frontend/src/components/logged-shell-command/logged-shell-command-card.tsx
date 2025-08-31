@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { Clock, Eye, Terminal } from 'lucide-react';
 import { useState } from 'react';
 import { command_utils } from '../../../wailsjs/go/models';
-import { LoggedShellCommandDisplay } from './logged-shell-command-display';
+import { ShellCommand } from '../shell-command';
 import { LoggedShellCommandOutputDialog } from './logged-shell-command-output-dialog';
 import { LoggedShellCommandStatusBadge } from './logged-shell-command-status-badge';
 
@@ -29,7 +29,7 @@ export function LoggedShellCommandCard({ command }: CommandCardProps) {
 
 	return (
 		<>
-			<Card className="mb-2 cursor-pointer" onClick={onOpenDialog}>
+			<Card className="mb-2 cursor-pointer overflow-auto" onClick={onOpenDialog}>
 				<CardHeader className="pb-1 pt-2 px-3">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
@@ -60,13 +60,14 @@ export function LoggedShellCommandCard({ command }: CommandCardProps) {
 							</code>
 						)}
 					</div>
-					<LoggedShellCommandDisplay command={command} />
 				</CardHeader>
 
-				<CardContent className="pt-0 px-3 pb-2">
-					<Separator className="mb-2" />
-
+				<CardContent className="pt-0 px-3 pb-2 overflow-auto">
 					<div className="space-y-2">
+						<ShellCommand commandString={command.fullCommand} includeCopyButton truncateCommand />
+
+						<Separator className="mb-2" />
+
 						<div className="grid grid-cols-4 gap-2 text-xs">
 							<div>
 								<span className="font-medium">Exit:</span>

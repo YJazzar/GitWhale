@@ -1,7 +1,7 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Terminal } from 'lucide-react';
 import { command_utils } from 'wailsjs/go/models';
-import { LoggedShellCommandDisplay } from './logged-shell-command-display';
+import { ShellCommand } from '../shell-command';
 import { LoggedShellCommandOutputDisplay } from './logged-shell-command-output-display';
 
 interface CommandOutputDialogProps {
@@ -23,11 +23,9 @@ export function LoggedShellCommandOutputDialog({ open, onOpenChange, command }: 
 						<Terminal className="w-4 h-4" />
 						Command Output
 					</DialogTitle>
-					<DialogDescription className="text-xs font-mono bg-muted px-2 py-1 m-2 rounded truncate" asChild>
-						<LoggedShellCommandDisplay command={command} />
-					</DialogDescription>
 				</DialogHeader>
 				<div className="flex-1 min-h-0 space-y-4 overflow-auto">
+					<ShellCommand commandString={command.fullCommand} includeCopyButton expandOnClick />
 					{commandOutput && (
 						<LoggedShellCommandOutputDisplay
 							title="Standard Output"

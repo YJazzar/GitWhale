@@ -1,18 +1,12 @@
-
 import { LoggedShellCommandCard } from '@/components/logged-shell-command/logged-shell-command-card';
 import { LoggedShellCommandLogsHeader } from '@/components/logged-shell-command/logged-shell-command-header';
 import { LoggedShellCommandStatistics } from '@/components/logged-shell-command/logged-shell-command-statistics';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLoggedShellCommandsState } from '@/hooks/state/use-logged-shell-commands-state';
 import { Terminal } from 'lucide-react';
 import { useMemo } from 'react';
 
 export default function CommandLogsPage() {
-	const {
-		searchTerm,
-		filter,
-		commands,
-	} = useLoggedShellCommandsState();
+	const { searchTerm, filter, commands } = useLoggedShellCommandsState();
 
 	const filteredCommands = useMemo(() => {
 		let filtered = commands.all;
@@ -53,8 +47,7 @@ export default function CommandLogsPage() {
 		<div className="h-full flex flex-col p-3">
 			<LoggedShellCommandLogsHeader />
 
-		<LoggedShellCommandStatistics/>
-
+			<LoggedShellCommandStatistics />
 
 			{/* Commands List */}
 			<div className="flex-1 min-h-0">
@@ -69,16 +62,11 @@ export default function CommandLogsPage() {
 						</p>
 					</div>
 				) : (
-					<ScrollArea className="h-full">
-						<div className="space-y-0 pr-2">
-							{filteredCommands.map((command) => (
-								<LoggedShellCommandCard
-									key={command.id}
-									command={command}
-								/>
-							))}
-						</div>
-					</ScrollArea>
+					<div className="pr-2 h-full overflow-auto">
+						{filteredCommands.map((command) => (
+							<LoggedShellCommandCard key={command.id} command={command} />
+						))}
+					</div>
 				)}
 			</div>
 		</div>

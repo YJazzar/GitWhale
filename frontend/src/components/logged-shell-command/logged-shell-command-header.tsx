@@ -37,7 +37,7 @@ export function LoggedShellCommandLogsHeader() {
 					<div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
 					<span className="text-xs font-medium">Auto-refresh 1s</span>
 					{lastRefresh && (
-						<span className="text-xs text-muted-foreground ml-1 hidden md:inline">
+						<span className="text-xs text-muted-foreground ml-1">
 							(last refreshed {lastRefresh.toLocaleTimeString()})
 						</span>
 					)}

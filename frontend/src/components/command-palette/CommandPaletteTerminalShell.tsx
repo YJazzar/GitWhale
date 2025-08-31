@@ -1,8 +1,21 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useCommandPaletteExecutor, useCommandPaletteState } from '@/hooks/command-palette/use-command-palette-state';
-import { AlertCircle, CheckCircle, Clock, Minimize2, Square, StopCircle, Terminal, XCircle } from 'lucide-react';
+import {
+	useCommandPaletteExecutor,
+	useCommandPaletteState,
+} from '@/hooks/command-palette/use-command-palette-state';
+import {
+	AlertCircle,
+	CheckCircle,
+	Clock,
+	Minimize2,
+	Square,
+	StopCircle,
+	Terminal,
+	XCircle,
+} from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { ShellCommand } from '../shell-command';
 
 export function CommandPaletteTerminalShell() {
 	const commandPaletteExecutor = useCommandPaletteExecutor();
@@ -100,17 +113,17 @@ export function CommandPaletteTerminalShell() {
 				<div className="flex items-center gap-1">
 					{/* Show minimize button only during command execution */}
 					{(isRunning || isComplete) && (
-						<Button 
-							variant="ghost" 
-							size="sm" 
-							onClick={handleMinimize} 
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={handleMinimize}
 							className="h-7 w-7 p-0 hover:bg-muted"
 							title="Minimize"
 						>
 							<Minimize2 className="h-3 w-3" />
 						</Button>
 					)}
-					
+
 					{isRunning && (
 						<Button variant="outline" size="sm" onClick={handleCancel} className="h-7">
 							<Square className="h-3 w-3 mr-1" />
@@ -122,15 +135,9 @@ export function CommandPaletteTerminalShell() {
 
 			{/* Command Information */}
 			{(commandArgs || commandWorkingDir) && (
-				<div className="mb-3 p-2 bg-muted/50 rounded-md text-xs">
+				<>
 					{commandArgs && (
-						<div className="flex items-center gap-2 mb-1">
-							<Terminal className="h-3 w-3 text-muted-foreground" />
-							<span className="font-medium text-muted-foreground">Command:</span>
-							<code className="bg-background px-1 py-0.5 rounded text-foreground font-mono">
-								{commandArgs}
-							</code>
-						</div>
+						<ShellCommand commandString={commandArgs} truncateCommand expandOnClick showTerminalIcon includeCopyButton />
 					)}
 					{commandWorkingDir && (
 						<div className="flex items-center gap-2">
@@ -141,15 +148,12 @@ export function CommandPaletteTerminalShell() {
 							</code>
 						</div>
 					)}
-				</div>
+				</>
 			)}
 
 			{/* Terminal output */}
 			<div className="flex-1 border rounded-md bg-black/95 text-green-400 font-mono text-[10px] min-w-0 max-w-full">
-				<div 
-					ref={scrollAreaRef} 
-					className="h-full w-full overflow-auto max-w-full"
-				>
+				<div ref={scrollAreaRef} className="h-full w-full overflow-auto max-w-full">
 					<div className="p-2 w-fit min-w-full">
 						{hasOutput ? (
 							<pre className="whitespace-pre leading-tight w-fit">{terminalOutput}</pre>
