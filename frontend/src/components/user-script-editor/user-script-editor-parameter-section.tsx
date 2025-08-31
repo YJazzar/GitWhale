@@ -23,7 +23,7 @@ export function UserScriptEditorParameterSection({
 }: UserScriptEditorParameterSectionProps) {
 	return (
 		<div>
-			<div className="flex items-center justify-between mb-4">
+			<div className="flex items-center justify-between mb-3">
 				<Label className="text-base font-medium">Parameters</Label>
 				<Button
 					type="button"
@@ -38,7 +38,7 @@ export function UserScriptEditorParameterSection({
 			</div>
 
 			{parameters && parameters.length > 0 ? (
-				<div className="space-y-3">
+				<div className="space-y-1">
 					{parameters.map((param, index) => (
 						<UserScriptEditorParameterForm
 							key={index}
@@ -50,7 +50,7 @@ export function UserScriptEditorParameterSection({
 					))}
 				</div>
 			) : (
-				<div className="text-center py-8 text-muted-foreground">
+				<div className="text-center py-2 text-muted-foreground">
 					<div className="text-sm">No parameters defined</div>
 					<div className="text-xs">Parameters allow users to provide input to your command</div>
 				</div>

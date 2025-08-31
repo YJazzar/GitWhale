@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { UserScriptEditorBasicInfoForm } from '@/components/user-script-editor/user-script-editor-basic-info-form';
 import { UserScriptEditorActionButtons } from '@/components/user-script-editor/user-script-editor-command-actions';
 import { UserScriptEditorParameterSection } from '@/components/user-script-editor/user-script-editor-parameter-section';
+import { UserScriptEditorScriptInput } from '@/components/user-script-editor/user-script-editor-script-input';
 import { useUserScriptEditorState } from '@/hooks/command-palette/use-user-script-editor-state';
 import { Terminal } from 'lucide-react';
 
@@ -30,23 +31,27 @@ export default function UserScriptCommandEditor({
 			</div>
 
 			<Card>
-				<CardHeader>
-					<CardTitle>Command Details</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-6">
+				<CardContent className="space-y-3 pt-4">
 					<UserScriptEditorBasicInfoForm
 						formData={editorState.formData}
 						errors={editorState.errors || {}}
 						updateFormField={editorState.updateFormField}
 					/>
-					<Separator />
+
 					<UserScriptEditorParameterSection
 						parameters={editorState.formData.parameters}
 						addParameter={editorState.addParameter}
 						updateParameter={editorState.updateParameter}
 						removeParameter={editorState.removeParameter}
 					/>
+					
+					<UserScriptEditorScriptInput
+						formData={editorState.formData}
+						errors={editorState.errors || {}}
+						updateFormField={editorState.updateFormField}
+					/>
 					<Separator />
+
 					<UserScriptEditorActionButtons
 						originalCommandId={originalCommandId}
 						isLoading={editorState.isLoading || false}

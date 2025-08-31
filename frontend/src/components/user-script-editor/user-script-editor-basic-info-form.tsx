@@ -1,9 +1,9 @@
-import { CommandPaletteContextKey } from "@/types/command-palette";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { TagInput } from "../ui/tag-input";
-import { UserDefinedCommandDefinition } from "@/hooks/command-palette/use-user-script-command";
+import { CommandPaletteContextKey } from '@/types/command-palette';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { TagInput } from '../ui/tag-input';
+import { UserDefinedCommandDefinition } from '@/hooks/command-palette/use-user-script-command';
 
 interface UserScriptEditorBasicInfoFormProps {
 	formData: Partial<UserDefinedCommandDefinition>;
@@ -11,7 +11,11 @@ interface UserScriptEditorBasicInfoFormProps {
 	updateFormField: <T extends UserDefinedCommandDefinition, K extends keyof T>(key: K, value: T[K]) => void;
 }
 
-export function UserScriptEditorBasicInfoForm({ formData, errors, updateFormField }: UserScriptEditorBasicInfoFormProps) {
+export function UserScriptEditorBasicInfoForm({
+	formData,
+	errors,
+	updateFormField,
+}: UserScriptEditorBasicInfoFormProps) {
 	return (
 		<>
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -74,23 +78,6 @@ export function UserScriptEditorBasicInfoForm({ formData, errors, updateFormFiel
 					onChange={(keywords) => updateFormField('keywords', keywords)}
 					placeholder="git, status, branch"
 				/>
-			</div>
-
-			<div>
-				<Label htmlFor="commandString">Command String *</Label>
-				<Input
-					id="commandString"
-					value={formData.action?.commandString || ''}
-					onChange={(e) => updateFormField('action', { commandString: e.target.value })}
-					placeholder="git status --porcelain"
-					className={errors['action.commandString'] ? 'border-destructive' : ''}
-				/>
-				{errors['action.commandString'] && (
-					<div className="text-sm text-destructive mt-1">{errors['action.commandString']}</div>
-				)}
-				<div className="text-sm text-muted-foreground mt-1">
-					Use {`{{parameterID}}`} to reference parameters
-				</div>
 			</div>
 		</>
 	);
