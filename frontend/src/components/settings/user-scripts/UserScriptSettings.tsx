@@ -3,17 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
-import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
+import { useUserScriptCommandsState } from '@/hooks/state/use-user-script-commands-state';
 import { Download, Edit, Plus, Terminal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import {
 	ExportUserScripts,
 	SelectUserScriptFileForImport
-} from '../../../wailsjs/go/backend/App';
+} from '../../../../wailsjs/go/backend/App';
 
-export function CustomCommands() {
-	const { customCommands, isLoading, error, deleteCustomCommand } = useCustomCommandsState();
-	const { onOpenCustomCommandEditor } = useNavigateRootFilTabs();
+export function UserScriptSettings() {
+	const { userScriptCommands, isLoading, error, deleteUserScriptCommand } = useUserScriptCommandsState();
+	const { onOpenUserScriptCommandEditor } = useNavigateRootFilTabs();
 	const [importingFile, setImportingFile] = useState<string | undefined>(undefined);
 	const [isExporting, setIsExporting] = useState(false);
 
@@ -22,30 +22,30 @@ export function CustomCommands() {
 	}, [setImportingFile]);
 
 	const handleCreateNew = useCallback(() => {
-		onOpenCustomCommandEditor();
-	}, [onOpenCustomCommandEditor]);
+		onOpenUserScriptCommandEditor();
+	}, [onOpenUserScriptCommandEditor]);
 
 	const handleEdit = useCallback(
 		(commandId: string) => {
-			onOpenCustomCommandEditor(commandId);
+			onOpenUserScriptCommandEditor(commandId);
 		},
-		[onOpenCustomCommandEditor]
+		[onOpenUserScriptCommandEditor]
 	);
 
 	const handleDelete = useCallback(
 		async (commandId: string) => {
 			try {
-				await deleteCustomCommand(commandId);
+				await deleteUserScriptCommand(commandId);
 			} catch (err) {
 				// Error is handled by the hook
 				console.error('Failed to delete command:', err);
 			}
 		},
-		[deleteCustomCommand]
+		[deleteUserScriptCommand]
 	);
 
 	const handleExport = useCallback(async () => {
-		if (customCommands.length === 0) return;
+		if (userScriptCommands.length === 0) return;
 
 		setIsExporting(true);
 		try {
@@ -55,7 +55,7 @@ export function CustomCommands() {
 		} finally {
 			setIsExporting(false);
 		}
-	}, [customCommands]);
+	}, [userScriptCommands]);
 
 	const handleImport = useCallback(async () => {
 		// Open file dialog
@@ -110,7 +110,7 @@ export function CustomCommands() {
 							variant="outline"
 							size="sm"
 							onClick={handleExport}
-							disabled={customCommands.length === 0 || isExporting}
+							disabled={userScriptCommands.length === 0 || isExporting}
 							className="select-none"
 						>
 							{isExporting ? (
@@ -137,7 +137,7 @@ export function CustomCommands() {
 					<div className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</div>
 				)}
 
-				{customCommands.length === 0 ? (
+				{userScriptCommands.length === 0 ? (
 					<div className="text-center py-8 text-muted-foreground">
 						<Terminal className="h-12 w-12 mx-auto mb-4 opacity-50" />
 						<div className="text-sm font-medium">No custom commands yet</div>
@@ -145,7 +145,7 @@ export function CustomCommands() {
 					</div>
 				) : (
 					<div className="space-y-2">
-						{customCommands.map((command) => (
+						{userScriptCommands.map((command) => (
 							<div
 								key={command.id}
 								className="group relative px-3 py-2.5 border border-border/50 rounded-lg hover:border-border hover:bg-muted/30 transition-all duration-200 select-none"

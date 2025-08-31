@@ -18,7 +18,7 @@ import HomePage from './pages/HomePage';
 import { CommandPaletteContextKey } from './types/command-palette';
 import { useRegisterRepoNavigationCommands } from './hooks/command-palette/commands/repo-navigation-commands';
 import { UseAppState } from './hooks/state/use-app-state';
-import { useCustomCommand, UserDefinedCommandDefinition } from './hooks/command-palette/use-custom-command';
+import { useUserScriptCommand, UserDefinedCommandDefinition } from './hooks/command-palette/use-user-script-command';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -46,8 +46,8 @@ function App() {
 	const isInDirDiffMode = UseIsDirDiffMode(appState);
 
 	// Convert backend commands to frontend format and convert it to the real command definition
-	const frontendCustomCommands = appState?.appConfig?.settings?.customCommands ?? [];
-	useCustomCommand(frontendCustomCommands as UserDefinedCommandDefinition[]);
+	const frontendUserScriptCommands = appState?.appConfig?.settings?.userScriptCommands ?? [];
+	useUserScriptCommand(frontendUserScriptCommands as UserDefinedCommandDefinition[]);
 
 	// Command palette stuff
 	const commandPaletteState = useCommandPaletteState();

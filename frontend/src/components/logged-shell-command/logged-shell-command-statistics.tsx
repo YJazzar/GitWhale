@@ -1,7 +1,7 @@
-import { useCommandLogsState } from '@/hooks/state/use-command-logs-state';
+import { useLoggedShellCommandsState } from '@/hooks/state/use-logged-shell-commands-state';
 
-export function CommandStatistics() {
-	const { statistics } = useCommandLogsState();
+export function LoggedShellCommandStatistics() {
+	const { statistics } = useLoggedShellCommandsState();
 	return (
 		<div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:items-center gap-2 lg:gap-4 mb-3 px-3 py-2 bg-muted/30 rounded-lg overflow-x-auto">
 			<StatItem label="Total" value={statistics.total} />

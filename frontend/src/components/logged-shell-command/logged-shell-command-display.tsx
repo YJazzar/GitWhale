@@ -5,7 +5,7 @@ interface CommandDisplayProps {
 	command: command_utils.CommandEntry;
 }
 
-export function CommandDisplay({ command }: CommandDisplayProps) {
+export function LoggedShellCommandDisplay({ command }: CommandDisplayProps) {
 	return (
 		<div className="space-y-1">
 			<div className="bg-muted px-1.5 py-0.5 rounded min-w-0  flex items-center gap-2 ">

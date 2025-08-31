@@ -309,10 +309,10 @@ func (app *App) ExecuteShellCommand(command string, workingDir, broadcastToTopic
 
 // Custom Commands CRUD operations
 
-func (app *App) SaveCustomCommand(command UserDefinedCommandDefinition) error {
+func (app *App) SaveUserScriptCommand(command UserDefinedCommandDefinition) error {
 	// Check if command with this ID already exists
 	existingIndex := -1
-	for i, existingCommand := range app.AppConfig.Settings.CustomCommands {
+	for i, existingCommand := range app.AppConfig.Settings.UserScriptCommands {
 		if existingCommand.ID == command.ID {
 			existingIndex = i
 			break
@@ -321,22 +321,22 @@ func (app *App) SaveCustomCommand(command UserDefinedCommandDefinition) error {
 
 	if existingIndex >= 0 {
 		// Update existing command
-		app.AppConfig.Settings.CustomCommands[existingIndex] = command
+		app.AppConfig.Settings.UserScriptCommands[existingIndex] = command
 	} else {
 		// Add new command
-		app.AppConfig.Settings.CustomCommands = append(app.AppConfig.Settings.CustomCommands, command)
+		app.AppConfig.Settings.UserScriptCommands = append(app.AppConfig.Settings.UserScriptCommands, command)
 	}
 
 	return app.AppConfig.SaveAppConfig()
 }
 
-func (app *App) DeleteCustomCommand(commandId string) error {
+func (app *App) DeleteUserScriptCommand(commandId string) error {
 	// Find and remove the command
-	for i, command := range app.AppConfig.Settings.CustomCommands {
+	for i, command := range app.AppConfig.Settings.UserScriptCommands {
 		if command.ID == commandId {
-			app.AppConfig.Settings.CustomCommands = append(
-				app.AppConfig.Settings.CustomCommands[:i],
-				app.AppConfig.Settings.CustomCommands[i+1:]...,
+			app.AppConfig.Settings.UserScriptCommands = append(
+				app.AppConfig.Settings.UserScriptCommands[:i],
+				app.AppConfig.Settings.UserScriptCommands[i+1:]...,
 			)
 			return app.AppConfig.SaveAppConfig()
 		}
@@ -379,7 +379,7 @@ func (app *App) ExportUserScripts() error {
 	exportData := UserScriptExportData{
 		Version:     "1.0",
 		ExportDate:  time.Now().Format(time.RFC3339),
-		UserScripts: app.AppConfig.Settings.CustomCommands,
+		UserScripts: app.AppConfig.Settings.UserScriptCommands,
 	}
 
 	return lib.SaveAsJSON(filePath, exportData)
@@ -472,7 +472,7 @@ func (app *App) ImportCustomUserScripts(filePath string, selectedUserScriptIds [
 			newUserScript.ID = uuid.New().String()
 
 			// Add the user script
-			app.AppConfig.Settings.CustomCommands = append(app.AppConfig.Settings.CustomCommands, newUserScript)
+			app.AppConfig.Settings.UserScriptCommands = append(app.AppConfig.Settings.UserScriptCommands, newUserScript)
 		}
 	}
 

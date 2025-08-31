@@ -20,7 +20,7 @@ export function CommitChanges(arg1:string,arg2:string):Promise<void>;
 
 export function CreateStagingDiffSession(arg1:string,arg2:string,arg3:string):Promise<git_operations.StagingDiffInfo>;
 
-export function DeleteCustomCommand(arg1:string):Promise<void>;
+export function DeleteUserScriptCommand(arg1:string):Promise<void>;
 
 export function EndDiffSession(arg1:string):Promise<void>;
 
@@ -68,7 +68,7 @@ export function ReadFile(arg1:string):Promise<string>;
 
 export function RunGitLog(arg1:string,arg2:git_operations.GitLogOptions):Promise<Array<git_operations.GitLogCommitInfo>>;
 
-export function SaveCustomCommand(arg1:backend.UserDefinedCommandDefinition):Promise<void>;
+export function SaveUserScriptCommand(arg1:backend.UserDefinedCommandDefinition):Promise<void>;
 
 export function SelectUserScriptFileForImport():Promise<string>;
 

@@ -36,7 +36,7 @@ function getGroupIcon(groupKey: string): React.ReactNode {
 		applicationLogsStateAtoms: <Terminal className="w-4 h-4" />,
 		commandPaletteStateAtoms: <Palette className="w-4 h-4" />,
 		commandRegistryStateAtoms: <Terminal className="w-4 h-4" />,
-		customCommandStateAtoms: <Terminal className="w-4 h-4" />,
+		userScriptCommandStateAtoms: <Terminal className="w-4 h-4" />,
 		fileTabsStateAtoms: <Bug className="w-4 h-4" />,
 		sidebarStateAtoms: <Sidebar className="w-4 h-4" />,
 		gitDiffStateAtoms: <Search className="w-4 h-4" />,

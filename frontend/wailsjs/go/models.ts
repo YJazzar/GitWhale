@@ -124,7 +124,7 @@ export namespace backend {
 	    git: GitSettings;
 	    terminal: command_utils.TerminalSettings;
 	    ui: UISettings;
-	    customCommands: UserDefinedCommandDefinition[];
+	    userScriptCommands: UserDefinedCommandDefinition[];
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -135,7 +135,7 @@ export namespace backend {
 	        this.git = this.convertValues(source["git"], GitSettings);
 	        this.terminal = this.convertValues(source["terminal"], command_utils.TerminalSettings);
 	        this.ui = this.convertValues(source["ui"], UISettings);
-	        this.customCommands = this.convertValues(source["customCommands"], UserDefinedCommandDefinition);
+	        this.userScriptCommands = this.convertValues(source["userScriptCommands"], UserDefinedCommandDefinition);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

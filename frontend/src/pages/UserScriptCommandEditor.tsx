@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { TagInput } from '@/components/ui/tag-input';
 import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button';
 import { ParameterForm } from '@/components/forms/ParameterForm';
-import { useCustomCommandsState } from '@/hooks/state/use-custom-commands-state';
+import { useUserScriptCommandsState } from '@/hooks/state/use-user-script-commands-state';
 import { Plus, Trash2, Save, Terminal } from 'lucide-react';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
@@ -14,7 +14,7 @@ import { z } from 'zod';
 import {
 	UserDefinedCommandDefinition,
 	UserDefinedParameter,
-} from '@/hooks/command-palette/use-custom-command';
+} from '@/hooks/command-palette/use-user-script-command';
 import { CommandPaletteContextKey } from '@/types/command-palette';
 import {
 	Select,
@@ -49,13 +49,14 @@ const commandSchema = z.object({
 	}),
 });
 
-interface CustomCommandEditorProps {
+interface UserScriptCommandEditorProps {
 	// Is assumed to stay as-is, even if the command's ID gets saved to something different
 	originalCommandId?: string;
 }
 
-export default function CustomCommandEditor({ originalCommandId }: CustomCommandEditorProps) {
-	const { getCustomCommand, saveCustomCommand, deleteCustomCommand } = useCustomCommandsState();
+export default function UserScriptCommandEditor({ originalCommandId }: UserScriptCommandEditorProps) {
+	const { getUserScriptCommand, saveUserScriptCommand, deleteUserScriptCommand } =
+		useUserScriptCommandsState();
 	const rootNavigation = useNavigateRootFilTabs();
 
 	const [formData, setFormData] = useState<UserDefinedCommandDefinition>({
@@ -76,7 +77,7 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 	// Load existing command if editing
 	useEffect(() => {
 		if (originalCommandId) {
-			const existingCommand = getCustomCommand(originalCommandId);
+			const existingCommand = getUserScriptCommand(originalCommandId);
 			if (existingCommand) {
 				setFormData({
 					...existingCommand,
@@ -91,7 +92,7 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 				id: `custom-${Date.now()}`,
 			}));
 		}
-	}, [originalCommandId, getCustomCommand]);
+	}, [originalCommandId, getUserScriptCommand]);
 
 	const validateForm = useCallback(() => {
 		try {
@@ -112,7 +113,7 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 	}, [formData]);
 
 	const onCloseEditorPage = () => {
-		rootNavigation.onCloseCustomCommandEditor(originalCommandId);
+		rootNavigation.onCloseUserScriptCommandEditor(originalCommandId);
 	};
 
 	const handleSave = useCallback(async () => {
@@ -122,28 +123,28 @@ export default function CustomCommandEditor({ originalCommandId }: CustomCommand
 
 		try {
 			setIsLoading(true);
-			await saveCustomCommand(formData);
+			await saveUserScriptCommand(formData);
 			onCloseEditorPage();
 		} catch (error) {
 			console.error('Failed to save command:', error);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [formData, validateForm, saveCustomCommand, onCloseEditorPage]);
+	}, [formData, validateForm, saveUserScriptCommand, onCloseEditorPage]);
 
 	const handleDelete = useCallback(async () => {
 		if (!originalCommandId) return;
 
 		try {
 			setIsLoading(true);
-			await deleteCustomCommand(originalCommandId);
+			await deleteUserScriptCommand(originalCommandId);
 			onCloseEditorPage();
 		} catch (error) {
 			console.error('Failed to delete command:', error);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [originalCommandId, deleteCustomCommand, onCloseEditorPage]);
+	}, [originalCommandId, deleteUserScriptCommand, onCloseEditorPage]);
 
 	const handleCancel = useCallback(() => {
 		onCloseEditorPage();

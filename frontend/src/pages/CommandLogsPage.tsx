@@ -1,8 +1,9 @@
-import { CommandCard } from '@/components/ui/command-card';
-import { CommandLogsHeader } from '@/components/ui/command-logs-header';
-import { CommandStatistics } from '@/components/ui/command-statistics';
+
+import { LoggedShellCommandCard } from '@/components/logged-shell-command/logged-shell-command-card';
+import { LoggedShellCommandLogsHeader } from '@/components/logged-shell-command/logged-shell-command-header';
+import { LoggedShellCommandStatistics } from '@/components/logged-shell-command/logged-shell-command-statistics';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCommandLogsState } from '@/hooks/state/use-command-logs-state';
+import { useLoggedShellCommandsState } from '@/hooks/state/use-logged-shell-commands-state';
 import { Terminal } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -11,7 +12,7 @@ export default function CommandLogsPage() {
 		searchTerm,
 		filter,
 		commands,
-	} = useCommandLogsState();
+	} = useLoggedShellCommandsState();
 
 	const filteredCommands = useMemo(() => {
 		let filtered = commands.all;
@@ -50,9 +51,10 @@ export default function CommandLogsPage() {
 
 	return (
 		<div className="h-full flex flex-col p-3">
-			<CommandLogsHeader />
+			<LoggedShellCommandLogsHeader />
 
-			<CommandStatistics />
+		<LoggedShellCommandStatistics/>
+
 
 			{/* Commands List */}
 			<div className="flex-1 min-h-0">
@@ -70,7 +72,7 @@ export default function CommandLogsPage() {
 					<ScrollArea className="h-full">
 						<div className="space-y-0 pr-2">
 							{filteredCommands.map((command) => (
-								<CommandCard
+								<LoggedShellCommandCard
 									key={command.id}
 									command={command}
 								/>

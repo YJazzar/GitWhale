@@ -12,7 +12,7 @@ const lastRefreshAtom = atom<Date | null>(null);
 
 type FilterType = 'all' | 'running' | 'success' | 'failed';
 
-export const useCommandLogsState = () => {
+export const useLoggedShellCommandsState = () => {
 	const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
 	const [filter, setFilter] = useAtom(filterAtom);
 	const [commands, setCommands] = useAtom(commandLogsAtom);

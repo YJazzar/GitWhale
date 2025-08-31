@@ -42,7 +42,7 @@ type UserDefinedStringParameter = UserDefinedParameterBase & {
 
 export type UserDefinedParameter = UserDefinedSelectParameter | UserDefinedStringParameter;
 
-export function useCustomCommand(userDefinedCommands: UserDefinedCommandDefinition[]) {
+export function useUserScriptCommand(userDefinedCommands: UserDefinedCommandDefinition[]) {
 	const commandRegistry = useCommandRegistry(undefined);
 
 	// Auto-register custom commands when they change

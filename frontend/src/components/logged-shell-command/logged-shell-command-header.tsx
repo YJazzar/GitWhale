@@ -8,7 +8,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { useCommandLogsState } from '@/hooks/state/use-command-logs-state';
+import { useLoggedShellCommandsState } from '@/hooks/state/use-logged-shell-commands-state';
 import { ChevronDown, Filter, RefreshCw, Search, Trash2 } from 'lucide-react';
 
 type FilterType = 'all' | 'running' | 'success' | 'failed';
@@ -20,9 +20,9 @@ const filterLabels: Record<FilterType, string> = {
 	failed: 'Failed',
 };
 
-export function CommandLogsHeader() {
+export function LoggedShellCommandLogsHeader() {
 	const { searchTerm, filter, lastRefresh, refreshCommands, isLoading, commands, clearAllCommands } =
-		useCommandLogsState();
+		useLoggedShellCommandsState();
 
 	return (
 		<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">

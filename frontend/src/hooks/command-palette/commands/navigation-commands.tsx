@@ -98,10 +98,10 @@ const navigateCommandLogs: CommandDefinition<ReturnType<typeof useNavigateRootFi
 
 // Open a command editor
 const navigateNewCommand: CommandDefinition<ReturnType<typeof useNavigateRootFilTabs>> = {
-	id: 'navigate.new.customCommand',
-	title: 'New Custom Command',
+	id: 'navigate.new.userScriptCommand',
+	title: 'New User Script',
 	icon: <Terminal className="h-4 w-4" />,
-	keywords: ['new', 'custom', 'command'],
+	keywords: ['new', 'custom', 'script', 'command', 'user'],
 	context: CommandPaletteContextKey.Root,
 	action: {
 		type: 'function',
@@ -109,16 +109,16 @@ const navigateNewCommand: CommandDefinition<ReturnType<typeof useNavigateRootFil
 			return useNavigateRootFilTabs();
 		},
 		runAction: async (providedHooks) => {
-			providedHooks.onOpenCustomCommandEditor();
+			providedHooks.onOpenUserScriptCommandEditor();
 		},
 	},
 };
 
 const editCommand: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
-	id: 'navigate.edit.customCommand',
-	title: 'Edit Custom Command',
+	id: 'navigate.edit.userScriptCommand',
+	title: 'Edit User Script',
 	icon: <Terminal className="h-4 w-4" />,
-	keywords: ['edit', 'custom', 'command'],
+	keywords: ['edit', 'custom', 'script', 'command', 'user'],
 	context: CommandPaletteContextKey.Root,
 	parameters: [
 		{
@@ -133,11 +133,11 @@ const editCommand: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
 						groupKey: 'custom commands',
 						groupName: '',
 						options:
-							providedHooks.appState?.appConfig?.settings?.customCommands?.map(
-								(customCommand) => {
+							providedHooks.appState?.appConfig?.settings?.userScriptCommands?.map(
+								(userScriptCommand) => {
 									return {
-										optionKey: customCommand.id,
-										optionValue: customCommand.title,
+										optionKey: userScriptCommand.id,
+										optionValue: userScriptCommand.title,
 									};
 								}
 							) ?? [],
@@ -155,7 +155,7 @@ const editCommand: CommandDefinition<ReturnType<typeof useAppLevelHooks>> = {
 				throw 'No command was provided';
 			}
 
-			providedHooks.rootNavigation.onOpenCustomCommandEditor(commandID.value);
+			providedHooks.rootNavigation.onOpenUserScriptCommandEditor(commandID.value);
 		},
 	},
 };

@@ -1,12 +1,12 @@
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Loader2, XCircle, CircleX } from 'lucide-react';
 
-interface CommandStatusBadgeProps {
+interface LoggedShellCommandStatusBadgeProps {
 	status: number;
 	size?: 'sm' | 'default';
 }
 
-export function CommandStatusBadge({ status, size = 'default' }: CommandStatusBadgeProps) {
+export function LoggedShellCommandStatusBadge({ status, size = 'default' }: LoggedShellCommandStatusBadgeProps) {
 	const sizeClasses = size === 'sm' ? 'text-xs px-1.5 py-0 h-5' : '';
 	const iconSize = size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3';
 

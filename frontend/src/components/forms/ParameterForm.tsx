@@ -12,7 +12,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { UserDefinedParameter, UserDefinedSelectParameter } from '@/hooks/command-palette/use-custom-command';
+import { UserDefinedParameter, UserDefinedSelectParameter } from '@/hooks/command-palette/use-user-script-command';
 import { Trash2 } from 'lucide-react';
 import { memo } from 'react';
 

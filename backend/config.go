@@ -26,10 +26,10 @@ type AppConfig struct {
 }
 
 type AppSettings struct {
-	Git            GitSettings                    `json:"git"`
-	Terminal       command_utils.TerminalSettings `json:"terminal"`
-	UI             UISettings                     `json:"ui"`
-	CustomCommands []UserDefinedCommandDefinition `json:"customCommands"`
+	Git                GitSettings                    `json:"git"`
+	Terminal           command_utils.TerminalSettings `json:"terminal"`
+	UI                 UISettings                     `json:"ui"`
+	UserScriptCommands []UserDefinedCommandDefinition `json:"userScriptCommands"`
 }
 
 type UISettings struct {
@@ -93,7 +93,7 @@ func LoadAppConfig() (*AppConfig, error) {
 				UI: UISettings{
 					AutoShowCommitDetails: true, // Default to true for existing behavior
 				},
-				CustomCommands: []UserDefinedCommandDefinition{},
+				UserScriptCommands: []UserDefinedCommandDefinition{},
 			},
 			GitReposMap:     make(map[string]RepoContext),
 			RecentGitRepos:  []string{},
@@ -120,8 +120,8 @@ func LoadAppConfig() (*AppConfig, error) {
 	if config.Settings.Terminal.CursorStyle == "" {
 		config.Settings.Terminal.CursorStyle = "block"
 	}
-	if config.Settings.CustomCommands == nil {
-		config.Settings.CustomCommands = []UserDefinedCommandDefinition{}
+	if config.Settings.UserScriptCommands == nil {
+		config.Settings.UserScriptCommands = []UserDefinedCommandDefinition{}
 	}
 	config.filterAllDeletedRepos()
 

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
-interface CommandOutputDisplayProps {
+interface LoggedShellCommandOutputDisplayProps {
 	title: string;
 	output: string;
 	outputType: 'stdout' | 'stderr';
@@ -13,7 +13,7 @@ interface CommandOutputDisplayProps {
 
 const NullSpecialChar = '␀'
 
-export function CommandOutputDisplay({ title, output, outputType, className }: CommandOutputDisplayProps) {
+export function LoggedShellCommandOutputDisplay({ title, output, outputType, className }: LoggedShellCommandOutputDisplayProps) {
 	const [showProcessed, setShowProcessed] = useState(true);
 
 	const processedOutput = useMemo(() => {

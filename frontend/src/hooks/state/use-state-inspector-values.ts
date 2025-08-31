@@ -6,7 +6,7 @@ import { useGitLogStateAtoms } from './repo/use-git-log-state';
 import { useGitStagingStateAtoms } from './repo/use-git-staging-state';
 import { useAppLogStateAtoms } from './use-app-log-state';
 import { useAppStateAtoms } from './use-app-state';
-import { useCustomCommandStateAtoms } from './use-custom-commands-state';
+import { useUserScriptCommandStateAtoms } from './use-user-script-commands-state';
 import { useFileTabsStateAtoms } from './useFileTabsState';
 import { useSidebarStateAtoms } from './useSidebarState';
 import { useMemo } from 'react';
@@ -18,7 +18,7 @@ export function useStateInspectorValues() {
 	const applicationLogsStateAtoms = useAppLogStateAtoms();
 	const commandPaletteStateAtoms = useCommandPaletteStateAtoms();
 	const commandRegistryStateAtoms = useCommandRegistryStateAtoms();
-	const customCommandStateAtoms = useCustomCommandStateAtoms();
+	const userScriptCommandStateAtoms = useUserScriptCommandStateAtoms();
 	const fileTabsStateAtoms = useFileTabsStateAtoms();
 	const sidebarStateAtoms = useSidebarStateAtoms();
 	const gitDiffStateAtoms = useGitDiffStateAtoms();
@@ -31,7 +31,7 @@ export function useStateInspectorValues() {
 		applicationLogsStateAtoms,
 		commandPaletteStateAtoms,
 		commandRegistryStateAtoms,
-		customCommandStateAtoms,
+		userScriptCommandStateAtoms,
 		fileTabsStateAtoms,
 		sidebarStateAtoms,
 		gitDiffStateAtoms,

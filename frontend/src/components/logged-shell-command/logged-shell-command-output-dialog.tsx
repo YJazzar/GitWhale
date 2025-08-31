@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Terminal } from 'lucide-react';
 import { command_utils } from 'wailsjs/go/models';
-import { CommandDisplay } from './command-display';
-import { CommandOutputDisplay } from './command-output-display';
+import { LoggedShellCommandDisplay } from './logged-shell-command-display';
+import { LoggedShellCommandOutputDisplay } from './logged-shell-command-output-display';
 
 interface CommandOutputDialogProps {
 	open: boolean;
@@ -11,7 +11,7 @@ interface CommandOutputDialogProps {
 	title?: string;
 }
 
-export function CommandOutputDialog({ open, onOpenChange, command }: CommandOutputDialogProps) {
+export function LoggedShellCommandOutputDialog({ open, onOpenChange, command }: CommandOutputDialogProps) {
 	const commandOutput = command.output;
 	const commandErrorOutput = command.errorOutput;
 
@@ -24,19 +24,19 @@ export function CommandOutputDialog({ open, onOpenChange, command }: CommandOutp
 						Command Output
 					</DialogTitle>
 					<DialogDescription className="text-xs font-mono bg-muted px-2 py-1 m-2 rounded truncate">
-						<CommandDisplay command={command} />
+						<LoggedShellCommandDisplay command={command} />
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex-1 min-h-0 space-y-4 overflow-auto">
 					{commandOutput && (
-						<CommandOutputDisplay
+						<LoggedShellCommandOutputDisplay
 							title="Standard Output"
 							output={commandOutput}
 							outputType="stdout"
 						/>
 					)}
 					{commandErrorOutput && (
-						<CommandOutputDisplay
+						<LoggedShellCommandOutputDisplay
 							title="Error Output"
 							output={commandErrorOutput}
 							outputType="stderr"

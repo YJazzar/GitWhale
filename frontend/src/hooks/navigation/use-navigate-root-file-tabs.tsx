@@ -4,7 +4,7 @@ import RepoFileTab from '@/components/repo-file-tab';
 import ApplicationLogsPage from '@/pages/ApplicationLogsPage';
 import RepoPage from '@/pages/repo/RepoPage';
 import SettingsPage from '@/pages/SettingsPage';
-import CustomCommandEditor from '@/pages/CustomCommandEditor';
+import UserScriptCommandEditor from '@/pages/UserScriptCommandEditor';
 import StateInspectorPage from '@/pages/StateInspectorPage';
 import CommandLogsPage from '@/pages/CommandLogsPage';
 import { useCallback } from 'react';
@@ -85,26 +85,26 @@ export function useNavigateRootFilTabs() {
 	};
 
 	// Callback to open custom command editor tab
-	const onOpenCustomCommandEditor = (commandId?: string) => {
+	const onOpenUserScriptCommandEditor = (commandId?: string) => {
 		const tabKey = commandId ? `$$custom-command-editor-${commandId}$$` : '$$custom-command-editor-new$$';
 
 		let title = 'New Command';
 		if (commandId) {
 			// Try to get the command title from app state
-			const customCommands = appState.appState?.appConfig?.settings?.customCommands || [];
-			const command = customCommands.find((cmd) => cmd.id === commandId);
+			const userScriptCommands = appState.appState?.appConfig?.settings?.userScriptCommands || [];
+			const command = userScriptCommands.find((cmd) => cmd.id === commandId);
 			title = command?.title ? command.title : `Edit Command`;
 		}
 
 		fileTabs.openTab({
 			tabKey,
 			titleRender: () => <>{title}</>,
-			component: <CustomCommandEditor originalCommandId={commandId} />,
+			component: <UserScriptCommandEditor originalCommandId={commandId} />,
 			isPermanentlyOpen: true,
 		});
 	};
 
-	const onCloseCustomCommandEditor = (commandId?: string) => {
+	const onCloseUserScriptCommandEditor = (commandId?: string) => {
 		const tabKey = commandId ? `$$custom-command-editor-${commandId}$$` : '$$custom-command-editor-new$$';
 		fileTabs.closeTab(tabKey);
 	};
@@ -117,7 +117,7 @@ export function useNavigateRootFilTabs() {
 		onOpenApplicationLogs,
 		onOpenStateInspector,
 		onOpenCommandLogs,
-		onOpenCustomCommandEditor,
-		onCloseCustomCommandEditor,
+		onOpenUserScriptCommandEditor,
+		onCloseUserScriptCommandEditor,
 	};
 }

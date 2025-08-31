@@ -30,8 +30,8 @@ export function CreateStagingDiffSession(arg1, arg2, arg3) {
   return window['go']['backend']['App']['CreateStagingDiffSession'](arg1, arg2, arg3);
 }
 
-export function DeleteCustomCommand(arg1) {
-  return window['go']['backend']['App']['DeleteCustomCommand'](arg1);
+export function DeleteUserScriptCommand(arg1) {
+  return window['go']['backend']['App']['DeleteUserScriptCommand'](arg1);
 }
 
 export function EndDiffSession(arg1) {
@@ -126,8 +126,8 @@ export function RunGitLog(arg1, arg2) {
   return window['go']['backend']['App']['RunGitLog'](arg1, arg2);
 }
 
-export function SaveCustomCommand(arg1) {
-  return window['go']['backend']['App']['SaveCustomCommand'](arg1);
+export function SaveUserScriptCommand(arg1) {
+  return window['go']['backend']['App']['SaveUserScriptCommand'](arg1);
 }
 
 export function SelectUserScriptFileForImport() {

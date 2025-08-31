@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ImportCustomUserScripts, ValidateUserScriptsFile } from '../../../wailsjs/go/backend/App';
 import { backend } from '../../../wailsjs/go/models';
-import { useCustomCommandsState } from '../state/use-custom-commands-state';
+import { useUserScriptCommandsState } from '../state/use-user-script-commands-state';
 
 interface ValidationState {
 	isValidating: boolean;
@@ -11,7 +11,7 @@ interface ValidationState {
 }
 
 export function useUserScriptImporter(filePathToImport: string | undefined, onCloseImportDialog: () => void) {
-	const { reloadUserScripts } = useCustomCommandsState();
+	const { reloadUserScripts } = useUserScriptCommandsState();
 	const [validation, setValidation] = useState<ValidationState>({
 		isValidating: false,
 		isValid: false,

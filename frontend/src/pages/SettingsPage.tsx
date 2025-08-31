@@ -4,9 +4,9 @@ import {
 	TerminalSettings,
 	AppearanceSettings,
 	ApplicationInfo,
-	CustomCommands,
 	SettingsHeader,
-	SettingsLoading
+	SettingsLoading,
+	UserScriptSettings
 } from '@/components/settings';
 
 export default function SettingsPage() {
@@ -25,7 +25,7 @@ export default function SettingsPage() {
 				<TerminalSettings />
 				<AppearanceSettings />
 				<div className="lg:col-span-2">
-					<CustomCommands />
+					<UserScriptSettings />
 				</div>
 				<ApplicationInfo />
 			</div>

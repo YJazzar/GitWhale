@@ -1,13 +1,13 @@
 import { atom, useAtom } from 'jotai';
 import { useCallback, useEffect, useMemo } from 'react';
-import { DeleteCustomCommand, SaveCustomCommand } from '../../../wailsjs/go/backend/App';
+import { DeleteUserScriptCommand, SaveUserScriptCommand } from '../../../wailsjs/go/backend/App';
 import { backend } from '../../../wailsjs/go/models';
-import { UserDefinedCommandDefinition } from '../command-palette/use-custom-command';
+import { UserDefinedCommandDefinition } from '../command-palette/use-user-script-command';
 import { UseAppState } from './use-app-state';
 
 // Atoms for state management
-const customCommandsLoadingAtom = atom<boolean>(false);
-const customCommandsErrorAtom = atom<string | null>(null);
+const userScriptCommandsLoadingAtom = atom<boolean>(false);
+const userScriptCommandsErrorAtom = atom<string | null>(null);
 
 // Helper function to convert from frontend type to backend type
 function convertToBackendType(
@@ -16,13 +16,13 @@ function convertToBackendType(
 	return frontendCommand as backend.UserDefinedCommandDefinition;
 }
 
-export function useCustomCommandsState() {
+export function useUserScriptCommandsState() {
 	const appState = UseAppState();
-	const [isLoading, setIsLoading] = useAtom(customCommandsLoadingAtom);
-	const [error, setError] = useAtom(customCommandsErrorAtom);
+	const [isLoading, setIsLoading] = useAtom(userScriptCommandsLoadingAtom);
+	const [error, setError] = useAtom(userScriptCommandsErrorAtom);
 
-	const customCommands = useMemo(() => {
-		return appState.appState?.appConfig?.settings?.customCommands ?? [];
+	const userScriptCommands = useMemo(() => {
+		return appState.appState?.appConfig?.settings?.userScriptCommands ?? [];
 	}, [appState.appState]) as UserDefinedCommandDefinition[];
 
 	// Load custom commands from backend
@@ -39,12 +39,12 @@ export function useCustomCommandsState() {
 	}, [setIsLoading, setError]);
 
 	// Save a custom command (create or update)
-	const saveCustomCommand = useCallback(
+	const saveUserScriptCommand = useCallback(
 		async (command: UserDefinedCommandDefinition) => {
 			try {
 				setError(null);
 				const backendCommand = convertToBackendType(command);
-				await SaveCustomCommand(backendCommand);
+				await SaveUserScriptCommand(backendCommand);
 				await appState.refreshAppState();
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to save custom command: ' + err);
@@ -55,11 +55,11 @@ export function useCustomCommandsState() {
 	);
 
 	// Delete a custom command
-	const deleteCustomCommand = useCallback(
+	const deleteUserScriptCommand = useCallback(
 		async (commandId: string) => {
 			try {
 				setError(null);
-				await DeleteCustomCommand(commandId);
+				await DeleteUserScriptCommand(commandId);
 				await appState.refreshAppState();
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to delete custom command: ' + err);
@@ -70,34 +70,34 @@ export function useCustomCommandsState() {
 	);
 
 	// Get a single command by ID
-	const getCustomCommand = useCallback(
+	const getUserScriptCommand = useCallback(
 		(commandId: string): UserDefinedCommandDefinition | undefined => {
-			return customCommands.find((cmd) => cmd.id === commandId);
+			return userScriptCommands.find((cmd) => cmd.id === commandId);
 		},
-		[customCommands]
+		[userScriptCommands]
 	);
 
 	// Load commands on mount
 	useEffect(() => {
-		if (customCommands.length === 0 && !isLoading) {
+		if (userScriptCommands.length === 0 && !isLoading) {
 			reloadUserScripts();
 		}
-	}, [customCommands.length, isLoading, reloadUserScripts]);
+	}, [userScriptCommands.length, isLoading, reloadUserScripts]);
 
 	return {
-		customCommands,
+		userScriptCommands,
 		isLoading,
 		error,
 		reloadUserScripts,
-		saveCustomCommand,
-		deleteCustomCommand,
-		getCustomCommand,
+		saveUserScriptCommand,
+		deleteUserScriptCommand,
+		getUserScriptCommand,
 	};
 }
 
-export function useCustomCommandStateAtoms() {
+export function useUserScriptCommandStateAtoms() {
 	return {
-		customCommandsLoadingAtom,
-		customCommandsErrorAtom,
+		userScriptCommandsLoadingAtom,
+		userScriptCommandsErrorAtom,
 	};
 }

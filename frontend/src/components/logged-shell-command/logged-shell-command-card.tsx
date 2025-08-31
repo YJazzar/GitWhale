@@ -1,23 +1,23 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { CommandDisplay } from '@/components/ui/command-display';
-import { CommandOutputDialog } from '@/components/ui/command-output-dialog';
-import { CommandStatusBadge } from '@/components/ui/command-status-badge';
 import { Separator } from '@/components/ui/separator';
+import { useLoggedShellCommandsState } from '@/hooks/state/use-logged-shell-commands-state';
 import { Clock, Eye, Terminal } from 'lucide-react';
 import { useState } from 'react';
 import { command_utils } from '../../../wailsjs/go/models';
-import { useCommandLogsState } from '@/hooks/state/use-command-logs-state';
+import { LoggedShellCommandDisplay } from './logged-shell-command-display';
+import { LoggedShellCommandOutputDialog } from './logged-shell-command-output-dialog';
+import { LoggedShellCommandStatusBadge } from './logged-shell-command-status-badge';
 
 interface CommandCardProps {
 	command: command_utils.CommandEntry;
 }
 
-export function CommandCard({ command }: CommandCardProps) {
+export function LoggedShellCommandCard({ command }: CommandCardProps) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const hasOutput = !!(command.output || command.errorOutput);
 
-	const { formatDuration, formatTimeAgo } = useCommandLogsState();
+	const { formatDuration, formatTimeAgo } = useLoggedShellCommandsState();
 
 	const onOpenDialog = (e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -32,7 +32,7 @@ export function CommandCard({ command }: CommandCardProps) {
 				<CardHeader className="pb-1 pt-2 px-3">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<CommandStatusBadge status={command.status} size="sm" />
+							<LoggedShellCommandStatusBadge status={command.status} size="sm" />
 							{hasOutput && (
 								<Button
 									variant="ghost"
@@ -59,7 +59,7 @@ export function CommandCard({ command }: CommandCardProps) {
 							</div>
 						)}
 					</div>
-					<CommandDisplay command={command} />
+					<LoggedShellCommandDisplay command={command} />
 				</CardHeader>
 
 				<CardContent className="pt-0 px-3 pb-2">
@@ -96,7 +96,7 @@ export function CommandCard({ command }: CommandCardProps) {
 				</CardContent>
 			</Card>
 
-			<CommandOutputDialog open={dialogOpen} onOpenChange={setDialogOpen} command={command} />
+			<LoggedShellCommandOutputDialog open={dialogOpen} onOpenChange={setDialogOpen} command={command} />
 		</>
 	);
 }
