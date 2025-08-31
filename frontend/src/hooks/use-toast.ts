@@ -4,6 +4,7 @@
 import * as React from 'react';
 
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
+import Logger from '@/utils/logger';
 
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 5000; // 5 seconds
@@ -120,7 +121,7 @@ export const reducer = (state: State, action: Action): State => {
 				toasts: state.toasts.filter((t) => t.id !== action.toastId),
 			};
 	}
-	console.error('Unhandled Action in use-toast.ts');
+	Logger.error('Unhandled Action in use-toast.ts');
 	return { ...state };
 };
 

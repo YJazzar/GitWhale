@@ -14,53 +14,43 @@ interface UserScriptListSelectorProps {
 export function UserScriptListSelector(props: UserScriptListSelectorProps) {
 	const { onToggleScriptId, userScriptCommands, selectedUserScriptIds } = props;
 
-	const onToggleUserScriptCallbackFactory = useCallback(
+	const onToggleUserScript = useCallback(
 		(userScriptId: string) => {
-			return (checked: boolean) => {
-				onToggleScriptId(userScriptId, !!checked);
-			};
+			const wasPreviouslyCheck = selectedUserScriptIds.has(userScriptId);
+			onToggleScriptId(userScriptId, !wasPreviouslyCheck);
 		},
-		[onToggleScriptId]
+		[onToggleScriptId, selectedUserScriptIds]
 	);
 
 	return (
-		<>
-			{/* User Scripts List */}
-			<ScrollArea className="h-80 rounded-md">
-				<div className="p-4 space-y-3">
-					{userScriptCommands.map((userScript: backend.UserDefinedCommandDefinition) => (
-						<div
-							key={userScript.id}
-							className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors"
-						>
-							<Checkbox
-								checked={selectedUserScriptIds.has(userScript.id)}
-								onCheckedChange={onToggleUserScriptCallbackFactory(userScript.id)}
-								className="mt-1"
-							/>
-							<div className="flex-1 min-w-0">
-								<div className="flex items-center gap-2 mb-1">
-									<h4 className="font-medium text-sm truncate">{userScript.title}</h4>
-									<Badge variant="secondary" className="text-xs">
-										{userScript.context}
-									</Badge>
-								</div>
-								{userScript.description && (
-									<p className="text-xs text-muted-foreground mb-2 truncate">
-										{userScript.description}
-									</p>
-								)}
-								<div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+		<ScrollArea className="h-80 pr-2">
+			{userScriptCommands.map((userScript: backend.UserDefinedCommandDefinition) => (
+				<div
+					key={userScript.id}
+					onClick={() => onToggleUserScript(userScript.id)}
+					className="p-2 rounded-md hover:bg-muted/50 transition-colors space-y-2 select-none"
+				>
+					{/* First line: Checkbox, Title, Context Badge, Description */}
+					<div className="flex items-center gap-2">
+						<Checkbox
+							checked={selectedUserScriptIds.has(userScript.id)}
+							className="flex-shrink-0"
+						/>
+						<h4 className="font-medium text-sm truncate">{userScript.title}</h4>
+						<Badge variant="outline" className="text-xs px-2 py-0 flex-shrink-0">
+							{userScript.context}
+						</Badge>
+						{userScript.description && (
+							<span className="text-xs text-muted-foreground truncate">
+								• {userScript.description}
+							</span>
+						)}
+					</div>
 
-									<ShellCommand
-										commandString={userScript.action.commandString}
-									/>
-								</div>
-							</div>
-						</div>
-					))}
+					{/* Second line: Command String aligned with checkbox */}
+					<ShellCommand commandString={userScript.action.commandString} truncateCommand={true} />
 				</div>
-			</ScrollArea>
-		</>
+			))}
+		</ScrollArea>
 	);
 }
