@@ -137,20 +137,18 @@ export function UserScriptSettings() {
 											<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
 												{command.context}
 											</span>
+											{command.description && (
+												<span className="truncate text-xs text-muted-foreground">
+													{command.description}
+												</span>
+											)}
 										</div>
 
-										<div className="flex items-center text-xs text-muted-foreground">
-											{command.description && (
-												<span className="truncate">{command.description}</span>
-											)}
-											<div className="flex items-center shrink-0 max-w-full">
-												<ShellCommand
-													commandString={command.action.commandString}
-													showTerminalIcon
-													truncateCommand
-												/>
-											</div>
-										</div>
+										<ShellCommand
+											commandString={command.action.commandString}
+											showTerminalIcon
+											truncateCommand
+										/>
 									</div>
 
 									<div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
