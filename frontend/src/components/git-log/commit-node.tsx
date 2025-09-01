@@ -1,6 +1,6 @@
 import { GitRefs } from '@/components/git-refs';
 import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
-import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/utils/use-unix-time';
 import { Calendar, GitCommit, GitMerge, Hash, User } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 

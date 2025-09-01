@@ -1,4 +1,4 @@
-import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/utils/use-unix-time';
 import { Calendar, Clock, Hash, User } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 

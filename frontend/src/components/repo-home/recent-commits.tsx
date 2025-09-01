@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigateToCommit } from '@/hooks/navigation/use-navigate-to-commit';
 import { useRepoHomeState } from '@/hooks/state/repo/use-git-home-state';
-import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/utils/use-unix-time';
 import { ArrowRight, Calendar, GitCommit, GitMerge, History } from 'lucide-react';
 import { git_operations } from 'wailsjs/go/models';
 

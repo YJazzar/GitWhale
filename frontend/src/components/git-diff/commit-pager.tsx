@@ -1,6 +1,6 @@
 import { useNavigateToCommitDiffs } from '@/hooks/navigation/use-navigate-commit-diffs';
 import { useRepoLogState } from '@/hooks/state/repo/use-git-log-state';
-import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/utils/use-unix-time';
 import { cn } from '@/lib/utils';
 import { Calendar, ChevronDown, GitCommit, Hash, User } from 'lucide-react';
 import { git_operations } from '../../../wailsjs/go/models';

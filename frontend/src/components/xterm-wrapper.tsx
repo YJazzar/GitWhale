@@ -1,6 +1,6 @@
 import { useRepoTerminalState } from '@/hooks/state/repo/use-repo-terminal';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { useResizeObserver } from '@/hooks/use-resize-observer';
+import { useResizeObserver } from '@/hooks/utils/use-resize-observer';
 import '@xterm/xterm/css/xterm.css';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 

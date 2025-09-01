@@ -1,5 +1,5 @@
 import { TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
-import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
 import clsx from 'clsx';
 import { Circle, X } from 'lucide-react';
 

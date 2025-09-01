@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
 
 export type SidebarProps = {
 	sidebarSessionKey: string;

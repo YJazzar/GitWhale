@@ -1,7 +1,7 @@
 import { GitRefs } from '@/components/git-refs';
 import { calculateGitGraphLayout, type GitGraphCommit } from '@/hooks/git-log/use-git-graph';
 import { convertToShortHash } from '@/hooks/git-log/use-short-hash';
-import { convertUnixTimeToDate } from '@/hooks/use-unix-time';
+import { convertUnixTimeToDate } from '@/hooks/utils/use-unix-time';
 import { CommitSelectType } from '@/pages/repo/RepoLogView';
 import * as d3 from 'd3';
 import { useEffect, useMemo, useRef } from 'react';

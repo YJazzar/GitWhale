@@ -17,7 +17,7 @@ import { EmptyState } from '../empty-state';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { CommandPaletteTerminalShell } from './CommandPaletteTerminalShell';
-import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
 
 export function CommandPaletteExecutor() {
 	const commandExecutor = useCommandPaletteExecutor();

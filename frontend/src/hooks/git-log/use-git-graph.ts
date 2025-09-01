@@ -1,5 +1,5 @@
 import { git_operations } from 'wailsjs/go/models';
-import { convertUnixTimeToDate } from '../use-unix-time';
+import { convertUnixTimeToDate } from '../utils/use-unix-time';
 
 interface GitGraphCommit {
 	commit: git_operations.GitLogCommitInfo;

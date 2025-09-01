@@ -143,7 +143,10 @@ export function getStagingState(repoPath: string) {
 			stageAllFiles,
 			unstageAllFiles,
 			commitChanges,
-			refreshGitStatus: () => setNeedsToReload(true),
+			refreshGitStatus: {
+				fullRefresh: () => setNeedsToReload(true),
+				silentRefresh: () => setNeedsToReload(true),
+			},
 
 			// Cleanup
 			disposeStagingState: () => {

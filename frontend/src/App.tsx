@@ -12,7 +12,7 @@ import { useRegisterNavigationCommands } from './hooks/command-palette/commands/
 import { useCommandPaletteState } from './hooks/command-palette/use-command-palette-state';
 import { FileTabsSessionKeyGenerator, TabProps } from './hooks/state/useFileTabsHandlers';
 import { UseIsDirDiffMode } from './hooks/use-is-dir-diff-mode';
-import { useKeyboardShortcut } from './hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from './hooks/utils/use-keyboard-shortcut';
 import DirDiffPage from './pages/DirDiffPage';
 import HomePage from './pages/HomePage';
 import { CommandPaletteContextKey } from './types/command-palette';
