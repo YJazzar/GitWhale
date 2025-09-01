@@ -263,12 +263,61 @@ const gitFetch: CommandDefinitionWithRepoState = {
 	},
 };
 
+
+// Git: Push
+const gitPush: CommandDefinitionWithRepoState = {
+	id: 'git.push',
+	title: 'Git: Push',
+	icon: <DownloadCloud className="h-4 w-4" />,
+	keywords: ['git', 'push'],
+	context: CommandPaletteContextKey.Repo,
+	parameters: [],
+	action: {
+		type: 'terminalCommand',
+		requestedHooks: commandWithRepoStateRequestedHooks,
+		runAction: async (providedHooks, parameters, commandExecutor) => {
+			if (!providedHooks?.repoPath) {
+				throw 'Need to always have a repo path';
+			}
+
+			const command = `git push`;
+			await commandExecutor(command, providedHooks.repoPath);
+			providedHooks?.repoSideBar.setActiveItem('log');
+			providedHooks?.repoState?.logState.refreshLogAndRefs();
+		},
+	},
+};
+
+// Git: Push --force-with-lease
+const gitPushForceWithLease: CommandDefinitionWithRepoState = {
+	id: 'git.push.forceWithLease',
+	title: 'Git: Push --force-with-lease',
+	icon: <DownloadCloud className="h-4 w-4" />,
+	keywords: ['git', 'push', 'force', 'with', 'lease'],
+	context: CommandPaletteContextKey.Repo,
+	parameters: [],
+	action: {
+		type: 'terminalCommand',
+		requestedHooks: commandWithRepoStateRequestedHooks,
+		runAction: async (providedHooks, parameters, commandExecutor) => {
+			if (!providedHooks?.repoPath) {
+				throw 'Need to always have a repo path';
+			}
+
+			const command = `git push --force-with-lease`;
+			await commandExecutor(command, providedHooks.repoPath);
+			providedHooks?.repoSideBar.setActiveItem('log');
+			providedHooks?.repoState?.logState.refreshLogAndRefs();
+		},
+	},
+};
+
 // Register all git commands
 export function useRegisterGitCommands() {
 	const commandRegistry = useCommandRegistry(undefined);
 
 	useEffect(() => {
-		const gitCommands = [gitCheckoutBranch, gitStatus, gitFetch];
+		const gitCommands = [gitCheckoutBranch, gitStatus, gitFetch, gitPush, gitPushForceWithLease];
 
 		commandRegistry.registerCommands(gitCommands as CommandDefinition<unknown>[]);
 	}, []);
