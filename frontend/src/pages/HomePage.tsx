@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-file-tabs';
 import { UseAppState } from '@/hooks/state/use-app-state';
-import { Bug, FileText, FolderOpen, Lightbulb, Settings, Star } from 'lucide-react';
+import { Bug, FileText, FolderOpen, Lightbulb, Settings, Star, Terminal } from 'lucide-react';
 import { ToggleStarRepo } from '../../wailsjs/go/backend/App';
 
 export default function HomePage() {
@@ -60,6 +60,16 @@ export default function HomePage() {
 							<li>
 								<Button
 									variant="link"
+									onClick={rootNavigation.onOpenCommandLogs}
+									className="justify-start p-0"
+								>
+									<Terminal className="h-4 w-4 mr-2" />
+									Command Logs
+								</Button>
+							</li>
+							<li>
+								<Button
+									variant="link"
 									onClick={rootNavigation.onOpenApplicationLogs}
 									className="justify-start p-0"
 								>
@@ -75,16 +85,6 @@ export default function HomePage() {
 								>
 									<Bug className="h-4 w-4 mr-2" />
 									State Inspector
-								</Button>
-							</li>
-							<li>
-								<Button
-									variant="link"
-									onClick={rootNavigation.onOpenCommandLogs}
-									className="justify-start p-0"
-								>
-									<Bug className="h-4 w-4 mr-2" />
-									Command Logs
 								</Button>
 							</li>
 						</ul>
