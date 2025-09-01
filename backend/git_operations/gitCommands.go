@@ -118,7 +118,7 @@ func ReadGitLog(repoPath string, options GitLogOptions) []GitLogCommitInfo {
 		"--topo-order",
 		"--decorate=full",
 		"--diff-merges=first-parent",
-		fmt.Sprintf("-n%d", *options.CommitsToLoad),
+		fmt.Sprintf("-n %d", *options.CommitsToLoad),
 	}
 
 	// Add search query if provided
