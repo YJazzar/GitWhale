@@ -28,6 +28,7 @@ import {
 import { useState } from 'react';
 import { CleanupStagingDiffSession, CreateStagingDiffSession } from '../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../wailsjs/go/models';
+import { useRefreshOnFocus } from '@/hooks/utils/use-refresh-on-focus';
 
 interface RepoActiveDiffPageProps {
 	repoPath: string;
@@ -35,6 +36,8 @@ interface RepoActiveDiffPageProps {
 
 export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps) {
 	const { refreshGitStatus, hasChanges } = getStagingState(repoPath);
+
+	useRefreshOnFocus(refreshGitStatus.silentRefresh);
 
 	// Persistent panel sizes for file lists (left) and diff content (right)
 	const [panelSizes, setPanelSizes] = usePersistentPanelSizes(
@@ -49,7 +52,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 	};
 
 	const handleRefresh = () => {
-		refreshGitStatus();
+		refreshGitStatus.fullRefresh();
 	};
 
 	return (
@@ -164,7 +167,7 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 	};
 
 	const handleRefresh = () => {
-		refreshGitStatus();
+		refreshGitStatus.fullRefresh();
 	};
 
 	const onCommitMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
