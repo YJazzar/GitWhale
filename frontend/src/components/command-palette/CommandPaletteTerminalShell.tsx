@@ -140,10 +140,9 @@ export function CommandPaletteTerminalShell() {
 						<ShellCommand commandString={commandArgs} truncateCommand expandOnClick showTerminalIcon includeCopyButton />
 					)}
 					{commandWorkingDir && (
-						<div className="flex items-center gap-2">
-							<span className="w-3 h-3" /> {/* Spacer */}
+						<div className="flex items-center text-xs gap-1 pb-3">
 							<span className="font-medium text-muted-foreground">Directory:</span>
-							<code className="bg-background px-1 py-0.5 rounded text-foreground font-mono">
+							<code className="bg-background py-0.5 rounded text-muted-foreground font-mono">
 								{commandWorkingDir}
 							</code>
 						</div>
