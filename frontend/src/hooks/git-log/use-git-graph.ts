@@ -1,4 +1,5 @@
-import { git_operations } from "wailsjs/go/models";
+import { git_operations } from 'wailsjs/go/models';
+import { convertUnixTimeToDate } from '../use-unix-time';
 
 interface GitGraphCommit {
 	commit: git_operations.GitLogCommitInfo;
@@ -10,7 +11,7 @@ interface GitGraphCommit {
 // Colors for different branches
 const BRANCH_COLORS = [
 	'#3b82f6', // blue
-	'#10b981', // emerald  
+	'#10b981', // emerald
 	'#f59e0b', // amber
 	'#ef4444', // red
 	'#8b5cf6', // violet
@@ -18,7 +19,7 @@ const BRANCH_COLORS = [
 	'#f97316', // orange
 	'#84cc16', // lime
 	'#ec4899', // pink
-	'#6366f1'  // indigo
+	'#6366f1', // indigo
 ];
 
 // Simplified layout for search results - all commits in column 0, disconnected unless parent-child relationship exists
@@ -31,29 +32,32 @@ function createSimplifiedSearchLayout(commits: git_operations.GitLogCommitInfo[]
 	});
 
 	// Build a map to check for parent-child relationships within loaded commits
-	const commitHashSet = new Set(sortedCommits.map(c => c.commitHash));
-	
+	const commitHashSet = new Set(sortedCommits.map((c) => c.commitHash));
+
 	const result: GitGraphCommit[] = [];
 	const usedColor = BRANCH_COLORS[0]; // Use single color for search results
 
 	sortedCommits.forEach((commit) => {
 		// Only include parent hashes that exist in our loaded commits
-		const availableParentHashes = commit.parentCommitHashes.filter(hash => 
-			hash.trim() && commitHashSet.has(hash)
+		const availableParentHashes = commit.parentCommitHashes.filter(
+			(hash) => hash.trim() && commitHashSet.has(hash)
 		);
 
 		result.push({
 			commit,
 			column: 0, // All search results in column 0
 			color: usedColor,
-			parentHashes: availableParentHashes
+			parentHashes: availableParentHashes,
 		});
 	});
 
 	return result;
 }
 
-function calculateGitGraphLayout(commits: git_operations.GitLogCommitInfo[], isSearchMode: boolean = false): GitGraphCommit[] {
+function calculateGitGraphLayout(
+	commits: git_operations.GitLogCommitInfo[],
+	isSearchMode: boolean = false
+): GitGraphCommit[] {
 	if (!commits || commits.length === 0) {
 		return [];
 	}
@@ -76,15 +80,17 @@ function calculateGitGraphLayout(commits: git_operations.GitLogCommitInfo[], isS
 }
 
 // Temporal topological sort as described in the article
-function temporalTopologicalSort(commits: git_operations.GitLogCommitInfo[]): git_operations.GitLogCommitInfo[] {
+function temporalTopologicalSort(
+	commits: git_operations.GitLogCommitInfo[]
+): git_operations.GitLogCommitInfo[] {
 	// Build commit map for quick lookups
 	const commitMap = new Map<string, git_operations.GitLogCommitInfo>();
-	commits.forEach(commit => commitMap.set(commit.commitHash, commit));
+	commits.forEach((commit) => commitMap.set(commit.commitHash, commit));
 
 	// Build children relationships
 	const children = new Map<string, Set<string>>();
-	commits.forEach(commit => {
-		commit.parentCommitHashes.forEach(parentHash => {
+	commits.forEach((commit) => {
+		commit.parentCommitHashes.forEach((parentHash) => {
 			if (parentHash.trim()) {
 				if (!children.has(parentHash)) {
 					children.set(parentHash, new Set());
@@ -96,8 +102,8 @@ function temporalTopologicalSort(commits: git_operations.GitLogCommitInfo[]): gi
 
 	// Sort commits by committer date (newest to oldest)
 	const sortedByDate = [...commits].sort((a, b) => {
-		const dateA = new Date(a.commitTimeStamp).getTime();
-		const dateB = new Date(b.commitTimeStamp).getTime();
+		const dateA = convertUnixTimeToDate(a.commitTimeStamp).getTime();
+		const dateB = convertUnixTimeToDate(b.commitTimeStamp).getTime();
 		return dateB - dateA; // newest first
 	});
 
@@ -113,7 +119,7 @@ function temporalTopologicalSort(commits: git_operations.GitLogCommitInfo[]): gi
 
 		// Process all children first
 		const commitChildren = children.get(commitHash) || new Set();
-		commitChildren.forEach(childHash => {
+		commitChildren.forEach((childHash) => {
 			dfs(childHash);
 		});
 
@@ -125,7 +131,7 @@ function temporalTopologicalSort(commits: git_operations.GitLogCommitInfo[]): gi
 	}
 
 	// Start DFS from commits sorted by date (newest first)
-	sortedByDate.forEach(commit => {
+	sortedByDate.forEach((commit) => {
 		dfs(commit.commitHash);
 	});
 
@@ -147,9 +153,9 @@ function createCommitGraph(sortedCommits: git_operations.GitLogCommitInfo[]): Gr
 	const children = new Map<string, Set<string>>();
 
 	// Build maps
-	sortedCommits.forEach(commit => {
+	sortedCommits.forEach((commit) => {
 		commitMap.set(commit.commitHash, commit);
-		commit.parentCommitHashes.forEach(parentHash => {
+		commit.parentCommitHashes.forEach((parentHash) => {
 			if (parentHash.trim()) {
 				if (!children.has(parentHash)) {
 					children.set(parentHash, new Set());
@@ -163,12 +169,12 @@ function createCommitGraph(sortedCommits: git_operations.GitLogCommitInfo[]): Gr
 	const graphCommits: GraphCommit[] = [];
 	sortedCommits.forEach((commit, index) => {
 		const commitChildren = Array.from(children.get(commit.commitHash) || []);
-		
+
 		// Separate branch children from merge children
 		const branchChildren: string[] = [];
 		const mergeChildren: string[] = [];
 
-		commitChildren.forEach(childHash => {
+		commitChildren.forEach((childHash) => {
 			const child = commitMap.get(childHash);
 			if (child && child.parentCommitHashes.length > 0) {
 				// If this commit is the first parent, it's a branch child
@@ -186,7 +192,7 @@ function createCommitGraph(sortedCommits: git_operations.GitLogCommitInfo[]): Gr
 			row: index,
 			branchChildren,
 			mergeChildren,
-			parentHashes: commit.parentCommitHashes.filter(h => h.trim())
+			parentHashes: commit.parentCommitHashes.filter((h) => h.trim()),
 		});
 	});
 
@@ -206,16 +212,22 @@ function assignColumns(graphCommits: GraphCommit[]): GitGraphCommit[] {
 	const result: GitGraphCommit[] = [];
 
 	// Process commits from lowest row to highest (topologically sorted order)
-	graphCommits.forEach(graphCommit => {
+	graphCommits.forEach((graphCommit) => {
 		const { commit, branchChildren, mergeChildren } = graphCommit;
-		
+
 		// Compute forbidden columns for this commit
-		const forbiddenColumns = computeForbiddenColumns(commit, mergeChildren, commitToColumn, activeBranches, graphCommits);
+		const forbiddenColumns = computeForbiddenColumns(
+			commit,
+			mergeChildren,
+			commitToColumn,
+			activeBranches,
+			graphCommits
+		);
 
 		let selectedColumn = -1;
-		
+
 		// Try to continue in a branch child's column if possible
-		const availableBranchChildren = branchChildren.filter(childHash => {
+		const availableBranchChildren = branchChildren.filter((childHash) => {
 			const childColumn = commitToColumn.get(childHash);
 			return childColumn !== undefined && !forbiddenColumns.has(childColumn);
 		});
@@ -227,13 +239,13 @@ function assignColumns(graphCommits: GraphCommit[]): GitGraphCommit[] {
 				const currentColumn = commitToColumn.get(current)!;
 				return currentColumn < leftmostColumn ? current : leftmost;
 			});
-			
+
 			selectedColumn = commitToColumn.get(selectedChild)!;
 			activeBranches[selectedColumn] = commit.commitHash;
 		} else {
 			// Find first available column or create new one
-			selectedColumn = activeBranches.findIndex(branch => branch === null);
-			
+			selectedColumn = activeBranches.findIndex((branch) => branch === null);
+
 			if (selectedColumn === -1) {
 				// No available column, create new one
 				selectedColumn = activeBranches.length;
@@ -254,7 +266,7 @@ function assignColumns(graphCommits: GraphCommit[]): GitGraphCommit[] {
 		commitToColumn.set(commit.commitHash, selectedColumn);
 
 		// Clear columns for remaining branch children
-		branchChildren.forEach(childHash => {
+		branchChildren.forEach((childHash) => {
 			const childColumn = commitToColumn.get(childHash);
 			if (childColumn !== undefined && childColumn !== selectedColumn) {
 				activeBranches[childColumn] = null;
@@ -268,7 +280,7 @@ function assignColumns(graphCommits: GraphCommit[]): GitGraphCommit[] {
 			commit,
 			column: selectedColumn,
 			color,
-			parentHashes: commit.parentCommitHashes.filter(h => h.trim())
+			parentHashes: commit.parentCommitHashes.filter((h) => h.trim()),
 		});
 	});
 
@@ -291,24 +303,20 @@ function computeForbiddenColumns(
 
 	// Find the minimum row of merge children
 	const commitRowMap = new Map<string, number>();
-	graphCommits.forEach(gc => commitRowMap.set(gc.commit.commitHash, gc.row));
+	graphCommits.forEach((gc) => commitRowMap.set(gc.commit.commitHash, gc.row));
 
 	const currentRow = commitRowMap.get(commit.commitHash) || 0;
-	const minMergeChildRow = Math.min(...mergeChildren.map(childHash => 
-		commitRowMap.get(childHash) || 0
-	));
+	const minMergeChildRow = Math.min(...mergeChildren.map((childHash) => commitRowMap.get(childHash) || 0));
 
 	// Mark columns as forbidden if they have commits between minMergeChildRow and currentRow
 	for (let col = 0; col < activeBranches.length; col++) {
 		if (activeBranches[col] !== null) {
 			// Check if this column has activity in the relevant row range
-			const hasActivity = graphCommits.some(gc => {
+			const hasActivity = graphCommits.some((gc) => {
 				const gcColumn = commitToColumn.get(gc.commit.commitHash);
-				return gcColumn === col && 
-				       gc.row >= minMergeChildRow && 
-				       gc.row < currentRow;
+				return gcColumn === col && gc.row >= minMergeChildRow && gc.row < currentRow;
 			});
-			
+
 			if (hasActivity) {
 				forbidden.add(col);
 			}

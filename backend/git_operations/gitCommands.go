@@ -50,7 +50,7 @@ func parseGitLogOutput(outputLines []string) []GitLogCommitInfo {
 	parsedLogs := []GitLogCommitInfo{}
 	currentLog := GitLogCommitInfo{}
 	currentSubLineCount := -1
-	onShortStatLine := false
+	nextLineIsShortStatLine := false
 
 	for _, line := range outputLines {
 		// logger.Log.Debug("Parsing line: %v", line)
@@ -58,15 +58,24 @@ func parseGitLogOutput(outputLines []string) []GitLogCommitInfo {
 
 		// The null terminators comes right before the short-stat line
 		// (because of the -z flag)
-		if line == "\x00" {
-			onShortStatLine = true
+		if strings.HasSuffix(line, "\x00") {
+			line = strings.TrimSuffix(line, "\x00")
+			nextLineIsShortStatLine = true
+
+			if line != "" {
+				// Append anything remaining in the line as the commit message
+				if currentLog.CommitMessage == nil {
+					currentLog.CommitMessage = []string{}
+				}
+				currentLog.CommitMessage = append(currentLog.CommitMessage, line)
+			}
 			continue
 		}
 
-		if onShortStatLine {
+		if nextLineIsShortStatLine {
 			currentLog.ShortStat = line
 			currentSubLineCount = -1
-			onShortStatLine = false
+			nextLineIsShortStatLine = false
 			parsedLogs = append(parsedLogs, currentLog)
 			currentLog = GitLogCommitInfo{}
 			continue
