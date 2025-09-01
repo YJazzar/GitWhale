@@ -7,8 +7,8 @@ type MappedWritableAtom<T> = WritableAtom<
 	void
 >;
 
-type SetIntentCallback<T> = (prevValue: T | undefined) => T;
-type SetIntent<T> = T | SetIntentCallback<T>;
+export type SetIntentCallback<T> = (prevValue: T | undefined) => T;
+export type SetIntent<T> = T | SetIntentCallback<T>;
 
 type MapPrimitive<T> = {
 	value: T | undefined;

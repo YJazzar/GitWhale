@@ -5,13 +5,14 @@ import { CommitTextarea } from '@/components/ui/commit-textarea';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getStagingState } from '@/hooks/state/repo/use-git-staging-state';
+import { useGitStagingState } from '@/hooks/state/repo/use-git-staging-state';
 import {
 	FileTabsSessionKeyGenerator,
 	TabProps,
 	useFileTabsHandlers,
 } from '@/hooks/state/useFileTabsHandlers';
 import { usePersistentPanelSizes } from '@/hooks/use-persistent-panel-sizes';
+import { useRefreshOnFocus } from '@/hooks/utils/use-refresh-on-focus';
 import { cn } from '@/lib/utils';
 import Logger from '@/utils/logger';
 import {
@@ -25,19 +26,23 @@ import {
 	Plus,
 	RefreshCw,
 } from 'lucide-react';
-import { useState } from 'react';
 import { CleanupStagingDiffSession, CreateStagingDiffSession } from '../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../wailsjs/go/models';
-import { useRefreshOnFocus } from '@/hooks/utils/use-refresh-on-focus';
+import { useEffect } from 'react';
 
 interface RepoActiveDiffPageProps {
 	repoPath: string;
 }
 
 export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps) {
-	const { refreshGitStatus, hasChanges } = getStagingState(repoPath);
+	const { actions, stateFlags } = useGitStagingState(repoPath);
 
-	useRefreshOnFocus(refreshGitStatus.silentRefresh);
+	useRefreshOnFocus(actions.refresh);
+
+	// Pop from the queue whenever we can
+	useEffect(() => {
+		actions.processNextAction();
+	}, [stateFlags, actions]);
 
 	// Persistent panel sizes for file lists (left) and diff content (right)
 	const [panelSizes, setPanelSizes] = usePersistentPanelSizes(
@@ -52,7 +57,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 	};
 
 	const handleRefresh = () => {
-		refreshGitStatus.fullRefresh();
+		actions.refresh();
 	};
 
 	return (
@@ -76,7 +81,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 				{/* Right pane: Diff viewer */}
 				<ResizablePanel id="diff-content-panel" defaultSize={panelSizes[1]}>
 					<div className="grow h-full flex flex-col min-h-0">
-						{!hasChanges && (
+						{!stateFlags.hasChanges && (
 							<div className="w-full h-full flex items-center justify-center">
 								<div className="text-center space-y-4">
 									<div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -94,7 +99,7 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 							</div>
 						)}
 
-						{hasChanges && (
+						{stateFlags.hasChanges && (
 							<FileTabs
 								key={`staging-${repoPath}`}
 								initialTabs={[]}
@@ -110,11 +115,11 @@ export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps
 
 // File Lists Container Component
 function StagingAreaFileLists({ repoPath }: { repoPath: string }) {
-	const { gitStatus } = getStagingState(repoPath);
+	const { gitStatusData } = useGitStagingState(repoPath);
 
-	const stagedFiles = gitStatus.value?.stagedFiles ?? [];
-	const unstagedFiles = gitStatus.value?.unstagedFiles ?? [];
-	const untrackedFiles = gitStatus.value?.untrackedFiles ?? [];
+	const stagedFiles = gitStatusData?.stagedFiles ?? [];
+	const unstagedFiles = gitStatusData?.unstagedFiles ?? [];
+	const untrackedFiles = gitStatusData?.untrackedFiles ?? [];
 
 	const hasStagedFiles = stagedFiles.length > 0;
 	const hasUnstagedFiles = unstagedFiles.length > 0;
@@ -143,36 +148,25 @@ function StagingAreaFileLists({ repoPath }: { repoPath: string }) {
 
 // Commit Form Component
 function CommitForm({ repoPath }: { repoPath: string }) {
-	const { commitChanges, refreshGitStatus, hasStagedChanges, gitStatus, isLoading } =
-		getStagingState(repoPath);
-	const [commitMessage, setCommitMessage] = useState('');
-	const [isCommitting, setIsCommitting] = useState(false);
+	const { gitStatusData, stateFlags, actions, commitMessage } = useGitStagingState(repoPath);
 
 	const handleCommit = async () => {
-		if (!commitMessage.trim()) {
+		if (!commitMessage.value?.trim()) {
 			Logger.error('Commit message cannot be empty', 'StagingPage');
 			return;
 		}
 
-		setIsCommitting(true);
-		try {
-			await commitChanges(commitMessage.trim());
-			setCommitMessage(''); // Clear the message after successful commit
-			Logger.info('Successfully committed changes', 'StagingPage');
-		} catch (error) {
-			Logger.error(`Failed to commit: ${error}`, 'StagingPage');
-		} finally {
-			setIsCommitting(false);
-		}
-	};
-
-	const handleRefresh = () => {
-		refreshGitStatus.fullRefresh();
+		await actions.commitChanges();
+		commitMessage.set(''); // Clear the message after successful commit
+		Logger.info('Successfully committed changes', 'StagingPage');
 	};
 
 	const onCommitMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-		setCommitMessage(event.target.value);
+		commitMessage.set(event.target.value);
 	};
+
+	const disableCommitButton =
+		!commitMessage.value?.trim() || !stateFlags.hasStagedChanges || stateFlags.isCommittingChanges;
 
 	return (
 		<div className="p-4 border-t bg-muted/20">
@@ -194,43 +188,38 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 							</Tooltip>
 						</TooltipProvider>
 					</div>
-					{hasStagedChanges && (
+					{stateFlags.hasStagedChanges && (
 						<span className="text-xs text-muted-foreground">
-							{gitStatus.value?.stagedFiles?.length ?? 0} staged
+							{gitStatusData?.stagedFiles?.length ?? 0} staged
 						</span>
 					)}
 				</div>
 				<CommitTextarea
 					id="commit-message"
 					placeholder="Enter commit message..."
-					value={commitMessage}
+					value={commitMessage.value}
 					onChange={onCommitMessageChange}
 					className="h-fit"
 				/>
 			</div>
 
 			<div className="flex items-center gap-2">
-				<Button
-					onClick={handleCommit}
-					disabled={!commitMessage.trim() || !hasStagedChanges || isCommitting}
-					className="flex-1"
-					size="sm"
-				>
-					{isCommitting ? (
+				<Button onClick={handleCommit} disabled={disableCommitButton} className="flex-1" size="sm">
+					{stateFlags.isCommittingChanges ? (
 						<RefreshCw className="w-4 h-4 mr-2 animate-spin" />
 					) : (
 						<GitCommit className="w-4 h-4 mr-2" />
 					)}
-					{isCommitting ? 'Committing...' : 'Commit'}
+					{stateFlags.isCommittingChanges ? 'Committing...' : 'Commit'}
 				</Button>
 				<Button
-					onClick={handleRefresh}
+					onClick={actions.refresh}
 					variant="outline"
 					size="sm"
-					disabled={isLoading}
+					disabled={stateFlags.isLoading}
 					className="px-3"
 				>
-					<RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+					<RefreshCw className={cn('w-4 h-4', stateFlags.isLoading && 'animate-spin')} />
 				</Button>
 			</div>
 		</div>
@@ -239,8 +228,8 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 
 // Staged Files List Component
 function StagedFilesList({ repoPath }: { repoPath: string }) {
-	const { unstageAllFiles, unstageFile, isLoading, gitStatus } = getStagingState(repoPath);
-	const files = gitStatus.value?.stagedFiles ?? [];
+	const { actions, gitStatusData, stateFlags } = useGitStagingState(repoPath);
+	const files = gitStatusData?.stagedFiles ?? [];
 
 	return (
 		<FileListSection
@@ -249,9 +238,9 @@ function StagedFilesList({ repoPath }: { repoPath: string }) {
 			files={files}
 			fileType="staged"
 			action="unstage"
-			onFileAction={unstageFile}
-			onBulkAction={unstageAllFiles}
-			isLoading={isLoading}
+			onFileAction={actions.unstageFile}
+			onBulkAction={actions.unstageAllFiles}
+			isLoading={stateFlags.isLoading}
 			repoPath={repoPath}
 		/>
 	);
@@ -259,8 +248,8 @@ function StagedFilesList({ repoPath }: { repoPath: string }) {
 
 // Unstaged Files List Component
 function UnstagedFilesList({ repoPath }: { repoPath: string }) {
-	const { stageFile, stageAllFiles, isLoading, gitStatus } = getStagingState(repoPath);
-	const files = gitStatus.value?.unstagedFiles ?? [];
+	const { actions, gitStatusData, stateFlags } = useGitStagingState(repoPath);
+	const files = gitStatusData?.unstagedFiles ?? [];
 
 	return (
 		<FileListSection
@@ -269,9 +258,9 @@ function UnstagedFilesList({ repoPath }: { repoPath: string }) {
 			files={files}
 			fileType="unstaged"
 			action="stage"
-			onFileAction={stageFile}
-			onBulkAction={stageAllFiles}
-			isLoading={isLoading}
+			onFileAction={actions.stageFile}
+			onBulkAction={actions.stageAllFiles}
+			isLoading={stateFlags.isLoading}
 			repoPath={repoPath}
 		/>
 	);
@@ -279,15 +268,8 @@ function UnstagedFilesList({ repoPath }: { repoPath: string }) {
 
 // Untracked Files List Component
 function UntrackedFilesList({ repoPath }: { repoPath: string }) {
-	const { gitStatus, stageFile, isLoading } = getStagingState(repoPath);
-	const files = gitStatus.value?.untrackedFiles ?? [];
-
-	const handleStageAll = async () => {
-		// Stage each untracked file individually
-		for (const file of files) {
-			await stageFile(file.path);
-		}
-	};
+	const { actions, gitStatusData, stateFlags } = useGitStagingState(repoPath);
+	const files = gitStatusData?.untrackedFiles ?? [];
 
 	return (
 		<FileListSection
@@ -296,9 +278,9 @@ function UntrackedFilesList({ repoPath }: { repoPath: string }) {
 			files={files}
 			fileType="untracked"
 			action="stage"
-			onFileAction={stageFile}
-			onBulkAction={handleStageAll}
-			isLoading={isLoading}
+			onFileAction={actions.stageFile}
+			onBulkAction={actions.stageAllFiles}
+			isLoading={stateFlags.isLoading}
 			repoPath={repoPath}
 		/>
 	);
@@ -311,8 +293,8 @@ interface FileListSectionProps {
 	files: git_operations.GitStatusFile[];
 	fileType: 'staged' | 'unstaged' | 'untracked';
 	action: 'stage' | 'unstage';
-	onFileAction: (filePath: string) => Promise<void>;
-	onBulkAction: () => Promise<void>;
+	onFileAction: (filePath: string) => void;
+	onBulkAction: () => void;
 	isLoading: boolean;
 	repoPath: string;
 }
@@ -325,7 +307,6 @@ function FileListSection({
 	action,
 	onFileAction,
 	onBulkAction,
-	isLoading,
 	repoPath,
 }: FileListSectionProps) {
 	const fileTabsHandlers = useFileTabsHandlers(FileTabsSessionKeyGenerator.stagingArea(repoPath));
@@ -411,7 +392,6 @@ function FileListSection({
 						onClick={onBulkAction}
 						variant="ghost"
 						size="sm"
-						disabled={isLoading}
 						className="h-7 px-2 text-xs hover:bg-accent"
 					>
 						{action === 'stage' ? (
@@ -466,7 +446,6 @@ function FileListSection({
 								}}
 								variant="ghost"
 								size="sm"
-								disabled={isLoading}
 								className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 shrink-0 transition-opacity"
 							>
 								{action === 'stage' ? (

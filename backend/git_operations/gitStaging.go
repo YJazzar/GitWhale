@@ -120,32 +120,38 @@ func GetGitStatus(repoPath string) (*GitStatus, error) {
 }
 
 // StageFile stages a specific file
-func StageFile(repoPath, filePath string) error {
-	logger.Log.Info("Staging file: %s in repo: %s", filePath, repoPath)
+func StageFile(repoPath string, filePaths []string) error {
+	logger.Log.Info("Staging files: %s in repo: %s", filePaths, repoPath)
 
-	cmd := exec.Command("git", "add", filePath)
+	commandArgs := []string{"add", "--"}
+	commandArgs = append(commandArgs, filePaths...)
+
+	cmd := exec.Command("git", commandArgs...)
 	cmd.Dir = repoPath
 	_, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
-		return fmt.Errorf("failed to stage file %s: %v", filePath, err)
+		return fmt.Errorf("failed to stage file %s: %v", filePaths, err)
 	}
 
-	logger.Log.Info("Successfully staged file: %s", filePath)
+	logger.Log.Info("Successfully staged file: %s", filePaths)
 	return nil
 }
 
 // UnstageFile unstages a specific file
-func UnstageFile(repoPath, filePath string) error {
-	logger.Log.Info("Unstaging file: %s in repo: %s", filePath, repoPath)
+func UnstageFile(repoPath string, filePaths []string) error {
+	logger.Log.Info("Unstaging files: %s in repo: %s", filePaths, repoPath)
 
-	cmd := exec.Command("git", "reset", "HEAD", filePath)
+	commandArgs := []string{"reset", "HEAD", "--"}
+	commandArgs = append(commandArgs, filePaths...)
+
+	cmd := exec.Command("git", commandArgs...)
 	cmd.Dir = repoPath
 	_, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
 	if err != nil || exitCode != 0 {
-		return fmt.Errorf("failed to unstage file %s: %v", filePath, err)
+		return fmt.Errorf("failed to unstage file %s: %v", filePaths, err)
 	}
 
-	logger.Log.Info("Successfully unstaged file: %s", filePath)
+	logger.Log.Info("Successfully unstaged file: %s", filePaths)
 	return nil
 }
 

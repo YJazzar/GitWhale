@@ -3,7 +3,7 @@ import { useRepoDiffState } from './use-git-diff-state';
 import { useRepoHomeState } from './use-git-home-state';
 import { useRepoLogState } from './use-git-log-state';
 import { useRepoTerminalState } from './use-repo-terminal';
-import { getStagingState } from './use-git-staging-state';
+import { useGitStagingState } from './use-git-staging-state';
 import { SidebarSessionKeyGenerator, useSidebarHandlers } from '../useSidebarHandlers';
 import { useCallback, useMemo } from 'react';
 
@@ -14,7 +14,7 @@ export const useAllRepoStates = (repoPath: string) => {
 	const homeState = useRepoHomeState(repoPath, false);
 	const diffState = useRepoDiffState(repoPath);
 	const logState = useRepoLogState(repoPath);
-	const stagingState = getStagingState(repoPath);
+	const stagingState = useGitStagingState(repoPath);
 
 	const stateObjects = useMemo(() => {
 		return {

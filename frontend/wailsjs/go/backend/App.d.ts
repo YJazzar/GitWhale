@@ -72,9 +72,7 @@ export function SaveUserScriptCommand(arg1:backend.UserDefinedCommandDefinition)
 
 export function SelectUserScriptFileForImport():Promise<string>;
 
-export function StageAllFiles(arg1:string):Promise<void>;
-
-export function StageFile(arg1:string,arg2:string):Promise<void>;
+export function StageFile(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function StartDiffSession(arg1:git_operations.DiffOptions):Promise<git_operations.DiffSession>;
 
@@ -82,9 +80,7 @@ export function Startup(arg1:context.Context,arg2:backend.StartupState):Promise<
 
 export function ToggleStarRepo(arg1:string):Promise<boolean>;
 
-export function UnstageAllFiles(arg1:string):Promise<void>;
-
-export function UnstageFile(arg1:string,arg2:string):Promise<void>;
+export function UnstageFile(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function UpdateSettings(arg1:backend.AppSettings):Promise<void>;
 

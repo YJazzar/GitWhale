@@ -134,10 +134,6 @@ export function SelectUserScriptFileForImport() {
   return window['go']['backend']['App']['SelectUserScriptFileForImport']();
 }
 
-export function StageAllFiles(arg1) {
-  return window['go']['backend']['App']['StageAllFiles'](arg1);
-}
-
 export function StageFile(arg1, arg2) {
   return window['go']['backend']['App']['StageFile'](arg1, arg2);
 }
@@ -152,10 +148,6 @@ export function Startup(arg1, arg2) {
 
 export function ToggleStarRepo(arg1) {
   return window['go']['backend']['App']['ToggleStarRepo'](arg1);
-}
-
-export function UnstageAllFiles(arg1) {
-  return window['go']['backend']['App']['UnstageAllFiles'](arg1);
 }
 
 export function UnstageFile(arg1, arg2) {

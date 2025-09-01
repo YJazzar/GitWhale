@@ -1,10 +1,15 @@
 import Logger from '@/utils/logger';
 import { atom, useAtom, WritableAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
+import { SetIntent, SetIntentCallback } from './use-map-primitive';
 
 type LoadTrackedEntry<T> = { isLoading: boolean; data: T | undefined };
 type MappedAtom<T> = Map<string, LoadTrackedEntry<T>>;
-export type LoadTrackedMappedWritableAtom<T> = WritableAtom<MappedAtom<T>, [MappedAtom<T>], void>;
+export type LoadTrackedMappedWritableAtom<T> = WritableAtom<
+	MappedAtom<T>,
+	[MappedAtom<T> | ((prev: MappedAtom<T>) => MappedAtom<T>)],
+	void
+>;
 
 export function createLoadTrackedMappedAtom<T>(): LoadTrackedMappedWritableAtom<T> {
 	return atom<MappedAtom<T>>(new Map());
@@ -21,6 +26,7 @@ type LoadTrackedPrimitive<T> = {
 	value: T | undefined;
 	load: LoadOperation<void>;
 	kill: () => void;
+	set: (newValue: SetIntent<T>) => void;
 };
 
 export function useLoadTrackedMapPrimitive<T>(
@@ -35,11 +41,29 @@ export function useLoadTrackedMapPrimitive<T>(
 	}, [mapData, mapKey]);
 
 	const updateAtom = useCallback(
-		(isLoading: boolean, newData: T | undefined) => {
+		(isLoading: boolean, newData: SetIntent<T> | undefined) => {
+			// Set based on a function that depends on the previous state
+			if (typeof newData === 'function') {
+				setMapData((previousMapData) => {
+					const previousKeyedData = previousMapData.get(mapKey);
+					const resolvedNewData = (newData as SetIntentCallback<T>)(previousKeyedData?.data);
+
+					const newMap = new Map(previousMapData);
+					newMap.set(mapKey, {
+						isLoading: isLoading,
+						data: resolvedNewData,
+					});
+					return newMap;
+				});
+
+				return;
+			}
+
+			// Set based on the current known state
 			const newMap = new Map(mapData);
 			newMap.set(mapKey, {
 				isLoading: isLoading,
-				data: newData ?? keyedData?.data,
+				data: newData,
 			});
 			setMapData(newMap);
 		},
@@ -70,6 +94,7 @@ export function useLoadTrackedMapPrimitive<T>(
 			value: keyedData?.data,
 			load: loadBlock,
 			kill: deleteKey,
+			set: (newValue: SetIntent<T>) => updateAtom(keyedData?.isLoading ?? false, newValue),
 		};
 	}, [keyedData, loadBlock, deleteKey]);
 }
