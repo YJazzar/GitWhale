@@ -67,16 +67,16 @@ func (cb *CommandBuffer) SetContext(ctx context.Context) {
 }
 
 // LogCommandStart logs the start of a command execution
-func (cb *CommandBuffer) LogCommandStart(command string, args []string, workingDir string) string {
+func (cb *CommandBuffer) LogCommandStart(commandArgs []string, workingDir string) string {
 	cb.mutex.Lock()
 	defer cb.mutex.Unlock()
 
 	commandID := uuid.New().String()
 	entry := CommandEntry{
 		ID:               commandID,
-		Command:          command,
-		Args:             args,
-		FullCommand:      fmt.Sprintf("%v %v", command, strings.Join(args, " ")),
+		Command:          commandArgs[0],
+		Args:             commandArgs[1:],
+		FullCommand:      fmt.Sprintf("%v", strings.Join(commandArgs, " ")),
 		WorkingDirectory: workingDir,
 		StartTime:        time.Now(),
 		Status:           CommandRunning,
@@ -223,8 +223,8 @@ func SetCommandBufferContext(ctx context.Context) {
 	commandBuffer.SetContext(ctx)
 }
 
-func LogCommandStart(command string, args []string, workingDir string) string {
-	return commandBuffer.LogCommandStart(command, args, workingDir)
+func LogCommandStart(commandArgs []string, workingDir string) string {
+	return commandBuffer.LogCommandStart(commandArgs, workingDir)
 }
 
 func LogCommandEnd(commandID string, output string, errorOutput string, exitCode int) {

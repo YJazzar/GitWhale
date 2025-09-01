@@ -24,7 +24,7 @@ func RunCommandAndLogErr(command *exec.Cmd) (string, int, error) {
 	}
 
 	// Log command start to buffer
-	commandID := LogCommandStart(command.Path, command.Args, workingDir)
+	commandID := LogCommandStart(command.Args, workingDir)
 
 	HideWindowsConsole(command)
 	result, err := command.CombinedOutput()

@@ -119,7 +119,7 @@ func streamOutput(ctx context.Context, shellPath []string, commandString, workin
 	logger.Log.Trace("\t- Command working directory: %s", command.Dir)
 
 	// Start logging the command
-	commandID := LogCommandStart(allCommand[0], allCommand[1:], workingDir)
+	commandID := LogCommandStart(allCommand, workingDir)
 	logger.Log.Debug("Started streaming command with ID: %s, topic: %s", commandID, broadcastToTopic)
 
 	// Record start time
