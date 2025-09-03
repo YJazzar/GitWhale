@@ -29,6 +29,8 @@ import {
 import { CleanupStagingDiffSession, CreateStagingDiffSession } from '../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../wailsjs/go/models';
 import { useEffect } from 'react';
+import { useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
+import { getDirNameFromPath, getNameFromPath } from '@/utils/filePathUtils';
 
 interface RepoActiveDiffPageProps {
 	repoPath: string;
@@ -37,7 +39,13 @@ interface RepoActiveDiffPageProps {
 export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps) {
 	const { actions, stateFlags } = useGitStagingState(repoPath);
 
-	useRefreshOnFocus(actions.refresh);
+	useRefreshOnFocus(() => {
+		actions.refresh();
+	});
+
+	useKeyboardShortcut('r', () => {
+		actions.refresh();
+	});
 
 	// Pop from the queue whenever we can
 	useEffect(() => {
@@ -406,10 +414,8 @@ function FileListSection({
 
 			<div className="space-y-0">
 				{files.map((file) => {
-					const fileName = file.path.split('/').pop() || file.path;
-					const dirPath = file.path.includes('/')
-						? file.path.substring(0, file.path.lastIndexOf('/'))
-						: '';
+					const fileName = getNameFromPath(file.path);
+					const dirPath = getDirNameFromPath(file.path);
 
 					return (
 						<div

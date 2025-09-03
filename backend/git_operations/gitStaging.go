@@ -123,7 +123,7 @@ func GetGitStatus(repoPath string) (*GitStatus, error) {
 func StageFile(repoPath string, filePaths []string) error {
 	logger.Log.Info("Staging files: %s in repo: %s", filePaths, repoPath)
 
-	commandArgs := []string{"add", "--"}
+	commandArgs := []string{"add", "-A", "--"}
 	commandArgs = append(commandArgs, filePaths...)
 
 	cmd := exec.Command("git", commandArgs...)
@@ -152,36 +152,6 @@ func UnstageFile(repoPath string, filePaths []string) error {
 	}
 
 	logger.Log.Info("Successfully unstaged file: %s", filePaths)
-	return nil
-}
-
-// StageAllFiles stages all unstaged and untracked files
-func StageAllFiles(repoPath string) error {
-	logger.Log.Info("Staging all files in repo: %s", repoPath)
-
-	cmd := exec.Command("git", "add", ".")
-	cmd.Dir = repoPath
-	_, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil || exitCode != 0 {
-		return fmt.Errorf("failed to stage all files: %v", err)
-	}
-
-	logger.Log.Info("Successfully staged all files")
-	return nil
-}
-
-// UnstageAllFiles unstages all staged files
-func UnstageAllFiles(repoPath string) error {
-	logger.Log.Info("Unstaging all files in repo: %s", repoPath)
-
-	cmd := exec.Command("git", "reset", "HEAD")
-	cmd.Dir = repoPath
-	_, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
-	if err != nil || exitCode != 0 {
-		return fmt.Errorf("failed to unstage all files: %v", err)
-	}
-
-	logger.Log.Info("Successfully unstaged all files")
 	return nil
 }
 

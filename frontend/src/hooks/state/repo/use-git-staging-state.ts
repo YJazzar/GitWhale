@@ -5,7 +5,7 @@ import { git_operations } from '../../../../wailsjs/go/models';
 import { createMappedAtom, useMapPrimitive } from '../primitives/use-map-primitive';
 
 type StagingOperation = {
-	type: 'stageFiles' | 'stageAllFiles' | 'unstageFiles' | 'unstageAllFiles' | 'refresh' | 'createCommit';
+	type: 'stageFiles' | 'unstageFiles' | 'refresh' | 'createCommit';
 	files?: string[];
 	commitMessage?: string;
 };
@@ -17,54 +17,23 @@ const commitMessageAtom = createMappedAtom<string>();
 const operationsQueueAtom = createMappedAtom<StagingOperation[]>();
 
 export function useGitStagingState(repoPath: string) {
-	// Track initial load state
-	// const _hasInitialLoadedPrim = useMapPrimitive(hasInitialLoadedAtom, repoPath);
 	const _commitMessagePrim = useMapPrimitive(commitMessageAtom, repoPath, '');
 	const _gitStatusPrim = useMapPrimitive(gitStatusAtom, repoPath);
-
-	// TODO: not sure if this will work the way i want it to, we shall see
 	const _operationsQueuePrim = useMapPrimitive(operationsQueueAtom, repoPath);
 
 	const _refreshGitStatus = useCallback(async () => {
 		try {
 			const status = await GetGitStatus(repoPath);
 			_gitStatusPrim.set(status);
+			Logger.warning(`Setting to new status from refresh: ${status}`);
 		} catch (error) {
 			Logger.error(`Failed to load git status: ${error}`, 'useGitStagingState');
 			return undefined;
 		}
-	}, [_gitStatusPrim]);
+	}, [_gitStatusPrim.set]);
 
 	const _stageFiles = useCallback(
 		async (filePaths: string[]) => {
-			// Pre-maturely move over the files into the staged files list
-			_gitStatusPrim.set((oldData) => {
-				const oldStagedFiles = oldData?.stagedFiles || [];
-				const oldUnstagedFiles = oldData?.unstagedFiles || [];
-				const oldUntrackedFiles = oldData?.untrackedFiles || [];
-
-				const newStagedFiles = [
-					...oldStagedFiles,
-					...oldUnstagedFiles.filter((file) => filePaths.includes(file.path)),
-					...oldUntrackedFiles.filter((file) => filePaths.includes(file.path)),
-				];
-
-				const newUntrackedFiles = [
-					...oldUntrackedFiles.filter((file) => !filePaths.includes(file.path)),
-				];
-
-				const newUnstagedFiles = [
-					...oldUnstagedFiles.filter((file) => !filePaths.includes(file.path)),
-				];
-
-				return new git_operations.GitStatus({
-					...oldData,
-					stagedFiles: newStagedFiles,
-					unstagedFiles: newUnstagedFiles,
-					untrackedFiles: newUntrackedFiles,
-				});
-			});
-
 			try {
 				await StageFile(repoPath, filePaths);
 				Logger.info(`Successfully staged file: ${filePaths}`, 'useGitStagingState');
@@ -96,7 +65,7 @@ export function useGitStagingState(repoPath: string) {
 		}
 		const allUnstagedFiles = [...gitStatusData.unstagedFiles, ...gitStatusData.untrackedFiles];
 		_stageFiles(allUnstagedFiles.map((file) => file.path));
-	}, [repoPath]);
+	}, [repoPath, _gitStatusPrim.value, _stageFiles]);
 
 	const _unstageAllFiles = useCallback(async () => {
 		const gitStatusData = _gitStatusPrim.value;
@@ -105,11 +74,11 @@ export function useGitStagingState(repoPath: string) {
 		}
 		const allStagedFiles = gitStatusData.stagedFiles;
 		_unstageFiles(allStagedFiles.map((file) => file.path));
-	}, [repoPath]);
+	}, [repoPath, _gitStatusPrim.value, _unstageFiles]);
 
 	const _commitChanges = useCallback(
 		async (commitMessage: string | undefined) => {
-			if (!commitMessage || commitMessage !== '') {
+			if (!commitMessage || commitMessage === '') {
 				return;
 			}
 
@@ -138,14 +107,8 @@ export function useGitStagingState(repoPath: string) {
 				case 'stageFiles':
 					await _stageFiles(operation.files ?? []);
 					break;
-				case 'stageAllFiles':
-					await _stageAllFiles();
-					break;
 				case 'unstageFiles':
 					await _unstageFiles(operation.files ?? []);
-					break;
-				case 'unstageAllFiles':
-					await _unstageAllFiles();
 					break;
 				default:
 					Logger.error('Unhandled git operation type in useStagingState()');
@@ -155,66 +118,92 @@ export function useGitStagingState(repoPath: string) {
 			// to make sure the UI actually shows what git thinks happened
 			return true;
 		},
-		[_refreshGitStatus, _stageFiles, _unstageFiles, _commitChanges]
+		[_refreshGitStatus, _stageFiles, _stageAllFiles, _unstageFiles, _unstageAllFiles, _commitChanges]
 	);
 
 	const pushToOperationsQueue = useCallback(
 		(newOperation: StagingOperation) => {
-			_operationsQueuePrim.set((prevValue) => [...(prevValue ?? []), newOperation]);
+			_operationsQueuePrim.set((prevValue) => {
+				const unfulfilledOperations = _operationsQueuePrim.value ?? [];
+				if (
+					newOperation.type === 'refresh' &&
+					unfulfilledOperations.length > 0 &&
+					unfulfilledOperations[unfulfilledOperations.length - 1].type === 'refresh'
+				) {
+					Logger.trace('Skipped adding a refresh to the queue');
+					return prevValue || [];
+				}
+
+				Logger.trace(
+					`Pushing git staging operation: ${JSON.stringify(newOperation)}`,
+					'useGitStagingState'
+				);
+
+				return [...(prevValue ?? []), newOperation];
+			});
 		},
-		[_operationsQueuePrim]
+		[_operationsQueuePrim.set]
 	);
 
 	const popFromOperationsQueue = useCallback(async () => {
 		const queue = _operationsQueuePrim.value ?? [];
+		Logger.trace(`queued operations: ${JSON.stringify(queue, null, 2)}`, 'useGitStagingState');
+
 		if (queue.length === 0) {
 			return;
 		}
-		// eslint-disable-next-line no-debugger
-		debugger;
 		const nextOperation = queue[0];
+
+		Logger.info(`Popping git staging operation: ${JSON.stringify(nextOperation)}`, 'useGitStagingState');
+
 		const shouldTriggerBackgroundRefresh = await handleGitOperation(nextOperation);
-		// eslint-disable-next-line no-debugger
-		debugger
+
+		// If it's recommended (by handleGitOperation) to refresh, which we should only respect after
+		// all operations have been executed, then add a new refresh operation to the queue
+		if (queue.length === 1 && shouldTriggerBackgroundRefresh) {
+			await _refreshGitStatus();
+		}
+
 		_operationsQueuePrim.set((prevValue) => {
+			Logger.info(`Finished popping ${nextOperation.type}`);
 			if (!prevValue || prevValue.length === 0) {
 				return [];
 			}
 
-			// If it's recommended (by handleGitOperation) to refresh, which we should only respect after
-			// all operations have been executed, then add a new refresh operation to the queue
 			const newOperationsQueue = prevValue.slice(1);
-			if (newOperationsQueue.length === 0 && shouldTriggerBackgroundRefresh) {
-				// return [{ type: 'refresh' }];
-			}
 
 			return newOperationsQueue;
 		});
-	}, [handleGitOperation, _operationsQueuePrim]);
+	}, [handleGitOperation, _operationsQueuePrim.value, _operationsQueuePrim.set]);
 
-	const prematurelyStageFiles = useCallback((filePaths: string[]) => {
-		// Pre-maturely move over the files into the staged files list
-		_gitStatusPrim.set((oldData) => {
-			const oldStagedFiles = oldData?.stagedFiles || [];
-			const oldUnstagedFiles = oldData?.unstagedFiles || [];
-			const oldUntrackedFiles = oldData?.untrackedFiles || [];
-
-			const newUntrackedFiles = [...oldUntrackedFiles.filter((file) => !filePaths.includes(file.path))];
-			const newUnstagedFiles = [...oldUnstagedFiles.filter((file) => !filePaths.includes(file.path))];
-			const newStagedFiles = [
-				...oldStagedFiles,
-				...oldUnstagedFiles.filter((file) => filePaths.includes(file.path)),
-				...oldUntrackedFiles.filter((file) => filePaths.includes(file.path)),
-			];
-
-			return new git_operations.GitStatus({
-				...oldData,
-				stagedFiles: newStagedFiles,
-				unstagedFiles: newUnstagedFiles,
-				untrackedFiles: newUntrackedFiles,
+	const prematurelyStageFiles = useCallback(
+		(filePaths: string[]) => {
+			// Pre-maturely move over the files into the staged files list
+			_gitStatusPrim.set((oldData) => {
+				const oldStagedFiles = oldData?.stagedFiles || [];
+				const oldUnstagedFiles = oldData?.unstagedFiles || [];
+				const oldUntrackedFiles = oldData?.untrackedFiles || [];
+				const newUntrackedFiles = [
+					...oldUntrackedFiles.filter((file) => !filePaths.includes(file.path)),
+				];
+				const newUnstagedFiles = [
+					...oldUnstagedFiles.filter((file) => !filePaths.includes(file.path)),
+				];
+				const newStagedFiles = [
+					...oldStagedFiles,
+					...oldUnstagedFiles.filter((file) => filePaths.includes(file.path)),
+					...oldUntrackedFiles.filter((file) => filePaths.includes(file.path)),
+				];
+				return new git_operations.GitStatus({
+					...oldData,
+					stagedFiles: getUniqueFilesAndSort(newStagedFiles),
+					unstagedFiles: getUniqueFilesAndSort(newUnstagedFiles),
+					untrackedFiles: getUniqueFilesAndSort(newUntrackedFiles),
+				});
 			});
-		});
-	}, []);
+		},
+		[_gitStatusPrim.set]
+	);
 
 	const prematurelyUnstageFiles = useCallback(
 		(filePaths: string[]) => {
@@ -238,13 +227,13 @@ export function useGitStagingState(repoPath: string) {
 
 				return new git_operations.GitStatus({
 					...oldData,
-					stagedFiles: newStagedFiles,
-					unstagedFiles: newUnstagedFiles,
-					untrackedFiles: newUntrackedFiles,
+					stagedFiles: getUniqueFilesAndSort(newStagedFiles),
+					unstagedFiles: getUniqueFilesAndSort(newUnstagedFiles),
+					untrackedFiles: getUniqueFilesAndSort(newUntrackedFiles),
 				});
 			});
 		},
-		[_gitStatusPrim]
+		[_gitStatusPrim.set]
 	);
 
 	const prematurelyStageAllFiles = useCallback(() => {
@@ -252,13 +241,13 @@ export function useGitStagingState(repoPath: string) {
 		const untrackedFiles = _gitStatusPrim.value?.untrackedFiles || [];
 		const filesToStage = [...unstagedFiles, ...untrackedFiles].map((file) => file.path);
 		prematurelyStageFiles(filesToStage);
-	}, [_gitStatusPrim]);
+	}, [_gitStatusPrim.value, prematurelyStageFiles]);
 
 	const prematurelyUnstageAllFiles = useCallback(() => {
 		const stagedFiles = _gitStatusPrim.value?.stagedFiles || [];
 		const filesToUnstage = stagedFiles.map((file) => file.path);
 		prematurelyUnstageFiles(filesToUnstage);
-	}, [_gitStatusPrim]);
+	}, [_gitStatusPrim.value, prematurelyUnstageFiles]);
 
 	const isLoading = (_operationsQueuePrim.value || []).length !== 0;
 	const hasChanges = _gitStatusPrim.value?.hasChanges ?? false;
@@ -278,7 +267,7 @@ export function useGitStagingState(repoPath: string) {
 				hasChanges,
 				hasStagedChanges,
 				isCommittingChanges,
-				unfulfilledActions: _operationsQueuePrim.value?.length || 0
+				unfulfilledActions: _operationsQueuePrim.value ?? [],
 			},
 
 			actions: {
@@ -289,7 +278,14 @@ export function useGitStagingState(repoPath: string) {
 				},
 				stageAllFiles: () => {
 					prematurelyStageAllFiles();
-					pushToOperationsQueue({ type: 'stageAllFiles' });
+
+					pushToOperationsQueue({
+						type: 'stageFiles',
+						files: [
+							...(_gitStatusPrim.value?.unstagedFiles ?? []),
+							...(_gitStatusPrim.value?.untrackedFiles ?? []),
+						].map((file) => file.path),
+					});
 				},
 				unstageFile: (filePath: string) => {
 					prematurelyUnstageFiles([filePath]);
@@ -297,21 +293,15 @@ export function useGitStagingState(repoPath: string) {
 				},
 				unstageAllFiles: () => {
 					prematurelyUnstageAllFiles();
-					pushToOperationsQueue({ type: 'unstageAllFiles' });
+					pushToOperationsQueue({
+						type: 'unstageFiles',
+						files: [...(_gitStatusPrim.value?.stagedFiles ?? [])].map((file) => file.path),
+					});
 				},
 				commitChanges: () => {
 					pushToOperationsQueue({ type: 'createCommit', commitMessage: _commitMessagePrim.value });
 				},
 				refresh: () => {
-					const unfulfilledOperations = _operationsQueuePrim.value ?? [];
-					if (
-						unfulfilledOperations.length > 0 &&
-						unfulfilledOperations[unfulfilledOperations.length - 1].type === 'refresh'
-					) {
-						return
-					}
-					// eslint-disable-next-line no-debugger
-					debugger
 					pushToOperationsQueue({ type: 'refresh' });
 				},
 			},
@@ -323,7 +313,21 @@ export function useGitStagingState(repoPath: string) {
 				_operationsQueuePrim.kill();
 			},
 		};
-	}, [_gitStatusPrim, _commitMessagePrim, isLoading, hasChanges, hasStagedChanges, pushToOperationsQueue]);
+	}, [
+		_gitStatusPrim,
+		_commitMessagePrim,
+		_operationsQueuePrim,
+		isLoading,
+		hasChanges,
+		hasStagedChanges,
+		isCommittingChanges,
+		pushToOperationsQueue,
+		popFromOperationsQueue,
+		prematurelyStageFiles,
+		prematurelyStageAllFiles,
+		prematurelyUnstageFiles,
+		prematurelyUnstageAllFiles,
+	]);
 }
 
 export function useGitStagingStateAtoms() {
@@ -331,4 +335,15 @@ export function useGitStagingStateAtoms() {
 		gitStatusAtom,
 		hasInitialLoadedAtom,
 	};
+}
+
+function getUniqueFilesAndSort(files: git_operations.GitStatusFile[]) {
+	let fileMap = new Map<string, git_operations.GitStatusFile>();
+	files.forEach((file) => fileMap.set(file.path, file));
+
+	return Array.from(fileMap.values()).sort((lhs, rhs) => {
+		const leftName = lhs.path.toLocaleLowerCase();
+		const rightName = rhs.path.toLocaleLowerCase();
+		return leftName.localeCompare(rightName);
+	});
 }
