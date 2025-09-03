@@ -360,7 +360,7 @@ func (app *App) ExportUserScripts(selectedUserScriptIds []string) error {
 	today := time.Now()
 	defaultName := fmt.Sprintf("gitwhale-user-scripts-%s.json", today.Format("2006-01-02"))
 
-	scriptsToExport := make([]UserDefinedCommandDefinition, len(selectedUserScriptIds))
+	scriptsToExport := make([]UserDefinedCommandDefinition, 0, len(selectedUserScriptIds))
 	for _, userScript := range app.AppConfig.Settings.UserScriptCommands {
 		if slices.Contains(selectedUserScriptIds, userScript.ID) {
 			scriptsToExport = append(scriptsToExport, userScript)
@@ -380,7 +380,7 @@ func (app *App) ExportUserScripts(selectedUserScriptIds []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open save dialog: %w", err)
 	}
-	if filePath != "" {
+	if filePath == "" {
 		return nil
 	}
 
