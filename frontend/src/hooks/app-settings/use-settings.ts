@@ -25,9 +25,13 @@ export function useSettings() {
 			terminal: newSettings.terminal
 				? new command_utils.TerminalSettings({ ...settings.terminal, ...newSettings.terminal })
 				: settings.terminal,
-			ui: newSettings.ui
-				? new backend.UISettings({ ...settings.ui, ...newSettings.ui })
-				: settings.ui,
+			ui: newSettings.ui ? new backend.UISettings({ ...settings.ui, ...newSettings.ui }) : settings.ui,
+			userScriptCommands: newSettings.userScriptCommands
+				? new backend.UserDefinedCommandDefinition({
+						...settings.userScriptCommands,
+						...newSettings.userScriptCommands,
+				  })
+				: settings.userScriptCommands,
 		});
 
 		// Save to backend and refresh app state
