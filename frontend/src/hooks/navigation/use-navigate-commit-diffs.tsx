@@ -54,10 +54,9 @@ export function useNavigateToCommitDiffs(repoPath: string) {
 
 		const firstCommitHashShort = convertToShortHash(options.fromRef);
 		const secondCommitHashShort = convertToShortHash(options.toRef);
-		const pageTitle =
-			options.toRef !== `${options.fromRef}^`
-				? `${firstCommitHashShort}`
-				: `${firstCommitHashShort} ↔ ${secondCommitHashShort}`;
+		const pageTitle = options.isSingleCommitDiff || !secondCommitHashShort
+			? `${firstCommitHashShort}`
+			: `${firstCommitHashShort} ↔ ${secondCommitHashShort}`;
 
 		// Create the sidebar item
 		const commitItem: SidebarItemProps = {
