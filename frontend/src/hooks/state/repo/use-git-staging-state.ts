@@ -218,8 +218,8 @@ export function useGitStagingState(repoPath: string) {
 
 				// Figure out if the file needs to be moved to the tracked/untracked list
 				const filesToUnstage = oldStagedFiles.filter((file) => filePaths.includes(file.path));
-				const filesToAddToUntracked = filesToUnstage.filter((file) => isNewFileState(file.status));
-				const filesToAddToTracked = filesToUnstage.filter((file) => !isNewFileState(file.status));
+				const filesToAddToUntracked = filesToUnstage.filter((file) => isNewFileState(file.workingStatus) || isNewFileState(file.stagedStatus));
+				const filesToAddToTracked = filesToUnstage.filter((file) => !isNewFileState(file.workingStatus) && !isNewFileState(file.stagedStatus));
 
 				const newStagedFiles = [...oldStagedFiles.filter((file) => !filePaths.includes(file.path))];
 				const newUntrackedFiles = [...oldUntrackedFiles, ...filesToAddToUntracked];
