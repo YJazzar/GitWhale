@@ -27,7 +27,7 @@ export function useGitStagingState(repoPath: string) {
 		try {
 			const status = await GetGitStatus(repoPath);
 			_gitStatusPrim.set(status);
-			_shouldTriggerAutoRefreshPrim.set(false)
+			_shouldTriggerAutoRefreshPrim.set(false);
 			Logger.warning(`Setting to new status from refresh: ${status}`);
 		} catch (error) {
 			Logger.error(`Failed to load git status: ${error}`, 'useGitStagingState');
@@ -155,18 +155,8 @@ export function useGitStagingState(repoPath: string) {
 		if (queue.length === 0) {
 			return;
 		}
+
 		const nextOperation = queue[0];
-
-		Logger.info(`Popping git staging operation: ${JSON.stringify(nextOperation)}`, 'useGitStagingState');
-
-		const shouldTriggerBackgroundRefresh = await handleGitOperation(nextOperation);
-
-		// If it's recommended (by handleGitOperation) to refresh, which we should only respect after
-		// all operations have been executed, then add a new refresh operation to the queue
-		if (queue.length === 1 && shouldTriggerBackgroundRefresh) {
-			_shouldTriggerAutoRefreshPrim.set(true)
-		}
-
 		_operationsQueuePrim.set((prevValue) => {
 			Logger.info(`Finished popping ${nextOperation.type}`);
 			if (!prevValue || prevValue.length === 0) {
@@ -177,7 +167,21 @@ export function useGitStagingState(repoPath: string) {
 
 			return newOperationsQueue;
 		});
-	}, [handleGitOperation, _operationsQueuePrim.value, _operationsQueuePrim.set, _shouldTriggerAutoRefreshPrim.set]);
+
+		Logger.info(`Popping git staging operation: ${JSON.stringify(nextOperation)}`, 'useGitStagingState');
+		const shouldTriggerBackgroundRefresh = await handleGitOperation(nextOperation);
+
+		// If it's recommended (by handleGitOperation) to refresh, which we should only respect after
+		// all operations have been executed, then add a new refresh operation to the queue
+		if (queue.length === 1 && shouldTriggerBackgroundRefresh) {
+			_shouldTriggerAutoRefreshPrim.set(true);
+		}
+	}, [
+		handleGitOperation,
+		_operationsQueuePrim.value,
+		_operationsQueuePrim.set,
+		_shouldTriggerAutoRefreshPrim.set,
+	]);
 
 	const prematurelyStageFiles = useCallback(
 		(filePaths: string[]) => {
