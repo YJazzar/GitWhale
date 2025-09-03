@@ -31,6 +31,7 @@ import { git_operations } from '../../../wailsjs/go/models';
 import { useEffect } from 'react';
 import { useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
 import { getDirNameFromPath, getNameFromPath } from '@/utils/filePathUtils';
+import { useDebounce } from '@uidotdev/usehooks';
 
 interface RepoActiveDiffPageProps {
 	repoPath: string;
@@ -39,13 +40,19 @@ interface RepoActiveDiffPageProps {
 export default function RepoActiveDiffPage({ repoPath }: RepoActiveDiffPageProps) {
 	const { actions, stateFlags } = useGitStagingState(repoPath);
 
-	useRefreshOnFocus(() => {
-		actions.refresh();
-	});
-
-	useKeyboardShortcut('r', () => {
-		actions.refresh();
-	});
+	// A couple of auto refresh triggers:
+	// 1. If the user just came back to the view
+	// 2. If the user requested one
+	// 3. If the user performed a few operations, and we need make sure the staged file list is in sync with git
+	// 		(this is because we prematurely update all the files in the view)
+	useRefreshOnFocus(actions.refresh);
+	useKeyboardShortcut('r', actions.refresh);
+	const shouldTriggerAutoRefresh = useDebounce(stateFlags.shouldTriggerAutoRefresh, 600);
+	useEffect(() => {
+		if (shouldTriggerAutoRefresh) {
+			actions.refresh();
+		}
+	}, [shouldTriggerAutoRefresh]);
 
 	// Pop from the queue whenever we can
 	useEffect(() => {

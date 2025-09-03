@@ -15,22 +15,25 @@ const gitStatusAtom = createMappedAtom<git_operations.GitStatus>();
 const hasInitialLoadedAtom = createMappedAtom<boolean>();
 const commitMessageAtom = createMappedAtom<string>();
 const operationsQueueAtom = createMappedAtom<StagingOperation[]>();
+const shouldTriggerAutoRefreshAtom = createMappedAtom<boolean>();
 
 export function useGitStagingState(repoPath: string) {
 	const _commitMessagePrim = useMapPrimitive(commitMessageAtom, repoPath, '');
 	const _gitStatusPrim = useMapPrimitive(gitStatusAtom, repoPath);
 	const _operationsQueuePrim = useMapPrimitive(operationsQueueAtom, repoPath);
+	const _shouldTriggerAutoRefreshPrim = useMapPrimitive(shouldTriggerAutoRefreshAtom, repoPath);
 
 	const _refreshGitStatus = useCallback(async () => {
 		try {
 			const status = await GetGitStatus(repoPath);
 			_gitStatusPrim.set(status);
+			_shouldTriggerAutoRefreshPrim.set(false)
 			Logger.warning(`Setting to new status from refresh: ${status}`);
 		} catch (error) {
 			Logger.error(`Failed to load git status: ${error}`, 'useGitStagingState');
 			return undefined;
 		}
-	}, [_gitStatusPrim.set]);
+	}, [_gitStatusPrim.set, _shouldTriggerAutoRefreshPrim.set]);
 
 	const _stageFiles = useCallback(
 		async (filePaths: string[]) => {
@@ -161,7 +164,7 @@ export function useGitStagingState(repoPath: string) {
 		// If it's recommended (by handleGitOperation) to refresh, which we should only respect after
 		// all operations have been executed, then add a new refresh operation to the queue
 		if (queue.length === 1 && shouldTriggerBackgroundRefresh) {
-			await _refreshGitStatus();
+			_shouldTriggerAutoRefreshPrim.set(true)
 		}
 
 		_operationsQueuePrim.set((prevValue) => {
@@ -174,7 +177,7 @@ export function useGitStagingState(repoPath: string) {
 
 			return newOperationsQueue;
 		});
-	}, [handleGitOperation, _operationsQueuePrim.value, _operationsQueuePrim.set]);
+	}, [handleGitOperation, _operationsQueuePrim.value, _operationsQueuePrim.set, _shouldTriggerAutoRefreshPrim.set]);
 
 	const prematurelyStageFiles = useCallback(
 		(filePaths: string[]) => {
@@ -218,8 +221,12 @@ export function useGitStagingState(repoPath: string) {
 
 				// Figure out if the file needs to be moved to the tracked/untracked list
 				const filesToUnstage = oldStagedFiles.filter((file) => filePaths.includes(file.path));
-				const filesToAddToUntracked = filesToUnstage.filter((file) => isNewFileState(file.workingStatus) || isNewFileState(file.stagedStatus));
-				const filesToAddToTracked = filesToUnstage.filter((file) => !isNewFileState(file.workingStatus) && !isNewFileState(file.stagedStatus));
+				const filesToAddToUntracked = filesToUnstage.filter(
+					(file) => isNewFileState(file.workingStatus) || isNewFileState(file.stagedStatus)
+				);
+				const filesToAddToTracked = filesToUnstage.filter(
+					(file) => !isNewFileState(file.workingStatus) && !isNewFileState(file.stagedStatus)
+				);
 
 				const newStagedFiles = [...oldStagedFiles.filter((file) => !filePaths.includes(file.path))];
 				const newUntrackedFiles = [...oldUntrackedFiles, ...filesToAddToUntracked];
@@ -268,6 +275,7 @@ export function useGitStagingState(repoPath: string) {
 				hasStagedChanges,
 				isCommittingChanges,
 				unfulfilledActions: _operationsQueuePrim.value ?? [],
+				shouldTriggerAutoRefresh: _shouldTriggerAutoRefreshPrim.value ?? false,
 			},
 
 			actions: {
