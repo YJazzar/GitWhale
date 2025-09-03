@@ -9,6 +9,7 @@ import { CommandPaletteExecutor } from './CommandPaletteExecutor';
 import { CommandPaletteInput } from './CommandPaletteInput';
 import { CommandPaletteSearch } from './CommandPaletteSearch';
 import { CommandPaletteMinimizedWidget } from './CommandPaletteMinimizedWidget';
+import { useKeyboardHotkeyDisplay } from '@/hooks/utils/use-keyboard-shortcut';
 
 export function CommandPalette() {
 	const commandPaletteState = useCommandPaletteState();
@@ -106,16 +107,19 @@ function CommandPaletteSearchFooter() {
 }
 
 function CommandPaletteExecutorFooter() {
+	const executeShortcutKeyDisplay = useKeyboardHotkeyDisplay("Enter", true)
+	const minimizeShortcutKeyDisplay = useKeyboardHotkeyDisplay("P", true)
+
 	return (
 		<div className="flex items-center justify-between text-xs text-muted-foreground">
 			<div className="flex items-center gap-4">
 				<span>
-					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + P</kbd> to minimize/close
+					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">{minimizeShortcutKeyDisplay}</kbd> to minimize/close
 				</span>
 			</div>
 			<div>
 				<span>
-					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl + Enter</kbd> to execute
+					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">{executeShortcutKeyDisplay}</kbd> to execute
 				</span>
 			</div>
 		</div>

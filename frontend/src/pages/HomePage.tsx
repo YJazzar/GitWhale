@@ -5,6 +5,7 @@ import { useNavigateRootFilTabs } from '@/hooks/navigation/use-navigate-root-fil
 import { UseAppState } from '@/hooks/state/use-app-state';
 import { Bug, FileText, FolderOpen, Lightbulb, Settings, Star, Terminal } from 'lucide-react';
 import { ToggleStarRepo } from '../../wailsjs/go/backend/App';
+import { useKeyboardHotkeyDisplay } from '@/hooks/utils/use-keyboard-shortcut';
 
 export default function HomePage() {
 	const { appState, refreshAppState } = UseAppState();
@@ -24,10 +25,7 @@ export default function HomePage() {
 	const recentRepos = appState?.appConfig?.recentGitRepos ?? [];
 	const nonStarredRecentRepos = recentRepos.filter((repo) => !starredRepos.includes(repo));
 	
-	
-	// Detect platform for keyboard shortcut
-	const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-	const shortcutKey = isMac ? '⌘' : 'Ctrl';
+	const shortcutKeyDisplay = useKeyboardHotkeyDisplay("P", true)
 
 	return (
 		<div className="h-full flex flex-col p-8">
@@ -145,7 +143,7 @@ export default function HomePage() {
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<span>Press</span>
 						<kbd className="inline-flex items-center gap-1 px-1.5 bg-muted border border-border rounded font-mono">
-							{shortcutKey} + P
+							{shortcutKeyDisplay}
 						</kbd>
 						<span>to open the command palette</span>
 					</div>

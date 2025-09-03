@@ -29,7 +29,7 @@ import {
 import { CleanupStagingDiffSession, CreateStagingDiffSession } from '../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../wailsjs/go/models';
 import { useEffect } from 'react';
-import { useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
+import { useKeyboardHotkeyDisplay, useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
 import { getDirNameFromPath, getNameFromPath } from '@/utils/filePathUtils';
 import { useDebounce } from '@uidotdev/usehooks';
 
@@ -176,6 +176,11 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 		Logger.info('Successfully committed changes', 'StagingPage');
 	};
 
+	useKeyboardShortcut('Enter', handleCommit);
+	const commitShortcutDisplay = useKeyboardHotkeyDisplay('Enter');
+	const rewrapShortcutDisplay = useKeyboardHotkeyDisplay('T');
+	const refreshShortcutDisplay = useKeyboardHotkeyDisplay("R")
+
 	const onCommitMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
 		commitMessage.set(event.target.value);
 	};
@@ -198,7 +203,9 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 									<Info className="w-3 h-3 text-muted-foreground cursor-help" />
 								</TooltipTrigger>
 								<TooltipContent side="right">
-									<p>Ctrl+T to rewrap • Cmd/Ctrl+Enter to commit</p>
+									<p>
+										{rewrapShortcutDisplay} to rewrap • {commitShortcutDisplay} to commit
+									</p>
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
@@ -227,15 +234,29 @@ function CommitForm({ repoPath }: { repoPath: string }) {
 					)}
 					{stateFlags.isCommittingChanges ? 'Committing...' : 'Commit'}
 				</Button>
-				<Button
-					onClick={actions.refresh}
-					variant="outline"
-					size="sm"
-					disabled={stateFlags.isLoading}
-					className="px-3"
-				>
-					<RefreshCw className={cn('w-4 h-4', stateFlags.isLoading && 'animate-spin')} />
-				</Button>
+
+				<TooltipProvider>
+					<Tooltip delayDuration={100}>
+						<TooltipTrigger asChild>
+							<Button
+								onClick={actions.refresh}
+								variant="outline"
+								size="sm"
+								disabled={stateFlags.isLoading}
+								className="px-3"
+							>
+								<RefreshCw
+									className={cn('w-4 h-4', stateFlags.isLoading && 'animate-spin')}
+								/>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="right">
+							<p>
+								{refreshShortcutDisplay}
+							</p>
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 			</div>
 		</div>
 	);

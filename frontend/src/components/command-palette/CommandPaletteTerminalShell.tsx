@@ -135,19 +135,19 @@ export function CommandPaletteTerminalShell() {
 
 			{/* Command Information */}
 			{(commandArgs || commandWorkingDir) && (
-				<>
+				<div className='pb-3'>
 					{commandArgs && (
 						<ShellCommand commandString={commandArgs} truncateCommand expandOnClick showTerminalIcon includeCopyButton />
 					)}
 					{commandWorkingDir && (
-						<div className="flex items-center text-xs gap-1 pb-3">
+						<div className="flex items-center text-xs gap-1">
 							<span className="font-medium text-muted-foreground">Directory:</span>
 							<code className="bg-background py-0.5 rounded text-muted-foreground font-mono">
 								{commandWorkingDir}
 							</code>
 						</div>
 					)}
-				</>
+				</div>
 			)}
 
 			{/* Terminal output */}

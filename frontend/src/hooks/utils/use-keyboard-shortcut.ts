@@ -5,6 +5,17 @@ type KeyboardShortcutOptions = {
 	continuePropagating?: boolean;
 };
 
+// Detect platform for keyboard shortcut
+export function useKeyboardHotkeyDisplay(key: string, addSpaces: boolean = false) {
+	// Detect platform for keyboard shortcut
+	const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+	const shortcutKey = isMac ? '⌘' : 'Ctrl';
+
+	const stringElements = [shortcutKey, '+', key];
+
+	return addSpaces ? stringElements.join(' ') : stringElements.join('');
+}
+
 export function useKeyboardShortcut(
 	// ref: RefObject<HTMLElement>,
 	key: string,
