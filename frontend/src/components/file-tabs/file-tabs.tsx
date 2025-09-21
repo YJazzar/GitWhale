@@ -95,11 +95,11 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 			<div
 				key={file.tabKey}
 				className={clsx([
-					'group relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 border-r border-border/50 hover:bg-accent/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-0 max-w-48 cursor-pointer select-none',
+					'group relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 border-r border-t-2 border-border/50 hover:bg-accent/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-0 max-w-48 cursor-pointer select-none',
 					{
-						'bg-background border-t-2 border-t-primary text-foreground shadow-xs':
+						'bg-background border-t-primary text-foreground shadow-xs':
 							isCurrentFileOpen,
-						'bg-muted/20 text-muted-foreground hover:text-foreground': !isCurrentFileOpen,
+						'bg-muted/20 border-t-transparent text-muted-foreground hover:text-foreground': !isCurrentFileOpen,
 						'pr-8': !file.preventUserClose, // Make room for close button
 						'pr-3': file.preventUserClose,
 						'border-l border-l-border/30': !isFirst, // Add left border except for first tab
