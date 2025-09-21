@@ -1,11 +1,12 @@
 import { ChevronDown, ChevronRight, File, Folder, FolderOpen } from 'lucide-react';
-import { KeyboardEventHandler, useState } from 'react';
+import { KeyboardEventHandler, useMemo, useState } from 'react';
 import { git_operations } from '../../../wailsjs/go/models';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
 import FileDiffView from '../file-diff-view';
+import { useFileTabsState } from '@/hooks/state/useFileTabsState';
 
 interface FileTreeProps {
 	directoryData: git_operations.Directory;
@@ -15,7 +16,10 @@ interface FileTreeProps {
 
 export function FileTree({ directoryData, fileTabsSessionKey, className }: FileTreeProps) {
 	const fileTabsHandlers = useFileTabsHandlers(fileTabsSessionKey);
-	
+	const fileTabsState = useFileTabsState(fileTabsSessionKey)
+
+	const activeFileOpen = fileTabsState.activeTabKey
+
 	const onOpenFile = (file: git_operations.FileInfo, keepFileOpen: boolean) => {
 		const tabKey = getFileKey(file);
 
@@ -36,7 +40,7 @@ export function FileTree({ directoryData, fileTabsSessionKey, className }: FileT
 		<TooltipProvider delayDuration={250}>
 			<div className={cn('w-full h-full overflow-auto bg-background', className)}>
 				<div className="p-2">
-					<TreeNode directory={directoryData} onFileClick={onOpenFile} depth={0} />
+					<TreeNode directory={directoryData} onFileClick={onOpenFile} depth={0} activeFileOpen={activeFileOpen} />
 				</div>
 			</div>
 		</TooltipProvider>
@@ -51,10 +55,11 @@ interface TreeNodeProps {
 	directory: git_operations.Directory;
 	onFileClick: (file: git_operations.FileInfo, keepFileOpen: boolean) => void;
 	depth: number;
+	activeFileOpen: string | undefined; // The tabkey of the file that's open (used for highlighting the right tab)
 }
 
-function TreeNode({ directory, onFileClick, depth }: TreeNodeProps) {
-	const [isOpen, setIsOpen] = useState(true); 
+function TreeNode({ directory, onFileClick, depth, activeFileOpen }: TreeNodeProps) {
+	const [isOpen, setIsOpen] = useState(true);
 
 	const toggleCollapse = () => {
 		setIsOpen(!isOpen);
@@ -136,6 +141,7 @@ function TreeNode({ directory, onFileClick, depth }: TreeNodeProps) {
 							directory={childDirectory}
 							onFileClick={onFileClick}
 							depth={depth + 1}
+							activeFileOpen={activeFileOpen}
 						/>
 					))}
 
@@ -146,6 +152,7 @@ function TreeNode({ directory, onFileClick, depth }: TreeNodeProps) {
 							onKeyDown={handleKeyDown}
 							onFileClick={onFileClick}
 							depth={depth + 1}
+							activeFileOpen={activeFileOpen}
 						/>
 					))}
 				</div>
@@ -159,9 +166,10 @@ interface FileNodeProps {
 	onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
 	onFileClick: (file: git_operations.FileInfo, keepFileOpen: boolean) => void;
 	depth: number;
+	activeFileOpen: string | undefined;
 }
 
-function FileNode({ file, onKeyDown, onFileClick, depth }: FileNodeProps) {
+function FileNode({ file, onKeyDown, onFileClick, depth, activeFileOpen }: FileNodeProps) {
 	const onClick = () => {
 		onFileClick(file, false);
 	};
@@ -175,56 +183,65 @@ function FileNode({ file, onKeyDown, onFileClick, depth }: FileNodeProps) {
 		if (file.LeftDirAbsPath && file.RightDirAbsPath) {
 			return {
 				color: 'text-amber-600 dark:text-amber-400',
-				bgColor: 'hover:bg-amber-50 dark:hover:bg-amber-950/30',
+				hoverBgColor: 'hover:bg-amber-50 dark:hover:bg-amber-950/30',
+				bgColor: 'bg-amber-50 dark:bg-amber-950/40',
 				status: 'M',
 				tooltip: 'Modified file',
 			};
 		} else if (file.LeftDirAbsPath && !file.RightDirAbsPath) {
 			return {
 				color: 'text-red-600 dark:text-red-400',
-				bgColor: 'hover:bg-red-50 dark:hover:bg-red-950/30',
+				hoverBgColor: 'hover:bg-red-50 dark:hover:bg-red-950/30',
+				bgColor: 'bg-red-50 dark:bg-red-950/40',
 				status: 'D',
 				tooltip: 'Deleted file',
 			};
 		} else if (!file.LeftDirAbsPath && file.RightDirAbsPath) {
 			return {
 				color: 'text-green-600 dark:text-green-400',
-				bgColor: 'hover:bg-green-50 dark:hover:bg-green-950/30',
+				hoverBgColor: 'hover:bg-green-50 dark:hover:bg-green-950/30',
+				bgColor: 'bg-green-50 dark:bg-green-950/40',
 				status: 'A',
 				tooltip: 'Added file',
 			};
 		}
 		return {
 			color: 'text-muted-foreground',
-			bgColor: 'hover:bg-muted/50',
+			hoverBgColor: 'hover:bg-muted/50',
+			bgColor: 'bg-muted-50 dark:bg-muted-950/20',
 			status: '?',
 			tooltip: 'Unknown status',
 		};
 	};
 
-	const { color, bgColor, status, tooltip } = getFileStatus();
+	const { color, hoverBgColor, bgColor, status, tooltip } = getFileStatus();
+
+	const isFileActive = useMemo(() => {
+		return activeFileOpen === getFileKey(file)
+	}, [file, activeFileOpen])
 
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
-					<Button
-						data-tree-item
-						onClick={onClick}
-						onDoubleClick={onDoubleClick}
-						onKeyDown={onKeyDown}
-						variant="ghost"
-						size="sm"
-						className={cn(
+				<Button
+					data-tree-item
+					onClick={onClick}
+					onDoubleClick={onDoubleClick}
+					onKeyDown={onKeyDown}
+					variant="ghost"
+					size="sm"
+					className={cn(
 						'w-full justify-start h-7 px-1 py-1 font-normal text-sm',
-							'transition-colors duration-150 focus-visible:ring-1',
-							bgColor
-						)}
+						'transition-colors duration-150 focus-visible:ring-1',
+						isFileActive && bgColor,
+						hoverBgColor
+					)}
 					style={{ paddingLeft: `${depth * 12 + 16}px` }}
-					>
-						<div className="flex items-center gap-1.5 min-w-0 flex-1">
-							<File className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+				>
+					<div className="flex items-center gap-1.5 min-w-0 flex-1">
+						<File className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
 
-							<span className={cn('truncate', color)}>{file.Name}</span>
+						<span className={cn('truncate', color)}>{file.Name}</span>
 
 						<span
 							className={cn(
@@ -237,8 +254,8 @@ function FileNode({ file, onKeyDown, onFileClick, depth }: FileNodeProps) {
 						>
 							{status}
 						</span>
-						</div>
-					</Button>
+					</div>
+				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">
 				<p>

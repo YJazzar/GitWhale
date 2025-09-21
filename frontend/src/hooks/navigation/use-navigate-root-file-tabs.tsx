@@ -1,4 +1,4 @@
-import RepoFileTab from '@/components/repo-file-tab';
+import RepoFileTab from '@/components/file-tabs/repo-file-tab';
 import { FileTabsSessionKeyGenerator, TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers';
 import ApplicationLogsPage from '@/pages/ApplicationLogsPage';
 import CommandLogsPage from '@/pages/CommandLogsPage';
@@ -33,7 +33,7 @@ export function useNavigateRootFilTabs() {
 			titleRender: () => <RepoFileTab repoPath={repoPath} />,
 			component: <RepoPage repoPath={repoPath} />,
 			isPermanentlyOpen: true,
-			onTabClose: () => {},
+			onTabClose: () => { },
 		};
 
 		fileTabs.openTab(newRepoTab);
