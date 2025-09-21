@@ -45,7 +45,7 @@ export default function DirDiffPage() {
 		<div className="w-full h-full flex flex-row min-h-0">
 			<ResizablePanelGroup direction="horizontal">
 				{/* Left pane that contains the file structure */}
-				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={15}>
+				<ResizablePanel id="file-tree-panel" defaultSize={25} minSize={3}>
 					<div className="border-r h-full overflow-y-auto overflow-x-hidden">
 						<FileTree fileTabsSessionKey="startup-diff-viewer" directoryData={directoryData} />
 					</div>
