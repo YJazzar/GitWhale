@@ -2,6 +2,7 @@ import { TabProps, useFileTabsHandlers } from '@/hooks/state/useFileTabsHandlers
 import { useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
 import clsx from 'clsx';
 import { Circle, X } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 export type FileTabManagerProps = {
 	fileTabManageSessionKey: string;
@@ -91,57 +92,68 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 	};
 
 	return (
-		<div className="relative group">
-			<div
-				key={file.tabKey}
-				className={clsx([
-					'group relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 border-r border-t-2 border-border/50 hover:bg-accent/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-0 max-w-48 cursor-pointer select-none',
-					{
-						'bg-background border-t-primary text-foreground shadow-xs':
-							isCurrentFileOpen,
-						'bg-muted/20 border-t-transparent text-muted-foreground hover:text-foreground': !isCurrentFileOpen,
-						'pr-8': !file.preventUserClose, // Make room for close button
-						'pr-3': file.preventUserClose,
-						'border-l border-l-border/30': !isFirst, // Add left border except for first tab
-					},
-				])}
-				onDoubleClick={onDoubleClick}
-				onClick={onOpenFileClick}
-			>
-				{/* File name */}
-				<span
-					className={clsx('truncate', {
-						italic: isTemporarilyOpen,
-					})}
-					title={typeof file.titleRender() === 'string' ? String(file.titleRender()) : ''}
-				>
-					{file.titleRender()}
-				</span>
+		<TooltipProvider>
+			<Tooltip delayDuration={100}>
+				<TooltipTrigger asChild>
 
-				{/* Temporary indicator */}
-				{isTemporarilyOpen && (
-					<Circle className="h-2 w-2 fill-current text-muted-foreground/60 shrink-0" />
-				)}
-			</div>
+					<div className="relative group">
+						<div
+							key={file.tabKey}
+							className={clsx([
+								'group relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200 border-r border-t-2 border-border/50 hover:bg-accent/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-0 max-w-48 cursor-pointer select-none',
+								{
+									'bg-background border-t-primary text-foreground shadow-xs':
+										isCurrentFileOpen,
+									'bg-muted/20 border-t-transparent text-muted-foreground hover:text-foreground': !isCurrentFileOpen,
+									'pr-8': !file.preventUserClose, // Make room for close button
+									'pr-3': file.preventUserClose,
+									'border-l border-l-border/30': !isFirst, // Add left border except for first tab
+								},
+							])}
+							onDoubleClick={onDoubleClick}
+							onClick={onOpenFileClick}
+						>
+							{/* File name */}
+							<span
+								className={clsx('truncate', {
+									italic: isTemporarilyOpen,
+								})}
+								title={typeof file.titleRender() === 'string' ? String(file.titleRender()) : ''}
+							>
+								{file.titleRender()}
+							</span>
 
-			{/* Close button */}
-			{!file.preventUserClose && (
-				<button
-					onClick={onCloseClick}
-					className={clsx([
-						'absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring',
-						{
-							'opacity-100': isCurrentFileOpen,
-							'hover:bg-muted': !isCurrentFileOpen,
-						},
-					])}
-					aria-label={`Close ${
-						typeof file.titleRender() === 'string' ? String(file.titleRender()) : 'file'
-					}`}
-				>
-					<X className="h-3.5 w-3.5" />
-				</button>
-			)}
-		</div>
+							{/* Temporary indicator */}
+							{isTemporarilyOpen && (
+								<Circle className="h-2 w-2 fill-current text-muted-foreground/60 shrink-0" />
+							)}
+						</div>
+
+						{/* Close button */}
+						{!file.preventUserClose && (
+							<button
+								onClick={onCloseClick}
+								className={clsx([
+									'absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring',
+									{
+										'opacity-100': isCurrentFileOpen,
+										'hover:bg-muted': !isCurrentFileOpen,
+									},
+								])}
+								aria-label={`Close ${typeof file.titleRender() === 'string' ? String(file.titleRender()) : 'file'
+									}`}
+							>
+								<X className="h-3.5 w-3.5" />
+							</button>
+						)}
+					</div>
+				</TooltipTrigger>
+				<TooltipContent side="right">
+					<p>
+						{file.titleRender()}
+					</p>
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
 	);
 };
