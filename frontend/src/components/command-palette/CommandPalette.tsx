@@ -59,9 +59,9 @@ export function CommandPalette() {
 					{/* UI to show when we're in the process of executing a specific command */}
 					{isExecutingCommand && (
 						<>
-							<ScrollArea className="flex-1">
+							<div className="overflow-auto h-full w-full">
 								<CommandPaletteExecutor />
-							</ScrollArea>
+							</div>
 						</>
 					)}
 

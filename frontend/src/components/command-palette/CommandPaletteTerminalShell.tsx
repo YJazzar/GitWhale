@@ -32,7 +32,6 @@ export function CommandPaletteTerminalShell() {
 		cancelTerminalCommand,
 	} = commandPaletteExecutor.terminalCommandState;
 
-	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
 
 	// Auto-scroll to bottom when new output arrives
@@ -135,9 +134,15 @@ export function CommandPaletteTerminalShell() {
 
 			{/* Command Information */}
 			{(commandArgs || commandWorkingDir) && (
-				<div className='pb-3'>
+				<div className="pb-3">
 					{commandArgs && (
-						<ShellCommand commandString={commandArgs} truncateCommand expandOnClick showTerminalIcon includeCopyButton />
+						<ShellCommand
+							commandString={commandArgs}
+							truncateCommand
+							expandOnClick
+							showTerminalIcon
+							includeCopyButton
+						/>
 					)}
 					{commandWorkingDir && (
 						<div className="flex items-center text-xs gap-1">
@@ -152,10 +157,10 @@ export function CommandPaletteTerminalShell() {
 
 			{/* Terminal output */}
 			<div className="flex-1 border rounded-md bg-black/95 text-green-400 font-mono text-[10px] min-w-0 max-w-full">
-				<div ref={scrollAreaRef} className="h-full w-full overflow-auto max-w-full">
+				<div className=" w-full overflow-auto max-w-full">
 					<div className="p-2 w-fit min-w-full">
 						{hasOutput ? (
-							<pre className="whitespace-pre leading-tight w-fit">{terminalOutput}</pre>
+							<pre className="whitespace-pre leading-tight w-fit">{terminalOutput} </pre>
 						) : (
 							<div className="text-muted-foreground/60 italic text-xs">
 								{status === 'notStarted'
