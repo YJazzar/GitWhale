@@ -185,6 +185,70 @@ const getFileKey = (file: git_operations.FileInfo) => {
 	return `${file.Path}/${file.Name}`;
 };
 
+const isRootDirectory = (directory: git_operations.Directory) => {
+	return directory.Path === './' || directory.Path === '.' || directory.Name === './' || directory.Name === '.';
+};
+
+const sanitizeDirectoryName = (name: string) => {
+	if (!name) {
+		return '';
+	}
+
+	if (name === './') {
+		return '.';
+	}
+
+	return name;
+};
+
+interface CollapsedDirectoryInfo {
+	displayName: string;
+	terminalDirectory: git_operations.Directory;
+	tooltipPath: string;
+}
+
+function getCollapsedDirectoryInfo(directory: git_operations.Directory): CollapsedDirectoryInfo {
+	const isRoot = isRootDirectory(directory);
+	const segments: string[] = [];
+
+	let currentDirectory = directory;
+
+	if (!isRoot) {
+		const initialName = sanitizeDirectoryName(currentDirectory.Name);
+		if (initialName) {
+			segments.push(initialName);
+		}
+	}
+
+	while (
+		(currentDirectory.Files?.length ?? 0) === 0 &&
+		(currentDirectory.SubDirs?.length ?? 0) === 1
+	) {
+		currentDirectory = currentDirectory.SubDirs[0];
+
+		const nextName = sanitizeDirectoryName(currentDirectory.Name);
+		if (nextName) {
+			segments.push(nextName);
+		}
+	}
+
+	const displayName =
+		segments.length > 0
+			? segments.join('/')
+			: sanitizeDirectoryName(directory.Name) || directory.Name || '.';
+
+	const tooltipPath =
+		currentDirectory.Path && currentDirectory.Path !== '.'
+			? currentDirectory.Path
+			: displayName;
+
+	return {
+		displayName,
+		terminalDirectory: currentDirectory,
+		tooltipPath,
+	};
+}
+
 function flattenDirectory(directory: git_operations.Directory | undefined) {
 	const flattenedFiles: git_operations.FileInfo[] = [];
 
@@ -214,6 +278,10 @@ interface TreeNodeProps {
 
 function TreeNode({ directory, onFileClick, depth, activeFileOpen }: TreeNodeProps) {
 	const [isOpen, setIsOpen] = useState(true);
+	const { displayName, terminalDirectory, tooltipPath } = useMemo(
+		() => getCollapsedDirectoryInfo(directory),
+		[directory]
+	);
 
 	const toggleCollapse = () => {
 		setIsOpen(!isOpen);
@@ -222,23 +290,23 @@ function TreeNode({ directory, onFileClick, depth, activeFileOpen }: TreeNodePro
 	const handleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
 		if (event.key === 'ArrowUp') {
 			event.preventDefault();
-			event.stopPropagation()
+			event.stopPropagation();
 			moveFocus(-1);
 		} else if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			event.stopPropagation()
+			event.stopPropagation();
 			moveFocus(1);
 		} else if (event.key === 'ArrowLeft') {
 			event.preventDefault();
-			event.stopPropagation()
+			event.stopPropagation();
 			setIsOpen(false);
 		} else if (event.key === 'ArrowRight') {
 			event.preventDefault();
-			event.stopPropagation()
+			event.stopPropagation();
 			setIsOpen(true);
 		} else if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
-			event.stopPropagation()
+			event.stopPropagation();
 			toggleCollapse();
 		}
 	};
@@ -250,7 +318,8 @@ function TreeNode({ directory, onFileClick, depth, activeFileOpen }: TreeNodePro
 		(focusableElements[nextIndex] as HTMLElement).focus();
 	};
 
-	const hasChildren = directory.SubDirs.length > 0 || directory.Files.length > 0;
+	const hasChildren =
+		(terminalDirectory.SubDirs?.length ?? 0) > 0 || (terminalDirectory.Files?.length ?? 0) > 0;
 
 	return (
 		<div className="select-none">
@@ -265,6 +334,7 @@ function TreeNode({ directory, onFileClick, depth, activeFileOpen }: TreeNodePro
 					'transition-colors duration-150'
 				)}
 				style={{ paddingLeft: `${depth * 12 + 4}px` }}
+				title={tooltipPath}
 			>
 				<div className="flex items-center gap-1 min-w-0 flex-1">
 					{hasChildren ? (
@@ -283,13 +353,13 @@ function TreeNode({ directory, onFileClick, depth, activeFileOpen }: TreeNodePro
 						<Folder className="h-3.5 w-3.5 text-blue-600 shrink-0" />
 					)}
 
-					<span className="truncate text-foreground/90 font-medium">{directory.Name}</span>
+					<span className="truncate text-foreground/90 font-medium">{displayName}</span>
 				</div>
 			</Button>
 
 			{isOpen && hasChildren && (
 				<div className="space-y-0.5">
-					{directory.SubDirs.map((childDirectory) => (
+					{terminalDirectory.SubDirs?.map((childDirectory) => (
 						<TreeNode
 							key={childDirectory.Path}
 							directory={childDirectory}
@@ -299,7 +369,7 @@ function TreeNode({ directory, onFileClick, depth, activeFileOpen }: TreeNodePro
 						/>
 					))}
 
-					{directory.Files.map((childFile) => (
+					{terminalDirectory.Files?.map((childFile) => (
 						<FileNode
 							key={getFileKey(childFile)}
 							file={childFile}
