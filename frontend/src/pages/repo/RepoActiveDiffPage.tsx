@@ -29,6 +29,7 @@ import {
 import { CleanupStagingDiffSession, CreateStagingDiffSession } from '../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../wailsjs/go/models';
 import { useEffect } from 'react';
+import { DiffFileListItem, DiffStatusBadge } from '@/components/git-diff/diff-file-list-item';
 import { useKeyboardHotkeyDisplay, useKeyboardShortcut } from '@/hooks/utils/use-keyboard-shortcut';
 import { getDirNameFromPath, getNameFromPath } from '@/utils/filePathUtils';
 import { useDebounce } from '@uidotdev/usehooks';
@@ -347,29 +348,6 @@ function FileListSection({
 }: FileListSectionProps) {
 	const fileTabsHandlers = useFileTabsHandlers(FileTabsSessionKeyGenerator.stagingArea(repoPath));
 
-	const getStatusBadge = (file: git_operations.GitStatusFile) => {
-		const status = file.stagedStatus !== ' ' ? file.stagedStatus : file.workingStatus;
-		const colorMap: Record<string, string> = {
-			M: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-			A: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-			D: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-			R: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-			C: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-			'?': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-		};
-
-		return (
-			<span
-				className={cn(
-					'text-xs font-mono rounded px-1 py-0 font-medium',
-					colorMap[status] || colorMap['?']
-				)}
-			>
-				{status}
-			</span>
-		);
-	};
-
 	const openFileInDiff = async (file: git_operations.GitStatusFile, fileType: string) => {
 		try {
 			Logger.info(`Creating staging diff session for: ${file.path} (${fileType})`, 'StagingPage');
@@ -387,11 +365,12 @@ function FileListSection({
 			};
 
 			const tabKey = `staging-${fileType}-${file.path}`;
+			const status = file.stagedStatus !== ' ' ? file.stagedStatus : file.workingStatus;
 			const tab: TabProps = {
 				tabKey,
 				titleRender: () => (
 					<span className="flex items-center gap-1.5">
-						{getStatusBadge(file)}
+						<DiffStatusBadge status={status} />
 						{fileInfo.Name}
 						<span className="text-xs text-muted-foreground">
 							({diffInfo.leftLabel} → {diffInfo.rightLabel})
@@ -444,54 +423,47 @@ function FileListSection({
 				{files.map((file) => {
 					const fileName = getNameFromPath(file.path);
 					const dirPath = getDirNameFromPath(file.path);
+					const status = file.stagedStatus !== ' ' ? file.stagedStatus : file.workingStatus;
 
 					return (
-						<div
+						<DiffFileListItem
 							key={file.path}
-							className="group flex items-center gap-1.5 py-1 px-1 rounded hover:bg-accent/60 cursor-pointer transition-colors border border-transparent hover:border-border/40"
-							onClick={() => openFileInDiff(file, fileType)}
-						>
-							{getStatusBadge(file)}
-
-							<div className="flex-1 min-w-0 flex items-center gap-1.5">
-								<span className="text-sm font-medium whitespace-nowrap" title={file.path}>
-									{fileName}
-								</span>
-								{dirPath && (
-									<span
-										className="text-xs text-muted-foreground/70 truncate"
-										title={file.path}
-									>
-										{dirPath}
+							status={status}
+							primaryText={fileName}
+							secondaryText={dirPath || undefined}
+							tertiaryText={
+								file.oldPath ? (
+									<span className="italic">
+										renamed from {file.oldPath.split('/').pop()}
 									</span>
-								)}
-							</div>
-
-							{file.oldPath && (
-								<span className="text-xs text-muted-foreground/60 italic shrink-0">
-									renamed from {file.oldPath.split('/').pop()}
-								</span>
-							)}
-
-							<Button
-								onClick={(e) => {
-									e.stopPropagation();
-									onFileAction(file.path);
-								}}
-								variant="ghost"
-								size="sm"
-								className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 shrink-0 transition-opacity"
-							>
-								{action === 'stage' ? (
-									<Plus className="w-2.5 h-2.5" />
-								) : (
-									<Minus className="w-2.5 h-2.5" />
-								)}
-							</Button>
-						</div>
+								) : undefined
+							}
+							title={file.path}
+							onClick={() => openFileInDiff(file, fileType)}
+							actionSlot={
+								<Button
+									onClick={(e) => {
+										e.stopPropagation();
+										onFileAction(file.path);
+									}}
+									variant="ghost"
+									size="sm"
+									className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 shrink-0 transition-opacity"
+								>
+									{action === 'stage' ? (
+										<Plus className="w-2.5 h-2.5" />
+									) : (
+										<Minus className="w-2.5 h-2.5" />
+									)}
+								</Button>
+							}
+						/>
 					);
 				})}
 			</div>
 		</div>
 	);
 }
+
+
+
