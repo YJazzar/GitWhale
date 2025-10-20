@@ -25,6 +25,7 @@ type App struct {
 	AppConfig       *AppConfig    `json:"appConfig"`
 	terminalManager command_utils.XTermSessionManager
 	diffSessions    map[string]*git_operations.DiffSession
+	repoWatchers    map[string]*repoWatcher
 }
 
 // NewApp creates a new App application struct
@@ -58,6 +59,7 @@ func (app *App) Startup(ctx context.Context, startupState *StartupState) {
 		TerminalSessions: map[string]*command_utils.TerminalSession{},
 	}
 	app.diffSessions = make(map[string]*git_operations.DiffSession)
+	app.repoWatchers = make(map[string]*repoWatcher)
 
 	if startupState.DirectoryDiffArgs != nil {
 		if startupState.DirectoryDiffArgs.ShouldStartFileWatcher {
@@ -88,6 +90,8 @@ func (app *App) Shutdown(ctx context.Context) {
 			CloseFileDiffWatcher(app.StartupState.fileDiffWatcher)
 		}
 	}
+
+	app.disposeAllRepoWatchers()
 
 	err := app.AppConfig.SaveAppConfig()
 	if err != nil {
@@ -517,4 +521,34 @@ func (app *App) CreateStagingDiffSession(repoPath, filePath, fileType string) (*
 // CleanupStagingDiffSession cleans up a staging diff session
 func (app *App) CleanupStagingDiffSession(sessionId string) error {
 	return git_operations.CleanupStagingDiffSession(sessionId)
+}
+
+// GetFileDiffPatch returns diff hunks for the given file.
+func (app *App) GetFileDiffPatch(repoPath, filePath string, source git_operations.DiffSource) (*git_operations.FileDiffPatch, error) {
+	return git_operations.GetFileDiffPatch(repoPath, filePath, source)
+}
+
+// StageDiffHunks stages specific hunks for a file.
+func (app *App) StageDiffHunks(repoPath, filePath string, hunkIDs []string) error {
+	return git_operations.StageDiffHunks(repoPath, filePath, hunkIDs)
+}
+
+// UnstageDiffHunks unstages specific hunks for a file.
+func (app *App) UnstageDiffHunks(repoPath, filePath string, hunkIDs []string) error {
+	return git_operations.UnstageDiffHunks(repoPath, filePath, hunkIDs)
+}
+
+// RevertDiffHunks reverts selected hunks in the working directory.
+func (app *App) RevertDiffHunks(repoPath, filePath string, hunkIDs []string) error {
+	return git_operations.RevertDiffHunks(repoPath, filePath, hunkIDs)
+}
+
+// EnsureRepoWatcher starts a filesystem watcher for the provided repository path.
+func (app *App) EnsureRepoWatcher(repoPath string) error {
+	return app.ensureRepoWatcher(repoPath)
+}
+
+// DisposeRepoWatcher stops the filesystem watcher for the provided repository path.
+func (app *App) DisposeRepoWatcher(repoPath string) {
+	app.stopRepoWatcher(repoPath)
 }

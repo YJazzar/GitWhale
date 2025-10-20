@@ -1,12 +1,16 @@
 package git_operations
 
 import (
+	"errors"
 	"fmt"
 	"gitwhale/backend/command_utils"
+	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -38,6 +42,183 @@ type StagingDiffInfo struct {
 	LeftLabel  string    `json:"leftLabel"`
 	RightLabel string    `json:"rightLabel"`
 	CreatedAt  time.Time `json:"createdAt"`
+}
+
+// DiffSource represents the context that a diff came from.
+type DiffSource string
+
+const (
+	// DiffSourceWorking compares staged vs working tree.
+	DiffSourceWorking DiffSource = "working"
+	// DiffSourceStaged compares HEAD vs staged.
+	DiffSourceStaged DiffSource = "staged"
+)
+
+// DiffHunk represents a single hunk within a diff.
+type DiffHunk struct {
+	ID           string `json:"id"`
+	Header       string `json:"header"`
+	OldStart     int    `json:"oldStart"`
+	OldLines     int    `json:"oldLines"`
+	NewStart     int    `json:"newStart"`
+	NewLines     int    `json:"newLines"`
+	AddedLines   int    `json:"addedLines"`
+	RemovedLines int    `json:"removedLines"`
+	Preview      string `json:"preview"`
+	Patch        string `json:"patch"`
+}
+
+// FileDiffPatch groups hunks and metadata for a file diff.
+type FileDiffPatch struct {
+	FilePath string     `json:"filePath"`
+	Source   DiffSource `json:"source"`
+	Metadata string     `json:"metadata"`
+	Hunks    []DiffHunk `json:"hunks"`
+	IsBinary bool       `json:"isBinary"`
+}
+
+var diffHunkHeaderRegex = regexp.MustCompile(`^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@`)
+
+func parseHunkRange(value string) int {
+	if value == "" {
+		return 1
+	}
+
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return 1
+	}
+	if parsed == 0 {
+		return 1
+	}
+	return parsed
+}
+
+func parseGitDiffOutput(filePath string, source DiffSource, diffOutput string) (*FileDiffPatch, error) {
+	lines := strings.Split(diffOutput, "\n")
+	metadataLines := []string{}
+	hunks := []DiffHunk{}
+
+	var currentHunkLines []string
+	addMetadata := true
+	addedLines := 0
+	removedLines := 0
+	previewLines := []string{}
+	var match []string
+
+	flushCurrentHunk := func() {
+		if len(currentHunkLines) == 0 {
+			return
+		}
+
+		header := currentHunkLines[0]
+		match = diffHunkHeaderRegex.FindStringSubmatch(header)
+		if match == nil {
+			currentHunkLines = nil
+			addedLines = 0
+			removedLines = 0
+			previewLines = nil
+			return
+		}
+
+		oldStart, _ := strconv.Atoi(match[1])
+		oldLines := parseHunkRange(match[2])
+		newStart, _ := strconv.Atoi(match[3])
+		newLines := parseHunkRange(match[4])
+
+		preview := ""
+		if len(previewLines) > 0 {
+			preview = strings.Join(previewLines, "\n")
+		}
+
+		if !strings.HasSuffix(currentHunkLines[len(currentHunkLines)-1], "\n") {
+			currentHunkLines[len(currentHunkLines)-1] = currentHunkLines[len(currentHunkLines)-1] + "\n"
+		}
+
+		patchBuilder := strings.Builder{}
+		for _, line := range currentHunkLines {
+			if !strings.HasSuffix(line, "\n") {
+				patchBuilder.WriteString(line)
+				patchBuilder.WriteString("\n")
+			} else {
+				patchBuilder.WriteString(line)
+			}
+		}
+
+		hunkHash := lib.HashString(fmt.Sprintf("%s:%s:%d:%d:%d", filePath, source, oldStart, newStart, len(hunks)))
+		hunkID := fmt.Sprintf("%08x", hunkHash)
+		hunks = append(hunks, DiffHunk{
+			ID:           hunkID,
+			Header:       header,
+			OldStart:     oldStart,
+			OldLines:     oldLines,
+			NewStart:     newStart,
+			NewLines:     newLines,
+			AddedLines:   addedLines,
+			RemovedLines: removedLines,
+			Preview:      preview,
+			Patch:        patchBuilder.String(),
+		})
+
+		currentHunkLines = nil
+		addedLines = 0
+		removedLines = 0
+		previewLines = nil
+	}
+
+	for _, line := range lines {
+		switch {
+		case diffHunkHeaderRegex.MatchString(line):
+			flushCurrentHunk()
+			addMetadata = false
+			currentHunkLines = []string{line}
+			addedLines = 0
+			removedLines = 0
+			previewLines = []string{}
+		case strings.HasPrefix(line, "diff --git "):
+			addMetadata = true
+			flushCurrentHunk()
+			metadataLines = append(metadataLines, line)
+		case addMetadata && (strings.HasPrefix(line, "index ") || strings.HasPrefix(line, "---") || strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "new file mode") || strings.HasPrefix(line, "deleted file mode") || strings.HasPrefix(line, "similarity index") || strings.HasPrefix(line, "rename from") || strings.HasPrefix(line, "rename to")):
+			metadataLines = append(metadataLines, line)
+		default:
+			if currentHunkLines != nil {
+				currentHunkLines = append(currentHunkLines, line)
+				if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+					addedLines++
+					if len(previewLines) < 4 {
+						previewLines = append(previewLines, line)
+					}
+				} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+					removedLines++
+					if len(previewLines) < 4 {
+						previewLines = append(previewLines, line)
+					}
+				} else if len(previewLines) < 4 && strings.TrimSpace(line) != "" {
+					previewLines = append(previewLines, line)
+				}
+			} else if addMetadata {
+				metadataLines = append(metadataLines, line)
+			}
+		}
+	}
+
+	flushCurrentHunk()
+
+	isBinary := len(hunks) == 0 && strings.Contains(strings.Join(metadataLines, "\n"), "Binary files")
+
+	metadata := strings.Join(metadataLines, "\n")
+	if metadata != "" && !strings.HasSuffix(metadata, "\n") {
+		metadata += "\n"
+	}
+
+	return &FileDiffPatch{
+		FilePath: filePath,
+		Source:   source,
+		Metadata: metadata,
+		Hunks:    hunks,
+		IsBinary: isBinary,
+	}, nil
 }
 
 // GetGitStatus retrieves the current Git status for a repository
@@ -321,4 +502,154 @@ func CleanupStagingDiffSession(sessionId string) error {
 		return err
 	}
 	return nil
+}
+
+func buildPatchFromHunks(patch *FileDiffPatch, hunkIDs []string) (string, error) {
+	if patch == nil {
+		return "", errors.New("diff patch was nil")
+	}
+
+	if len(hunkIDs) == 0 {
+		return "", errors.New("no hunks selected")
+	}
+
+	hunkSet := make(map[string]bool, len(hunkIDs))
+	for _, id := range hunkIDs {
+		hunkSet[id] = true
+	}
+
+	var builder strings.Builder
+	if patch.Metadata != "" {
+		builder.WriteString(patch.Metadata)
+		if !strings.HasSuffix(patch.Metadata, "\n") {
+			builder.WriteString("\n")
+		}
+	}
+
+	matched := 0
+	for _, hunk := range patch.Hunks {
+		if !hunkSet[hunk.ID] {
+			continue
+		}
+
+		builder.WriteString(hunk.Patch)
+		if !strings.HasSuffix(hunk.Patch, "\n") {
+			builder.WriteString("\n")
+		}
+		matched++
+	}
+
+	if matched == 0 {
+		return "", fmt.Errorf("no matching hunks found for file %s", patch.FilePath)
+	}
+
+	builder.WriteString("\n")
+	return builder.String(), nil
+}
+
+func applyPatch(repoPath string, patchPayload string, args ...string) error {
+	if strings.TrimSpace(patchPayload) == "" {
+		return errors.New("patch payload was empty")
+	}
+
+	commandArgs := append([]string{"apply"}, args...)
+	cmd := exec.Command("git", commandArgs...)
+	cmd.Dir = repoPath
+	cmd.Stdin = strings.NewReader(patchPayload)
+
+	_, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return fmt.Errorf("git apply failed: %w", err)
+	}
+
+	if exitCode != 0 {
+		return fmt.Errorf("git apply exited with code %d", exitCode)
+	}
+
+	return nil
+}
+
+func StageDiffHunks(repoPath, filePath string, hunkIDs []string) error {
+	logger.Log.Info("Staging hunks %v for %s", hunkIDs, filePath)
+
+	patch, err := GetFileDiffPatch(repoPath, filePath, DiffSourceWorking)
+	if err != nil {
+		return err
+	}
+
+	payload, err := buildPatchFromHunks(patch, hunkIDs)
+	if err != nil {
+		return err
+	}
+
+	return applyPatch(repoPath, payload, "--cached", "--whitespace=nowarn")
+}
+
+func UnstageDiffHunks(repoPath, filePath string, hunkIDs []string) error {
+	logger.Log.Info("Unstaging hunks %v for %s", hunkIDs, filePath)
+
+	patch, err := GetFileDiffPatch(repoPath, filePath, DiffSourceStaged)
+	if err != nil {
+		return err
+	}
+
+	payload, err := buildPatchFromHunks(patch, hunkIDs)
+	if err != nil {
+		return err
+	}
+
+	return applyPatch(repoPath, payload, "--cached", "--reverse", "--whitespace=nowarn")
+}
+
+func RevertDiffHunks(repoPath, filePath string, hunkIDs []string) error {
+	logger.Log.Info("Reverting hunks %v for %s", hunkIDs, filePath)
+
+	patch, err := GetFileDiffPatch(repoPath, filePath, DiffSourceWorking)
+	if err != nil {
+		return err
+	}
+
+	payload, err := buildPatchFromHunks(patch, hunkIDs)
+	if err != nil {
+		return err
+	}
+
+	return applyPatch(repoPath, payload, "--reverse", "--whitespace=nowarn")
+}
+
+func GetFileDiffPatch(repoPath, filePath string, source DiffSource) (*FileDiffPatch, error) {
+	logger.Log.Debug("Generating diff patch for %s (%s)", filePath, source)
+
+	gitArgs := []string{"diff", "--no-color", "--unified=4", "--", filePath}
+	switch source {
+	case DiffSourceStaged:
+		gitArgs = []string{"diff", "--cached", "--no-color", "--unified=4", "--", filePath}
+	case DiffSourceWorking:
+		// default args already handle working tree vs index
+	default:
+		return nil, fmt.Errorf("unsupported diff source: %s", source)
+	}
+
+	cmd := exec.Command("git", gitArgs...)
+	cmd.Dir = repoPath
+	diffOutput, exitCode, err := command_utils.RunCommandAndLogErr(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate git diff for %s: %w", filePath, err)
+	}
+
+	if exitCode != 0 {
+		return nil, fmt.Errorf("git diff returned non-zero exit code (%d) for %s", exitCode, filePath)
+	}
+
+	if strings.TrimSpace(diffOutput) == "" {
+		return &FileDiffPatch{
+			FilePath: filePath,
+			Source:   source,
+			Metadata: "",
+			Hunks:    []DiffHunk{},
+			IsBinary: false,
+		}, nil
+	}
+
+	return parseGitDiffOutput(filePath, source, diffOutput)
 }

@@ -111,6 +111,16 @@ export function useFileTabsHandlers(
 		state.setOpenTabs(newAvailableTabs);
 	};
 
+	const updateTab = (tabKeyToUpdate: string, updater: (tab: TabProps) => TabProps): void => {
+		const newTabs = state.openTabs.map((tab) => {
+			if (tab.tabKey === tabKeyToUpdate) {
+				return updater(tab);
+			}
+			return tab;
+		});
+		state.setOpenTabs(newTabs);
+	};
+
 	/**
 	 * Get the currently active tab, if any
 	 */
@@ -136,6 +146,7 @@ export function useFileTabsHandlers(
 		openTab,
 		switchToTab,
 		setTabPermaOpen,
+		updateTab,
 		getActiveTab,
 		getTabProps,
 

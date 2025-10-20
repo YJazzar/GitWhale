@@ -22,7 +22,11 @@ export function CreateStagingDiffSession(arg1:string,arg2:string,arg3:string):Pr
 
 export function DeleteUserScriptCommand(arg1:string):Promise<void>;
 
+export function DisposeRepoWatcher(arg1:string):Promise<void>;
+
 export function EndDiffSession(arg1:string):Promise<void>;
+
+export function EnsureRepoWatcher(arg1:string):Promise<void>;
 
 export function ExecuteShellCommand(arg1:string,arg2:string,arg3:string):Promise<void>;
 
@@ -41,6 +45,8 @@ export function GetCommandLogs():Promise<Array<command_utils.CommandEntry>>;
 export function GetDetailedCommitInfo(arg1:string,arg2:string):Promise<git_operations.DetailedCommitInfo>;
 
 export function GetDiffSession(arg1:string):Promise<git_operations.DiffSession>;
+
+export function GetFileDiffPatch(arg1:string,arg2:string,arg3:git_operations.DiffSource):Promise<git_operations.FileDiffPatch>;
 
 export function GetGitStatus(arg1:string):Promise<git_operations.GitStatus>;
 
@@ -66,11 +72,15 @@ export function OpenRepoWithPath(arg1:string):Promise<void>;
 
 export function ReadFile(arg1:string):Promise<string>;
 
+export function RevertDiffHunks(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
+
 export function RunGitLog(arg1:string,arg2:git_operations.GitLogOptions):Promise<Array<git_operations.GitLogCommitInfo>>;
 
 export function SaveUserScriptCommand(arg1:backend.UserDefinedCommandDefinition):Promise<void>;
 
 export function SelectUserScriptFileForImport():Promise<string>;
+
+export function StageDiffHunks(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
 export function StageFile(arg1:string,arg2:Array<string>):Promise<void>;
 
@@ -79,6 +89,8 @@ export function StartDiffSession(arg1:git_operations.DiffOptions):Promise<git_op
 export function Startup(arg1:context.Context,arg2:backend.StartupState):Promise<void>;
 
 export function ToggleStarRepo(arg1:string):Promise<boolean>;
+
+export function UnstageDiffHunks(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
 export function UnstageFile(arg1:string,arg2:Array<string>):Promise<void>;
 

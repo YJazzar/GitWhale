@@ -34,8 +34,16 @@ export function DeleteUserScriptCommand(arg1) {
   return window['go']['backend']['App']['DeleteUserScriptCommand'](arg1);
 }
 
+export function DisposeRepoWatcher(arg1) {
+  return window['go']['backend']['App']['DisposeRepoWatcher'](arg1);
+}
+
 export function EndDiffSession(arg1) {
   return window['go']['backend']['App']['EndDiffSession'](arg1);
+}
+
+export function EnsureRepoWatcher(arg1) {
+  return window['go']['backend']['App']['EnsureRepoWatcher'](arg1);
 }
 
 export function ExecuteShellCommand(arg1, arg2, arg3) {
@@ -72,6 +80,10 @@ export function GetDetailedCommitInfo(arg1, arg2) {
 
 export function GetDiffSession(arg1) {
   return window['go']['backend']['App']['GetDiffSession'](arg1);
+}
+
+export function GetFileDiffPatch(arg1, arg2, arg3) {
+  return window['go']['backend']['App']['GetFileDiffPatch'](arg1, arg2, arg3);
 }
 
 export function GetGitStatus(arg1) {
@@ -122,6 +134,10 @@ export function ReadFile(arg1) {
   return window['go']['backend']['App']['ReadFile'](arg1);
 }
 
+export function RevertDiffHunks(arg1, arg2, arg3) {
+  return window['go']['backend']['App']['RevertDiffHunks'](arg1, arg2, arg3);
+}
+
 export function RunGitLog(arg1, arg2) {
   return window['go']['backend']['App']['RunGitLog'](arg1, arg2);
 }
@@ -132,6 +148,10 @@ export function SaveUserScriptCommand(arg1) {
 
 export function SelectUserScriptFileForImport() {
   return window['go']['backend']['App']['SelectUserScriptFileForImport']();
+}
+
+export function StageDiffHunks(arg1, arg2, arg3) {
+  return window['go']['backend']['App']['StageDiffHunks'](arg1, arg2, arg3);
 }
 
 export function StageFile(arg1, arg2) {
@@ -148,6 +168,10 @@ export function Startup(arg1, arg2) {
 
 export function ToggleStarRepo(arg1) {
   return window['go']['backend']['App']['ToggleStarRepo'](arg1);
+}
+
+export function UnstageDiffHunks(arg1, arg2, arg3) {
+  return window['go']['backend']['App']['UnstageDiffHunks'](arg1, arg2, arg3);
 }
 
 export function UnstageFile(arg1, arg2) {
