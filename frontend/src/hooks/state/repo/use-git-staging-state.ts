@@ -1,34 +1,13 @@
 import Logger from '@/utils/logger';
-import { useCallback, useEffect, useMemo } from 'react';
-import {
-	CommitChanges,
-	EnsureRepoWatcher,
-	GetFileDiffPatch,
-	GetGitStatus,
-	RevertDiffHunks,
-	StageDiffHunks,
-	StageFile,
-	UnstageDiffHunks,
-	UnstageFile,
-	DisposeRepoWatcher,
-} from '../../../../wailsjs/go/backend/App';
+import { useCallback, useMemo } from 'react';
+import { CommitChanges, GetGitStatus, StageFile, UnstageFile } from '../../../../wailsjs/go/backend/App';
 import { git_operations } from '../../../../wailsjs/go/models';
 import { createMappedAtom, useMapPrimitive } from '../primitives/use-map-primitive';
-import { DiffSource } from '@/pages/repo/RepoActiveDiffPage';
 
 type StagingOperation = {
-	type:
-		| 'stageFiles'
-		| 'unstageFiles'
-		| 'refresh'
-		| 'createCommit'
-		| 'stageHunks'
-		| 'unstageHunks'
-		| 'revertHunks';
+	type: 'stageFiles' | 'unstageFiles' | 'refresh' | 'createCommit';
 	files?: string[];
 	commitMessage?: string;
-	filePath?: string;
-	hunkIDs?: string[];
 };
 
 // State atoms for staging data per repository path
@@ -43,23 +22,6 @@ export function useGitStagingState(repoPath: string) {
 	const _gitStatusPrim = useMapPrimitive(gitStatusAtom, repoPath);
 	const _operationsQueuePrim = useMapPrimitive(operationsQueueAtom, repoPath);
 	const _shouldTriggerAutoRefreshPrim = useMapPrimitive(shouldTriggerAutoRefreshAtom, repoPath);
-
-	useEffect(() => {
-		let isActive = true;
-		EnsureRepoWatcher(repoPath).catch((error) => {
-			Logger.error(`Failed to start repo watcher for ${repoPath}: ${error}`, 'useGitStagingState');
-		});
-
-		return () => {
-			if (!isActive) {
-				return;
-			}
-			isActive = false;
-			DisposeRepoWatcher(repoPath).catch((error) => {
-				Logger.warning(`Failed to dispose repo watcher for ${repoPath}: ${error}`, 'useGitStagingState');
-			});
-		};
-	}, [repoPath]);
 
 	const _refreshGitStatus = useCallback(async () => {
 		try {
@@ -99,83 +61,23 @@ export function useGitStagingState(repoPath: string) {
 		[repoPath]
 	);
 
-	const _stageHunks = useCallback(
-		async (filePath: string, hunkIDs: string[]) => {
-			if (!filePath || hunkIDs.length === 0) {
-				return;
-			}
+	const _stageAllFiles = useCallback(async () => {
+		const gitStatusData = _gitStatusPrim.value;
+		if (!gitStatusData) {
+			return;
+		}
+		const allUnstagedFiles = [...gitStatusData.unstagedFiles, ...gitStatusData.untrackedFiles];
+		_stageFiles(allUnstagedFiles.map((file) => file.path));
+	}, [repoPath, _gitStatusPrim.value, _stageFiles]);
 
-			try {
-				await StageDiffHunks(repoPath, filePath, hunkIDs);
-				Logger.debug(
-					`Staged ${hunkIDs.length} hunks for ${filePath}`,
-					'useGitStagingState::_stageHunks'
-				);
-			} catch (error) {
-				Logger.error(`Failed to stage hunks for ${filePath}: ${error}`, 'useGitStagingState');
-				throw error;
-			}
-		},
-		[repoPath]
-	);
-
-	const _unstageHunks = useCallback(
-		async (filePath: string, hunkIDs: string[]) => {
-			if (!filePath || hunkIDs.length === 0) {
-				return;
-			}
-
-			try {
-				await UnstageDiffHunks(repoPath, filePath, hunkIDs);
-				Logger.debug(
-					`Unstaged ${hunkIDs.length} hunks for ${filePath}`,
-					'useGitStagingState::_unstageHunks'
-				);
-			} catch (error) {
-				Logger.error(`Failed to unstage hunks for ${filePath}: ${error}`, 'useGitStagingState');
-				throw error;
-			}
-		},
-		[repoPath]
-	);
-
-	const _revertHunks = useCallback(
-		async (filePath: string, hunkIDs: string[]) => {
-			if (!filePath || hunkIDs.length === 0) {
-				return;
-			}
-
-			try {
-				await RevertDiffHunks(repoPath, filePath, hunkIDs);
-				Logger.debug(
-					`Reverted ${hunkIDs.length} hunks for ${filePath}`,
-					'useGitStagingState::_revertHunks'
-				);
-			} catch (error) {
-				Logger.error(`Failed to revert hunks for ${filePath}: ${error}`, 'useGitStagingState');
-				throw error;
-			}
-		},
-		[repoPath]
-	);
-
-	// const _stageAllFiles = useCallback(async () => {
-	// 	const gitStatusData = _gitStatusPrim.value;
-	// 	if (!gitStatusData) {
-	// 		return;
-	// 	}
-	// 	const allUnstagedFiles = [...gitStatusData.unstagedFiles, ...gitStatusData.untrackedFiles];
-	// 	_stageFiles(allUnstagedFiles.map((file) => file.path));
-	// }, [repoPath, _gitStatusPrim.value, _stageFiles]);
-
-	// const _unstageAllFiles = useCallback(async () => {
-	// 	const gitStatusData = _gitStatusPrim.value;
-	// 	if (!gitStatusData) {
-	// 		return;
-	// 	}
-	// 	const allStagedFiles = gitStatusData.stagedFiles;
-	// 	_unstageFiles(allStagedFiles.map((file) => file.path));
-	// }, [repoPath, _gitStatusPrim.value, _unstageFiles]);
+	const _unstageAllFiles = useCallback(async () => {
+		const gitStatusData = _gitStatusPrim.value;
+		if (!gitStatusData) {
+			return;
+		}
+		const allStagedFiles = gitStatusData.stagedFiles;
+		_unstageFiles(allStagedFiles.map((file) => file.path));
+	}, [repoPath, _gitStatusPrim.value, _unstageFiles]);
 
 	const _commitChanges = useCallback(
 		async (commitMessage: string | undefined) => {
@@ -211,15 +113,6 @@ export function useGitStagingState(repoPath: string) {
 				case 'unstageFiles':
 					await _unstageFiles(operation.files ?? []);
 					break;
-				case 'stageHunks':
-					await _stageHunks(operation.filePath ?? '', operation.hunkIDs ?? []);
-					break;
-				case 'unstageHunks':
-					await _unstageHunks(operation.filePath ?? '', operation.hunkIDs ?? []);
-					break;
-				case 'revertHunks':
-					await _revertHunks(operation.filePath ?? '', operation.hunkIDs ?? []);
-					break;
 				default:
 					Logger.error('Unhandled git operation type in useStagingState()');
 			}
@@ -228,7 +121,7 @@ export function useGitStagingState(repoPath: string) {
 			// to make sure the UI actually shows what git thinks happened
 			return true;
 		},
-		[_refreshGitStatus, _stageFiles, _unstageFiles, _stageHunks, _unstageHunks, _revertHunks, _commitChanges]
+		[_refreshGitStatus, _stageFiles, _stageAllFiles, _unstageFiles, _unstageAllFiles, _commitChanges]
 	);
 
 	const pushToOperationsQueue = useCallback(
@@ -417,23 +310,11 @@ export function useGitStagingState(repoPath: string) {
 						files: [...(_gitStatusPrim.value?.stagedFiles ?? [])].map((file) => file.path),
 					});
 				},
-				stageHunks: (filePath: string, hunkIDs: string[]) => {
-					pushToOperationsQueue({ type: 'stageHunks', filePath, hunkIDs });
-				},
-				unstageHunks: (filePath: string, hunkIDs: string[]) => {
-					pushToOperationsQueue({ type: 'unstageHunks', filePath, hunkIDs });
-				},
-				revertHunks: (filePath: string, hunkIDs: string[]) => {
-					pushToOperationsQueue({ type: 'revertHunks', filePath, hunkIDs });
-				},
 				commitChanges: () => {
 					pushToOperationsQueue({ type: 'createCommit', commitMessage: _commitMessagePrim.value });
 				},
 				refresh: () => {
 					pushToOperationsQueue({ type: 'refresh' });
-				},
-				loadDiffPatch: (filePath: string, source: DiffSource) => {
-					return GetFileDiffPatch(repoPath, filePath, source);
 				},
 			},
 

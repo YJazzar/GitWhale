@@ -12,7 +12,6 @@ export interface TabProps {
 	preventUserClose?: boolean;
 	isPermanentlyOpen?: boolean;
 	onTabClose?: () => void;
-	meta?: Record<string, unknown>;
 }
 
 // Global atoms for session-based state
