@@ -105,6 +105,7 @@ export function useSidebarState(
 		cleanup: () => {
 			_activeItemPrim.kill();
 			_dynamicItemsPrim.kill();
+			_staticItemsPrim.kill();
 			_sidebarModePrim.kill();
 		},
 	};
