@@ -31,6 +31,7 @@ export function useNavigateRootFilTabs() {
 		const newRepoTab: TabProps = {
 			tabKey: repoPath,
 			titleRender: () => <RepoFileTab repoPath={repoPath} />,
+			tooltipContent: () => <span>{repoPath}</span>,
 			component: <RepoPage repoPath={repoPath} />,
 			isPermanentlyOpen: true,
 			onTabClose: () => { },
@@ -100,6 +101,7 @@ export function useNavigateRootFilTabs() {
 		fileTabs.openTab({
 			tabKey,
 			titleRender: () => <>{title}</>,
+			tooltipContent: () => <>{title}</>,
 			component: <UserScriptCommandEditor sessionKey={sessionId} originalCommandId={commandId} />,
 			isPermanentlyOpen: true,
 		});

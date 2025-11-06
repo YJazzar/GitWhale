@@ -377,6 +377,7 @@ function FileListSection({
 						</span>
 					</span>
 				),
+				tooltipContent: () => <>{file.path}</>,
 				component: <FileDiffView file={fileInfo} />,
 				isPermanentlyOpen: false,
 				onTabClose: () => {
