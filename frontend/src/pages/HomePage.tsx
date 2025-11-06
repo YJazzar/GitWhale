@@ -88,48 +88,52 @@ export default function HomePage() {
 						</ul>
 					</div>
 
-					<Separator orientation="vertical" className="h-64" />
+					{starredRepos.length || nonStarredRecentRepos.length ? (
+						<>
+							<Separator orientation="vertical" className="h-64" />
 
-					{/* Column 2: Repo lists */}
-					<div className="flex flex-col max-h-full w-80">
-						{starredRepos.length > 0 && (
-							<div className="mb-6">
-								<h2 className="text-xl font-semibold mb-4">Starred:</h2>
-								<ScrollArea className="max-h-40">
-									<div className="space-y-2 pr-3">
-										{starredRepos.map((repoPath) => (
-											<RepoEntry
-												key={repoPath}
-												repoPath={repoPath}
-												isStarred
-												onOpenRepo={onOpenRepo}
-												onToggleStar={onToggleStar}
-											/>
-										))}
+							{/* Column 2: Repo lists */}
+							<div className="flex flex-col max-h-full w-80">
+								{starredRepos.length > 0 && (
+									<div className="mb-6">
+										<h2 className="text-xl font-semibold mb-4">Starred:</h2>
+										<ScrollArea className="max-h-40">
+											<div className="space-y-2 pr-3">
+												{starredRepos.map((repoPath) => (
+													<RepoEntry
+														key={repoPath}
+														repoPath={repoPath}
+														isStarred
+														onOpenRepo={onOpenRepo}
+														onToggleStar={onToggleStar}
+													/>
+												))}
+											</div>
+										</ScrollArea>
 									</div>
-								</ScrollArea>
-							</div>
-						)}
+								)}
 
-						{nonStarredRecentRepos.length > 0 && (
-							<div>
-								<h2 className="text-xl font-semibold mb-4">Recent:</h2>
-								<ScrollArea className="max-h-60">
-									<div className="space-y-2 pr-3">
-										{nonStarredRecentRepos.map((repoPath) => (
-											<RepoEntry
-												key={repoPath}
-												repoPath={repoPath}
-												isStarred={false}
-												onOpenRepo={onOpenRepo}
-												onToggleStar={onToggleStar}
-											/>
-										))}
+								{nonStarredRecentRepos.length > 0 && (
+									<div>
+										<h2 className="text-xl font-semibold mb-4">Recent:</h2>
+										<ScrollArea className="max-h-60">
+											<div className="space-y-2 pr-3">
+												{nonStarredRecentRepos.map((repoPath) => (
+													<RepoEntry
+														key={repoPath}
+														repoPath={repoPath}
+														isStarred={false}
+														onOpenRepo={onOpenRepo}
+														onToggleStar={onToggleStar}
+													/>
+												))}
+											</div>
+										</ScrollArea>
 									</div>
-								</ScrollArea>
+								)}
 							</div>
-						)}
-					</div>
+						</>
+					): null}
 				</div>
 			</div>
 
