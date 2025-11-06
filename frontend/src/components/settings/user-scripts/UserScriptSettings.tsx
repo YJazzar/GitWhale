@@ -12,7 +12,7 @@ import { SelectUserScriptFileForImport } from '../../../../wailsjs/go/backend/Ap
 import { UserScriptExportDialog } from './UserScriptExportDialog';
 
 export function UserScriptSettings() {
-	const { userScriptCommands, isLoading, error, deleteUserScriptCommand } = useUserScriptCommandsState();
+	const { userScriptCommands, isLoading, error, deleteUserScriptCommand } = useUserScriptCommandsState(true);
 	const { onOpenUserScriptCommandEditor } = useNavigateRootFilTabs();
 	const [importingFile, setImportingFile] = useState<string | undefined>(undefined);
 	const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
