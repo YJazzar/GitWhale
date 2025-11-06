@@ -9,6 +9,7 @@ import (
 	"gitwhale/backend/lib"
 	"gitwhale/backend/logger"
 	"os"
+	"path"
 	"slices"
 	"strings"
 	"time"
@@ -121,6 +122,10 @@ func (app *App) OpenNewRepo() string {
 	}
 
 	return newRepoPath
+}
+
+func (app *App) NormalizeFolderPath(gitRepoPath string) string {
+	return strings.ReplaceAll(path.Clean(gitRepoPath), "\\", "/")
 }
 
 // Actually opens the repo and adds it to the app's state

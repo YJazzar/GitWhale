@@ -58,6 +58,8 @@ export function InitNewTerminalSession(arg1:string):Promise<void>;
 
 export function ListDiffSessions():Promise<Array<git_operations.DiffSession>>;
 
+export function NormalizeFolderPath(arg1:string):Promise<string>;
+
 export function OnTerminalSessionWasResized(arg1:string,arg2:command_utils.TTYSize):Promise<void>;
 
 export function OpenNewRepo():Promise<string>;

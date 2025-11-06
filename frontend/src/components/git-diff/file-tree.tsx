@@ -68,6 +68,7 @@ export function FileTree({ directoryData, fileTabsSessionKey, className }: FileT
 		let fileToOpen: TabProps = {
 			tabKey: tabKey,
 			titleRender: () => <>{file.Name}</>,
+			tooltipContent: () => <>{file.Path || file.Name}</>,
 			component: <FileDiffView file={file} />,
 			isPermanentlyOpen: keepFileOpen,
 		};

@@ -8,6 +8,7 @@ type TabKey = string;
 export interface TabProps {
 	tabKey: TabKey;
 	titleRender: () => React.JSX.Element;
+	tooltipContent?: () => React.JSX.Element | undefined;
 	component: React.ReactNode;
 	preventUserClose?: boolean;
 	isPermanentlyOpen?: boolean;

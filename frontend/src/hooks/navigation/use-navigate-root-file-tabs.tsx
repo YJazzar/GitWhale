@@ -7,7 +7,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import StateInspectorPage from '@/pages/StateInspectorPage';
 import UserScriptCommandEditor from '@/pages/UserScriptCommandEditor';
 import { useCallback } from 'react';
-import { OpenNewRepo, OpenRepoWithPath } from '../../../wailsjs/go/backend/App';
+import { NormalizeFolderPath, OpenNewRepo, OpenRepoWithPath } from '../../../wailsjs/go/backend/App';
 import { UseAppState } from '../state/use-app-state';
 
 export function useNavigateRootFilTabs() {
@@ -25,15 +25,17 @@ export function useNavigateRootFilTabs() {
 			return;
 		}
 
-		await OpenRepoWithPath(repoPath);
+		const normalizedPath = await NormalizeFolderPath(repoPath)
+		await OpenRepoWithPath(normalizedPath);
 		await appState.refreshAppState();
 
 		const newRepoTab: TabProps = {
-			tabKey: repoPath,
-			titleRender: () => <RepoFileTab repoPath={repoPath} />,
-			component: <RepoPage repoPath={repoPath} />,
+			tabKey: normalizedPath,
+			titleRender: () => <RepoFileTab repoPath={normalizedPath} />,
+			tooltipContent: () => <span>{normalizedPath}</span>,
+			component: <RepoPage repoPath={normalizedPath} />,
 			isPermanentlyOpen: true,
-			onTabClose: () => { },
+			onTabClose: () => {},
 		};
 
 		fileTabs.openTab(newRepoTab);
@@ -100,6 +102,7 @@ export function useNavigateRootFilTabs() {
 		fileTabs.openTab({
 			tabKey,
 			titleRender: () => <>{title}</>,
+			tooltipContent: () => <>{title}</>,
 			component: <UserScriptCommandEditor sessionKey={sessionId} originalCommandId={commandId} />,
 			isPermanentlyOpen: true,
 		});

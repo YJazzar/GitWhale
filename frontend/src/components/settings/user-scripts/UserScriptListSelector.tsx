@@ -1,7 +1,6 @@
 import { ShellCommand } from '@/components/shell-command';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCallback } from 'react';
 import { backend } from '../../../../wailsjs/go/models';
 
@@ -23,7 +22,7 @@ export function UserScriptListSelector(props: UserScriptListSelectorProps) {
 	);
 
 	return (
-		<ScrollArea className="h-80 pr-2">
+		<>
 			{userScriptCommands.map((userScript: backend.UserDefinedCommandDefinition) => (
 				<div
 					key={userScript.id}
@@ -51,6 +50,6 @@ export function UserScriptListSelector(props: UserScriptListSelectorProps) {
 					<ShellCommand commandString={userScript.action.commandString} truncateCommand={true} />
 				</div>
 			))}
-		</ScrollArea>
+		</>
 	);
 }

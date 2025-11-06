@@ -16,7 +16,7 @@ function convertToBackendType(
 	return frontendCommand as backend.UserDefinedCommandDefinition;
 }
 
-export function useUserScriptCommandsState() {
+export function useUserScriptCommandsState(loadOnMount: boolean = false) {
 	const appState = UseAppState();
 	const [isLoading, setIsLoading] = useAtom(userScriptCommandsLoadingAtom);
 	const [error, setError] = useAtom(userScriptCommandsErrorAtom);
@@ -42,6 +42,7 @@ export function useUserScriptCommandsState() {
 	const saveUserScriptCommand = useCallback(
 		async (command: UserDefinedCommandDefinition) => {
 			try {
+				setIsLoading(true);
 				setError(null);
 				const backendCommand = convertToBackendType(command);
 				await SaveUserScriptCommand(backendCommand);
@@ -49,6 +50,8 @@ export function useUserScriptCommandsState() {
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to save user script command: ' + err);
 				throw err;
+			} finally {
+				setIsLoading(false);
 			}
 		},
 		[appState.refreshAppState, setError]
@@ -58,12 +61,15 @@ export function useUserScriptCommandsState() {
 	const deleteUserScriptCommand = useCallback(
 		async (commandId: string) => {
 			try {
+				setIsLoading(true);
 				setError(null);
 				await DeleteUserScriptCommand(commandId);
 				await appState.refreshAppState();
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to delete user script command: ' + err);
 				throw err;
+			} finally {
+				setIsLoading(false);
 			}
 		},
 		[appState.refreshAppState, setError]
@@ -79,7 +85,7 @@ export function useUserScriptCommandsState() {
 
 	// Load commands on mount
 	useEffect(() => {
-		if (userScriptCommands.length === 0 && !isLoading) {
+		if (loadOnMount && userScriptCommands.length === 0 && !isLoading) {
 			reloadUserScripts();
 		}
 	}, [userScriptCommands.length, isLoading, reloadUserScripts]);

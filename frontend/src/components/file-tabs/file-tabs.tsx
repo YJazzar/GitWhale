@@ -95,7 +95,6 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 		<TooltipProvider>
 			<Tooltip delayDuration={100}>
 				<TooltipTrigger asChild>
-
 					<div className="relative group">
 						<div
 							key={file.tabKey}
@@ -104,7 +103,8 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 								{
 									'bg-background border-t-primary text-foreground shadow-xs':
 										isCurrentFileOpen,
-									'bg-muted/20 border-t-transparent text-muted-foreground hover:text-foreground': !isCurrentFileOpen,
+									'bg-muted/20 border-t-transparent text-muted-foreground hover:text-foreground':
+										!isCurrentFileOpen,
 									'pr-8': !file.preventUserClose, // Make room for close button
 									'pr-3': file.preventUserClose,
 									'border-l border-l-border/30': !isFirst, // Add left border except for first tab
@@ -118,7 +118,9 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 								className={clsx('truncate', {
 									italic: isTemporarilyOpen,
 								})}
-								title={typeof file.titleRender() === 'string' ? String(file.titleRender()) : ''}
+								title={
+									typeof file.titleRender() === 'string' ? String(file.titleRender()) : ''
+								}
 							>
 								{file.titleRender()}
 							</span>
@@ -140,18 +142,19 @@ const FileTabHeader: React.FunctionComponent<FileTabHeaderProps> = (props) => {
 										'hover:bg-muted': !isCurrentFileOpen,
 									},
 								])}
-								aria-label={`Close ${typeof file.titleRender() === 'string' ? String(file.titleRender()) : 'file'
-									}`}
+								aria-label={`Close ${
+									typeof file.titleRender() === 'string'
+										? String(file.titleRender())
+										: 'file'
+								}`}
 							>
 								<X className="h-3.5 w-3.5" />
 							</button>
 						)}
 					</div>
 				</TooltipTrigger>
-				<TooltipContent side="right">
-					<p>
-						{file.titleRender()}
-					</p>
+				<TooltipContent side="right" hidden={file.tooltipContent === undefined}>
+					{file.tooltipContent ? file.tooltipContent() : null}
 				</TooltipContent>
 			</Tooltip>
 		</TooltipProvider>

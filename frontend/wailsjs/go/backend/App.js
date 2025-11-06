@@ -106,6 +106,10 @@ export function ListDiffSessions() {
   return window['go']['backend']['App']['ListDiffSessions']();
 }
 
+export function NormalizeFolderPath(arg1) {
+  return window['go']['backend']['App']['NormalizeFolderPath'](arg1);
+}
+
 export function OnTerminalSessionWasResized(arg1, arg2) {
   return window['go']['backend']['App']['OnTerminalSessionWasResized'](arg1, arg2);
 }

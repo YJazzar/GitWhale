@@ -19,7 +19,14 @@ const searchQueryAtom = atom('');
 const availableCommandPaletteContextsAtom = atom<Map<CommandPaletteContextKey, CommandPaletteContextData>>(
 	new Map()
 );
-const inProgressCommandAtom = atom<CommandDefinition<unknown> | undefined>(undefined);
+
+// Stores the command and context that's currently running in the palette
+// It just combines the command definition and the context data
+// Context data is important to keep here, because the "availableCommandPaletteContextsAtom" may change while a command is running
+type ActiveCommandDefinition =
+	| (CommandDefinition<unknown> & { contextData: CommandPaletteContextData | undefined })
+	| undefined;
+const inProgressCommandAtom = atom<ActiveCommandDefinition>(undefined);
 
 // Simple hook for smaller components to see what contexts are available
 export function useCommandPaletteAvailableContexts() {
@@ -110,7 +117,7 @@ export function useCommandPaletteState() {
 			return;
 		}
 
-		_setInProgressCommand(command);
+		_setInProgressCommand({ ...command, contextData: getByContextKey(command.context) });
 	};
 
 	return {
@@ -219,9 +226,7 @@ export function useCommandPaletteExecutor() {
 	const _availableContexts = useAtomValue(availableCommandPaletteContextsAtom);
 	const [_inProgressCommand, _setInProgressCommand] = useAtom(inProgressCommandAtom);
 
-	const contextData = _inProgressCommand?.context
-		? _availableContexts.get(_inProgressCommand.context)
-		: undefined;
+	const contextData = _inProgressCommand?.contextData;
 	const requestedHooks = _inProgressCommand?.action.requestedHooks(contextData);
 	const shellExecutor = useCommandPaletteTerminalCommandExecutor();
 
