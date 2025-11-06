@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -59,11 +58,6 @@ export function WorktreesOverview(props: WorktreesOverviewProps) {
 			</CardHeader>
 			<CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
 				<div className="space-y-3">
-					<Button variant="ghost" className="w-full" size="sm" disabled={isLoading}>
-						<FolderTree className="h-3.5 w-3.5 mr-2" />
-						Manage Worktrees
-					</Button>
-
 					<Separator />
 
 					{isLoading ? (
